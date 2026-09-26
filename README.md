@@ -10,7 +10,6 @@ Projeto desenvolvido para a disciplina de Projeto Integrador 4, curso de Engenha
 
 - Cezar Fernandez Rull
 - Gabriel Henrique Pozeti de Faria
-- Guilherme De Lima E Sousa
 - Julia Da Silva Maia
 - Miguel Fernandes Monteiro
 
