@@ -21,6 +21,17 @@ O Servidor nunca fala com o Frontend, só com o Backend. Cada usuário conectado
 | Estado por conexão (`double valor`) | Não há: o estado fica no MongoDB, gerido pelo Backend |
 | `Teclado` | Igual, copiada do material |
 
+## O Servidor não acessa o banco
+
+**Decisão:** o Servidor Java não se conecta ao MongoDB e não tem driver de banco no `pom.xml`. Só o Backend acessa o banco. Quando um cálculo do Servidor depende de dados do usuário, o Backend busca esses dados e os envia **dentro do pedido**. Exemplos:
+
+- `PedidoValidarMFA` leva o segredo do MFA do usuário.
+- `PedidoMontarContextoIA` leva os totais e as transações recentes.
+- `PedidoValidarSenha` leva o hash guardado.
+- `PedidoRentabilidadeSimulada` leva a lista de ativos.
+
+Por isso os handlers do Servidor são funções puras: pedido entra, resposta sai, sem leitura nem escrita de dados. Tudo o que precisa ser persistido (usuários, transações, metas, histórico) é gravado pelo Backend a partir das respostas do Servidor. Ao criar ou alterar um `PedidoXxx`, inclua nele todos os dados de que o handler precisa.
+
 ## Protocolo
 
 - Uma mensagem por linha, UTF-8, no formato `{"tipo":"...","dados":{...}}`.
@@ -56,9 +67,21 @@ src/main/java/com/financeai/
   investments/               InvestmentsHandler + PedidoRentabilidadeSimulada e resposta
 ```
 
-## Como rodar (depois que os `.java` reais existirem)
+## Estado atual (Sprint 0)
 
-Requer JDK 17 e Maven. O servidor deve ser iniciado **antes** do Backend.
+Já implementados em `src/main/java/com/financeai/`: o `Main` e o `core/` (`Comunicado`, `Parceiro`, `Aceitadora`, `Supervisora`, `Handler`, `HandlerRegistry`, `Teclado`), mais o `EcoHandler`, um handler de teste: `PedidoEco` devolve `RespostaEco` com os mesmos `dados`. Os pacotes dos grupos (`auth`, `transactions`, `dashboard`, `mentoria`, `goals`, `investments`) ainda têm só os `.md` de exemplo; cada grupo adiciona o seu handler com uma linha em `HandlerRegistry.criarPadrao()`.
+
+Verificado com um cliente de teste: eco, tipo desconhecido (resposta `Erro`), respostas na ordem, conexões independentes, `PedidoParaSair` e o comando `desativar` (que envia `ComunicadoDeDesligamento` aos clientes).
+
+## Build com Maven
+
+O `pom.xml` define o Java 17 e a dependência do Gson, que o Maven baixa sozinho (para `~/.m2`); não é preciso guardar nenhum `.jar` no repositório. Tudo o que o Maven gera fica em `target/` (`.class` compilados, `.jar`), que está no `.gitignore` e pode ser apagado com `mvn clean`.
+
+**Pré-requisitos:** JDK 17 ou superior e [Maven](https://maven.apache.org/download.cgi) instalado e no `PATH` (confira com `java -version` e `mvn -v`). Uma IDE com Maven embutido (IntelliJ, VS Code com extensão Java) também serve.
+
+## Como rodar
+
+O servidor deve ser iniciado **antes** do Backend.
 
 ```bash
 mvn compile
@@ -69,8 +92,18 @@ mvn exec:java -Dexec.mainClass=com.financeai.Main -Dexec.args="3001"
 
 Para desativar, digite `desativar` no console.
 
+### Testar a conexão (Sprint 0)
+
+Com o servidor no ar, abra uma conexão TCP na porta (por exemplo `telnet localhost 3000` ou `nc localhost 3000`) e envie uma linha:
+
+```
+{"tipo":"PedidoEco","dados":{"oi":1}}
+```
+
+A resposta esperada é `{"tipo":"RespostaEco","dados":{"oi":1}}`. Um `tipo` sem handler devolve `{"tipo":"Erro",...}` e `{"tipo":"PedidoParaSair","dados":{}}` encerra a conexão.
+
 ## Pontos em aberto (contratos do Sprint 0)
 
-- **O Servidor não acessa o MongoDB** nos exemplos. Quando um cálculo depende de dados do usuário, o Backend envia esses dados no pedido: o segredo do MFA em `PedidoValidarMFA`, e os totais e as transações recentes em `PedidoMontarContextoIA`. Se o time preferir que o Java leia o Mongo direto, os pedidos ficam mais enxutos, mas o Servidor passa a depender do banco.
 - **Resposta `Erro`:** o Backend precisa tratar `tipo: "Erro"` como falha daquele pedido, repassando a mensagem. Os `.md` do Backend foram alinhados a isso.
 - **Biblioteca JSON:** os exemplos usam Gson (declarado no `pom.xml`). Se o professor preferir outra, só `Comunicado` muda.
+- **Maven:** usado por enquanto. A issue da Sprint 0 descreve compilação manual com `javac` e o `.jar` no classpath; falta confirmar com o professor se o Maven é aceito.
