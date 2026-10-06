@@ -9,6 +9,7 @@
 ```ts
 // src/modules/mentor-ia/mentor-ia.repository.ts
 import { ChatMessageModel, AlertModel } from "./mentor-ia.model";
+import { TransactionModel } from "../transactions/transactions.model";
 
 export const mentorIaRepository = {
   async saveChatMessage(userId: string, autor: "usuario" | "ia", texto: string) {
@@ -27,6 +28,18 @@ export const mentorIaRepository = {
 
   async findAlerts(userId: string) {
     return AlertModel.find({ userId }).sort({ createdAt: -1 }).lean();
+  },
+
+  async getResumoFinanceiro(userId: string) {
+    const transacoes = await TransactionModel.find({ userId }).sort({ data: -1 }).limit(10).lean();
+    const soma = (tipo: string) =>
+      transacoes.filter((t) => t.tipo === tipo).reduce((total, t) => total + t.valor, 0);
+
+    return {
+      receitas: soma("receita"),
+      despesas: soma("despesa"),
+      transacoesRecentes: transacoes.map((t) => ({ descricao: t.descricao, valor: t.valor })),
+    };
   },
 };
 ```

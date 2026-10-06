@@ -5,6 +5,7 @@
 - `JavaServerClient.conectar()`: abre a conexão (falha com erro `503` se o servidor não estiver no ar — o "Indique o servidor e a porta corretos!" do vídeo).
 - `enviarPedido(tipoPedido, tipoResposta, dados)`: faz o que o `Cliente.java` fazia na opção "=" (`servidor.receba(pedido)` e esperar a resposta), de forma genérica. A resposta é casada **por ordem de chegada** (fila FIFO): o Servidor Java trata uma conexão sequencialmente (lê um pedido, responde, lê o próximo), então a primeira resposta é sempre do primeiro pedido pendente. Por isso não há ID. Só use `enviarPedido` para pedidos que **têm** resposta.
 - Uma única tarefa de leitura (`lerMensagens`) consome tudo que chega. Se for `ComunicadoDeDesligamento`, dispara o callback registrado com `aoDesligar` (o papel da `TratadoraDeComunicadoDeDesligamento`). Qualquer outra mensagem resolve o pedido pendente.
+- Se o Servidor Java responder `{ tipo: "Erro", dados: { message } }` (handler falhou ou tipo desconhecido), o pedido pendente é rejeitado com um `AppError` `502` carregando essa mensagem.
 - `sair()`: envia `PedidoParaSair` e chama `adeus()`, como o `Cliente.java` faz ao terminar. Deve ser chamado quando o WebSocket do Frontend fecha.
 - Queda abrupta do servidor: o `Parceiro` avisa pelo `aoFechar`; os pedidos pendentes são rejeitados com erro `503` ("Erro de comunicação com o servidor").
 
@@ -15,7 +16,7 @@
 import net from "net";
 import { env } from "../config/env";
 import { Parceiro } from "./parceiro";
-import { TIPO_PEDIDO_PARA_SAIR, ehComunicadoDeDesligamento } from "./comunicado";
+import { TIPO_ERRO, TIPO_PEDIDO_PARA_SAIR, ehComunicadoDeDesligamento } from "./comunicado";
 import { AppError } from "../shared/errors/app-error";
 
 interface Pendente {
@@ -65,6 +66,12 @@ export class JavaServerClient {
 
         const pendente = this.pendentes.shift();
         if (!pendente) continue;
+
+        if (comunicado.tipo === TIPO_ERRO) {
+          const { message } = comunicado.dados as { message?: string };
+          pendente.reject(new AppError(message ?? "Erro no servidor", 502, "JAVA_SERVER_ERROR"));
+          continue;
+        }
 
         if (comunicado.tipo === pendente.tipoResposta) {
           pendente.resolve(comunicado.dados);

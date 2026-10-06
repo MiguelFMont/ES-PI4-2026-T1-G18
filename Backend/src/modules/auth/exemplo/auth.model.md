@@ -17,6 +17,7 @@ interface UserDocument {
   cpf: string;
   senhaHash: string;
   mfaEnabled: boolean;
+  mfaSecret?: string; // segredo TOTP, guardado criptografado
   plano: "free" | "pro";
   preferencias: {
     tema: "claro" | "escuro";
@@ -31,6 +32,7 @@ const UserSchema = new Schema<UserDocument>(
     cpf: { type: String, required: true, unique: true },
     senhaHash: { type: String, required: true },
     mfaEnabled: { type: Boolean, default: false },
+    mfaSecret: { type: String, select: false },
     plano: { type: String, enum: ["free", "pro"], default: "free" },
     preferencias: {
       tema: { type: String, enum: ["claro", "escuro"], default: "claro" },

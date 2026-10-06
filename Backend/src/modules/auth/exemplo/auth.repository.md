@@ -34,5 +34,10 @@ export const authRepository = {
   async setMfaEnabled(userId: string, mfaEnabled: boolean) {
     return UserModel.findByIdAndUpdate(userId, { mfaEnabled }, { new: true }).lean();
   },
+
+  async findMfaSecret(userId: string) {
+    const usuario = await UserModel.findById(userId).select("+mfaSecret").lean();
+    return usuario?.mfaSecret ?? "";
+  },
 };
 ```
