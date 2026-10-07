@@ -35,11 +35,17 @@ public class Comunicado
         return new Comunicado (TIPO_DESLIGAMENTO, new JsonObject());
     }
 
-    public static Comunicado erro (String mensagem)
+    public static Comunicado erro (String code, String mensagem)
     {
         JsonObject dados = new JsonObject();
+        dados.addProperty ("code",    code);
         dados.addProperty ("message", mensagem);
         return new Comunicado (TIPO_ERRO, dados);
+    }
+
+    public static Comunicado erro (String mensagem)
+    {
+        return erro ("INTERNAL_ERROR", mensagem);
     }
 
     public static Comunicado lerJson (String linha)
