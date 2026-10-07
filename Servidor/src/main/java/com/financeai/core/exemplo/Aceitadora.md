@@ -1,10 +1,11 @@
 # Aceitadora.java — Thread que aceita conexões
 
 ## O que deve ter neste arquivo
+- **Escuta só em `127.0.0.1`** (`InetAddress.getLoopbackAddress()`): o Servidor confia no `userId` que o Backend manda, então não pode aceitar conexões vindas da rede.
 - Equivalente à `AceitadoraDeConexao.java` do professor: uma `Thread` com um `ServerSocket` que fica em loop chamando `accept()`. Para cada conexão aceita, cria e inicia uma `Supervisora`.
 - Recebe a porta, a lista compartilhada de usuários (`ArrayList<Parceiro>`) e o `HandlerRegistry`, que repassa para cada `Supervisora` criada.
 - Valida os parâmetros no construtor (porta ausente ou inválida, lista ausente), como no original.
-- Na prática, as conexões aceitas são as dos usuários conectados ao Backend (uma por conexão WebSocket do Frontend).
+- Na prática, cada conexão aceita é uma chamada do Backend (uma conexão por pedido, que termina com `PedidoParaSair`), então a `Aceitadora` cria e descarta `Supervisora`s o tempo todo.
 
 ## Exemplo de implementação
 
@@ -28,7 +29,7 @@ public class Aceitadora extends Thread
 
         try
         {
-            this.pedido = new ServerSocket (Integer.parseInt(porta));
+            this.pedido = new ServerSocket (Integer.parseInt(porta), 50, InetAddress.getLoopbackAddress());
         }
         catch (Exception erro)
         {

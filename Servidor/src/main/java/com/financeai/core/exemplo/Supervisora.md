@@ -5,11 +5,12 @@
 - A grande mudança em relação ao original: o `if/else instanceof` fixo (`PedidoDeOperacao`, `PedidoDeResultado`, `PedidoParaSair`) é substituído por uma busca no `HandlerRegistry` pelo `tipo` da mensagem. Assim nenhum grupo edita a `Supervisora`.
 - Fluxo por mensagem:
   - `PedidoParaSair`: remove o usuário da lista, chama `adeus()` e encerra a thread (como no original).
-  - `tipo` sem handler: responde `Erro` ("Tipo de pedido desconhecido").
-  - Handler que lança exceção: responde `Erro` com a mensagem, sem derrubar a conexão.
+  - `tipo` sem handler: responde `Erro` com `code` `UNKNOWN_TYPE`.
+  - Handler que lança `ErroDeNegocio`: responde `Erro` com o `code` e a mensagem dele. Qualquer outra exceção é registrada no log e vira `INTERNAL_ERROR` genérico, sem vazar detalhe. A conexão não cai em nenhum dos dois casos.
   - Caso normal: envia a resposta do handler.
-- **Cada pedido recebe exatamente uma resposta, na mesma ordem em que chegou.** O Backend casa as respostas por ordem de chegada (não há ID), então este laço sequencial é parte do contrato.
+- **Cada pedido recebe exatamente uma resposta**, na mesma conexão e na ordem em que chegou. O Backend abre uma conexão por chamada, então normalmente a `Supervisora` atende um pedido e recebe o `PedidoParaSair`; mesmo assim o laço atende vários pedidos em sequência, como no original.
 - Queda da conexão (exceção em `envie`): remove da lista e fecha, como o `catch` do original.
+- **Timeout de leitura:** `conexao.setSoTimeout(TIMEOUT_LEITURA_MS)` (30 s) logo ao começar. Se o cliente conecta e não manda nada, o `readLine` estoura, o `envie()` lança, e o `catch` do laço remove o usuário da lista e fecha a conexão, liberando a thread. O timeout só vale para *esperar o pedido*; um handler lento não é interrompido.
 - Estado por conexão (como o `double valor` do original) é opcional; nos handlers do FinanceAI o estado fica no MongoDB, então a `Supervisora` não guarda nada.
 
 ## Exemplo de implementação
@@ -32,9 +33,14 @@ public class Supervisora extends Thread
     public Supervisora (Socket conexao, ArrayList<Parceiro> usuarios, HandlerRegistry registry)
     throws Exception
     {
-        if (conexao == null)  throw new Exception ("Conexao ausente");
-        if (usuarios == null) throw new Exception ("Usuarios ausentes");
-        if (registry == null) throw new Exception ("Registry ausente");
+        if (conexao == null)
+            throw new Exception ("Conexao ausente");
+
+        if (usuarios == null)
+            throw new Exception ("Usuarios ausentes");
+
+        if (registry == null)
+            throw new Exception ("Registry ausente");
 
         this.conexao  = conexao;
         this.usuarios = usuarios;
@@ -45,10 +51,15 @@ public class Supervisora extends Thread
     {
         try
         {
-            BufferedReader receptor = new BufferedReader (
-                new InputStreamReader (this.conexao.getInputStream(), StandardCharsets.UTF_8));
-            PrintWriter transmissor = new PrintWriter (
-                new OutputStreamWriter (this.conexao.getOutputStream(), StandardCharsets.UTF_8));
+            BufferedReader receptor =
+            new BufferedReader (
+            new InputStreamReader (
+            this.conexao.getInputStream(), StandardCharsets.UTF_8));
+
+            PrintWriter transmissor =
+            new PrintWriter (
+            new OutputStreamWriter (
+            this.conexao.getOutputStream(), StandardCharsets.UTF_8));
 
             this.usuario = new Parceiro (this.conexao, receptor, transmissor);
         }
@@ -66,7 +77,7 @@ public class Supervisora extends Thread
 
             for (;;)
             {
-                Comunicado pedido = this.usuario.envie();
+                Comunicado pedido = this.usuario.envie ();
 
                 if (pedido.getTipo().equals(Comunicado.TIPO_PEDIDO_PARA_SAIR))
                 {
@@ -81,18 +92,27 @@ public class Supervisora extends Thread
                 Handler handler = this.registry.obter (pedido.getTipo());
                 if (handler == null)
                 {
-                    this.usuario.receba (Comunicado.erro("Tipo de pedido desconhecido: " + pedido.getTipo()));
+                    this.usuario.receba (Comunicado.erro(400, "UNKNOWN_TYPE",
+                                         "Tipo de pedido desconhecido: " + pedido.getTipo()));
                     continue;
                 }
 
+                Comunicado resposta;
                 try
                 {
-                    this.usuario.receba (handler.tratar(pedido));
+                    resposta = handler.tratar (pedido);
+                }
+                catch (ErroDeNegocio erro)
+                {
+                    resposta = Comunicado.erro (erro.getCode(), erro.getMessage());
                 }
                 catch (Exception erro)
                 {
-                    this.usuario.receba (Comunicado.erro(erro.getMessage()));
+                    erro.printStackTrace();   // detalhe fica so no log do servidor
+                    resposta = Comunicado.erro (500, "INTERNAL_ERROR", "Erro interno do servidor");
                 }
+
+                this.usuario.receba (resposta);
             }
         }
         catch (Exception erro)
@@ -101,6 +121,7 @@ public class Supervisora extends Thread
             {
                 this.usuarios.remove (this.usuario);
             }
+
             try
             {
                 this.usuario.adeus();

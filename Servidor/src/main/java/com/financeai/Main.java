@@ -21,6 +21,20 @@ public class Main
             porta = args[0];
 
         ArrayList<Parceiro> usuarios = new ArrayList<Parceiro>();
+        try
+        {
+            if (Banco.iniciar())
+                System.out.println ("Conectado ao MongoDB.");
+            else
+                System.out.println ("MONGO_URI nao definida: servidor sem banco (so para testes de socket).");
+        }
+        catch (Exception erro)
+        {
+            System.err.println ("Nao foi possivel conectar ao MongoDB: " + erro.getMessage() + "\n");
+            return;
+        }
+
+        // o registry vem depois do banco: os repositorios criam indices ao serem instanciados
         HandlerRegistry registry = HandlerRegistry.criarPadrao();
 
         Aceitadora aceitadora = null;
@@ -78,6 +92,7 @@ public class Main
                     }
                 }
 
+                Banco.encerrar();
                 System.out.println ("O servidor foi desativado!\n");
                 System.exit(0);
             }

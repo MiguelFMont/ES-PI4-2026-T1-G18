@@ -17,7 +17,9 @@ public class Aceitadora extends Thread
 
         try
         {
-            this.pedido = new ServerSocket (Integer.parseInt(porta));
+            // so aceita conexoes da propria maquina: o Servidor confia no userId
+            // enviado pelo Backend, entao nao pode ficar exposto na rede
+            this.pedido = new ServerSocket (Integer.parseInt(porta), 50, InetAddress.getLoopbackAddress());
         }
         catch (Exception erro)
         {

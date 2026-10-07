@@ -7,6 +7,10 @@ import java.util.*;
 
 public class Supervisora extends Thread
 {
+    // Quanto tempo esperar por uma linha do cliente. O Backend manda o pedido logo
+    // depois de conectar, entao uma conexao calada por mais que isso esta presa.
+    public static final int TIMEOUT_LEITURA_MS = 30000;
+
     private Parceiro            usuario;
     private Socket              conexao;
     private ArrayList<Parceiro> usuarios;
@@ -33,6 +37,8 @@ public class Supervisora extends Thread
     {
         try
         {
+            this.conexao.setSoTimeout (TIMEOUT_LEITURA_MS);
+
             BufferedReader receptor =
             new BufferedReader (
             new InputStreamReader (
@@ -74,18 +80,27 @@ public class Supervisora extends Thread
                 Handler handler = this.registry.obter (pedido.getTipo());
                 if (handler == null)
                 {
-                    this.usuario.receba (Comunicado.erro("Tipo de pedido desconhecido: " + pedido.getTipo()));
+                    this.usuario.receba (Comunicado.erro("UNKNOWN_TYPE",
+                                         "Tipo de pedido desconhecido: " + pedido.getTipo()));
                     continue;
                 }
 
+                Comunicado resposta;
                 try
                 {
-                    this.usuario.receba (handler.tratar(pedido));
+                    resposta = handler.tratar (pedido);
+                }
+                catch (ErroDeNegocio erro)
+                {
+                    resposta = Comunicado.erro (erro.getCode(), erro.getMessage());
                 }
                 catch (Exception erro)
                 {
-                    this.usuario.receba (Comunicado.erro(erro.getMessage()));
+                    erro.printStackTrace();   // detalhe fica so no log do servidor
+                    resposta = Comunicado.erro ("INTERNAL_ERROR", "Erro interno do servidor");
                 }
+
+                this.usuario.receba (resposta);
             }
         }
         catch (Exception erro)
