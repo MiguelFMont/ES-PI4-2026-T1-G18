@@ -2,49 +2,55 @@
 
 Estrutura base do Backend em **arquitetura limpa por feature**, seguindo a divisão de grupos e a arquitetura de componentes do README principal do repositório (`../README.md`).
 
-## O Backend não é uma API REST
+## O que o Backend faz
 
-O Backend **não usa Express nem expõe HTTP/REST**. Ele tem dois papéis:
+O Backend é a **API REST (Node.js, TypeScript e Express)** do FinanceAI e funciona como um **gateway**: recebe as requisições HTTP do Frontend, valida e autentica, e repassa o trabalho ao Servidor Java. Ele **não acessa o banco de dados**: o Servidor Java é o único dono do MongoDB e das regras de negócio.
 
-1. **Servidor WebSocket para o Frontend** (`src/ws/`): o Frontend abre uma conexão WebSocket e troca mensagens `{ tipo, dados }` com o Backend. A conexão nasce anônima e é autenticada por mensagem (ver "Autenticação" abaixo).
-2. **Cliente do Servidor Java** (`src/java-client/`): o Backend é o cliente do Servidor Java, que segue a arquitetura cliente-servidor por sockets do "Fazedor de Continhas" (`Comunicado`, `Parceiro`, `Aceitadora`, `Supervisora`), adaptada para trocar JSON em linhas em vez de serialização nativa do Java.
-
-```
-Frontend --WebSocket--> Backend --socket TCP (JSON)--> Servidor Java
-(cliente)               (servidor p/ o front,          (servidor)
-                         cliente p/ o Java)
-```
-
-O navegador não consegue abrir um socket TCP puro, por isso existe o WebSocket entre Frontend e Backend. O Servidor Java não sabe que existe WebSocket.
-
-### Uma conexão com o Java por usuário
-
-Como no vídeo do professor, onde cada `Cliente` tem a sua conexão e a sua `Supervisora` no servidor, **cada conexão WebSocket do Frontend abre uma conexão TCP própria com o Servidor Java**:
+1. **API HTTP para o Frontend** (`src/http/`): rotas sob `/v1/...` (`/v1/auth`, `/v1/transactions`...), JSON e autenticação por JWT no header `Authorization: Bearer <token>`. É o Backend que assina e verifica o JWT.
+2. **Cliente do Servidor Java** (`src/java-client/`): cada operação de negócio vira um pedido ao Servidor, por socket TCP com mensagens JSON em linhas. O Servidor segue o sistema cliente-servidor do "Fazedor de Continhas" ensinado em aula (`Comunicado`, `Parceiro`, `Aceitadora`, `Supervisora`), e a pasta `java-client/` é uma porta quase literal de `Comunicado.java`/`Parceiro.java`/`Cliente.java`, mantendo os nomes `envie`/`receba`/`espie`.
 
 ```
-Front (usuário A) --WS--> Backend --TCP A--> Java (Supervisora A)
-Front (usuário B) --WS--> Backend --TCP B--> Java (Supervisora B)
+Frontend --HTTP (REST/JSON)--> Backend --socket TCP (JSON)--> Servidor Java --> MongoDB (Atlas)
+(navegador)                    (gateway: rotas,                (dono dos dados
+                                validação, JWT)                 e das regras)
 ```
 
-- Não há ID de correlação: cada usuário espera a resposta na sua própria conexão. As respostas são casadas por ordem de chegada, porque o Java trata uma conexão sequencialmente.
-- Ao fechar o WebSocket, o Backend envia `PedidoParaSair` e chama `adeus()` (como o `Cliente.java`).
-- Se o Servidor Java avisar que vai desligar (`ComunicadoDeDesligamento`), o Backend manda `ServidorDesligando` ao Frontend e fecha a conexão.
-- Se o Java estiver fora do ar, a conexão WebSocket é fechada. Queda abrupta só é percebida quando se tenta usar a conexão (erro `503` devolvido ao Frontend).
+O navegador não consegue abrir um socket TCP puro, por isso existe o Backend: ele traduz HTTP em mensagens de socket para o Servidor Java.
+
+### O que o Backend faz e não faz
+
+| Faz | Não faz |
+|---|---|
+| Expor as rotas HTTP e validar o corpo das requisições (`zod`) | Acessar o MongoDB (não há Mongoose, `model` nem `repository`) |
+| Assinar e verificar o JWT (`JWT_SECRET`) | Guardar senhas, hashes ou segredos de MFA |
+| Repassar cada operação ao Servidor Java e devolver o resultado | Aplicar regras de negócio (categorização, indicadores, progresso de meta...) |
+| Chamar serviços externos que precisam de internet e chave (API de IA generativa, Pluggy) | |
+
+Como o Servidor Java decide o resultado das operações, ele devolve os erros de negócio só com um `code` (ver abaixo), e o Backend traduz o `code` em status HTTP.
+
+### Uma conexão com o Java por chamada
+
+HTTP não mantém conexão aberta, então cada chamada ao Servidor Java segue o ciclo de vida de um `Cliente` do professor: **conecta, faz um pedido, lê a resposta, envia `PedidoParaSair` e fecha**. Cada chamada tem a sua própria `Supervisora` no Servidor, então:
+
+- não há ID de correlação: duas requisições simultâneas nunca misturam respostas;
+- há um **timeout** (`JAVA_SERVER_TIMEOUT_MS`): se o Servidor não responder, a rota devolve `503`;
+- **Como o Servidor é dono dos dados, se ele estiver fora do ar a API inteira falha** (`503`), exceto o que não depende dele.
+
+### Erros vindos do Servidor
+
+Quando uma regra de negócio falha, o Servidor responde `{"tipo":"Erro","dados":{"code":"EMAIL_IN_USE","message":"..."}}`. O `java-client` consulta a tabela `code → status` (`shared/errors/error-codes.ts`) e cria um `AppError` com o status HTTP, o `code` e a `message`; o `error-handler.middleware` devolve a resposta. Assim o Servidor Java não conhece HTTP: ele diz *o que* aconteceu (`EMAIL_IN_USE`) e o Backend decide que isso é `409`. Um `code` fora da tabela vira `502 JAVA_SERVER_ERROR`.
 
 ## Comparação com o material do professor
 
 | Ponto | Professor | Nosso Backend |
 |---|---|---|
-| Cliente | `Cliente.java`, console com menu | Classe `JavaServerClient`, uma por conexão WebSocket |
+| Cliente | `Cliente.java`, console com menu | `javaServerClient`, chamado pelos `services`; uma conexão por chamada |
 | Serialização | `ObjectOutputStream`/`ObjectInputStream` | JSON em linhas (`\n`) |
 | Tipo da mensagem | Subclasses de `Comunicado`, `instanceof` | Envelope `{ tipo, dados }`, string |
 | `Parceiro` | `receba` / `envie` / `espie` / `adeus`, com `Semaphore` | Mesmos métodos e semântica, sobre `net.Socket`, sem `Semaphore` (event loop do Node) |
 | Concorrência | Threads bloqueantes | Assíncrono (`Promise`) |
-| Aguardar resposta | `espie()` em loop até `instanceof Resultado` | `enviarPedido`, com fila de pendentes |
-| Desligamento do servidor | `TratadoraDeComunicadoDeDesligamento` | `aoDesligar` no `JavaServerClient` |
-| Saída do cliente | `PedidoParaSair` | `sair()` envia `PedidoParaSair` e chama `adeus()` |
-| Servidor | `Aceitadora` + `Supervisora` com `if/else instanceof` | Mesma estrutura, com `HandlerRegistry` por `tipo` (um handler por grupo) |
-| Camadas extras | Nenhuma | WebSocket com o Frontend, MongoDB, módulos por feature |
+| Saída do cliente | `PedidoParaSair` | Enviado no fim de cada chamada |
+| Camadas extras | Nenhuma | API REST com o Frontend (o professor só tem console) |
 
 ## `exemplo/`: documentação de cada arquivo
 
@@ -60,10 +66,10 @@ Exemplo: o futuro `src/modules/auth/auth.service.ts` é documentado em `src/modu
 ```
 src/
   config/            variáveis de ambiente (env.ts)
-  database/          conexão com o MongoDB (mongo.connection.ts)
+  http/              app.ts (Express e rotas) e server.ts (listen)
+  middlewares/       auth.middleware.ts (JWT) e error-handler.middleware.ts
   java-client/       cliente do Servidor Java (comunicado.ts, parceiro.ts, java-server.client.ts)
-  shared/errors/     erro de negócio compartilhado (app-error.ts)
-  ws/                servidor WebSocket para o Frontend (server.ts, connection.ts, dispatcher.ts, ws-auth.ts)
+  shared/errors/     erro compartilhado (app-error.ts)
   modules/
     auth/            Grupo 1 — Autenticação & Conta
       mfa/           sub-módulo de MFA
@@ -78,34 +84,39 @@ src/
 
 | Arquivo | Responsabilidade |
 |---|---|
-| `*.handler.ts` | Registra no `ws/dispatcher.ts` a função que trata cada `tipo` de mensagem WebSocket do módulo. Recebe `(dados, { usuario, java })`. |
-| `*.service.ts` | Regra de negócio. Usa o `repository` para persistência e o `java` (recebido por parâmetro) quando a regra depende do Servidor Java. |
-| `*.repository.ts` | Acesso ao MongoDB (via o `*.model.ts` do módulo), sempre restrito ao usuário dono do dado. |
-| `*.dto.ts` | Schemas de validação (`zod`) e tipos de entrada/saída. |
-| `*.model.ts` | Schema(s) Mongoose da(s) coleção(ões) do módulo. |
+| `*.routes.ts` | Define as rotas HTTP do módulo (método + caminho) e quais usam o `authMiddleware`. |
+| `*.controller.ts` | Camada HTTP: lê `req`, valida com o DTO, chama o service e monta a resposta. Erros vão para `next(error)`. |
+| `*.service.ts` | Casos de uso: monta o pedido, chama o `javaServerClient` e devolve o resultado. Pode orquestrar vários pedidos e serviços externos (ex.: Mentor IA). |
+| `*.dto.ts` | Schemas de validação (`zod`) e tipos de entrada/saída das rotas. |
 
-Cada grupo só mexe no seu módulo e, em `ws/server.ts`, adiciona a linha de `import` do seu `*.handler.ts`.
+Cada grupo só mexe no seu módulo e, em `http/app.ts`, adiciona a linha do `app.use` do seu router. Os dados, as regras e o acesso ao banco do grupo ficam na pasta do grupo no **Servidor** (`../Servidor`).
 
-## Autenticação (JWT por conexão)
+## Autenticação (JWT)
 
-A conexão WebSocket **nasce anônima** (sem token no handshake, nem na URL). A autenticação vale só para aquela conexão e fica guardada nela, como o estado da `Supervisora` do professor.
-
-1. Uma conexão anônima só aceita mensagens **públicas**: `Registrar`, `Login` e `Autenticar`. Qualquer outra recebe erro `401`.
-2. `Login` valida a senha (hash verificado pelo Servidor Java), o Backend assina o JWT (`{ id, email }`, `JWT_SECRET`, com expiração) e marca a conexão como autenticada.
-3. O Frontend guarda o token. Ao recarregar a página ou reconectar, envia `Autenticar` com o token e a conexão volta a ser autenticada sem pedir a senha.
-4. No código: `dispatcher.registrarPublico(...)` para mensagens públicas e `dispatcher.registrar(...)` para as que exigem usuário (o handler recebe `{ usuario, java }`, com `usuario` garantido).
-
-O token só é verificado no `Autenticar`: uma conexão já aberta continua válida depois de o token expirar.
+- `POST /v1/auth/register` e `POST /v1/auth/login` são públicas. O Servidor Java confere e-mail e senha (o hash fica no banco, só no Servidor); se o login der certo, o Backend assina o JWT (`{ id, email }`, `JWT_SECRET`, com expiração) e devolve o token.
+- O Frontend envia `Authorization: Bearer <token>` nas demais requisições. O `authMiddleware` verifica o token e coloca o usuário em `req.user`; token ausente, inválido ou expirado devolve `401`.
+- As rotas de todos os módulos (exceto `register` e `login`) usam o `authMiddleware`, e os controllers sempre usam `req.user.id`, nunca um `userId` vindo do corpo da requisição. O Servidor confia no `userId` que o Backend envia, por isso só o Backend deve conseguir alcançá-lo.
 
 ## Pontos em aberto (contratos do Sprint 0)
 
-- **MFA no login:** como o `Login` devolve `mfaRequired` e só autentica a conexão depois de `ValidarMfa` fica a definir pelo grupo de Autenticação.
-- **Ordem das respostas do Java:** a correlação por ordem exige que o Servidor Java responda cada pedido na ordem em que recebeu, e que só use `enviarPedido` para pedidos que têm resposta.
+- **MFA no login:** como o `login` devolve `mfaEnabled` e só entrega o token final depois de validar o código fica a definir pelo grupo de Autenticação.
+- **Contratos Backend↔Servidor:** os tipos de mensagem e seus payloads (`PedidoXxx`/`RespostaXxx`) precisam ser os mesmos nos dois lados. A lista completa está no `../Servidor/README.md`.
+
+## Configuração
+
+O banco de dados (MongoDB Atlas) é configurado **no Servidor Java**, não aqui: ver `../Servidor/README.md`. O Backend só precisa saber onde está o Servidor.
+
+```bash
+cp .env.example .env   # PORT, JWT_SECRET, JAVA_SERVER_HOST/PORT, GENAI_API_KEY
+```
+
+O `.env` está no `.gitignore` e nunca deve ser commitado.
 
 ## Como rodar (depois que os `.ts` reais existirem)
 
+O Servidor Java deve estar no ar (ver `../Servidor/README.md`): sem ele, as rotas respondem `503`.
+
 ```bash
 npm install
-cp .env.example .env   # preencher MONGO_URI, JWT_SECRET, etc.
-npm run dev
+npm run dev            # API em http://localhost:3001/v1
 ```

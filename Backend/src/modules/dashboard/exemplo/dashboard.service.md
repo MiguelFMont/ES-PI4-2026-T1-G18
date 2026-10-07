@@ -1,35 +1,38 @@
-# dashboard.service.ts — Regras de negócio do painel
+# dashboard.service.ts — Casos de uso do painel
 
 ## O que deve ter neste arquivo
-- Não é dono de uma entidade própria: lê as transações do usuário (via `dashboardRepository`, que faz agregações sobre a coleção `transactions`) e manda os totais calculados para o Servidor Java calcular os indicadores (`PedidoCalcularIndicadores`).
-- `getByCategory`: agrupa os totais por categoria e por grupo de categoria (ex.: "Alimentação" = mercado + restaurante).
-- `comparePeriods`: busca os agregados de cada período e devolve a série pronta para o gráfico do Frontend.
+- Três consultas de leitura, cada uma repassada ao Servidor Java, que lê as transações do banco, agrega e calcula: `getSummary` (`PedidoResumoPainel`), `getByCategory` (`PedidoGastosPorCategoria`) e `comparePeriods` (`PedidoCompararPeriodos`).
+- O Backend não agrega nem calcula nada: só envia o `userId` do token (e o `periodo`, na comparação) e devolve o resultado ao Frontend.
+- O painel não tem coleção própria; ele lê as transações do módulo `transactions`, mas essa leitura acontece dentro do Servidor.
 
 ## Exemplo de implementação
 
 ```ts
 // src/modules/dashboard/dashboard.service.ts
-import { dashboardRepository } from "./dashboard.repository";
-import { JavaServerClient } from "../../java-client/java-server.client";
+import { javaServerClient } from "../../java-client/java-server.client";
 
 export const dashboardService = {
-  async getSummary(userId: string, java: JavaServerClient) {
-    const totaisDoMes = await dashboardRepository.getTotaisDoMes(userId);
-
-    const indicadores = await java.enviarPedido<
-      { receitas: number; despesas: number },
-      { saldo: number; economia: number; fluxoDeCaixa: number }
-    >("PedidoCalcularIndicadores", "RespostaCalcularIndicadores", totaisDoMes);
-
-    return { ...totaisDoMes, ...indicadores };
+  getSummary(userId: string) {
+    return javaServerClient.enviarPedido<
+      { userId: string },
+      { receitas: number; despesas: number; saldo: number; economia: number; fluxoDeCaixa: number }
+    >("PedidoResumoPainel", "RespostaResumoPainel", { userId });
   },
 
   async getByCategory(userId: string) {
-    return dashboardRepository.getTotaisPorCategoria(userId);
+    const { categorias } = await javaServerClient.enviarPedido<
+      { userId: string },
+      { categorias: { categoria: string; total: number }[] }
+    >("PedidoGastosPorCategoria", "RespostaGastosPorCategoria", { userId });
+    return categorias;
   },
 
   async comparePeriods(userId: string, periodo: string) {
-    return dashboardRepository.getComparativoPorPeriodo(userId, periodo);
+    const { periodos } = await javaServerClient.enviarPedido<
+      { userId: string; periodo: string },
+      { periodos: { ano: number; mes: number; total: number }[] }
+    >("PedidoCompararPeriodos", "RespostaCompararPeriodos", { userId, periodo });
+    return periodos;
   },
 };
 ```

@@ -1,9 +1,9 @@
-# PedidoProgressoMeta.java — Pedido de cálculo de progresso da meta
+# PedidoProgressoMeta.java — Cálculo do progresso da meta
 
 ## O que deve ter neste arquivo
 - Pedido enviado pelo Backend ao Servidor (`tipo` `"PedidoProgressoMeta"`). Par: `RespostaProgressoMeta`.
 - É um POJO simples que representa o campo `dados` do `Comunicado`. Os nomes dos campos são exatamente os do JSON trocado com o Backend, então qualquer mudança aqui é uma mudança de **contrato** e precisa ser combinada com o Backend.
-- Constante `TIPO` com o nome do tipo, para o handler e o `HandlerRegistry` não repetirem a string. Sem construtor: o Gson preenche os campos a partir do JSON recebido.
+- Constante `TIPO` com o nome do tipo, para o handler e o `HandlerRegistry` não repetirem a string. Sem construtor: o Gson preenche os campos a partir do JSON recebido; campo ausente chega como `null` (ou `0` nos tipos primitivos).
 
 ## Exemplo de implementação
 
@@ -14,23 +14,17 @@ public class PedidoProgressoMeta
 {
     public static final String TIPO = "PedidoProgressoMeta";
 
-    private double valorAtual;
-    private double valorObjetivo;
-    private String prazo;
+    private String userId;
+    private String id;
 
-    public double getValorAtual ()
+    public String getUserId ()
     {
-        return this.valorAtual;
+        return this.userId;
     }
 
-    public double getValorObjetivo ()
+    public String getId ()
     {
-        return this.valorObjetivo;
-    }
-
-    public String getPrazo ()
-    {
-        return this.prazo;
+        return this.id;
     }
 }
 ```

@@ -1,53 +1,60 @@
-# goals.service.ts — Regras de negócio de metas financeiras
+# goals.service.ts — Casos de uso de metas financeiras
 
 ## O que deve ter neste arquivo
-- `create`/`update`/`remove`/`list`: CRUD simples, sempre restrito ao `userId`.
-- `getProgress`: pede ao Servidor Java (`PedidoProgressoMeta`) o cálculo do progresso atual da meta — o Java decide a fórmula (ex.: baseada no quanto já foi economizado vs. o valor objetivo e o tempo restante), o service só repassa o valor atual guardado e devolve o que o Java calcular.
+- CRUD de metas e cálculo de progresso, tudo repassado ao Servidor Java: `PedidoListarMetas`, `PedidoCriarMeta`, `PedidoAtualizarMeta`, `PedidoRemoverMeta` e `PedidoProgressoMeta`.
+- O Servidor é dono das metas (e do valor acumulado) e calcula o progresso (percentual concluído e se está dentro do prazo) lendo a própria meta; o Backend só envia `userId` (do token) e `id`.
+- Meta inexistente ou de outro usuário volta como `Erro` `404` e vira `AppError`.
 
 ## Exemplo de implementação
 
 ```ts
 // src/modules/goals/goals.service.ts
-import { goalsRepository } from "./goals.repository";
-import { JavaServerClient } from "../../java-client/java-server.client";
-import { AppError } from "../../shared/errors/app-error";
+import { javaServerClient } from "../../java-client/java-server.client";
 import { CreateGoalDto } from "./goals.dto";
+
+type Meta = { id: string; titulo: string; valorObjetivo: number; valorAtual: number; prazo: string };
 
 export const goalsService = {
   async list(userId: string) {
-    return goalsRepository.findByUser(userId);
+    const { metas } = await javaServerClient.enviarPedido<{ userId: string }, { metas: Meta[] }>(
+      "PedidoListarMetas",
+      "RespostaListarMetas",
+      { userId }
+    );
+    return metas;
   },
 
   async create(userId: string, dados: CreateGoalDto) {
-    return goalsRepository.create({ ...dados, userId, valorAtual: 0 });
+    const { meta } = await javaServerClient.enviarPedido<unknown, { meta: Meta }>(
+      "PedidoCriarMeta",
+      "RespostaCriarMeta",
+      { userId, ...dados }
+    );
+    return meta;
   },
 
   async update(userId: string, id: string, dados: Partial<CreateGoalDto>) {
-    const meta = await goalsRepository.updateByUser(userId, id, dados);
-    if (!meta) {
-      throw new AppError("Meta não encontrada", 404, "GOAL_NOT_FOUND");
-    }
+    const { meta } = await javaServerClient.enviarPedido<unknown, { meta: Meta }>(
+      "PedidoAtualizarMeta",
+      "RespostaAtualizarMeta",
+      { userId, id, ...dados }
+    );
     return meta;
   },
 
   async remove(userId: string, id: string) {
-    await goalsRepository.deleteByUser(userId, id);
+    await javaServerClient.enviarPedido<unknown, { removida: boolean }>(
+      "PedidoRemoverMeta",
+      "RespostaRemoverMeta",
+      { userId, id }
+    );
   },
 
-  async getProgress(userId: string, id: string, java: JavaServerClient) {
-    const meta = await goalsRepository.findByIdAndUser(userId, id);
-    if (!meta) {
-      throw new AppError("Meta não encontrada", 404, "GOAL_NOT_FOUND");
-    }
-
-    return java.enviarPedido<
-      { valorAtual: number; valorObjetivo: number; prazo: string },
+  getProgress(userId: string, id: string) {
+    return javaServerClient.enviarPedido<
+      { userId: string; id: string },
       { percentualConcluido: number; dentroDoPrazo: boolean }
-    >("PedidoProgressoMeta", "RespostaProgressoMeta", {
-      valorAtual: meta.valorAtual,
-      valorObjetivo: meta.valorObjetivo,
-      prazo: meta.prazo,
-    });
+    >("PedidoProgressoMeta", "RespostaProgressoMeta", { userId, id });
   },
 };
 ```
