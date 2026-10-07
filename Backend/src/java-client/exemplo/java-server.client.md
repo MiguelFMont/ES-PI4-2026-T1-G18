@@ -1,13 +1,11 @@
-# java-server.client.ts — Porta de Cliente.java (uma conexão por usuário)
+# java-server.client.ts — Porta de Cliente.java (uma conexão por chamada)
 
 ## O que deve ter neste arquivo
-- Equivalente ao `Cliente.java` do professor: abre o `Socket`, embrulha num `Parceiro` e fala com o Servidor. A diferença é que não há `main()` nem teclado — é uma **classe instanciada uma vez por conexão WebSocket do Frontend** (em `ws/connection.ts`), e não um singleton. Cada usuário conectado tem o seu `JavaServerClient`, com a sua própria conexão TCP e, portanto, a sua própria `Supervisora` lá no Servidor Java.
-- `JavaServerClient.conectar()`: abre a conexão (falha com erro `503` se o servidor não estiver no ar — o "Indique o servidor e a porta corretos!" do vídeo).
-- `enviarPedido(tipoPedido, tipoResposta, dados)`: faz o que o `Cliente.java` fazia na opção "=" (`servidor.receba(pedido)` e esperar a resposta), de forma genérica. A resposta é casada **por ordem de chegada** (fila FIFO): o Servidor Java trata uma conexão sequencialmente (lê um pedido, responde, lê o próximo), então a primeira resposta é sempre do primeiro pedido pendente. Por isso não há ID. Só use `enviarPedido` para pedidos que **têm** resposta.
-- Uma única tarefa de leitura (`lerMensagens`) consome tudo que chega. Se for `ComunicadoDeDesligamento`, dispara o callback registrado com `aoDesligar` (o papel da `TratadoraDeComunicadoDeDesligamento`). Qualquer outra mensagem resolve o pedido pendente.
-- Se o Servidor Java responder `{ tipo: "Erro", dados: { message } }` (handler falhou ou tipo desconhecido), o pedido pendente é rejeitado com um `AppError` `502` carregando essa mensagem.
-- `sair()`: envia `PedidoParaSair` e chama `adeus()`, como o `Cliente.java` faz ao terminar. Deve ser chamado quando o WebSocket do Frontend fecha.
-- Queda abrupta do servidor: o `Parceiro` avisa pelo `aoFechar`; os pedidos pendentes são rejeitados com erro `503` ("Erro de comunicação com o servidor").
+- Equivalente ao `Cliente.java` do professor: abre o `Socket` (`net.createConnection`), embrulha num `Parceiro` e fala com o Servidor. Como o Backend é uma API HTTP (Express) e HTTP não mantém conexão, cada chamada ao Servidor Java segue o ciclo de vida de um `Cliente` do professor: **conecta, faz um pedido, lê a resposta, envia `PedidoParaSair` e fecha**. Assim cada chamada tem a sua própria `Supervisora` no Servidor, sem ID de correlação e sem compartilhar conexão entre requisições simultâneas.
+- Expõe um único método para os `services`: `enviarPedido(tipoPedido, tipoResposta, dados)`. Por baixo faz o que o `Cliente.java` fazia na opção "=": `receba(pedido)` e depois `envie()` para ler a resposta.
+- Valida a resposta: se vier `Erro`, lança `AppError` com o `status`, o `code` e a `message` que o Servidor mandou (por exemplo `409 EMAIL_IN_USE`, `401 INVALID_CREDENTIALS`, `404 NOT_FOUND`), já que o Servidor é o dono das regras de negócio e decide o resultado; sem esses campos, usa `502`; se vier `ComunicadoDeDesligamento` (o servidor foi desativado no meio da chamada), lança `AppError` `503`; se o tipo não for o esperado, também falha.
+- Tem **timeout** (`JAVA_SERVER_TIMEOUT_MS`): se o Servidor não responder, a chamada falha com `503` em vez de ficar pendurada. Servidor fora do ar (conexão recusada) também vira `503`.
+- Não tem regra de negócio, só fala o protocolo. Só use `enviarPedido` para pedidos que **têm** resposta.
 
 ## Exemplo de implementação
 
@@ -16,101 +14,75 @@
 import net from "net";
 import { env } from "../config/env";
 import { Parceiro } from "./parceiro";
-import { TIPO_ERRO, TIPO_PEDIDO_PARA_SAIR, ehComunicadoDeDesligamento } from "./comunicado";
+import {
+  TIPO_ERRO,
+  TIPO_PEDIDO_PARA_SAIR,
+  ehComunicadoDeDesligamento,
+} from "./comunicado";
 import { AppError } from "../shared/errors/app-error";
+import { statusDoCodigo } from "../shared/errors/error-codes";
 
-interface Pendente {
-  tipoResposta: string;
-  resolve: (dados: any) => void;
-  reject: (erro: Error) => void;
+const indisponivel = () =>
+  new AppError("Servidor indisponível", 503, "JAVA_SERVER_UNAVAILABLE");
+
+function conectar(): Promise<Parceiro> {
+  return new Promise((resolve, reject) => {
+    const conexao = net.createConnection(
+      { host: env.JAVA_SERVER_HOST, port: env.JAVA_SERVER_PORT },
+      () => resolve(new Parceiro(conexao))
+    );
+    conexao.once("error", () => reject(indisponivel()));
+  });
 }
 
-const erroDeComunicacao = () =>
-  new AppError("Erro de comunicação com o servidor", 503, "JAVA_SERVER_UNAVAILABLE");
+function comTimeout<T>(promessa: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(indisponivel()), ms);
+    promessa.then(
+      (valor) => { clearTimeout(timer); resolve(valor); },
+      (erro) => { clearTimeout(timer); reject(erro); }
+    );
+  });
+}
 
-export class JavaServerClient {
-  private pendentes: Pendente[] = [];
-  private aoDesligarCallback: (() => void) | null = null;
-
-  private constructor(private readonly parceiro: Parceiro) {
-    this.parceiro.aoFechar(() => this.rejeitarPendentes());
-    void this.lerMensagens();
-  }
-
-  static conectar(): Promise<JavaServerClient> {
-    return new Promise((resolve, reject) => {
-      const conexao = net.createConnection(
-        { host: env.JAVA_SERVER_HOST, port: env.JAVA_SERVER_PORT },
-        () => resolve(new JavaServerClient(new Parceiro(conexao)))
-      );
-      conexao.once("error", () =>
-        reject(new AppError("Servidor indisponível", 503, "JAVA_SERVER_UNAVAILABLE"))
-      );
-    });
-  }
-
-  aoDesligar(callback: () => void) {
-    this.aoDesligarCallback = callback;
-  }
-
-  // Única leitora do Parceiro desta conexão.
-  private async lerMensagens() {
-    try {
-      for (;;) {
-        const comunicado = await this.parceiro.envie();
-
-        if (ehComunicadoDeDesligamento(comunicado)) {
-          this.aoDesligarCallback?.();
-          continue;
-        }
-
-        const pendente = this.pendentes.shift();
-        if (!pendente) continue;
-
-        if (comunicado.tipo === TIPO_ERRO) {
-          const { message } = comunicado.dados as { message?: string };
-          pendente.reject(new AppError(message ?? "Erro no servidor", 502, "JAVA_SERVER_ERROR"));
-          continue;
-        }
-
-        if (comunicado.tipo === pendente.tipoResposta) {
-          pendente.resolve(comunicado.dados);
-        } else {
-          pendente.reject(erroDeComunicacao());
-        }
-      }
-    } catch {
-      // conexão fechada: o aoFechar já rejeitou os pedidos pendentes
-    }
-  }
-
-  private rejeitarPendentes() {
-    this.pendentes.splice(0).forEach((p) => p.reject(erroDeComunicacao()));
-  }
-
-  enviarPedido<TDados, TResposta>(
+export const javaServerClient = {
+  async enviarPedido<TDados, TResposta>(
     tipoPedido: string,
     tipoResposta: string,
     dados: TDados
   ): Promise<TResposta> {
-    return new Promise((resolve, reject) => {
-      this.pendentes.push({ tipoResposta, resolve, reject });
-      try {
-        this.parceiro.receba({ tipo: tipoPedido, dados });
-      } catch {
-        this.pendentes.pop();
-        reject(erroDeComunicacao());
-      }
-    });
-  }
+    const parceiro = await conectar();
 
-  sair() {
     try {
-      this.parceiro.receba({ tipo: TIPO_PEDIDO_PARA_SAIR, dados: {} });
-    } catch {
-      // servidor já caiu: nada a avisar
+      parceiro.receba({ tipo: tipoPedido, dados });
+      const resposta = await comTimeout(parceiro.envie(), env.JAVA_SERVER_TIMEOUT_MS);
+
+      if (resposta.tipo === TIPO_ERRO) {
+        const { code, message } = resposta.dados as { code?: string; message?: string };
+        const status = code ? statusDoCodigo(code) : undefined;
+        if (!code || status === undefined) {
+          throw new AppError("Erro desconhecido do servidor", 502, "JAVA_SERVER_ERROR");
+        }
+        throw new AppError(message ?? "Erro no servidor", status, code);
+      }
+      if (ehComunicadoDeDesligamento(resposta)) {
+        throw new AppError("Servidor desligando", 503, "JAVA_SERVER_SHUTTING_DOWN");
+      }
+      if (resposta.tipo !== tipoResposta) {
+        throw new AppError("Resposta inesperada do servidor", 502, "JAVA_SERVER_ERROR");
+      }
+
+      return resposta.dados as TResposta;
+    } catch (erro) {
+      throw erro instanceof AppError ? erro : indisponivel();
+    } finally {
+      try {
+        parceiro.receba({ tipo: TIPO_PEDIDO_PARA_SAIR, dados: {} });
+      } catch {
+        // conexão já caiu: nada a avisar
+      }
+      parceiro.adeus();
     }
-    this.parceiro.adeus();
-  }
-}
+  },
+};
 ```

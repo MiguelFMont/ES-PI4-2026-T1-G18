@@ -1,30 +1,30 @@
-# investments.service.ts — Regras de negócio de investimentos
+# investments.service.ts — Casos de uso de investimentos simulados
 
 ## O que deve ter neste arquivo
-- `getPortfolio`: busca os investimentos simulados do usuário e pede ao Servidor Java a rentabilidade simulada (`PedidoRentabilidadeSimulada`) o Java decide a fórmula de rendimento fictício, o service só organiza o patrimônio total + a lista de ativos.
-- `listInstallments`: lista os parcelamentos ativos do cartão (parcela atual/total, valor mensal) é leitura simples via repository, sem chamada ao Servidor Java.
+- Duas leituras, repassadas ao Servidor Java: `getPortfolio` (`PedidoPainelInvestimentos`) e `listInstallments` (`PedidoListarParcelamentos`).
+- O Servidor lê os ativos simulados e os parcelamentos do banco, aplica a rentabilidade fictícia e devolve o patrimônio total e a lista de ativos. O Backend só envia o `userId` do token.
+- Tudo é simulação: nenhuma integração com mercado real.
 
 ## Exemplo de implementação
 
 ```ts
 // src/modules/investments/investments.service.ts
-import { investmentsRepository } from "./investments.repository";
-import { JavaServerClient } from "../../java-client/java-server.client";
+import { javaServerClient } from "../../java-client/java-server.client";
 
 export const investmentsService = {
-  async getPortfolio(userId: string, java: JavaServerClient) {
-    const ativos = await investmentsRepository.findInvestmentsByUser(userId);
-
-    const { patrimonioTotal, ativosComRentabilidade } = await java.enviarPedido<
-      { ativos: typeof ativos },
-      { patrimonioTotal: number; ativosComRentabilidade: typeof ativos }
-    >("PedidoRentabilidadeSimulada", "RespostaRentabilidadeSimulada", { ativos });
-
-    return { patrimonioTotal, ativos: ativosComRentabilidade };
+  getPortfolio(userId: string) {
+    return javaServerClient.enviarPedido<
+      { userId: string },
+      { patrimonioTotal: number; ativos: { nome: string; valor: number; rentabilidade: number }[] }
+    >("PedidoPainelInvestimentos", "RespostaPainelInvestimentos", { userId });
   },
 
   async listInstallments(userId: string) {
-    return investmentsRepository.findInstallmentsByUser(userId);
+    const { parcelamentos } = await javaServerClient.enviarPedido<
+      { userId: string },
+      { parcelamentos: unknown[] }
+    >("PedidoListarParcelamentos", "RespostaListarParcelamentos", { userId });
+    return parcelamentos;
   },
 };
 ```

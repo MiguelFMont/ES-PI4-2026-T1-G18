@@ -1,10 +1,10 @@
 # AuthHandler.java — Handlers do Grupo 1 (Autenticação & Conta)
 
 ## O que deve ter neste arquivo
-- Registra no `HandlerRegistry` os três pedidos do grupo: `PedidoHashSenha`, `PedidoValidarSenha` e `PedidoValidarMFA`. O método `registrarEm(registry)` é a única coisa que `HandlerRegistry.criarPadrao()` chama.
-- Concentra a parte **criptográfica** da autenticação, que fica no Java e não no Backend: hash e conferência de senha (PBKDF2 do próprio JDK, sem biblioteca extra) e verificação do código TOTP do MFA.
-- Não acessa o MongoDB: o Backend envia no pedido tudo que o handler precisa (o hash guardado, o segredo do MFA). Quem busca o usuário, guarda o hash e emite o JWT é o Backend.
-- Cada handler: lê o payload com `pedido.dadosComo(...)`, calcula e devolve `Comunicado.de(RespostaXxx.TIPO, new RespostaXxx(...))`.
+- Registra no `HandlerRegistry` os cinco pedidos do grupo: `PedidoRegistrarUsuario`, `PedidoLogin`, `PedidoObterPerfil`, `PedidoHabilitarMFA` e `PedidoValidarMFA`. O método `registrarEm(registry)` é a única coisa que `HandlerRegistry.criarPadrao()` chama.
+- É o **dono dos usuários**: valida os dados, confere e-mail duplicado, faz o hash da senha e grava no MongoDB (via `AuthRepository`). O Backend só repassa a requisição e assina o JWT depois de um login bem-sucedido.
+- Concentra a parte criptográfica: hash e conferência de senha (PBKDF2 do próprio JDK, sem biblioteca extra) e geração e verificação do segredo TOTP do MFA. O hash e o segredo **nunca saem do Servidor**: `Banco.paraMapa` e as respostas só levam dados públicos.
+- Falhas de regra viram `ErroDeNegocio`: `409 EMAIL_IN_USE`, `401 INVALID_CREDENTIALS` (a mesma resposta para e-mail inexistente e senha errada, para não revelar quais e-mails existem), `404 USER_NOT_FOUND`, `400 MFA_NOT_ENABLED`, `400 VALIDATION`.
 - A senha em texto puro só existe dentro da conexão Backend↔Servidor e nunca deve ser logada.
 
 ## Exemplo de implementação
@@ -17,51 +17,124 @@ import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Base64;
+import java.util.Date;
 import javax.crypto.Mac;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.bson.Document;
+
 import com.financeai.core.Comunicado;
+import com.financeai.core.ErroDeNegocio;
 import com.financeai.core.HandlerRegistry;
+import com.mongodb.ErrorCategory;
+import com.mongodb.MongoWriteException;
 
 public class AuthHandler
 {
+    private static final String ALFABETO_BASE32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+
+    private final AuthRepository repositorio = new AuthRepository();
+
     public void registrarEm (HandlerRegistry registry)
     {
-        registry.registrar (PedidoHashSenha.TIPO,    this::hashSenha);
-        registry.registrar (PedidoValidarSenha.TIPO, this::validarSenha);
-        registry.registrar (PedidoValidarMFA.TIPO,   this::validarMfa);
+        registry.registrar (PedidoRegistrarUsuario.TIPO, this::registrar);
+        registry.registrar (PedidoLogin.TIPO,            this::login);
+        registry.registrar (PedidoObterPerfil.TIPO,      this::obterPerfil);
+        registry.registrar (PedidoHabilitarMFA.TIPO,     this::habilitarMfa);
+        registry.registrar (PedidoValidarMFA.TIPO,       this::validarMfa);
     }
 
-    private Comunicado hashSenha (Comunicado pedido) throws Exception
+    private Comunicado registrar (Comunicado pedido) throws Exception
     {
-        PedidoHashSenha p = pedido.dadosComo (PedidoHashSenha.class);
+        PedidoRegistrarUsuario p = pedido.dadosComo (PedidoRegistrarUsuario.class);
 
-        byte[] sal = new byte[16];
-        new SecureRandom().nextBytes (sal);
-        String hash = b64(sal) + ":" + b64(pbkdf2(p.getSenha(), sal));
+        if (vazio(p.getNome()) || vazio(p.getEmail()) || vazio(p.getCpf())
+            || p.getSenha() == null || p.getSenha().length() < 8)
+            throw new ErroDeNegocio ("VALIDATION", "Dados de cadastro invalidos");
 
-        return Comunicado.de (RespostaHashSenha.TIPO, new RespostaHashSenha(hash));
+        if (this.repositorio.buscarPorEmail(p.getEmail()) != null)
+            throw new ErroDeNegocio ("EMAIL_IN_USE", "E-mail ja cadastrado");
+
+        Document usuario = new Document ("nome", p.getNome())
+            .append ("email",      p.getEmail())
+            .append ("cpf",        p.getCpf())
+            .append ("senhaHash",  hashSenha(p.getSenha()))
+            .append ("mfaEnabled", false)
+            .append ("plano",      "free")
+            .append ("createdAt",  new Date());
+
+        try
+        {
+            this.repositorio.criar (usuario);
+        }
+        catch (MongoWriteException erro)   // duas requisicoes simultaneas com o mesmo e-mail
+        {
+            if (erro.getError().getCategory() == ErrorCategory.DUPLICATE_KEY)
+                throw new ErroDeNegocio ("EMAIL_IN_USE", "E-mail ja cadastrado");
+            throw erro;
+        }
+
+        return Comunicado.de (RespostaRegistrarUsuario.TIPO,
+            new RespostaRegistrarUsuario (usuario.getObjectId("_id").toHexString(), p.getNome(), p.getEmail()));
     }
 
-    private Comunicado validarSenha (Comunicado pedido) throws Exception
+    private Comunicado login (Comunicado pedido) throws Exception
     {
-        PedidoValidarSenha p = pedido.dadosComo (PedidoValidarSenha.class);
+        PedidoLogin p = pedido.dadosComo (PedidoLogin.class);
 
-        String[] partes = p.getHash().split (":");
-        byte[] sal      = Base64.getDecoder().decode (partes[0]);
-        byte[] esperado = Base64.getDecoder().decode (partes[1]);
-        boolean valido  = MessageDigest.isEqual (esperado, pbkdf2(p.getSenha(), sal));
+        Document usuario = this.repositorio.buscarPorEmail (p.getEmail());
+        if (usuario == null || p.getSenha() == null || !conferirSenha(p.getSenha(), usuario.getString("senhaHash")))
+            throw new ErroDeNegocio ("INVALID_CREDENTIALS", "E-mail ou senha incorretos");
 
-        return Comunicado.de (RespostaValidarSenha.TIPO, new RespostaValidarSenha(valido));
+        return Comunicado.de (RespostaLogin.TIPO, new RespostaLogin (
+            usuario.getObjectId("_id").toHexString(), usuario.getString("nome"), usuario.getString("email"),
+            usuario.getString("plano"), usuario.getBoolean("mfaEnabled", false)));
+    }
+
+    private Comunicado obterPerfil (Comunicado pedido) throws Exception
+    {
+        PedidoObterPerfil p = pedido.dadosComo (PedidoObterPerfil.class);
+
+        Document usuario = this.repositorio.buscarPorId (p.getUserId());
+        if (usuario == null)
+            throw new ErroDeNegocio ("USER_NOT_FOUND", "Usuario nao encontrado");
+
+        return Comunicado.de (RespostaObterPerfil.TIPO, new RespostaObterPerfil (
+            usuario.getObjectId("_id").toHexString(), usuario.getString("nome"), usuario.getString("email"),
+            usuario.getString("plano"), usuario.getBoolean("mfaEnabled", false)));
+    }
+
+    private Comunicado habilitarMfa (Comunicado pedido) throws Exception
+    {
+        PedidoHabilitarMFA p = pedido.dadosComo (PedidoHabilitarMFA.class);
+
+        if (this.repositorio.buscarPorId(p.getUserId()) == null)
+            throw new ErroDeNegocio ("USER_NOT_FOUND", "Usuario nao encontrado");
+
+        byte[] aleatorio = new byte[20];
+        new SecureRandom().nextBytes (aleatorio);
+        String segredo = codificarBase32 (aleatorio);
+
+        this.repositorio.salvarSegredoMfa (p.getUserId(), segredo);
+
+        return Comunicado.de (RespostaHabilitarMFA.TIPO, new RespostaHabilitarMFA (true, segredo));
     }
 
     private Comunicado validarMfa (Comunicado pedido) throws Exception
     {
         PedidoValidarMFA p = pedido.dadosComo (PedidoValidarMFA.class);
 
-        byte[] chave = decodificarBase32 (p.getSegredo());
+        Document usuario = this.repositorio.buscarPorId (p.getUserId());
+        if (usuario == null)
+            throw new ErroDeNegocio ("USER_NOT_FOUND", "Usuario nao encontrado");
+
+        String segredo = usuario.getString ("mfaSecret");
+        if (segredo == null)
+            throw new ErroDeNegocio ("MFA_NOT_ENABLED", "MFA nao habilitado");
+
+        byte[] chave = decodificarBase32 (segredo);
         long   passo = System.currentTimeMillis() / 1000 / 30;
 
         boolean valido = false;
@@ -69,7 +142,27 @@ public class AuthHandler
             if (gerarCodigo(chave, i).equals(p.getCodigo()))
                 valido = true;
 
-        return Comunicado.de (RespostaValidarMFA.TIPO, new RespostaValidarMFA(valido));
+        return Comunicado.de (RespostaValidarMFA.TIPO, new RespostaValidarMFA (valido));
+    }
+
+    private static boolean vazio (String texto)
+    {
+        return texto == null || texto.isBlank();
+    }
+
+    private static String hashSenha (String senha) throws Exception
+    {
+        byte[] sal = new byte[16];
+        new SecureRandom().nextBytes (sal);
+        return b64(sal) + ":" + b64(pbkdf2(senha, sal));
+    }
+
+    private static boolean conferirSenha (String senha, String hashGuardado) throws Exception
+    {
+        String[] partes = hashGuardado.split (":");
+        byte[] sal      = Base64.getDecoder().decode (partes[0]);
+        byte[] esperado = Base64.getDecoder().decode (partes[1]);
+        return MessageDigest.isEqual (esperado, pbkdf2(senha, sal));
     }
 
     private static byte[] pbkdf2 (String senha, byte[] sal) throws Exception
@@ -95,15 +188,35 @@ public class AuthHandler
         return String.format ("%06d", bin % 1000000);
     }
 
+    private static String codificarBase32 (byte[] bytes)
+    {
+        StringBuilder saida = new StringBuilder();
+        int buffer = 0, bits = 0;
+
+        for (byte b : bytes)
+        {
+            buffer = (buffer << 8) | (b & 0xff);
+            bits  += 8;
+            while (bits >= 5)
+            {
+                saida.append (ALFABETO_BASE32.charAt((buffer >> (bits - 5)) & 31));
+                bits -= 5;
+            }
+        }
+        if (bits > 0)
+            saida.append (ALFABETO_BASE32.charAt((buffer << (5 - bits)) & 31));
+
+        return saida.toString();
+    }
+
     private static byte[] decodificarBase32 (String texto)
     {
-        String alfabeto = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
         ByteArrayOutputStream saida = new ByteArrayOutputStream();
         int buffer = 0, bits = 0;
 
         for (char c : texto.toUpperCase().toCharArray())
         {
-            int idx = alfabeto.indexOf (c);
+            int idx = ALFABETO_BASE32.indexOf (c);
             if (idx < 0) continue;                 // ignora '=' e separadores
             buffer = (buffer << 5) | idx;
             bits  += 5;

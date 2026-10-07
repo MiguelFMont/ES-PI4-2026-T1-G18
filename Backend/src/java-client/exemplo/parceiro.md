@@ -2,7 +2,7 @@
 
 ## O que deve ter neste arquivo
 - Port quase literal do `Parceiro.java` do professor: embrulha **uma conexão** com o outro lado. Troca `ObjectOutputStream`/`ObjectInputStream` por um `net.Socket` lendo/escrevendo **linhas JSON** (cada `Comunicado` é uma linha terminada em `\n`).
-- Um `Parceiro` por conexão: no nosso Backend, cada usuário conectado por WebSocket tem o seu `Parceiro` com o Servidor Java (igual a cada `Cliente.java` ter o seu).
+- Um `Parceiro` por conexão: no nosso Backend, cada chamada ao Servidor Java cria o seu `Parceiro` e o descarta ao terminar (igual a cada `Cliente.java` ter o seu).
 - Mantém os **mesmos três métodos**, com o mesmo significado (contraintuitivo, igual no original):
   - `receba(comunicado)` → **envia** algo para o outro lado (no original, escreve no `transmissor`).
   - `envie()` → **recebe e consome** a próxima mensagem (no original, lê do `receptor`).

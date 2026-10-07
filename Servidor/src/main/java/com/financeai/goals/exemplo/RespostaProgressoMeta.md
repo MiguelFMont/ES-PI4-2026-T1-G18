@@ -1,4 +1,4 @@
-# RespostaProgressoMeta.java — Resposta com o progresso da meta
+# RespostaProgressoMeta.java — Progresso da meta
 
 ## O que deve ter neste arquivo
 - Resposta enviada pelo Servidor ao Backend (`tipo` `"RespostaProgressoMeta"`). Par: `PedidoProgressoMeta`.

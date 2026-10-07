@@ -1,9 +1,10 @@
 # InvestmentsHandler.java — Handlers do Grupo 5 (Investimentos Simulados)
 
 ## O que deve ter neste arquivo
-- Registra `PedidoRentabilidadeSimulada`. O Backend envia a lista de ativos simulados do usuário (nome e valor investido); o handler aplica uma rentabilidade fictícia a cada um e devolve o patrimônio total.
-- Tudo é **simulação**: nenhuma integração com mercado real. O exemplo usa uma taxa fixa por ativo; a versão real pode sortear uma variação ou usar uma tabela por tipo de ativo.
-- Os ativos viajam como `List<Map<String,Object>>` (nome, valor); a resposta devolve a mesma lista com o campo `rentabilidade` acrescentado.
+- Registra `PedidoPainelInvestimentos` e `PedidoListarParcelamentos`.
+- `painel`: lê os ativos simulados do usuário, aplica uma rentabilidade **fictícia** a cada um e devolve o patrimônio total e a lista de ativos com o campo `rentabilidade`. Tudo é simulação: nenhuma integração com mercado real. O exemplo usa uma taxa fixa; a versão real pode variar por tipo de ativo.
+- `parcelamentos`: devolve os parcelamentos ativos do cartão (parcela atual/total e valor mensal).
+- Só leitura, sempre do `userId` do pedido.
 
 ## Exemplo de implementação
 
@@ -11,42 +12,57 @@
 package com.financeai.investments;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.bson.Document;
+
+import com.financeai.core.Banco;
 import com.financeai.core.Comunicado;
 import com.financeai.core.HandlerRegistry;
 
 public class InvestmentsHandler
 {
-    private static final double RENTABILIDADE_SIMULADA = 0.0085;   // 0,85% ao mes (fictício)
+    private static final double RENTABILIDADE_SIMULADA = 0.0085;   // 0,85% ao mes (ficticio)
+
+    private final InvestmentsRepository repositorio = new InvestmentsRepository();
 
     public void registrarEm (HandlerRegistry registry)
     {
-        registry.registrar (PedidoRentabilidadeSimulada.TIPO, this::rentabilidadeSimulada);
+        registry.registrar (PedidoPainelInvestimentos.TIPO, this::painel);
+        registry.registrar (PedidoListarParcelamentos.TIPO, this::parcelamentos);
     }
 
-    private Comunicado rentabilidadeSimulada (Comunicado pedido) throws Exception
+    private Comunicado painel (Comunicado pedido) throws Exception
     {
-        PedidoRentabilidadeSimulada p = pedido.dadosComo (PedidoRentabilidadeSimulada.class);
+        PedidoPainelInvestimentos p = pedido.dadosComo (PedidoPainelInvestimentos.class);
 
         double patrimonio = 0;
-        List<Map<String, Object>> resultado = new ArrayList<>();
+        List<Map<String, Object>> ativos = new ArrayList<>();
 
-        for (Map<String, Object> ativo : p.getAtivos())
+        for (Document d : this.repositorio.ativos (p.getUserId()))
         {
-            double valor = ((Number) ativo.get("valor")).doubleValue();
-            double rendido = valor * (1 + RENTABILIDADE_SIMULADA);
-            patrimonio += rendido;
+            double valor = ((Number) d.get ("valor")).doubleValue();
+            patrimonio  += valor * (1 + RENTABILIDADE_SIMULADA);
 
-            Map<String, Object> saida = new HashMap<>(ativo);
-            saida.put ("rentabilidade", RENTABILIDADE_SIMULADA);
-            resultado.add (saida);
+            Map<String, Object> ativo = Banco.paraMapa (d);
+            ativo.put ("rentabilidade", RENTABILIDADE_SIMULADA);
+            ativos.add (ativo);
         }
 
-        return Comunicado.de (RespostaRentabilidadeSimulada.TIPO,
-                              new RespostaRentabilidadeSimulada(patrimonio, resultado));
+        return Comunicado.de (RespostaPainelInvestimentos.TIPO,
+                              new RespostaPainelInvestimentos (patrimonio, ativos));
+    }
+
+    private Comunicado parcelamentos (Comunicado pedido) throws Exception
+    {
+        PedidoListarParcelamentos p = pedido.dadosComo (PedidoListarParcelamentos.class);
+
+        List<Map<String, Object>> parcelamentos = new ArrayList<>();
+        for (Document d : this.repositorio.parcelamentosAtivos (p.getUserId()))
+            parcelamentos.add (Banco.paraMapa (d));
+
+        return Comunicado.de (RespostaListarParcelamentos.TIPO, new RespostaListarParcelamentos (parcelamentos));
     }
 }
 ```
