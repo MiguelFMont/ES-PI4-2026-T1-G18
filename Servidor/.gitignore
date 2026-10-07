@@ -4,3 +4,8 @@ target/
 *.iml
 .vscode/
 out/
+
+# Segredos (o Servidor le MONGO_URI do ambiente; nunca commitar)
+.env
+.env.*
+!.env.example
