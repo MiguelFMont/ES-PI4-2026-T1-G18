@@ -1,20 +1,20 @@
-# Metas financeiras
+﻿# Metas financeiras
 
-Esta pasta reúne a fatia de frontend responsável por criação de metas, valor alvo, prazo, progresso e aportes. A organização segue a arquitetura por funcionalidade definida para o FinanceAI.
+Esta pasta reÃºne a fatia de frontend responsÃ¡vel por criaÃ§Ã£o de metas, valor alvo, prazo, progresso e aportes. A organizaÃ§Ã£o segue a arquitetura por funcionalidade definida para o FinanceAI.
 
-## Organização
+## OrganizaÃ§Ã£o
 
 ```text
 goals/
-├── components/  # telas, formulários e componentes
-├── services/    # integração por WebSocket com o Backend
-└── styles/      # CSS específico do módulo
+â”œâ”€â”€ components/  # telas, formulÃ¡rios e componentes
+â”œâ”€â”€ services/    # integraÃ§Ã£o por HTTP REST com o Backend
+â””â”€â”€ styles/      # CSS especÃ­fico do mÃ³dulo
 ```
 
 ## Modelo inicial
 
 ```js
-const meta = { id: "meta-001", nome: "Reserva de emergência", valorAlvo: 10000, valorAtual: 2750, prazo: "2027-12-31" };
+const meta = { id: "meta-001", nome: "Reserva de emergÃªncia", valorAlvo: 10000, valorAtual: 2750, prazo: "2027-12-31" };
 ```
 
 ## Exemplo de tela com estados
@@ -32,17 +32,18 @@ export async function renderizar(container) {
   } catch (erro) {
     const aviso = document.createElement("p");
     aviso.setAttribute("role", "alert");
-    aviso.textContent = "Não foi possível carregar os dados. Tente novamente.";
+    aviso.textContent = "NÃ£o foi possÃ­vel carregar os dados. Tente novamente.";
     container.replaceChildren(aviso);
   }
 }
 ```
 
-Os nomes de rota, campos e respostas devem seguir o contrato real do Backend. Identifique claramente dados mockados enquanto a integração não estiver pronta.
+Os nomes de rota, campos e respostas devem seguir o contrato real do Backend. Identifique claramente dados mockados enquanto a integraÃ§Ã£o nÃ£o estiver pronta.
 
-## Critérios da feature
+## CritÃ©rios da feature
 
 - Tratar carregamento, erro, lista vazia e sucesso.
-- Usar rótulos, semântica HTML e navegação por teclado.
+- Usar rÃ³tulos, semÃ¢ntica HTML e navegaÃ§Ã£o por teclado.
 - Formatar datas e valores com `pt-BR` e BRL.
-- Atualizar a interface somente após o Backend confirmar a operação.
+- Atualizar a interface somente apÃ³s o Backend confirmar a operaÃ§Ã£o.
+

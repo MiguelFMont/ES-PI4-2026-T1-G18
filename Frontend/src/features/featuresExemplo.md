@@ -1,18 +1,14 @@
-# Módulos do Frontend
+﻿# Módulos do Frontend
 
-Cada feature entrega sua parte do FinanceAI em uma pasta própria, com `components/`, `services/` e `styles/`.
+Cada feature encapsula sua interface, integração e estilos nas pastas `components/`, `services/` e `styles/`.
 
 | Pasta | Responsabilidade |
 |---|---|
-| `auth/` | Cadastro, login, recuperação, MFA opcional, perfil e preferências |
-| `transactions/` | Receitas, despesas, filtros e Open Finance sandbox |
+| `auth/` | Cadastro, login, recuperação, perfil e preferências |
+| `transactions/` | Receitas, despesas e filtros |
 | `dashboard/` | Indicadores, fluxo de caixa e análise de gastos |
-| `mentor-ai/` | Chat contextual, explicações e alertas responsáveis |
+| `mentor-ia/` | Assistente e orientações financeiras |
 | `goals/` | Metas e progresso financeiro |
-| `investments/` | Carteira simulada, cartão e parcelamentos |
+| `investments/` | Carteira e simulações de investimentos |
 
-```text
-Navegador (HTML/CSS/JS) → service da feature → WebSocket Backend → socket JSON → servidor Java
-```
-
-O browser conversa com o Backend por mensagens JSON WebSocket `{ tipo, dados }`. Combine tipos de mensagem, payloads, respostas e mocks entre as camadas antes de integrar.
+A comunicação segue `components → services da feature → core/http/apiFetch → Backend REST`. Os services devem importar `apiFetch` de `../../core/http/api.js` e concentrar nele todas as requisições HTTP. Não use `fetch` diretamente nem crie clientes de rede por feature. Os componentes cuidam da apresentação e chamam funções do service.

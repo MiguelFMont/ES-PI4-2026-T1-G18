@@ -1,49 +1,28 @@
-# Autenticação e conta
+﻿# Autenticação e conta
 
-Esta feature cobre cadastro com nome, e-mail, CPF e senha, login, recuperação de senha, MFA opcional, perfil e preferências (tema e ocultação de valores), plano Free/Pro e suporte. Consulte os contratos do Backend em `Backend/src/modules/auth/exemplo/` e `Backend/src/modules/auth/mfa/exemplo/`.
+A feature `auth` cobre cadastro, login, recuperação, perfil e preferências. Seus services fazem requisições REST exclusivamente por `apiFetch`, em `src/core/http/api.js`.
 
 ## Organização
 
-```text
-auth/
-├── components/  # formulários de login, cadastro, recuperação e perfil
-├── services/    # mensagens WebSocket de autenticação
-└── styles/      # estilos das telas de conta
-```
+- `components/`: formulários e interface.
+- `services/`: operações REST de autenticação/conta.
+- `styles/`: CSS da feature.
 
-## Exemplo: formulário de login
-
-```html
-<form id="login-form">
-  <label for="email">E-mail</label>
-  <input id="email" name="email" type="email" autocomplete="email" required />
-  <label for="senha">Senha</label>
-  <input id="senha" name="senha" type="password" autocomplete="current-password" required />
-  <p id="login-error" role="alert" hidden></p>
-  <button type="submit">Entrar</button>
-</form>
-```
+## Exemplo de service
 
 ```js
-import { login } from "./services/authService.js";
+import { apiFetch } from '../../../core/http/api.js';
+import { saveToken } from '../../../core/session/storage.js';
 
-document.querySelector("#login-form").addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const form = event.currentTarget;
-  if (!form.reportValidity()) return;
-  const dados = Object.fromEntries(new FormData(form));
-  const aviso = document.querySelector("#login-error");
-  aviso.hidden = true;
-  try {
-    const resultado = await login(dados.email, dados.senha);
-    // O Backend retorna token e usuário; a política de armazenamento deve ser definida
-    // com a equipe. Ao abrir uma nova conexão, envie Autenticar com o token salvo.
-    console.info("Login concluído", resultado.usuario);
-  } catch (erro) {
-    aviso.textContent = erro.message || "Não foi possível entrar. Confira seus dados.";
-    aviso.hidden = false;
-  }
-});
+export async function login(email, senha) {
+  const resultado = await apiFetch('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, senha }),
+  });
+  if (resultado?.token) saveToken(resultado.token);
+  return resultado;
+}
 ```
 
-A conexão WebSocket nasce anônima. `Registrar`, `Login` e `Autenticar` são mensagens públicas; `ObterPerfil`, `HabilitarMfa` e `ValidarMfa` exigem sessão autenticada. Se o Backend sinalizar MFA pendente, conclua `ValidarMfa` antes de considerar o login finalizado. Não envie senha em logs nem persista senha no navegador.
+Ajuste rota e DTO ao contrato HTTP do Backend. O endpoint de login é público e não precisa de token; os demais endpoints protegidos recebem o JWT automaticamente pelo wrapper. Não persista senha nem a inclua em logs. Em erros, `ApiError` expõe `message`, `status` e `data` para a interface decidir o feedback. Resposta `401` encerra a sessão e encaminha para `#login`.
+

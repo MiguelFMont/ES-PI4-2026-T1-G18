@@ -1,75 +1,56 @@
-// src/app/main.js
-// Arquivo principal de Inicialização (Bootstrap) e Roteamento
+import { hasToken, clearSession } from '../core/session/storage.js';
 
-// Exemplo de importações futuras que você fará do seu módulo 'core'
-// import { connectWebSocket } from '../core/ws/client.js';
-// import { getToken } from '../core/session/storage.js';
+const PUBLIC_ROUTES = new Set(['login']);
+const appContent = document.querySelector('#app-content');
 
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('✅ FinanceAI Frontend iniciado!');
-    
-    const appContent = document.getElementById('app-content');
+function currentRoute() {
+  return window.location.hash.slice(1).split('?')[0] || 'login';
+}
 
-    // ==========================================
-    // 1. BOOTSTRAP (Inicialização)
-    // ==========================================
-    function initApp() {
-        // Exemplo de lógica de inicialização:
-        // const token = getToken();
-        // if (token) {
-        //     connectWebSocket(token);
-        // } else {
-        //     console.warn('Sem sessão ativa. Redirecionando para login...');
-        //     window.location.hash = '#login';
-        // }
-        
-        // Inicia o roteador pela primeira vez
-        handleRoute();
-    }
+function navigate(route) {
+  window.location.hash = `#${route}`;
+}
 
-    // ==========================================
-    // 2. ROTEAMENTO SIMPLES (Baseado em Hash)
-    // ==========================================
-    function handleRoute() {
-        // Pega a rota da URL (ex: #dashboard), se estiver vazia o padrão é #login
-        const hash = window.location.hash || '#login';
+function renderRoute() {
+  if (!appContent) return;
 
-        switch (hash) {
-            case '#login':
-                // Aqui você futuramente injetará o HTML do auth/components/login.js
-                appContent.innerHTML = `
-                    <div style="text-align: center; margin-top: 50px;">
-                        <h2>Entrar no FinanceAI</h2>
-                        <p>Tela de Login simulada</p>
-                        <a href="#dashboard">Entrar (Simulação)</a>
-                    </div>
-                `;
-                break;
-            case '#dashboard':
-                // Aqui você injetará o HTML do dashboard/components/dashboard.js
-                appContent.innerHTML = `
-                    <div style="padding: 20px;">
-                        <h2>Dashboard</h2>
-                        <p>Bem-vindo ao seu painel financeiro.</p>
-                        <a href="#login">Sair</a>
-                    </div>
-                `;
-                break;
-            default:
-                appContent.innerHTML = `
-                    <div style="padding: 20px; color: red;">
-                        <h2>Erro 404</h2>
-                        <p>Página não encontrada!</p>
-                        <a href="#login">Voltar para o início</a>
-                    </div>
-                `;
-                break;
-        }
-    }
+  let route = currentRoute();
+  if (!PUBLIC_ROUTES.has(route) && !hasToken()) {
+    navigate('login');
+    route = 'login';
+  } else if (route === 'login' && hasToken()) {
+    navigate('dashboard');
+    route = 'dashboard';
+  }
 
-    // Fica escutando as mudanças na URL (quando o usuário clica em links)
-    window.addEventListener('hashchange', handleRoute);
+  switch (route) {
+    case 'login':
+      appContent.innerHTML = `
+        <section aria-labelledby="login-title">
+          <h1 id="login-title">Entrar no FinanceAI</h1>
+          <p>A tela de autenticação será fornecida pela feature auth.</p>
+        </section>`;
+      break;
+    case 'dashboard':
+      appContent.innerHTML = `
+        <section aria-labelledby="dashboard-title">
+          <h1 id="dashboard-title">Dashboard</h1>
+          <p>Bem-vindo ao seu painel financeiro.</p>
+          <button type="button" id="logout-button">Sair</button>
+        </section>`;
+      appContent.querySelector('#logout-button')?.addEventListener('click', () => {
+        clearSession();
+        navigate('login');
+      });
+      break;
+    default:
+      appContent.innerHTML = `
+        <section aria-labelledby="not-found-title">
+          <h1 id="not-found-title">Página não encontrada</h1>
+          <a href="#login">Voltar para o início</a>
+        </section>`;
+  }
+}
 
-    // Dispara a inicialização
-    initApp();
-});
+window.addEventListener('hashchange', renderRoute);
+renderRoute();
