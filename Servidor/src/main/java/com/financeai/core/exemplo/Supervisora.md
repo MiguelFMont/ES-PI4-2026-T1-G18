@@ -8,9 +8,9 @@
   - `tipo` sem handler: responde `Erro` com `code` `UNKNOWN_TYPE`.
   - Handler que lança `ErroDeNegocio`: responde `Erro` com o `code` e a mensagem dele. Qualquer outra exceção é registrada no log e vira `INTERNAL_ERROR` genérico, sem vazar detalhe. A conexão não cai em nenhum dos dois casos.
   - Caso normal: envia a resposta do handler.
-- **Cada pedido recebe exatamente uma resposta**, na mesma conexão e na ordem em que chegou. O Backend abre uma conexão por chamada, então normalmente a `Supervisora` atende um pedido e recebe o `PedidoParaSair`; mesmo assim o laço atende vários pedidos em sequência, como no original.
+- **Cada pedido recebe exatamente uma resposta**, na mesma conexão e na ordem em que chegou. O Backend mantém conexões duradouras (um pool): cada `Supervisora` atende **vários pedidos em sequência** na mesma conexão, um de cada vez, como no original, e só recebe o `PedidoParaSair` quando o Backend encerra.
 - Queda da conexão (exceção em `envie`): remove da lista e fecha, como o `catch` do original.
-- **Timeout de leitura:** `conexao.setSoTimeout(TIMEOUT_LEITURA_MS)` (30 s) logo ao começar. Se o cliente conecta e não manda nada, o `readLine` estoura, o `envie()` lança, e o `catch` do laço remove o usuário da lista e fecha a conexão, liberando a thread. O timeout só vale para *esperar o pedido*; um handler lento não é interrompido.
+- **Timeout de leitura:** `conexao.setSoTimeout(TIMEOUT_LEITURA_MS)` (5 min) logo ao começar. Se o cliente fica 5 minutos sem mandar nada (o Backend mantém conexões duradouras e reconecta sozinho quando isso acontece), o `readLine` estoura, o `envie()` lança, e o `catch` do laço remove o usuário da lista e fecha a conexão, liberando a thread. O timeout só vale para *esperar o pedido*; um handler lento não é interrompido.
 - Estado por conexão (como o `double valor` do original) é opcional; nos handlers do FinanceAI o estado fica no MongoDB, então a `Supervisora` não guarda nada.
 
 ## Exemplo de implementação

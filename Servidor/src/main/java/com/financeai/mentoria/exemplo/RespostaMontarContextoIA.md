@@ -1,4 +1,4 @@
-# RespostaMontarContextoIA.java — Contexto pronto para o prompt
+# RespostaMontarContextoIA.java — Resposta com o contexto pronto para o prompt
 
 ## O que deve ter neste arquivo
 - Resposta enviada pelo Servidor ao Backend (`tipo` `"RespostaMontarContextoIA"`). Par: `PedidoMontarContextoIA`.

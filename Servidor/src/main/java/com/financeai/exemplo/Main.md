@@ -1,11 +1,12 @@
 # Main.java — Ponto de entrada do Servidor
 
 ## O que deve ter neste arquivo
-- Equivalente ao `Servidor.java` do professor (o `main` do servidor). Faz o mesmo, nesta ordem: valida os argumentos (`java Main [PORTA]`, porta padrão `3000`), cria a lista compartilhada `ArrayList<Parceiro> usuarios`, **conecta no MongoDB** (`Banco.iniciar()`; sem `MONGO_URI` sobe sem banco e avisa; com `MONGO_URI` que não conecta, mostra a mensagem e encerra), monta o `HandlerRegistry` com os handlers de todos os grupos, cria e inicia a `Aceitadora`.
+- Equivalente ao `Servidor.java` do professor (o `main` do servidor). Faz o mesmo, nesta ordem: valida os argumentos (`java Main [PORTA]`, porta padrão `3000`), cria a lista compartilhada `ArrayList<Parceiro> usuarios`, monta o `HandlerRegistry` com os handlers de todos os grupos, cria e inicia a `Aceitadora`.
 - Depois fica em loop lendo comandos do console (`Teclado`). O único comando válido é `desativar`: percorre `usuarios` dentro de `synchronized`, envia o `ComunicadoDeDesligamento` para cada conexão, chama `adeus()` e termina o processo. Qualquer outro comando mostra "Comando invalido!".
-- O `ComunicadoDeDesligamento` só alcança as conexões abertas naquele instante (chamadas do Backend em andamento); o Backend o trata como erro `503` ("Servidor desligando"). Novas chamadas passam a falhar com `503` até o servidor voltar.
+- O `ComunicadoDeDesligamento` chega a todas as conexões abertas do Backend (que mantém um pool de conexões duradouras); ele o trata como erro `503` ("Servidor desligando") e descarta essas conexões, o equivalente ao "volte mais tarde" do cliente do professor.
 - Porta ocupada ou inválida: mostra a mensagem e encerra, como o original.
-- Pode ser iniciado antes ou depois do Backend: o Backend só abre conexão quando uma rota precisa do Servidor. Se ele estiver fora do ar, essas rotas respondem `503`.
+- Pode ser iniciado antes ou depois do Backend: o Backend só conecta quando uma rota precisa do Servidor e reconecta sozinho. Se o Servidor estiver fora do ar, essas rotas respondem `503`.
+- O Servidor **não tem banco de dados**: ele só executa operações sobre os dados que chegam no pedido (como o "fazedor de continhas"). O MongoDB é do Backend.
 
 ## Exemplo de implementação
 
@@ -33,16 +34,6 @@ public class Main
             porta = args[0];
 
         ArrayList<Parceiro> usuarios = new ArrayList<Parceiro>();
-        try
-        {
-            Banco.iniciar();   // antes do registry: os repositorios criam indices ao serem instanciados
-        }
-        catch (Exception erro)
-        {
-            System.err.println ("Nao foi possivel conectar ao MongoDB: " + erro.getMessage() + "\n");
-            return;
-        }
-
         HandlerRegistry registry = HandlerRegistry.criarPadrao();
 
         Aceitadora aceitadora = null;

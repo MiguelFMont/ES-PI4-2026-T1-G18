@@ -7,9 +7,9 @@ import java.util.*;
 
 public class Supervisora extends Thread
 {
-    // Quanto tempo esperar por uma linha do cliente. O Backend manda o pedido logo
-    // depois de conectar, entao uma conexao calada por mais que isso esta presa.
-    public static final int TIMEOUT_LEITURA_MS = 30000;
+    // Quanto esperar por uma linha do cliente. O Backend mantem conexoes duradouras e
+    // reconecta sozinho, entao uma conexao calada por 5 minutos pode ser fechada.
+    public static final int TIMEOUT_LEITURA_MS = 300000;
 
     private Parceiro            usuario;
     private Socket              conexao;

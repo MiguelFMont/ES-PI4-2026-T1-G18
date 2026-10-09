@@ -1,24 +1,24 @@
-# PedidoFiltrarResposta.java — Pedido de filtragem da resposta da IA
+# PedidoHashSenha.java — Pedido de hash de senha
 
 ## O que deve ter neste arquivo
-- Pedido enviado pelo Backend ao Servidor (`tipo` `"PedidoFiltrarResposta"`). Par: `RespostaFiltrarResposta`.
+- Pedido enviado pelo Backend ao Servidor (`tipo` `"PedidoHashSenha"`). Par: `RespostaHashSenha`.
 - É um POJO simples que representa o campo `dados` do `Comunicado`. Os nomes dos campos são exatamente os do JSON trocado com o Backend, então qualquer mudança aqui é uma mudança de **contrato** e precisa ser combinada com o Backend.
 - Constante `TIPO` com o nome do tipo, para o handler e o `HandlerRegistry` não repetirem a string. Sem construtor: o Gson preenche os campos a partir do JSON recebido.
 
 ## Exemplo de implementação
 
 ```java
-package com.financeai.mentoria;
+package com.financeai.auth;
 
-public class PedidoFiltrarResposta
+public class PedidoHashSenha
 {
-    public static final String TIPO = "PedidoFiltrarResposta";
+    public static final String TIPO = "PedidoHashSenha";
 
-    private String resposta;
+    private String senha;
 
-    public String getResposta ()
+    public String getSenha ()
     {
-        return this.resposta;
+        return this.senha;
     }
 }
 ```

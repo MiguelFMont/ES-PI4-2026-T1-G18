@@ -1,7 +1,7 @@
-# PedidoValidarMFA.java — Pedido de validação de código MFA
+# PedidoValidarSenha.java — Pedido de conferência de senha
 
 ## O que deve ter neste arquivo
-- Pedido enviado pelo Backend ao Servidor (`tipo` `"PedidoValidarMFA"`). Par: `RespostaValidarMFA`.
+- Pedido enviado pelo Backend ao Servidor (`tipo` `"PedidoValidarSenha"`). Par: `RespostaValidarSenha`.
 - É um POJO simples que representa o campo `dados` do `Comunicado`. Os nomes dos campos são exatamente os do JSON trocado com o Backend, então qualquer mudança aqui é uma mudança de **contrato** e precisa ser combinada com o Backend.
 - Constante `TIPO` com o nome do tipo, para o handler e o `HandlerRegistry` não repetirem a string. Sem construtor: o Gson preenche os campos a partir do JSON recebido.
 
@@ -10,27 +10,21 @@
 ```java
 package com.financeai.auth;
 
-public class PedidoValidarMFA
+public class PedidoValidarSenha
 {
-    public static final String TIPO = "PedidoValidarMFA";
+    public static final String TIPO = "PedidoValidarSenha";
 
-    private String userId;
-    private String segredo;
-    private String codigo;
+    private String senha;
+    private String hash;
 
-    public String getUserId ()
+    public String getSenha ()
     {
-        return this.userId;
+        return this.senha;
     }
 
-    public String getSegredo ()
+    public String getHash ()
     {
-        return this.segredo;
-    }
-
-    public String getCodigo ()
-    {
-        return this.codigo;
+        return this.hash;
     }
 }
 ```

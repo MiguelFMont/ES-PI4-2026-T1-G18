@@ -1,4 +1,4 @@
-# RespostaValidarMFA.java — Resultado da validação do código MFA
+# RespostaValidarMFA.java — Resposta da validação de código MFA
 
 ## O que deve ter neste arquivo
 - Resposta enviada pelo Servidor ao Backend (`tipo` `"RespostaValidarMFA"`). Par: `PedidoValidarMFA`.
