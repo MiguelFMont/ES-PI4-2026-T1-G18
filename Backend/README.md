@@ -24,9 +24,9 @@ O navegador não consegue abrir um socket TCP puro, por isso o Backend fica no m
 |---|---|
 | Rotas HTTP, validação do corpo (`zod`), CORS, JWT | Hash e conferência de senha (PBKDF2), segredo e código TOTP do MFA |
 | CRUD no MongoDB (usuários, transações, metas, chat...) | Categorização de transações |
-| Orquestração: lê os dados, pede a operação ao Servidor e grava o resultado | Cálculo dos indicadores do painel |
+| Orquestração: lê os dados, pede a operação ao Servidor e grava o resultado | Cálculo dos indicadores do painel e comparação entre períodos |
 | Chamadas externas que precisam de internet e chave: API de IA generativa e Pluggy | Contexto e filtro de segurança do Mentor IA |
-| Tradução dos erros do Servidor em status HTTP | Progresso de meta e rentabilidade simulada |
+| Tradução dos erros do Servidor em status HTTP | Progresso de meta, rentabilidade com juros compostos e cálculo de parcelamentos |
 
 O Servidor **não acessa o banco**: o Backend manda os dados no pedido e recebe o resultado. Isso deixa cada operação do Servidor pura (entrada → saída), fácil de testar e de repetir.
 

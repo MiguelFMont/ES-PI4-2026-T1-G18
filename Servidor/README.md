@@ -17,9 +17,9 @@ O Servidor é um **executor de operações**, como o fazedor de continhas: o Bac
 |---|---|
 | 1 — Autenticação & Conta | hash e conferência de senha (PBKDF2), geração do segredo TOTP, validação do código do MFA |
 | 2 — Transações | categorização automática de uma transação |
-| 3 — Painel & Análise | cálculo dos indicadores (saldo, economia, fluxo de caixa) |
+| 3 — Painel & Análise | cálculo dos indicadores (saldo, economia, fluxo de caixa) e **comparação entre períodos** (variação % de receitas, despesas e saldo, tendência das despesas) |
 | 4 — Mentor Financeiro (IA) | montar o contexto da IA e filtrar a resposta (nunca recomendar compra/venda de ativo) |
-| 5 — Metas & Investimentos | progresso de uma meta e rentabilidade simulada |
+| 5 — Metas & Investimentos | progresso de uma meta, rentabilidade simulada com **juros compostos** e **cálculo de parcelamentos** (parcela, juros, saldo devedor pela Tabela Price) |
 
 Tudo que é CRUD (cadastro, listagens, edição) fica no Backend.
 
@@ -54,15 +54,15 @@ Os campos de cada mensagem estão nos `.md` de `exemplo/` (um por `PedidoXxx`/`R
 |---|---|---|
 | 1 — Autenticação & Conta | `PedidoHashSenha` → `RespostaHashSenha`; `PedidoValidarSenha` → `RespostaValidarSenha`; `PedidoGerarSegredoMFA` → `RespostaGerarSegredoMFA`; `PedidoValidarMFA` → `RespostaValidarMFA` | `AuthHandler` |
 | 2 — Transações | `PedidoCategorizarTransacao` → `RespostaCategorizarTransacao` | `TransactionsHandler` |
-| 3 — Painel & Análise | `PedidoCalcularIndicadores` → `RespostaCalcularIndicadores` | `DashboardHandler` |
+| 3 — Painel & Análise | `PedidoCalcularIndicadores` → `RespostaCalcularIndicadores`; `PedidoCompararPeriodos` → `RespostaCompararPeriodos` | `DashboardHandler` |
 | 4 — Mentor Financeiro (IA) | `PedidoMontarContextoIA` → `RespostaMontarContextoIA`; `PedidoFiltrarResposta` → `RespostaFiltrarResposta` | `MentorHandler` |
-| 5 — Metas & Investimentos | `PedidoProgressoMeta` → `RespostaProgressoMeta`; `PedidoRentabilidadeSimulada` → `RespostaRentabilidadeSimulada` | `GoalsHandler`, `InvestmentsHandler` |
+| 5 — Metas & Investimentos | `PedidoProgressoMeta` → `RespostaProgressoMeta`; `PedidoRentabilidadeSimulada` → `RespostaRentabilidadeSimulada`; `PedidoCalcularParcelamentos` → `RespostaCalcularParcelamentos` | `GoalsHandler`, `InvestmentsHandler` |
 
 Cada grupo mexe só na própria pasta e adiciona **uma linha** em `HandlerRegistry.criarPadrao()`. Se um grupo precisar de uma operação nova, cria o par `PedidoXxx`/`RespostaXxx` e o registra no seu handler, combinando os campos com quem implementa o lado do Backend.
 
 ## `exemplo/`: documentação de cada arquivo
 
-`src/main/java/com/financeai/` tem as pastas de cada pacote. Em cada pasta há uma subpasta `exemplo/` com um `.md` para cada arquivo `.java` planejado, explicando o que ele deve ter e trazendo um exemplo de implementação. Ao implementar, crie o `.java` no pacote correspondente; o `.md` fica como referência (e pode ser apagado quando o projeto estiver andando). Os exemplos foram compilados juntos com o `core` e as operações foram testadas (hash e conferência de senha, TOTP com o vetor da RFC 6238, categorização, indicadores, progresso de meta, rentabilidade, contexto e filtro da IA).
+`src/main/java/com/financeai/` tem as pastas de cada pacote. Em cada pasta há uma subpasta `exemplo/` com um `.md` para cada arquivo `.java` planejado, explicando o que ele deve ter e trazendo um exemplo de implementação. Ao implementar, crie o `.java` no pacote correspondente; o `.md` fica como referência (e pode ser apagado quando o projeto estiver andando). Os exemplos foram compilados juntos com o `core` e as operações foram testadas (hash e conferência de senha, TOTP com o vetor da RFC 6238, categorização, indicadores, comparação de períodos, progresso de meta, rentabilidade com juros compostos, parcelamentos, contexto e filtro da IA).
 
 ```
 src/main/java/com/financeai/
@@ -71,10 +71,10 @@ src/main/java/com/financeai/
                              ErroDeNegocio, EcoHandler, Teclado
   auth/                      AuthHandler + mensagens de senha e MFA
   transactions/              TransactionsHandler + mensagens de categorização
-  dashboard/                 DashboardHandler + mensagens dos indicadores
+  dashboard/                 DashboardHandler + mensagens de indicadores e comparação de períodos
   mentoria/                  MentorHandler + mensagens de contexto e filtro da IA
   goals/                     GoalsHandler + mensagens de progresso de meta
-  investments/               InvestmentsHandler + mensagens de rentabilidade simulada
+  investments/               InvestmentsHandler + mensagens de rentabilidade simulada e parcelamentos
 ```
 
 ## Estado atual (Sprint 0)

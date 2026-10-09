@@ -19,4 +19,15 @@ export interface CategoryBreakdownDto {
   categoria: string;
   total: number;
 }
+
+// um mês da comparação: totais e variações (%) em relação ao mês anterior, calculados pelo Servidor
+export interface PeriodComparisonDto {
+  rotulo: string; // "2026-09"
+  receitas: number;
+  despesas: number;
+  saldo: number;
+  variacaoReceitas: number;
+  variacaoDespesas: number;
+  variacaoSaldo: number;
+}
 ```

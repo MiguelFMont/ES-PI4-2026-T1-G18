@@ -1,7 +1,7 @@
 # investments.model.ts — Schemas de investimentos e parcelamentos
 
 ## O que deve ter neste arquivo
-- Duas coleções deste módulo: `investments` (ativos simulados do usuário: nome, valor investido) e `installments` (parcelamentos ativos do cartão: descrição, parcela atual/total, valor mensal, se ainda está ativo).
+- Duas coleções deste módulo: `investments` (ativos simulados do usuário: nome, valor investido) e `installments` (parcelamentos ativos do cartão: descrição, valor total financiado, taxa de juros mensal, parcela atual/total, valor mensal, se ainda está ativo). O valor total e a taxa alimentam o cálculo de juros e saldo devedor feito pelo Servidor.
 
 ## Exemplo de implementação
 
@@ -29,6 +29,8 @@ export const InvestmentModel = model<InvestmentDocument>("Investment", Investmen
 interface InstallmentDocument {
   userId: string;
   descricao: string;
+  valorTotal: number;
+  taxaJurosMensal: number; // em %; 0 se não há juros
   parcelaAtual: number;
   totalParcelas: number;
   valorMensal: number;
@@ -39,6 +41,8 @@ const InstallmentSchema = new Schema<InstallmentDocument>(
   {
     userId: { type: String, required: true, index: true },
     descricao: { type: String, required: true },
+    valorTotal: { type: Number, required: true },
+    taxaJurosMensal: { type: Number, default: 0 },
     parcelaAtual: { type: Number, required: true },
     totalParcelas: { type: Number, required: true },
     valorMensal: { type: Number, required: true },

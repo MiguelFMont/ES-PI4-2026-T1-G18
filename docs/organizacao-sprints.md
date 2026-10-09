@@ -34,9 +34,9 @@ Cada grupo cria seus próprios tipos de mensagem (`PedidoXxx`/`RespostaXxx`, est
 |---|---|
 | Autenticação & Conta | `PedidoHashSenha`, `PedidoValidarSenha`, `PedidoGerarSegredoMFA`, `PedidoValidarMFA` |
 | Transações (receitas/despesas) | `PedidoCategorizarTransacao` |
-| Painel Financeiro & Análise | `PedidoCalcularIndicadores` |
+| Painel Financeiro & Análise | `PedidoCalcularIndicadores`, `PedidoCompararPeriodos` |
 | Mentor Financeiro (IA) | `PedidoMontarContextoIA`, `PedidoFiltrarResposta` |
-| Metas & Investimentos | `PedidoProgressoMeta`, `PedidoRentabilidadeSimulada` |
+| Metas & Investimentos | `PedidoProgressoMeta`, `PedidoRentabilidadeSimulada`, `PedidoCalcularParcelamentos` |
 
 ---
 
@@ -178,7 +178,7 @@ Servidor/src/main/java/com/financeai/
     PedidoCategorizarTransacao (+ Resposta)
   dashboard/
     DashboardHandler.java
-    PedidoCalcularIndicadores (+ Resposta)
+    PedidoCalcularIndicadores, PedidoCompararPeriodos (+ Respostas)
   mentoria/
     MentorHandler.java
     PedidoMontarContextoIA, PedidoFiltrarResposta (+ Respostas)
@@ -187,7 +187,7 @@ Servidor/src/main/java/com/financeai/
     PedidoProgressoMeta (+ Resposta)
   investments/
     InvestmentsHandler.java
-    PedidoRentabilidadeSimulada (+ Resposta)
+    PedidoRentabilidadeSimulada, PedidoCalcularParcelamentos (+ Respostas)
   Main.java                  // parse de args, sobe a estrutura compartilhada, starta o Aceitador
 ```
 Cada grupo só mexe na sua própria pasta (suas mensagens e seu handler) e adiciona uma linha no `HandlerRegistry` — evita todo mundo editando o mesmo arquivo de despacho.
