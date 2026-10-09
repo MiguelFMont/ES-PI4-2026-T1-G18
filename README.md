@@ -29,9 +29,9 @@ Projeto desenvolvido para a disciplina de Projeto Integrador 4, curso de Engenha
 O sistema é dividido em quatro camadas independentes:
 
 - **Frontend** — telas web que o usuário acessa.
-- **Backend** — API REST (Node.js, TypeScript e Express) consumida pelo Frontend, com autenticação por JWT. É um gateway: valida as requisições e repassa cada operação ao Servidor Java (uma conexão de socket por chamada, como um `Cliente` do exemplo ensinado em aula). Não acessa o banco. Traduz os erros do Servidor (`code`) em status HTTP.
-- **Servidor** — processo Java separado do Backend, baseado no sistema de sockets ensinado em aula (Aceitadora/Supervisora/Parceiro, uma `Supervisora` por conexão), com mensagens em JSON. É o dono dos dados e das regras de negócio: lê e grava no MongoDB e responde ao Backend. Aceita conexões só da própria máquina (`127.0.0.1`) e não conhece HTTP: os erros saem como `code` + `message`.
-- **Banco de dados** — MongoDB (Atlas), com coleções isoladas por funcionalidade; acessado só pelo Servidor Java.
+- **Backend** — API REST (Node.js, TypeScript e Express) consumida pelo Frontend, com autenticação por JWT. Faz o CRUD e acessa o MongoDB, valida as requisições, chama serviços externos (API de IA, Pluggy) e pede ao Servidor Java as operações específicas de cada feature. Mantém um pool de conexões duradouras de socket com o Servidor (como um `Cliente` do exemplo ensinado em aula, que fica conectado) e traduz os erros do Servidor (`code`) em status HTTP.
+- **Servidor** — processo Java separado do Backend, baseado no sistema de sockets ensinado em aula (Aceitadora/Supervisora/Parceiro, uma `Supervisora` por conexão), com mensagens em JSON. Funciona como o "fazedor de continhas": recebe os dados no pedido, executa uma operação (hash de senha, categorização, indicadores, filtro da IA...) e devolve o resultado. Não acessa banco de dados, aceita conexões só da própria máquina (`127.0.0.1`) e não conhece HTTP: os erros saem como `code` + `message`.
+- **Banco de dados** — MongoDB (Atlas), com coleções isoladas por funcionalidade; acessado só pelo Backend.
 
 O projeto é dividido em 5 grupos de features, cada um responsável por uma fatia vertical completa (Frontend + Backend + Servidor + BD): Autenticação & Conta, Transações, Painel Financeiro & Análise, Mentor Financeiro (IA) e Metas & Investimentos.
 
@@ -48,7 +48,7 @@ Detalhes completos da arquitetura, divisão de grupos, padrão de issues e crono
 
 ### Backend
 ```
-# Requer Node 20+. Copie Backend/.env.example para Backend/.env e ajuste JWT_SECRET.
+# Requer Node 20+. Copie Backend/.env.example para Backend/.env e ajuste JWT_SECRET e MONGO_URI.
 cd Backend
 npm install
 npm run dev          # http://localhost:3001/v1
@@ -75,15 +75,15 @@ mvn exec:java -Dexec.mainClass=com.financeai.Main
 ### Banco de dados
 ```
 # MongoDB Atlas (cluster do projeto, compartilhado). Cada integrante libera o próprio IP
-# no Atlas e define a string de conexão na variável de ambiente MONGO_URI do Servidor (nunca commitar).
-# Passo a passo em Servidor/README.md (seção "Banco de dados")
+# no Atlas e coloca a string de conexão em MONGO_URI no Backend/.env (nunca commitar).
+# Passo a passo em Backend/README.md (seção "MongoDB Atlas")
 ```
 
 ## Estrutura do repositório
 
 ```
-Backend/     # API REST em TypeScript/Node.js (Express) e cliente do Servidor Java
-Servidor/    # Servidor Java por sockets (JSON) e dono do MongoDB, build com Maven
+Backend/     # API REST em TypeScript/Node.js (Express), MongoDB e cliente do Servidor Java
+Servidor/    # Servidor Java por sockets (JSON) que executa as operações específicas, build com Maven
 Frontend/    # Telas em HTML/CSS/JS
 docs/        # Documento de visão, organização de sprints, contratos de API
 ```
@@ -97,4 +97,4 @@ docs/        # Documento de visão, organização de sprints, contratos de API
 
 ## Status atual
 
-🚧 Sprint 0 — base das camadas pronta: `core` do Servidor (sockets, JSON, erros, timeout) e Backend mínimo (Express, `java-client`, `/v1/eco`) funcionando juntos; o `Banco` (MongoDB) e os handlers dos grupos ainda são `.md` de exemplo. O Frontend está na branch `chore/estrutura-inicial-frontend`.
+🚧 Sprint 0 — base das camadas pronta e testada: `core` do Servidor (sockets, JSON, erros, timeout) e Backend (Express, conexão com o MongoDB, `java-client` com pool de conexões, `/v1/eco`) funcionando juntos; os handlers e módulos dos grupos ainda são `.md` de exemplo. O Frontend está na branch `chore/estrutura-inicial-frontend`.

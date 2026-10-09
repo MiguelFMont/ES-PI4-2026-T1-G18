@@ -19,24 +19,24 @@ O Servidor Java é o sistema cliente-servidor por sockets (o "fazedor de continh
 Quatro camadas:
 
 - **Frontend (HTML/CSS/JavaScript):** telas web do FinanceAI.
-- **Backend (TypeScript/Node.js):** API REST (Express) consumida pelo frontend, com autenticação por JWT. É um **gateway**: valida as requisições e repassa cada operação ao Servidor Java, sem acessar o banco nem aplicar regras de negócio. É o único **cliente** do Servidor Java: abre uma conexão de socket por chamada (usando o módulo `net` do Node; conecta, envia o pedido, lê a resposta e sai com `PedidoParaSair`), como um `Cliente` do exemplo original, e troca mensagens JSON no lugar do `ObjectOutputStream`/`ObjectInputStream`.
-- **Servidor (Java):** processo à parte, rodado independentemente do Backend, replicando a arquitetura do professor:
+- **Backend (TypeScript/Node.js):** API REST (Express) consumida pelo frontend, com autenticação por JWT. Faz o CRUD e acessa o MongoDB (Mongoose), valida as requisições, chama serviços externos (API de IA, Pluggy) e pede ao Servidor Java as **operações específicas** de cada feature. É o único **cliente** do Servidor Java: mantém um **pool de conexões duradouras** de socket (usando o módulo `net` do Node), cada uma atendendo um pedido por vez, como um `Cliente` do exemplo original que fica conectado e escuta o `ComunicadoDeDesligamento`; troca mensagens JSON no lugar do `ObjectOutputStream`/`ObjectInputStream`.
+- **Servidor (Java):** processo à parte, rodado independentemente do Backend, replicando a arquitetura do professor. Funciona como o "fazedor de continhas": recebe os dados no pedido, executa uma operação e devolve o resultado; **não acessa banco de dados**:
   - `Comunicado` — classe-base das mensagens (no exemplo original ela só precisa ser `Serializable`; na nossa adaptação ela vira a base de um "envelope" JSON com um campo `tipo`).
   - `Parceiro` — embrulha o socket + leitura/escrita, com os métodos `envie/receba/espie` do exemplo, só que lendo/escrevendo linhas JSON em vez de objetos serializados.
   - `Aceitador` — thread que fica em loop aceitando conexões (`accept()`) — na prática só o Backend se conecta, mas mantemos a estrutura genérica do exemplo.
   - `Supervisora` — uma thread por conexão aceita; em vez do if/else de operações do exemplo (mais, menos, vezes, dividir), despacha por **tipo de mensagem** para o handler do grupo dono daquele tipo.
-  - Uma lista compartilhada (`usuários`/conexões, com mutex/semáforo como no exemplo) guarda as conexões ativas — no nosso caso, uma por chamada do Backend (cada uma com a sua `Supervisora`).
-- **BD (MongoDB):** coleções isoladas por feature, para não gerar acoplamento entre grupos. Só o Servidor Java acessa o banco (um `Repository` por grupo, com um `MongoClient` compartilhado); o Backend não tem banco.
+  - Uma lista compartilhada (`usuários`/conexões, com mutex/semáforo como no exemplo) guarda as conexões ativas — no nosso caso, as conexões do pool do Backend (cada uma com a sua `Supervisora`).
+- **BD (MongoDB):** coleções isoladas por feature, para não gerar acoplamento entre grupos. Só o Backend acessa o banco (um `repository` por grupo, via Mongoose); o Servidor Java não tem banco.
 
 Cada grupo cria seus próprios tipos de mensagem (`PedidoXxx`/`RespostaXxx`, estendendo `Comunicado`) e um handler para eles, registrado num dispatcher central — assim ninguém edita o mesmo arquivo de despacho que outro grupo, só registra sua entrada:
 
-| Grupo | Tipos de mensagem que ele registra no Servidor Java (o Servidor é dono dos dados: cada grupo também tem um `Repository` com o acesso ao MongoDB) |
+| Grupo | Tipos de mensagem que ele registra no Servidor Java (operações específicas; o CRUD e o banco ficam no Backend) |
 |---|---|
-| Autenticação & Conta | `PedidoRegistrarUsuario`, `PedidoLogin`, `PedidoObterPerfil`, `PedidoHabilitarMFA`, `PedidoValidarMFA` |
-| Transações (receitas/despesas) | `PedidoListarTransacoes`, `PedidoCriarTransacao`, `PedidoAtualizarTransacao`, `PedidoRemoverTransacao`, `PedidoDuplicarTransacao`, `PedidoImportarTransacoes` |
-| Painel Financeiro & Análise | `PedidoResumoPainel`, `PedidoGastosPorCategoria`, `PedidoCompararPeriodos` |
-| Mentor Financeiro (IA) | `PedidoMontarContextoIA`, `PedidoFiltrarResposta`, `PedidoSalvarTrocaChat`, `PedidoHistoricoChat`, `PedidoListarAlertas` |
-| Metas & Investimentos | `PedidoListarMetas`, `PedidoCriarMeta`, `PedidoAtualizarMeta`, `PedidoRemoverMeta`, `PedidoProgressoMeta`, `PedidoPainelInvestimentos`, `PedidoListarParcelamentos` |
+| Autenticação & Conta | `PedidoHashSenha`, `PedidoValidarSenha`, `PedidoGerarSegredoMFA`, `PedidoValidarMFA` |
+| Transações (receitas/despesas) | `PedidoCategorizarTransacao` |
+| Painel Financeiro & Análise | `PedidoCalcularIndicadores` |
+| Mentor Financeiro (IA) | `PedidoMontarContextoIA`, `PedidoFiltrarResposta` |
+| Metas & Investimentos | `PedidoProgressoMeta`, `PedidoRentabilidadeSimulada` |
 
 ---
 
@@ -130,8 +130,9 @@ Mesmo padrão nas três camadas de código — pasta por feature, não por tipo 
 ```
 Backend/src/
   config/           env (variáveis de ambiente validadas com zod)
+  database/         mongo.connection (conexão Mongoose com o Atlas)
   shared/errors/    app-error, error-codes (tabela code -> status HTTP)
-  java-client/      Comunicado, Parceiro, JavaServerClient (cliente do Servidor Java)
+  java-client/      Comunicado, Parceiro, JavaServerClient (pool de conexões com o Servidor Java)
   http/             app (Express e rotas), server (listen)
   modules/sistema/  /v1/health e /v1/eco (verifica Backend -> Servidor Java)
   middlewares/      auth.middleware (JWT), error-handler.middleware
@@ -144,6 +145,8 @@ Backend/src/
       auth.routes.ts
       auth.controller.ts
       auth.service.ts
+      auth.repository.ts
+      auth.model.ts
       auth.dto.ts
     transactions/
     dashboard/
@@ -151,9 +154,9 @@ Backend/src/
     goals/
     investments/
 ```
-Cada módulo segue o mesmo padrão `routes` / `controller` / `service` / `dto` (sem `repository` nem `model`: o acesso ao banco é do Servidor).
+Cada módulo segue o mesmo padrão `routes` / `controller` / `service` / `repository` / `model` / `dto`; o `repository` é o único arquivo do módulo que fala com o MongoDB.
 
-**Mensagens entre Backend e Servidor** — os nomes (`PedidoXxx`/`RespostaXxx`), os campos e os `code` de erro são combinados entre os grupos no Sprint 0. O Servidor responde erros só com `code` e `message`; o Backend traduz o `code` em status HTTP (`shared/errors/error-codes.ts`). O Servidor escuta apenas em `127.0.0.1` e fecha conexões que ficam 30 s sem enviar nada.
+**Mensagens entre Backend e Servidor** — os nomes (`PedidoXxx`/`RespostaXxx`), os campos e os `code` de erro são combinados entre os grupos no Sprint 0. O Servidor responde erros só com `code` e `message`; o Backend traduz o `code` em status HTTP (`shared/errors/error-codes.ts`). O Servidor escuta apenas em `127.0.0.1`, atende várias conexões simultâneas (uma `Supervisora` por conexão) e fecha conexões que ficam 5 minutos sem enviar nada (o Backend reconecta sozinho).
 
 **Servidor (Java)** — arquitetura do professor (sockets), organizada por feature dentro dela:
 ```
@@ -166,28 +169,28 @@ Servidor/src/main/java/com/financeai/
     HandlerRegistry.java     // registro tipo-de-mensagem -> handler (cada grupo se registra aqui)
     Handler.java             // contrato de um tratador de pedido
     ErroDeNegocio.java       // falha de regra -> resposta Erro (code, message; o status HTTP é do Backend)
-    Banco.java               // MongoClient compartilhado e conversões Document -> Map
+    EcoHandler.java          // handler de teste (PedidoEco -> RespostaEco)
   auth/
-    AuthHandler.java, AuthRepository.java
-    PedidoRegistrarUsuario, PedidoLogin, PedidoObterPerfil, PedidoHabilitarMFA, PedidoValidarMFA (+ Respostas)
+    AuthHandler.java
+    PedidoHashSenha, PedidoValidarSenha, PedidoGerarSegredoMFA, PedidoValidarMFA (+ Respostas)
   transactions/
-    TransactionsHandler.java, TransactionsRepository.java
-    PedidoListar/Criar/Atualizar/Remover/Duplicar/ImportarTransacao(es) (+ Respostas)
+    TransactionsHandler.java
+    PedidoCategorizarTransacao (+ Resposta)
   dashboard/
-    DashboardHandler.java, DashboardRepository.java
-    PedidoResumoPainel, PedidoGastosPorCategoria, PedidoCompararPeriodos (+ Respostas)
+    DashboardHandler.java
+    PedidoCalcularIndicadores (+ Resposta)
   mentoria/
-    MentorHandler.java, MentorRepository.java
-    PedidoMontarContextoIA, PedidoFiltrarResposta, PedidoSalvarTrocaChat, PedidoHistoricoChat, PedidoListarAlertas (+ Respostas)
+    MentorHandler.java
+    PedidoMontarContextoIA, PedidoFiltrarResposta (+ Respostas)
   goals/
-    GoalsHandler.java, GoalsRepository.java
-    PedidoListarMetas, PedidoCriarMeta, PedidoAtualizarMeta, PedidoRemoverMeta, PedidoProgressoMeta (+ Respostas)
+    GoalsHandler.java
+    PedidoProgressoMeta (+ Resposta)
   investments/
-    InvestmentsHandler.java, InvestmentsRepository.java
-    PedidoPainelInvestimentos, PedidoListarParcelamentos (+ Respostas)
+    InvestmentsHandler.java
+    PedidoRentabilidadeSimulada (+ Resposta)
   Main.java                  // parse de args, sobe a estrutura compartilhada, starta o Aceitador
 ```
-Cada grupo só mexe na sua própria pasta (suas mensagens, seu handler e seu repository) e adiciona uma linha no `HandlerRegistry` — evita todo mundo editando o mesmo arquivo de despacho.
+Cada grupo só mexe na sua própria pasta (suas mensagens e seu handler) e adiciona uma linha no `HandlerRegistry` — evita todo mundo editando o mesmo arquivo de despacho.
 
 **Frontend (HTML/CSS/JavaScript)**
 ```
@@ -217,8 +220,8 @@ Cada grupo segue a mesma sequência (CRUD básico → regra de negócio própria
 - Dados de seed/mock de todas as coleções
 - Estrutura de pastas, board do GitHub Projects e Git Flow configurados
 - Ambientes (Backend, Servidor Java, Frontend, BD) rodando localmente para todos
-- Base do Backend: Express com `/v1/health` e `/v1/eco`, `java-client`, `error-handler` e tabela `code -> status`; o `/v1/eco` prova o caminho Frontend -> Backend -> Servidor Java e de volta
-- Nomes e campos das mensagens (`PedidoXxx`/`RespostaXxx`) e `code` de erro acordados entre os grupos
+- Base do Backend: Express, conexão com o MongoDB Atlas, `java-client` (pool de conexões duradouras), `error-handler` e tabela `code -> status`; `/v1/health` e `/v1/eco` provam o caminho Frontend -> Backend -> Servidor Java e de volta
+- Nomes e campos das mensagens (`PedidoXxx`/`RespostaXxx`) e `code` de erro acordados entre os grupos; o Servidor só executa operações (sem banco), o CRUD e o MongoDB ficam no Backend
 - Base do Servidor Java adaptada do exemplo do professor: `Comunicado`, `Parceiro` (com JSON no lugar da serialização nativa), `Aceitador`, `Supervisora`, `HandlerRegistry` funcionando com um handler de teste — essa parte é comum a todos os grupos, então vale ser feita em conjunto ou por uma pessoa só antes dos grupos começarem a registrar seus próprios tipos de mensagem
 - Conta e API key do sandbox da Pluggy criadas (Grupo 2 é responsável, mas a chave fica disponível para o time todo)
 
@@ -234,9 +237,9 @@ Cada grupo segue a mesma sequência (CRUD básico → regra de negócio própria
 ### Sprint 2 — 10 dias — Regra de negócio própria de cada grupo (mensagem + handler no Servidor Java)
 | Grupo | Entrega |
 |---|---|
-| 1 — Autenticação & Conta | Recuperação de senha + `PedidoHabilitarMFA`/`PedidoValidarMFA` e handler registrados no Servidor Java |
-| 2 — Transações | Categorização automática (categorização dentro de `PedidoCriarTransacao`/`PedidoImportarTransacoes` no Servidor Java) + edição manual de categoria |
-| 3 — Painel & Análise | Fluxo de caixa e economia (`PedidoResumoPainel`/`PedidoCompararPeriodos` + handler no Servidor Java) |
+| 1 — Autenticação & Conta | Recuperação de senha + `PedidoHashSenha`/`PedidoValidarSenha`/`PedidoGerarSegredoMFA`/`PedidoValidarMFA` e handler registrados no Servidor Java |
+| 2 — Transações | Categorização automática (`PedidoCategorizarTransacao` + handler no Servidor Java) + edição manual de categoria |
+| 3 — Painel & Análise | Fluxo de caixa e economia (`PedidoCalcularIndicadores` + handler no Servidor Java) |
 | 4 — Mentor Financeiro (IA) | Integração real com a API de IA generativa + `PedidoMontarContextoIA` no Servidor Java |
 | 5 — Metas & Investimentos | `PedidoProgressoMeta` + handler no Servidor Java + acompanhamento visual |
 
