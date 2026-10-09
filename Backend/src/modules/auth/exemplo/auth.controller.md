@@ -2,7 +2,7 @@
 
 ## O que deve ter neste arquivo
 - Um método por rota (`register`, `login`, `me`): lê `req.body`/`req.user`, valida o formato com o DTO (`auth.dto.ts`), chama o `authService` e monta a resposta com o status certo (`201` no cadastro, `200` no login).
-- Não acessa o banco nem o Servidor Java: isso é do service.
+- Não acessa o banco nem o Servidor Java: isso é do service (que usa o repository e o `javaServerClient`).
 - Erros são repassados com `next(error)` para o `error-handler.middleware.ts`.
 - Se o usuário tiver MFA ativo, o `login` pode devolver `{ mfaRequired: true, ... }` em vez do token final; a definição desse fluxo é do grupo de Autenticação.
 

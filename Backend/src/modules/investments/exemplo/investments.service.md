@@ -1,30 +1,30 @@
-# investments.service.ts — Casos de uso de investimentos simulados
+# investments.service.ts — Regras de negócio de investimentos
 
 ## O que deve ter neste arquivo
-- Duas leituras, repassadas ao Servidor Java: `getPortfolio` (`PedidoPainelInvestimentos`) e `listInstallments` (`PedidoListarParcelamentos`).
-- O Servidor lê os ativos simulados e os parcelamentos do banco, aplica a rentabilidade fictícia e devolve o patrimônio total e a lista de ativos. O Backend só envia o `userId` do token.
-- Tudo é simulação: nenhuma integração com mercado real.
+- `getPortfolio`: busca os investimentos simulados do usuário no MongoDB e pede ao Servidor Java a rentabilidade simulada (`PedidoRentabilidadeSimulada`). O Java decide a fórmula do rendimento fictício; o service só organiza o patrimônio total e a lista de ativos.
+- `listInstallments`: lista os parcelamentos ativos do cartão (parcela atual/total, valor mensal). É leitura simples via repository, sem chamada ao Servidor Java.
 
 ## Exemplo de implementação
 
 ```ts
 // src/modules/investments/investments.service.ts
+import { investmentsRepository } from "./investments.repository";
 import { javaServerClient } from "../../java-client/java-server.client";
 
 export const investmentsService = {
-  getPortfolio(userId: string) {
-    return javaServerClient.enviarPedido<
-      { userId: string },
-      { patrimonioTotal: number; ativos: { nome: string; valor: number; rentabilidade: number }[] }
-    >("PedidoPainelInvestimentos", "RespostaPainelInvestimentos", { userId });
+  async getPortfolio(userId: string) {
+    const ativos = await investmentsRepository.findInvestmentsByUser(userId);
+
+    const { patrimonioTotal, ativosComRentabilidade } = await javaServerClient.enviarPedido<
+      { ativos: typeof ativos },
+      { patrimonioTotal: number; ativosComRentabilidade: typeof ativos }
+    >("PedidoRentabilidadeSimulada", "RespostaRentabilidadeSimulada", { ativos });
+
+    return { patrimonioTotal, ativos: ativosComRentabilidade };
   },
 
   async listInstallments(userId: string) {
-    const { parcelamentos } = await javaServerClient.enviarPedido<
-      { userId: string },
-      { parcelamentos: unknown[] }
-    >("PedidoListarParcelamentos", "RespostaListarParcelamentos", { userId });
-    return parcelamentos;
+    return investmentsRepository.findInstallmentsByUser(userId);
   },
 };
 ```

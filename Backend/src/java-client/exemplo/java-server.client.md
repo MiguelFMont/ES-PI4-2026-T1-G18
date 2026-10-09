@@ -1,10 +1,13 @@
-# java-server.client.ts — Porta de Cliente.java (uma conexão por chamada)
+# java-server.client.ts — Porta de Cliente.java (pool de conexões duradouras)
 
 ## O que deve ter neste arquivo
-- Equivalente ao `Cliente.java` do professor: abre o `Socket` (`net.createConnection`), embrulha num `Parceiro` e fala com o Servidor. Como o Backend é uma API HTTP (Express) e HTTP não mantém conexão, cada chamada ao Servidor Java segue o ciclo de vida de um `Cliente` do professor: **conecta, faz um pedido, lê a resposta, envia `PedidoParaSair` e fecha**. Assim cada chamada tem a sua própria `Supervisora` no Servidor, sem ID de correlação e sem compartilhar conexão entre requisições simultâneas.
-- Expõe um único método para os `services`: `enviarPedido(tipoPedido, tipoResposta, dados)`. Por baixo faz o que o `Cliente.java` fazia na opção "=": `receba(pedido)` e depois `envie()` para ler a resposta.
-- Valida a resposta: se vier `Erro`, lança `AppError` com o `status`, o `code` e a `message` que o Servidor mandou (por exemplo `409 EMAIL_IN_USE`, `401 INVALID_CREDENTIALS`, `404 NOT_FOUND`), já que o Servidor é o dono das regras de negócio e decide o resultado; sem esses campos, usa `502`; se vier `ComunicadoDeDesligamento` (o servidor foi desativado no meio da chamada), lança `AppError` `503`; se o tipo não for o esperado, também falha.
-- Tem **timeout** (`JAVA_SERVER_TIMEOUT_MS`): se o Servidor não responder, a chamada falha com `503` em vez de ficar pendurada. Servidor fora do ar (conexão recusada) também vira `503`.
+- Equivalente ao `Cliente.java` do professor: abre o `Socket` (`net.createConnection`), embrulha num `Parceiro` e fala com o Servidor. Como o professor, o cliente **fica conectado** durante a sessão; como o Backend atende várias requisições HTTP ao mesmo tempo, ele mantém um **pool** (`JAVA_SERVER_POOL_SIZE`, padrão 5) de conexões duradouras, cada uma com a sua `Supervisora` no Servidor.
+- Cada conexão atende **um pedido por vez** (`receba(pedido)` e depois lê a resposta) e volta ao pool. Pedidos simultâneos usam conexões diferentes; se todas estão ocupadas, o pedido espera uma livre. Por isso não há ID de correlação nem fila de respostas.
+- Cada conexão tem um laço de leitura que recebe tudo o que o Servidor manda, inclusive o `ComunicadoDeDesligamento` fora de um pedido (a "thread de comunicado de desligamento" do cliente do professor): a conexão sai do pool e os pedidos em andamento falham com `503 JAVA_SERVER_SHUTTING_DOWN`.
+- Expõe `enviarPedido(tipoPedido, tipoResposta, dados)` para os `services` e `fechar()` para o `server.ts` (manda `PedidoParaSair` em cada conexão ao encerrar o Backend).
+- **Reconexão automática:** conexão que cai (Servidor reiniciou ou fechou a conexão ociosa) sai do pool; o pedido seguinte abre outra. Se a conexão cair no meio de um pedido, ele é repetido **uma vez** (seguro: as operações do Servidor são puras).
+- Valida a resposta: se vier `Erro`, lança `AppError` com o `code` e a `message` do Servidor e o **status HTTP buscado na tabela** `statusDoCodigo` (`shared/errors/error-codes.ts`); `code` fora da tabela vira `502 JAVA_SERVER_ERROR`; tipo de resposta inesperado também.
+- Tem **timeout** (`JAVA_SERVER_TIMEOUT_MS`): se o Servidor não responder, a chamada falha com `503` e a conexão é descartada (uma resposta tardia desalinharia o pedido seguinte). Servidor fora do ar (conexão recusada) também vira `503`.
 - Não tem regra de negócio, só fala o protocolo. Só use `enviarPedido` para pedidos que **têm** resposta.
 
 ## Exemplo de implementação
@@ -15,6 +18,7 @@ import net from "net";
 import { env } from "../config/env";
 import { Parceiro } from "./parceiro";
 import {
+  Comunicado,
   TIPO_ERRO,
   TIPO_PEDIDO_PARA_SAIR,
   ehComunicadoDeDesligamento,
@@ -24,25 +28,161 @@ import { statusDoCodigo } from "../shared/errors/error-codes";
 
 const indisponivel = () =>
   new AppError("Servidor indisponível", 503, "JAVA_SERVER_UNAVAILABLE");
+const desligando = () =>
+  new AppError("Servidor desligando", 503, "JAVA_SERVER_SHUTTING_DOWN");
 
-function conectar(): Promise<Parceiro> {
+// A conexão caiu antes de a resposta chegar. Como as operações do Servidor são puras
+// (dados de entrada -> resultado), o pedido pode ser repetido uma vez com segurança.
+class FalhaDeTransporte extends Error {}
+
+// Uma conexão duradoura com o Servidor Java. Atende UM pedido por vez (envia o pedido e
+// espera a resposta), por isso não precisa de ID de correlação. Um laço de leitura recebe
+// tudo o que o Servidor manda, inclusive o ComunicadoDeDesligamento fora de um pedido
+// (a "thread do comunicado de desligamento" do cliente do professor).
+class Conexao {
+  readonly parceiro: Parceiro;
+  ocupada = false;
+  morta = false;
+  private pendente: { resolve: (c: Comunicado) => void; reject: (e: Error) => void } | null = null;
+
+  constructor(socket: net.Socket, private readonly aoMorrer: () => void) {
+    this.parceiro = new Parceiro(socket);
+    this.parceiro.aoFechar(() => this.morrer());
+    this.ler();
+  }
+
+  private async ler() {
+    try {
+      for (;;) {
+        const comunicado = await this.parceiro.envie();
+        if (ehComunicadoDeDesligamento(comunicado)) {
+          this.morrer(desligando());
+          return;
+        }
+        const p = this.pendente;
+        this.pendente = null;
+        p?.resolve(comunicado);
+      }
+    } catch {
+      this.morrer();
+    }
+  }
+
+  enviar(pedido: Comunicado): Promise<Comunicado> {
+    return new Promise((resolve, reject) => {
+      if (this.morta) {
+        reject(new FalhaDeTransporte());
+        return;
+      }
+      this.pendente = { resolve, reject };
+      try {
+        this.parceiro.receba(pedido);
+      } catch {
+        this.morrer();
+      }
+    });
+  }
+
+  morrer(erro: Error = new FalhaDeTransporte()) {
+    if (this.morta) return;
+    this.morta = true;
+    this.pendente?.reject(erro);
+    this.pendente = null;
+    try {
+      this.parceiro.adeus();
+    } catch {
+      // já estava fechada
+    }
+    this.aoMorrer();
+  }
+}
+
+const pool: Conexao[] = [];
+let criando = 0;
+const esperando: Array<() => void> = [];
+
+function acordar() {
+  esperando.shift()?.();
+}
+
+function conectar(): Promise<Conexao> {
   return new Promise((resolve, reject) => {
-    const conexao = net.createConnection(
+    const socket = net.createConnection(
       { host: env.JAVA_SERVER_HOST, port: env.JAVA_SERVER_PORT },
-      () => resolve(new Parceiro(conexao))
+      () => {
+        socket.removeListener("error", falhou);
+        resolve(new Conexao(socket, acordar));
+      }
     );
-    conexao.once("error", () => reject(indisponivel()));
+    const falhou = () => reject(indisponivel());
+    socket.once("error", falhou);
   });
 }
 
-function comTimeout<T>(promessa: Promise<T>, ms: number): Promise<T> {
+// Pega uma conexão livre do pool; se não há e o pool ainda não está cheio, abre uma nova;
+// senão espera alguém devolver. Pedidos simultâneos usam conexões diferentes (cada uma
+// com a sua Supervisora no Servidor).
+async function obter(): Promise<Conexao> {
+  for (;;) {
+    for (let i = pool.length - 1; i >= 0; i--) {
+      if (pool[i].morta) pool.splice(i, 1);
+    }
+
+    const livre = pool.find((c) => !c.ocupada);
+    if (livre) {
+      livre.ocupada = true;
+      return livre;
+    }
+
+    if (pool.length + criando < env.JAVA_SERVER_POOL_SIZE) {
+      criando++;
+      try {
+        const nova = await conectar();
+        nova.ocupada = true;
+        pool.push(nova);
+        return nova;
+      } finally {
+        criando--;
+        acordar();
+      }
+    }
+
+    await new Promise<void>((resolve) => esperando.push(resolve));
+  }
+}
+
+function devolver(c: Conexao) {
+  c.ocupada = false;
+  acordar();
+}
+
+function comTimeout<T>(promessa: Promise<T>, ms: number, aoEstourar: () => void): Promise<T> {
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(indisponivel()), ms);
+    const timer = setTimeout(() => {
+      aoEstourar();
+      reject(indisponivel());
+    }, ms);
     promessa.then(
       (valor) => { clearTimeout(timer); resolve(valor); },
       (erro) => { clearTimeout(timer); reject(erro); }
     );
   });
+}
+
+async function tentar(pedido: Comunicado, tentativa: number): Promise<Comunicado> {
+  const conexao = await obter();
+  try {
+    // se estourar o tempo, a conexão é descartada: uma resposta tardia desalinharia o pedido seguinte
+    return await comTimeout(conexao.enviar(pedido), env.JAVA_SERVER_TIMEOUT_MS, () => conexao.morrer());
+  } catch (erro) {
+    if (erro instanceof FalhaDeTransporte) {
+      if (tentativa === 1) return tentar(pedido, 2);
+      throw indisponivel();
+    }
+    throw erro;
+  } finally {
+    devolver(conexao);
+  }
 }
 
 export const javaServerClient = {
@@ -51,37 +191,32 @@ export const javaServerClient = {
     tipoResposta: string,
     dados: TDados
   ): Promise<TResposta> {
-    const parceiro = await conectar();
+    const resposta = await tentar({ tipo: tipoPedido, dados }, 1);
 
-    try {
-      parceiro.receba({ tipo: tipoPedido, dados });
-      const resposta = await comTimeout(parceiro.envie(), env.JAVA_SERVER_TIMEOUT_MS);
+    if (resposta.tipo === TIPO_ERRO) {
+      const { code, message } = resposta.dados as { code?: string; message?: string };
+      const status = code ? statusDoCodigo(code) : undefined;
+      if (!code || status === undefined) {
+        throw new AppError("Erro desconhecido do servidor", 502, "JAVA_SERVER_ERROR");
+      }
+      throw new AppError(message ?? "Erro no servidor", status, code);
+    }
+    if (resposta.tipo !== tipoResposta) {
+      throw new AppError("Resposta inesperada do servidor", 502, "JAVA_SERVER_ERROR");
+    }
 
-      if (resposta.tipo === TIPO_ERRO) {
-        const { code, message } = resposta.dados as { code?: string; message?: string };
-        const status = code ? statusDoCodigo(code) : undefined;
-        if (!code || status === undefined) {
-          throw new AppError("Erro desconhecido do servidor", 502, "JAVA_SERVER_ERROR");
-        }
-        throw new AppError(message ?? "Erro no servidor", status, code);
-      }
-      if (ehComunicadoDeDesligamento(resposta)) {
-        throw new AppError("Servidor desligando", 503, "JAVA_SERVER_SHUTTING_DOWN");
-      }
-      if (resposta.tipo !== tipoResposta) {
-        throw new AppError("Resposta inesperada do servidor", 502, "JAVA_SERVER_ERROR");
-      }
+    return resposta.dados as TResposta;
+  },
 
-      return resposta.dados as TResposta;
-    } catch (erro) {
-      throw erro instanceof AppError ? erro : indisponivel();
-    } finally {
+  // Ao encerrar o Backend: PedidoParaSair em cada conexão (o Servidor a remove da lista usuarios).
+  fechar() {
+    for (const c of pool.splice(0)) {
       try {
-        parceiro.receba({ tipo: TIPO_PEDIDO_PARA_SAIR, dados: {} });
+        c.parceiro.receba({ tipo: TIPO_PEDIDO_PARA_SAIR, dados: {} });
       } catch {
-        // conexão já caiu: nada a avisar
+        // conexão já caiu
       }
-      parceiro.adeus();
+      c.morrer();
     }
   },
 };
