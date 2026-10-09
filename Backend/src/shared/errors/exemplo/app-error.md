@@ -2,8 +2,8 @@
 
 ## O que deve ter neste arquivo
 - Uma classe `AppError` que qualquer `service` de qualquer módulo pode lançar quando uma regra de negócio é violada (e-mail duplicado, recurso não encontrado, credencial inválida etc).
-- Carrega três informações: a mensagem para log/usuário, um `codigo` estável (para o Frontend decidir o que fazer, sem depender do texto da mensagem) e, por convenção, um "status" conceitual (não é HTTP aqui, já que não há Express — é só uma categoria: `409` = conflito, `404` = não encontrado, `401` = não autorizado etc., reaproveitado como convenção de código).
-- É a única coisa que a camada `ws/connection.ts` sabe distinguir de um erro inesperado: se for `AppError`, manda a mensagem/código de volta pro Frontend; se não for, loga e manda um erro genérico (sem vazar detalhe interno).
+- Carrega três informações (no caso de erros vindos do Servidor Java, o `statusCode` é deduzido do `code` em `error-codes.ts`): a mensagem, o `statusCode` HTTP que a resposta deve ter (`409` conflito, `404` não encontrado, `401` não autorizado, `503` servidor Java indisponível etc.) e um `code` estável, para o Frontend decidir o que fazer sem depender do texto da mensagem.
+- É o que o `middlewares/error-handler.middleware.ts` reconhece: se o erro for um `AppError`, responde com o `statusCode` e o `code` dele; qualquer outro erro é logado e vira um `500` genérico, sem vazar detalhe interno.
 
 ## Exemplo de implementação
 

@@ -28,6 +28,11 @@ export const transactionsRepository = {
     return TransactionModel.find(query).sort({ data: -1 }).lean();
   },
 
+  // as N transações mais recentes (usado para montar o contexto do Mentor IA)
+  async findRecentByUser(userId: string, limite: number) {
+    return TransactionModel.find({ userId }).sort({ data: -1 }).limit(limite).lean();
+  },
+
   async findByIdAndUser(userId: string, id: string) {
     return TransactionModel.findOne({ _id: id, userId }).lean();
   },

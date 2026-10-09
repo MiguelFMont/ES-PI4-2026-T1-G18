@@ -1,7 +1,7 @@
 # auth.repository.ts — Acesso a dados do usuário
 
 ## O que deve ter neste arquivo
-- Funções de acesso direto à coleção de usuários no MongoDB (`findByEmail`, `findById`, `create`, `setMfaEnabled`), usando o `UserModel` (`auth.model.ts`).
+- Funções de acesso direto à coleção de usuários no MongoDB (`findByEmail`, `findById`, `create`, `setMfaSecret`, `findMfaSecret`), usando o `UserModel` (`auth.model.ts`).
 - Nenhuma regra de negócio aqui — só consulta/grava e retorna o documento (ou `null`). Quem decide o que fazer com o resultado é o `auth.service.ts` (ou, no caso do MFA, o `mfa/mfa.service.ts`, que reaproveita este repository).
 - É a única camada do módulo que importa o `UserModel` diretamente — se o banco mudar (ex.: trocar Mongoose por outro driver), só este arquivo muda.
 
@@ -31,8 +31,15 @@ export const authRepository = {
     return usuario.toObject();
   },
 
-  async setMfaEnabled(userId: string, mfaEnabled: boolean) {
-    return UserModel.findByIdAndUpdate(userId, { mfaEnabled }, { new: true }).lean();
+  // guarda o segredo TOTP e marca o MFA como habilitado
+  async setMfaSecret(userId: string, mfaSecret: string) {
+    return UserModel.findByIdAndUpdate(userId, { mfaSecret, mfaEnabled: true }, { new: true }).lean();
+  },
+
+  // o segredo tem select:false, por isso é pedido explicitamente aqui
+  async findMfaSecret(userId: string) {
+    const usuario = await UserModel.findById(userId).select("+mfaSecret").lean();
+    return usuario?.mfaSecret ?? null;
   },
 };
 ```
