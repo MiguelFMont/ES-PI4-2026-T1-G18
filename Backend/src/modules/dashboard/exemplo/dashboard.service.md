@@ -4,7 +4,7 @@
 - Não é dono de uma entidade própria: lê as transações do usuário (via `dashboardRepository`, que faz agregações sobre a coleção `transactions`).
 - `getSummary`: agrega os totais do mês no MongoDB e manda **só os totais** ao Servidor Java, que calcula os indicadores (`PedidoCalcularIndicadores`: saldo, economia, fluxo de caixa). A fórmula é do Java; o Backend junta os totais e os indicadores na resposta.
 - `getByCategory`: agrupa os totais por categoria (leitura simples via repository).
-- `comparePeriods`: o Backend busca no MongoDB os totais de receitas e despesas por mês (`getTotaisPorMes`) e manda ao Servidor Java (`PedidoCompararPeriodos`), que calcula o saldo e a **variação percentual** de cada mês em relação ao anterior e a tendência das despesas. O parâmetro `periodo` vira a quantidade de meses (`mensal` = este mês contra o anterior; `ultimos-6-meses`). O Backend não faz a conta: devolve o que o Servidor calculou, pronto para o gráfico do Frontend.
+- `comparePeriods`: o Backend busca no MongoDB os totais de receitas e despesas por mês (`getTotaisPorMes`) e manda ao Servidor Java (`PedidoCompararPeriodos`), que calcula o saldo e a **variação percentual** de cada mês em relação ao anterior e a tendência das despesas. O parâmetro `periodo` vira a quantidade de meses (`mensal` = este mês contra o anterior; `ultimos-6-meses`; `ytd` = de janeiro até o mês atual). O Backend não faz a conta: devolve o que o Servidor calculou, pronto para o gráfico do Frontend.
 
 ## Exemplo de implementação
 
@@ -14,10 +14,19 @@ import { dashboardRepository } from "./dashboard.repository";
 import { javaServerClient } from "../../java-client/java-server.client";
 import { AppError } from "../../shared/errors/app-error";
 
-const MESES_POR_PERIODO: Record<string, number> = {
-  mensal: 2, // este mês contra o anterior
-  "ultimos-6-meses": 6,
-};
+// quantos meses (do mais antigo ao atual) entram na comparação
+function mesesDoPeriodo(periodo: string): number | undefined {
+  switch (periodo) {
+    case "mensal":
+      return 2; // este mês contra o anterior
+    case "ultimos-6-meses":
+      return 6;
+    case "ytd":
+      return new Date().getMonth() + 1; // de janeiro até o mês atual
+    default:
+      return undefined;
+  }
+}
 
 export const dashboardService = {
   async getSummary(userId: string) {
@@ -36,7 +45,7 @@ export const dashboardService = {
   },
 
   async comparePeriods(userId: string, periodo: string) {
-    const meses = MESES_POR_PERIODO[periodo];
+    const meses = mesesDoPeriodo(periodo);
     if (!meses) {
       throw new AppError("Período inválido", 400, "VALIDATION_ERROR");
     }
