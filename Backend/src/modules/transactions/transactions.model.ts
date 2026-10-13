@@ -1,16 +1,7 @@
-# transactions.model.ts — Schema da coleção de transações
-
-## O que deve ter neste arquivo
-- Schema Mongoose da coleção `transactions`: `userId` (quem é o dono), tipo (receita/despesa), valor, categoria, data, descrição, origem (manual/pluggy).
-- Índice composto em `(userId, data)` ajuda bastante nas consultas de listagem/dashboard mais pra frente.
-
-## Exemplo de implementação
-
-```ts
 // src/modules/transactions/transactions.model.ts
 import { Schema, model } from "mongoose";
 
-interface TransactionDocument {
+export interface TransactionDocument {
   userId: string;
   tipo: "receita" | "despesa";
   valor: number;
@@ -33,7 +24,7 @@ const TransactionSchema = new Schema<TransactionDocument>(
   { timestamps: true }
 );
 
+// ajuda a listagem (mais recentes primeiro) e o painel
 TransactionSchema.index({ userId: 1, data: -1 });
 
 export const TransactionModel = model<TransactionDocument>("Transaction", TransactionSchema);
-```
