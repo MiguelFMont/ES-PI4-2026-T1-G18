@@ -228,16 +228,16 @@ Cada grupo segue a mesma sequência (CRUD básico → regra de negócio própria
 ### Sprint 1 — 10 dias — Fluxo principal (com dados mockados dos outros grupos)
 | Grupo | Entrega |
 |---|---|
-| 1 — Autenticação & Conta | Cadastro e login |
-| 2 — Transações | Cadastro manual de receita/despesa + listagem simples |
-| 3 — Painel & Análise | Dashboard inicial básico (saldo, gastos do mês) |
+| 1 — Autenticação & Conta | Cadastro e login (hash e conferência da senha no Servidor Java: `PedidoHashSenha`/`PedidoValidarSenha`) |
+| 2 — Transações | Cadastro manual de receita/despesa (categoria informada pelo usuário) + listagem simples |
+| 3 — Painel & Análise | Dashboard inicial básico (saldo e gastos do mês, com conta simples; o Servidor entra na Sprint 2) |
 | 4 — Mentor Financeiro (IA) | Tela de chat + endpoint de chat com resposta mockada |
 | 5 — Metas & Investimentos | Cadastro de metas (CRUD básico) |
 
 ### Sprint 2 — 10 dias — Regra de negócio própria de cada grupo (mensagem + handler no Servidor Java)
 | Grupo | Entrega |
 |---|---|
-| 1 — Autenticação & Conta | Recuperação de senha + `PedidoHashSenha`/`PedidoValidarSenha`/`PedidoGerarSegredoMFA`/`PedidoValidarMFA` e handler registrados no Servidor Java |
+| 1 — Autenticação & Conta | Recuperação de senha + `PedidoGerarSegredoMFA`/`PedidoValidarMFA` e handler registrados no Servidor Java |
 | 2 — Transações | Categorização automática (`PedidoCategorizarTransacao` + handler no Servidor Java) + edição manual de categoria |
 | 3 — Painel & Análise | Fluxo de caixa e economia (`PedidoCalcularIndicadores` + handler no Servidor Java) |
 | 4 — Mentor Financeiro (IA) | Integração real com a API de IA generativa + `PedidoMontarContextoIA` no Servidor Java |
@@ -248,9 +248,9 @@ Cada grupo segue a mesma sequência (CRUD básico → regra de negócio própria
 |---|---|
 | 1 — Autenticação & Conta | MFA opcional + tela de perfil e preferências (modo claro/escuro, ocultar valores) + plano da conta (Free/Pro) e canal de suporte |
 | 2 — Transações | Integração com sandbox de Open Finance da Pluggy (conectar conta + importar transações) + gerenciamento de contas conectadas + filtros avançados (período, valor, origem) + duplicar lançamento |
-| 3 — Painel & Análise | Gráfico de gastos por categoria (com visão por grupos) + comparação entre períodos |
+| 3 — Painel & Análise | Gráfico de gastos por categoria (com visão por grupos) + comparação entre períodos (`PedidoCompararPeriodos` + handler no Servidor Java) |
 | 4 — Mentor Financeiro (IA) | Explicações proativas sobre padrões + filtro de segurança (nunca recomendar ativo) |
-| 5 — Metas & Investimentos | Painel de investimentos simulado (patrimônio, portfólio) + parcelamentos ativos do cartão |
+| 5 — Metas & Investimentos | Painel de investimentos simulado (patrimônio, portfólio; `PedidoRentabilidadeSimulada` com juros compostos) + parcelamentos ativos do cartão (`PedidoCalcularParcelamentos`: parcela, juros e saldo devedor), ambos no Servidor Java |
 
 ### Sprint 4 — 10 dias — Integração real entre grupos + testes
 | Grupo | Entrega |
