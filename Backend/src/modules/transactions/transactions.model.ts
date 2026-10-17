@@ -1,6 +1,10 @@
 // src/modules/transactions/transactions.model.ts
 import { Schema, model } from "mongoose";
 
+// Valores aceitos em formaPagamento (a API e o banco usam esta mesma lista).
+export const FORMAS_PAGAMENTO = ["dinheiro", "pix", "debito", "credito", "boleto", "outro"] as const;
+export type FormaPagamento = (typeof FORMAS_PAGAMENTO)[number];
+
 export interface TransactionDocument {
   userId: string;
   tipo: "receita" | "despesa";
@@ -8,6 +12,7 @@ export interface TransactionDocument {
   categoria: string;
   data: Date;
   descricao: string;
+  formaPagamento: FormaPagamento;
   origem: "manual" | "pluggy";
 }
 
@@ -19,6 +24,7 @@ const TransactionSchema = new Schema<TransactionDocument>(
     categoria: { type: String, required: true },
     data: { type: Date, required: true },
     descricao: { type: String, required: true },
+    formaPagamento: { type: String, enum: FORMAS_PAGAMENTO, default: "outro" },
     origem: { type: String, enum: ["manual", "pluggy"], default: "manual" },
   },
   { timestamps: true }

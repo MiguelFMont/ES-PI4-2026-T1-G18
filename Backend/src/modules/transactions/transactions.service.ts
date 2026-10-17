@@ -19,6 +19,7 @@ function paraDto(t: TransactionDocument & { _id: { toString(): string } }): Tran
     categoria: t.categoria,
     data: t.data.toISOString(),
     descricao: t.descricao,
+    formaPagamento: t.formaPagamento,
     origem: t.origem,
   };
 }

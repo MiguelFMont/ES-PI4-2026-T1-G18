@@ -1,5 +1,6 @@
 // src/modules/transactions/transactions.dto.ts
 import { z } from "zod";
+import { FORMAS_PAGAMENTO, FormaPagamento } from "./transactions.model";
 
 export const createTransactionSchema = z.object({
   tipo: z.enum(["receita", "despesa"]),
@@ -7,6 +8,7 @@ export const createTransactionSchema = z.object({
   categoria: z.string().trim().min(1).optional(),
   data: z.coerce.date(),
   descricao: z.string().trim().min(1),
+  formaPagamento: z.enum(FORMAS_PAGAMENTO).default("outro"),
   origem: z.enum(["manual", "pluggy"]).default("manual"),
 });
 
@@ -39,5 +41,6 @@ export interface TransactionResponseDto {
   categoria: string;
   data: string; // ISO 8601
   descricao: string;
+  formaPagamento: FormaPagamento;
   origem: "manual" | "pluggy";
 }
