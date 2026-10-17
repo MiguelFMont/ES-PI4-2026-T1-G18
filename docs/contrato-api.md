@@ -9,7 +9,7 @@ Documento vivo que descreve **o que o Backend aceita e devolve**. É a referênc
 | Módulo | Prefixo | Grupo | Estado |
 |---|---|---|---|
 | Sistema | `/v1/health`, `/v1/eco` | Todos | Documentado (seção 1.6) |
-| Transações | `/v1/transactions` | 2 | **Cadastro e listagem documentados** (seção 2); edição, exclusão, duplicação e importação planejadas |
+| Transações | `/v1/transactions` | 2 | **Cadastro e listagem (com filtros e paginação) documentados** (seção 2); edição, exclusão, duplicação e importação planejadas |
 | Autenticação e conta | `/v1/auth` | 1 | A documentar |
 | Painel e análise | `/v1/dashboard` | 3 | A documentar |
 | Mentor financeiro (IA) | `/v1/mentor-ia` | 4 | A documentar |
@@ -194,10 +194,10 @@ Resposta `400` quando vários campos estão errados (`{"tipo":"transferencia","v
 
 ### 2.5 Listar transações
 
-`GET /v1/transactions` → `200 OK`, com uma **lista** de `Transaction`.
+`GET /v1/transactions` → `200 OK`, com **uma página** de transações e os dados para montar a paginação (ver "Resposta").
 
-- Devolve só as transações do usuário do token, da **mais recente para a mais antiga** (pela `data`).
-- Sem filtros, devolve todas. **Paginação ainda não existe** (está planejada com `limite` e `pagina`); quando entrar, este documento será atualizado.
+- Devolve só as transações do usuário do token, da **mais recente para a mais antiga** (pela `data`; em empate, a criada por último vem primeiro).
+- Sempre paginada: sem `limite` e `pagina`, devolve a página 1 com até 20 itens.
 
 Parâmetros de consulta (todos opcionais, combinam entre si com "e"):
 
@@ -209,34 +209,94 @@ Parâmetros de consulta (todos opcionais, combinam entre si com "e"):
 | `dataFim` | data | `data` menor ou igual a este valor. Se for meia-noite UTC (como `2026-10-31`), inclui o **dia inteiro** |
 | `valorMin` | número ≥ 0 | `valor` maior ou igual a este valor |
 | `valorMax` | número ≥ 0 | `valor` menor ou igual a este valor |
+| `pagina` | inteiro ≥ 1 | Qual página devolver. Padrão `1` |
+| `limite` | inteiro de 1 a 100 | Quantos itens por página. Padrão `20` |
 
 Os limites de data e de valor são **inclusivos**. `valorMin` não pode ser maior que `valorMax`, e `dataInicio` não pode ser depois de `dataFim`.
+
+**Resposta:**
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `itens` | lista de `Transaction` | As transações desta página |
+| `pagina` | inteiro | A página devolvida (começa em 1) |
+| `limite` | inteiro | Itens por página |
+| `total` | inteiro | Quantas transações passam nos filtros, somando **todas** as páginas |
+| `totalPaginas` | inteiro | `ceil(total / limite)`. É `0` quando não há nenhuma transação |
 
 Exemplo: `GET /v1/transactions?valorMin=100&dataInicio=2026-10-01&dataFim=2026-10-31`
 
 ```json
-[
-  {
-    "id": "6ad3fd7c273f8f0946dd77e7",
-    "tipo": "receita",
-    "valor": 1500,
-    "categoria": "Outros",
-    "data": "2026-10-01T00:00:00.000Z",
-    "descricao": "Salário",
-    "formaPagamento": "outro",
-    "origem": "manual"
-  }
-]
+{
+  "itens": [
+    {
+      "id": "6ad3ffeadf71ebb52b124d91",
+      "tipo": "receita",
+      "valor": 1500,
+      "categoria": "Outros",
+      "data": "2026-10-01T00:00:00.000Z",
+      "descricao": "Salário",
+      "formaPagamento": "outro",
+      "origem": "manual"
+    }
+  ],
+  "pagina": 1,
+  "limite": 20,
+  "total": 1,
+  "totalPaginas": 1
+}
 ```
 
-Sem resultados, a resposta é a lista vazia `[]` (não é erro).
+Exemplo de paginação: `GET /v1/transactions?limite=1&pagina=2` (o usuário tem 2 transações)
+
+```json
+{
+  "itens": [
+    {
+      "id": "6ad3ffeadf71ebb52b124d91",
+      "tipo": "receita",
+      "valor": 1500,
+      "categoria": "Outros",
+      "data": "2026-10-01T00:00:00.000Z",
+      "descricao": "Salário",
+      "formaPagamento": "outro",
+      "origem": "manual"
+    }
+  ],
+  "pagina": 2,
+  "limite": 1,
+  "total": 2,
+  "totalPaginas": 2
+}
+```
+
+Como usar na tela:
+- Mostre "página `pagina` de `totalPaginas`" e habilite "próxima" enquanto `pagina < totalPaginas`.
+- Os filtros valem para o `total` também: com `categoria=Alimentacao`, o `total` conta só as dessa categoria.
+- Pedir uma página **além da última** não é erro: a resposta traz `"itens": []`, mantendo o `total` e o `totalPaginas`.
+- Sem nenhuma transação, a resposta é `{"itens":[],"pagina":1,"limite":20,"total":0,"totalPaginas":0}`.
 
 Erros:
 
 | Status | `code` | Quando |
 |---|---|---|
-| 400 | `VALIDATION_ERROR` | Filtro inválido: `origem` desconhecida, número ou data inválidos, `valorMin` maior que `valorMax`, `dataInicio` depois de `dataFim` |
+| 400 | `VALIDATION_ERROR` | Parâmetro inválido: `origem` desconhecida, número ou data inválidos, `valorMin` maior que `valorMax`, `dataInicio` depois de `dataFim`, `pagina` menor que 1, `limite` fora de 1 a 100 ou não inteiro |
 | 401 | `UNAUTHENTICATED` | Sem token ou token inválido |
+
+Exemplo de `400` para `?limite=500&pagina=0`:
+
+```json
+{
+  "error": {
+    "message": "Dados inválidos",
+    "code": "VALIDATION_ERROR",
+    "details": {
+      "pagina": ["Number must be greater than or equal to 1"],
+      "limite": ["Number must be less than or equal to 100"]
+    }
+  }
+}
+```
 
 Exemplo de `400` para `?valorMin=100&valorMax=50`:
 

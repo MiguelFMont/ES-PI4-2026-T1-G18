@@ -4,6 +4,7 @@ import { TransactionDocument } from "./transactions.model";
 import {
   CreateTransactionDto,
   TransactionFiltersDto,
+  TransactionListResponseDto,
   TransactionResponseDto,
 } from "./transactions.dto";
 
@@ -25,9 +26,15 @@ function paraDto(t: TransactionDocument & { _id: { toString(): string } }): Tran
 }
 
 export const transactionsService = {
-  async list(userId: string, filtros: TransactionFiltersDto) {
-    const transacoes = await transactionsRepository.findByUser(userId, filtros);
-    return transacoes.map(paraDto);
+  async list(userId: string, filtros: TransactionFiltersDto): Promise<TransactionListResponseDto> {
+    const { docs, total } = await transactionsRepository.findByUser(userId, filtros);
+    return {
+      itens: docs.map(paraDto),
+      pagina: filtros.pagina,
+      limite: filtros.limite,
+      total,
+      totalPaginas: Math.ceil(total / filtros.limite),
+    };
   },
 
   async create(userId: string, dados: CreateTransactionDto) {

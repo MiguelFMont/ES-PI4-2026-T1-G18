@@ -20,6 +20,8 @@ export const transactionFiltersSchema = z
     dataFim: z.coerce.date().optional(),
     valorMin: z.coerce.number().min(0).optional(),
     valorMax: z.coerce.number().min(0).optional(),
+    pagina: z.coerce.number().int().min(1).default(1),
+    limite: z.coerce.number().int().min(1).max(100).default(20),
   })
   .refine((f) => !f.dataInicio || !f.dataFim || f.dataInicio <= f.dataFim, {
     message: "dataInicio não pode ser depois de dataFim",
@@ -32,6 +34,15 @@ export const transactionFiltersSchema = z
 
 export type CreateTransactionDto = z.infer<typeof createTransactionSchema>;
 export type TransactionFiltersDto = z.infer<typeof transactionFiltersSchema>;
+
+// Resposta da listagem: uma página de transações mais os dados para montar a paginação na tela.
+export interface TransactionListResponseDto {
+  itens: TransactionResponseDto[];
+  pagina: number; // página devolvida (começa em 1)
+  limite: number; // itens por página
+  total: number; // total de transações que passam nos filtros (todas as páginas)
+  totalPaginas: number; // 0 quando não há nenhuma transação
+}
 
 // O que o Frontend recebe: `id` no lugar de `_id`, sem `userId` nem campos internos do Mongo.
 export interface TransactionResponseDto {

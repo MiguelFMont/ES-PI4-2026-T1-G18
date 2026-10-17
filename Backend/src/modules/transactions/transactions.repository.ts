@@ -32,7 +32,17 @@ export const transactionsRepository = {
       };
     }
 
-    return TransactionModel.find(query).sort({ data: -1 }).lean();
+    // `_id` desempata transações da mesma data, para a ordem (e as páginas) ficarem estáveis
+    const [docs, total] = await Promise.all([
+      TransactionModel.find(query)
+        .sort({ data: -1, _id: -1 })
+        .skip((filtros.pagina - 1) * filtros.limite)
+        .limit(filtros.limite)
+        .lean(),
+      TransactionModel.countDocuments(query),
+    ]);
+
+    return { docs, total };
   },
 
   async create(dados: CreateTransactionDto & { userId: string; categoria: string }) {
