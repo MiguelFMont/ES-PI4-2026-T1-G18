@@ -18,3 +18,5 @@ sistemaRouter.post("/eco", async (req, res, next) => {
     next(erro);
   }
 });
+
+export default sistemaRouter;
