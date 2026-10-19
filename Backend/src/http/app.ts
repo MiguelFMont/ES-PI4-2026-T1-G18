@@ -2,8 +2,8 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
-import { sistemaRouter } from "../modules/sistema/sistema.routes";
-import { transactionsRouter } from "../modules/transactions/transactions.routes";
+import  router   from "../modules/index";
+import { frontendRouter } from "./frontend";
 import { errorHandler } from "../middlewares/error-handler.middleware";
 import { AppError } from "../shared/errors/app-error";
 
@@ -13,15 +13,10 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
-app.use("/v1", sistemaRouter);
-app.use("/v1/transactions", transactionsRouter);
+app.use("/v1", router);
 
-// Cada grupo adiciona UMA linha aqui quando seu router existir, por exemplo:
-// app.use("/v1/auth", authRouter);
-// app.use("/v1/dashboard", dashboardRouter);
-// app.use("/v1/mentor-ia", mentorIaRouter);
-// app.use("/v1/goals", goalsRouter);
-// app.use("/v1/investments", investmentsRouter);
+// O Frontend é entregue pelo próprio Backend (páginas em /, /transactions...). Depois da API e antes do 404.
+app.use(frontendRouter);
 
 app.use((_req, _res, next) => next(new AppError("Rota não encontrada", 404, "NOT_FOUND")));
 

@@ -71,7 +71,7 @@ Em cada pasta há uma subpasta `exemplo/` com um `.md` para cada arquivo `.ts` p
 src/
   config/            variáveis de ambiente (env.ts)
   database/          conexão com o MongoDB (mongo.connection.ts)
-  http/              app.ts (Express e rotas) e server.ts (listen)
+  http/              app.ts (Express e rotas), frontend.ts (entrega o Frontend e as páginas) e server.ts (listen)
   middlewares/       auth.middleware.ts (JWT) e error-handler.middleware.ts
   java-client/       cliente do Servidor Java (comunicado.ts, parceiro.ts, java-server.client.ts)
   shared/errors/     erro compartilhado (app-error.ts) e tabela code -> status (error-codes.ts)
