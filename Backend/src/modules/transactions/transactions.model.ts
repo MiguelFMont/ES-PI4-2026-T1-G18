@@ -12,6 +12,7 @@ export interface TransactionDocument {
   categoria: string;
   data: Date;
   descricao: string;
+  observacoes?: string;
   formaPagamento: FormaPagamento;
   origem: "manual" | "pluggy";
 }
@@ -24,6 +25,7 @@ const TransactionSchema = new Schema<TransactionDocument>(
     categoria: { type: String, required: true },
     data: { type: Date, required: true },
     descricao: { type: String, required: true },
+    observacoes: { type: String, maxlength: 300 },
     formaPagamento: { type: String, enum: FORMAS_PAGAMENTO, default: "outro" },
     origem: { type: String, enum: ["manual", "pluggy"], default: "manual" },
   },

@@ -21,14 +21,14 @@ const D = "despesa" as const;
 
 const EXEMPLOS: Exemplo[] = [
   // receitas
-  { tipo: R, valor: 4500, categoria: "Salario", descricao: "Salário", formaPagamento: "pix", diasAtras: 2 },
+  { tipo: R, valor: 4500, categoria: "Salario", descricao: "Salário", observacoes: "Salário de outubro", formaPagamento: "pix", diasAtras: 2 },
   { tipo: R, valor: 4500, categoria: "Salario", descricao: "Salário", formaPagamento: "pix", diasAtras: 32 },
   { tipo: R, valor: 4500, categoria: "Salario", descricao: "Salário", formaPagamento: "pix", diasAtras: 62 },
-  { tipo: R, valor: 850, categoria: "Outros", descricao: "Freelance site", formaPagamento: "pix", diasAtras: 15 },
+  { tipo: R, valor: 850, categoria: "Outros", descricao: "Freelance site", observacoes: "Pagamento da 1ª parcela", formaPagamento: "pix", diasAtras: 15 },
   { tipo: R, valor: 1200, categoria: "Outros", descricao: "Freelance app", formaPagamento: "pix", diasAtras: 47 },
   { tipo: R, valor: 120, categoria: "Outros", descricao: "Reembolso", formaPagamento: "pix", diasAtras: 20 },
   // moradia
-  { tipo: D, valor: 1400, categoria: "Moradia", descricao: "Aluguel", formaPagamento: "boleto", diasAtras: 5 },
+  { tipo: D, valor: 1400, categoria: "Moradia", descricao: "Aluguel", observacoes: "Vence todo dia 5", formaPagamento: "boleto", diasAtras: 5 },
   { tipo: D, valor: 1400, categoria: "Moradia", descricao: "Aluguel", formaPagamento: "boleto", diasAtras: 35 },
   { tipo: D, valor: 1400, categoria: "Moradia", descricao: "Aluguel", formaPagamento: "boleto", diasAtras: 65 },
   // alimentação
@@ -38,7 +38,7 @@ const EXEMPLOS: Exemplo[] = [
   { tipo: D, valor: 301.1, categoria: "Alimentacao", descricao: "Supermercado", formaPagamento: "debito", diasAtras: 38 },
   { tipo: D, valor: 220.75, categoria: "Alimentacao", descricao: "Supermercado", formaPagamento: "debito", diasAtras: 46 },
   { tipo: D, valor: 278.6, categoria: "Alimentacao", descricao: "Supermercado", formaPagamento: "debito", diasAtras: 70 },
-  { tipo: D, valor: 68.5, categoria: "Alimentacao", descricao: "Restaurante", formaPagamento: "credito", diasAtras: 4 },
+  { tipo: D, valor: 68.5, categoria: "Alimentacao", descricao: "Restaurante", observacoes: "Almoço com a equipe", formaPagamento: "credito", diasAtras: 4 },
   { tipo: D, valor: 92, categoria: "Alimentacao", descricao: "Restaurante", formaPagamento: "credito", diasAtras: 12 },
   { tipo: D, valor: 54.9, categoria: "Alimentacao", descricao: "Restaurante", formaPagamento: "credito", diasAtras: 40 },
   // transporte

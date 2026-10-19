@@ -94,6 +94,7 @@ Todas as rotas exigem token. Um usuário só vê e altera as próprias transaç�
 | `data` | texto (ISO 8601) | Data da movimentação |
 | `descricao` | texto | Descrição livre |
 | `formaPagamento` | texto | Uma das formas de pagamento (ver 2.2). Se não for enviada, vale `"outro"` |
+| `observacoes` | texto | Anotação livre de até 300 caracteres. **Só aparece quando foi informada** |
 | `origem` | `"manual"` ou `"pluggy"` | Como a transação entrou: digitada pelo usuário ou importada |
 
 ### 2.2 Formas de pagamento
@@ -116,6 +117,7 @@ O campo `categoria` é texto livre, mas o Frontend deve oferecer esta lista para
 | `descricao` | texto | Sim | Não vazio (espaços nas pontas são removidos) |
 | `categoria` | texto | Não | Se faltar, vale `"Outros"` |
 | `formaPagamento` | texto | Não | Uma da lista 2.2. Se faltar, vale `"outro"` |
+| `observacoes` | texto | Não | Até 300 caracteres (espaços nas pontas são removidos). Texto vazio é o mesmo que não enviar |
 | `origem` | texto | Não | `manual` (padrão) ou `pluggy` |
 
 Exemplo, requisição completa:
@@ -203,7 +205,10 @@ Parâmetros de consulta (todos opcionais, combinam entre si com "e"):
 
 | Parâmetro | Tipo | Efeito |
 |---|---|---|
+| `tipo` | `receita` ou `despesa` | Só receitas ou só despesas |
 | `categoria` | texto | Só desta categoria (comparação exata) |
+| `formaPagamento` | texto | Só desta forma de pagamento (lista 2.2) |
+| `busca` | texto de 1 a 100 caracteres | Só transações cuja `descricao` **contém** o texto (sem diferenciar maiúsculas de minúsculas) |
 | `origem` | `manual` ou `pluggy` | Só desta origem |
 | `dataInicio` | data | `data` maior ou igual a este valor |
 | `dataFim` | data | `data` menor ou igual a este valor. Se for meia-noite UTC (como `2026-10-31`), inclui o **dia inteiro** |
@@ -223,6 +228,7 @@ Os limites de data e de valor são **inclusivos**. `valorMin` não pode ser maio
 | `limite` | inteiro | Itens por página |
 | `total` | inteiro | Quantas transações passam nos filtros, somando **todas** as páginas |
 | `totalPaginas` | inteiro | `ceil(total / limite)`. É `0` quando não há nenhuma transação |
+| `resumo` | objeto | Totais de **todas** as transações que passam nos filtros (não só desta página): `receitas`, `despesas` (somas, sempre positivas) e `saldo` (`receitas - despesas`, pode ser negativo). É assim que a tela mostra o extrato sem somar página por página |
 
 Exemplo: `GET /v1/transactions?valorMin=100&dataInicio=2026-10-01&dataFim=2026-10-31`
 
@@ -243,7 +249,8 @@ Exemplo: `GET /v1/transactions?valorMin=100&dataInicio=2026-10-01&dataFim=2026-1
   "pagina": 1,
   "limite": 20,
   "total": 1,
-  "totalPaginas": 1
+  "totalPaginas": 1,
+  "resumo": { "receitas": 1500, "despesas": 0, "saldo": 1500 }
 }
 ```
 
@@ -266,21 +273,22 @@ Exemplo de paginação: `GET /v1/transactions?limite=1&pagina=2` (o usuário tem
   "pagina": 2,
   "limite": 1,
   "total": 2,
-  "totalPaginas": 2
+  "totalPaginas": 2,
+  "resumo": { "receitas": 1500, "despesas": 42.9, "saldo": 1457.1 }
 }
 ```
 
 Como usar na tela:
 - Mostre "página `pagina` de `totalPaginas`" e habilite "próxima" enquanto `pagina < totalPaginas`.
-- Os filtros valem para o `total` também: com `categoria=Alimentacao`, o `total` conta só as dessa categoria.
+- Os filtros valem para o `total` e o `resumo` também: com `categoria=Alimentacao`, os dois contam só as dessa categoria.
 - Pedir uma página **além da última** não é erro: a resposta traz `"itens": []`, mantendo o `total` e o `totalPaginas`.
-- Sem nenhuma transação, a resposta é `{"itens":[],"pagina":1,"limite":20,"total":0,"totalPaginas":0}`.
+- Sem nenhuma transação, a resposta é `{"itens":[],"pagina":1,"limite":20,"total":0,"totalPaginas":0,"resumo":{"receitas":0,"despesas":0,"saldo":0}}`.
 
 Erros:
 
 | Status | `code` | Quando |
 |---|---|---|
-| 400 | `VALIDATION_ERROR` | Parâmetro inválido: `origem` desconhecida, número ou data inválidos, `valorMin` maior que `valorMax`, `dataInicio` depois de `dataFim`, `pagina` menor que 1, `limite` fora de 1 a 100 ou não inteiro |
+| 400 | `VALIDATION_ERROR` | Parâmetro inválido: `tipo`, `formaPagamento` ou `origem` desconhecidos, `busca` vazia ou com mais de 100 caracteres, número ou data inválidos, `valorMin` maior que `valorMax`, `dataInicio` depois de `dataFim`, `pagina` menor que 1, `limite` fora de 1 a 100 ou não inteiro |
 | 401 | `UNAUTHENTICATED` | Sem token ou token inválido |
 
 Exemplo de `400` para `?limite=500&pagina=0`:
