@@ -63,7 +63,7 @@ Quando uma operação falha, o Servidor responde `{"tipo":"Erro","dados":{"code"
 
 Em cada pasta há uma subpasta `exemplo/` com um `.md` para cada arquivo `.ts` planejado, explicando o que o arquivo deve ter (e o que **não** é responsabilidade dele) e trazendo um exemplo de implementação. Ao implementar, crie o `.ts` na pasta correspondente; o `.md` fica como referência (e pode ser apagado quando o projeto estiver andando).
 
-**Já implementados como código** (base da Sprint 0): `config/env.ts`, `http/app.ts`, `http/server.ts`, `database/mongo.connection.ts`, `java-client/` (`comunicado`, `parceiro`, `java-server.client`), `middlewares/error-handler.middleware.ts`, `shared/errors/` (`app-error`, `error-codes`) e `modules/sistema/` (`/v1/health` e `/v1/eco`, para testar o caminho até o Servidor). O restante (módulos dos grupos, `auth.middleware`) está só nos `.md`.
+**Já implementados como código** (base da Sprint 0): `config/env.ts`, `http/app.ts`, `http/server.ts`, `database/mongo.connection.ts`, `java-client/` (`comunicado`, `parceiro`, `java-server.client`), `middlewares/error-handler.middleware.ts`, `shared/errors/` (`app-error`, `error-codes`) `modules/sistema/` (`/v1/health` e `/v1/eco`, para testar o caminho até o Servidor), `middlewares/auth.middleware.ts` e o módulo `modules/transactions/` (cadastro e listagem, Grupo 2), que serve de modelo para os outros. O restante dos módulos dos grupos está só nos `.md`.
 
 ## Estrutura de pastas
 
@@ -71,7 +71,7 @@ Em cada pasta há uma subpasta `exemplo/` com um `.md` para cada arquivo `.ts` p
 src/
   config/            variáveis de ambiente (env.ts)
   database/          conexão com o MongoDB (mongo.connection.ts)
-  http/              app.ts (Express e rotas) e server.ts (listen)
+  http/              app.ts (Express e rotas), frontend.ts (entrega o Frontend e as páginas) e server.ts (listen)
   middlewares/       auth.middleware.ts (JWT) e error-handler.middleware.ts
   java-client/       cliente do Servidor Java (comunicado.ts, parceiro.ts, java-server.client.ts)
   shared/errors/     erro compartilhado (app-error.ts) e tabela code -> status (error-codes.ts)
@@ -156,4 +156,15 @@ Para conferir a base (com o Servidor no ar):
 curl localhost:3001/v1/health                       # {"status":"ok"}: Backend de pé
 curl -X POST localhost:3001/v1/eco -H "content-type: application/json" -d '{"oi":1}'
 # {"oi":1}: Backend -> socket -> Servidor Java -> de volta
+```
+
+## Contrato da API e dados de exemplo
+
+- **Contrato da API:** [`../docs/contrato-api.md`](../docs/contrato-api.md) descreve as convenções (autenticação, formatos, erros) e as rotas de cada módulo, com exemplos reais. Quem cria ou muda uma rota atualiza esse documento no mesmo Pull Request.
+- **Seed de transações:** insere cerca de 33 transações de exemplo (últimos 3 meses) para um usuário, sem digitar nada. Precisa da `MONGO_URI` no `.env`:
+
+```bash
+npm run seed:transacoes                        # usuário "usuario-demo"
+npm run seed:transacoes -- <userId>            # usuário específico (use o id que está no seu token)
+npm run seed:transacoes -- <userId> --limpar   # apaga antes as transações desse usuário
 ```

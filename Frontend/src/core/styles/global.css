@@ -8,10 +8,163 @@
     --black: #000000;
     --white: #ffffff;
     --gray: #333333;
+
+    /* tema escuro (padrão) */
+    --fundo: #0b0c10;
+    --fundo-card: #14161c;
+    --fundo-campo: #1c1f27;
+    --borda: #272b35;
+    --texto: #f4f5f7;
+    --texto-suave: #9aa1b2;
+    --destaque: #c6f432;
+    --destaque-texto: #0b0c10;
+    --positivo: #4ade80;
+    --negativo: #f87171;
+    --foco: #fbbf24;
+}
+
+:root[data-tema='claro'] {
+    --fundo: #f4f5f7;
+    --fundo-card: #ffffff;
+    --fundo-campo: #ffffff;
+    --borda: #d0d5dd;
+    --texto: #101828;
+    --texto-suave: #475467;
+    --destaque: #4d7c0f;
+    --destaque-texto: #ffffff;
+    --positivo: #067647;
+    --negativo: #b42318;
+    --foco: #b45309;
 }
 
 body {
     font-family: 'Roboto', sans-serif;
-    background-color: var(--white);
-    color: var(--black);
+    background-color: var(--fundo);
+    color: var(--texto);
+    min-height: 100vh;
+}
+
+/* texto só para leitores de tela */
+.so-leitor {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+/* sem sessão (tela de login) o menu não aparece; as páginas internas já nascem com a classe com-sessao */
+body:not(.com-sessao) #main-header {
+    display: none;
+}
+
+/* com sessão: menu lateral + conteúdo (o main.js marca o body) */
+body.com-sessao {
+    display: grid;
+    grid-template-columns: 15rem 1fr;
+}
+
+body.com-sessao #app-content {
+    min-width: 0; /* sem isso uma tabela larga estica a coluna em vez de rolar dentro do cartão */
+}
+
+body.com-sessao #main-header {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    padding: 1.5rem 1rem;
+    background: var(--fundo-card);
+    border-right: 1px solid var(--borda);
+}
+
+.menu-lateral {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    height: 100%;
+}
+
+.menu-lateral__marca {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--destaque);
+}
+
+.main-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.main-nav a {
+    color: var(--texto-suave);
+    text-decoration: none;
+    padding: 0.6rem 0.75rem;
+    border-radius: 0.6rem;
+}
+
+.main-nav a:hover {
+    color: var(--texto);
+}
+
+.main-nav a[aria-current='page'] {
+    color: var(--destaque-texto);
+    background: var(--destaque);
+    font-weight: 700;
+}
+
+.menu-lateral__rodape {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: auto;
+}
+
+.menu-lateral__rodape button {
+    min-height: 2.5rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--borda);
+    border-radius: 0.6rem;
+    color: var(--texto);
+    background: transparent;
+    font: inherit;
+    cursor: pointer;
+}
+
+.main-nav a:focus-visible,
+.menu-lateral__rodape button:focus-visible {
+    outline: 3px solid var(--foco);
+    outline-offset: 2px;
+}
+
+@media (max-width: 767px) {
+    body.com-sessao {
+        grid-template-columns: 1fr;
+    }
+
+    body.com-sessao #main-header {
+        position: static;
+        height: auto;
+        border-right: 0;
+        border-bottom: 1px solid var(--borda);
+        padding: 0.75rem 1rem;
+    }
+
+    .menu-lateral {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .main-nav {
+        flex-direction: row;
+    }
+
+    .menu-lateral__rodape {
+        flex-direction: row;
+        margin-top: 0;
+        margin-left: auto;
+    }
 }

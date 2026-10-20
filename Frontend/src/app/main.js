@@ -1,7 +1,22 @@
-import { hasToken, clearSession } from '../core/session/storage.js';
+import { hasToken } from '../core/session/storage.js';
+import { iniciarTema } from '../core/theme/theme.js';
+import { ligarMenu } from '../core/layout/menu.js';
 
 const PUBLIC_ROUTES = new Set(['login']);
 const appContent = document.querySelector('#app-content');
+
+iniciarTema();
+
+ligarMenu();
+
+// O menu está escrito no index.html; aqui só se mostra (com sessão) e se marca o item da rota atual.
+function renderMenu(route) {
+  document.body.classList.toggle('com-sessao', hasToken());
+  for (const link of document.querySelectorAll('#main-header a[data-rota]')) {
+    if (link.dataset.rota === route) link.setAttribute('aria-current', 'page');
+    else link.removeAttribute('aria-current');
+  }
+}
 
 function currentRoute() {
   return window.location.hash.slice(1).split('?')[0] || 'login';
@@ -36,12 +51,7 @@ function renderRoute() {
         <section aria-labelledby="dashboard-title">
           <h1 id="dashboard-title">Dashboard</h1>
           <p>Bem-vindo ao seu painel financeiro.</p>
-          <button type="button" id="logout-button">Sair</button>
         </section>`;
-      appContent.querySelector('#logout-button')?.addEventListener('click', () => {
-        clearSession();
-        navigate('login');
-      });
       break;
     default:
       appContent.innerHTML = `
@@ -50,6 +60,8 @@ function renderRoute() {
           <a href="#login">Voltar para o início</a>
         </section>`;
   }
+
+  renderMenu(route);
 }
 
 window.addEventListener('hashchange', renderRoute);

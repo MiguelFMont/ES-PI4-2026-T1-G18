@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "tsx watch src/http/server.ts",
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/http/server.js"
+    "start": "node dist/http/server.js",
+    "seed:transacoes": "tsx src/database/seeds/transactions.seed.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
