@@ -20,11 +20,14 @@
     --destaque-texto: #0b0c10;
     --positivo: #4ade80;
     --negativo: #f87171;
-    --foco: #fbbf24;
+    --foco: #c6f432;
+    /* sombra bem suave dos cartões, botões e campos (no lugar de bordas) */
+    --sombra: 0 1px 2px rgba(48, 46, 46, 0.044), 0 2px 8px rgba(58, 56, 56, 0.18);
+    --backgroundBarra:rgba(211, 211, 211, 0.071);
 }
 
 :root[data-tema='claro'] {
-    --fundo: #f4f5f7;
+    --fundo: #ffffff;
     --fundo-card: #ffffff;
     --fundo-campo: #ffffff;
     --borda: #d0d5dd;
@@ -34,14 +37,48 @@
     --destaque-texto: #ffffff;
     --positivo: #067647;
     --negativo: #b42318;
-    --foco: #b45309;
+    --foco: grey;
+    --sombra: 0 2px 1px rgb(16 24 40 / 0.03), 0 1px 4px rgb(16 24 40 / 0.07);
+    /*cor da barra que separa o botão "nova transação" dos cards de
+        entrada, saida e saldo. Coloquei aqui porque ela muda o tom
+        de acordo com o tema da pagina (claro/escuro)
+        -Miguel Fernandes Monteiro */
+    --backgroundBarra:rgba(211, 211, 211, 0.156); 
 }
 
 body {
-    font-family: 'Roboto', sans-serif;
+    /* Nunito vem do Google Fonts (<link> no <head> de cada página); as outras só entram se ela não carregar */
+    font-family: 'Nunito', 'Roboto', system-ui, sans-serif;
+    font-weight: 500; /* um pouco mais grossa que o normal (400); títulos e botões têm os próprios pesos */
     background-color: var(--fundo);
     color: var(--texto);
     min-height: 100vh;
+}
+
+/* Troca de tema, caso 1 (View Transitions): a animação do círculo que nasce no botão é criada em
+   core/theme/theme.js. Aqui se desliga o fade padrão e se põe o tema novo por cima do antigo. */
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+    z-index: 1;
+}
+
+::view-transition-new(root) {
+    z-index: 2147483646;
+}
+
+/* Troca de tema, caso 2 (navegadores sem View Transitions): fade das cores. A classe é ligada por theme.js só
+   durante a troca (cerca de 0,4 s); fora dela as transições ficam desligadas e o tema inicial carrega sem animação. */
+html.tema-em-transicao,
+html.tema-em-transicao *,
+html.tema-em-transicao *::before,
+html.tema-em-transicao *::after {
+    transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease,
+        box-shadow 0.4s ease, outline-color 0.4s ease !important;
 }
 
 /* texto só para leitores de tela */
@@ -124,10 +161,11 @@ body.com-sessao #main-header {
 .menu-lateral__rodape button {
     min-height: 2.5rem;
     padding: 0.5rem 0.75rem;
-    border: 1px solid var(--borda);
+    border: 0;
     border-radius: 0.6rem;
     color: var(--texto);
-    background: transparent;
+    background: var(--fundo-campo);
+    box-shadow: var(--sombra);
     font: inherit;
     cursor: pointer;
 }

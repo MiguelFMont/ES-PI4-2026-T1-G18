@@ -1,6 +1,7 @@
 /* Campos de formulário compartilhados (usa as variáveis de tema de core/styles/global.css). */
 
 .campo {
+  --escala-foco: 1.03; /* quanto o campo cresce quando está selecionado (o mesmo valor do hover dos botões) */
   display: grid;
   gap: 0.35rem;
   min-width: 0;
@@ -18,11 +19,13 @@
   width: 100%;
   min-height: 2.75rem;
   padding: 0.5rem 0.75rem;
-  border: 1px solid var(--borda);
+  border: 0;
   border-radius: 0.6rem;
+  box-shadow: var(--sombra);
   color: var(--texto);
   background: var(--fundo-campo);
   font: inherit;
+  transition: scale 0.1s ease; /* o campo cresce e volta suavemente (mesma duração do hover dos botões) */
 }
 
 .campo textarea {
@@ -35,22 +38,96 @@
   opacity: 0.8;
 }
 
-.campo input:focus-visible,
-.campo select:focus-visible,
-.campo textarea:focus-visible {
-  outline: 3px solid var(--foco);
-  outline-offset: 1px;
+/* Campo selecionado: sem contorno, ele cresce um pouco (como o hover dos botões). */
+.campo input:not([type='radio']):not([type='checkbox']):focus,
+.campo select:focus,
+.campo select:open, /* com a lista aberta o foco passa para ela, mas o select continua "selecionado" */
+.campo textarea:focus {
+  outline: none;
+  scale: var(--escala-foco);
 }
 
-.campo input[aria-invalid='true'],
+.campo input:not([type='radio']):not([type='checkbox'])[aria-invalid='true'],
 .campo select[aria-invalid='true'],
 .campo textarea[aria-invalid='true'] {
-  border-color: var(--negativo);
-  border-width: 2px;
+  /* sem borda: o erro aparece como um anel vermelho (o seletor do input é mais longo para ganhar da regra base) */
+  box-shadow: 0 0 0 2px var(--negativo), var(--sombra);
 }
 
 .campo__erro {
   margin: 0;
   font-size: 0.85rem;
   color: var(--negativo);
+}
+
+/* Lista aberta do select, parecida com o calendário do período: cantos arredondados, sombra, fundo de cartão,
+   opções com cantos arredondados e a mesma descida suave. Usa o select personalizável (appearance: base-select,
+   Chrome e Edge recentes); nos outros navegadores a lista continua nativa, sem perder a função. */
+@supports (appearance: base-select) {
+  .campo select,
+  .campo select::picker(select) {
+    appearance: base-select;
+  }
+
+  .campo select::picker-icon {
+    color: var(--texto-suave);
+    transition: rotate 0.2s ease;
+  }
+
+  .campo select:open::picker-icon {
+    rotate: 180deg;
+  }
+
+  .campo select::picker(select) {
+    box-sizing: border-box;
+    margin-block: 0.3rem;
+    padding: 0.35rem;
+    border: 0;
+    border-radius: 0.75rem;
+    background: var(--fundo-card);
+    box-shadow: 0 12px 28px rgb(0 0 0 / 0.28);
+
+    /* descida suave ao abrir (a mesma do calendário) */
+    opacity: 1;
+    translate: 0 0;
+    transition: opacity 0.2s ease, translate 0.2s ease, overlay 0.2s allow-discrete, display 0.2s allow-discrete;
+  }
+
+  .campo select::picker(select):not(:popover-open) {
+    opacity: 0;
+    translate: 0 -0.6rem;
+  }
+
+  @starting-style {
+    .campo select::picker(select):popover-open {
+      opacity: 0;
+      translate: 0 -0.6rem;
+    }
+  }
+
+  .campo select option {
+    padding: 0.5rem 0.7rem;
+    border-radius: 0.5rem;
+    color: var(--texto);
+    background: transparent;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+
+  /* passar o mouse (ou navegar com o teclado): o mesmo verde escuro dos dias do calendário */
+  .campo select option:hover,
+  .campo select option:focus-visible {
+    outline: none;
+    background: color-mix(in srgb, var(--destaque) 22%, transparent);
+  }
+
+  .campo select option:checked {
+    color: var(--destaque-texto);
+    background: var(--destaque);
+    font-weight: 700;
+  }
+
+  .campo select option::checkmark {
+    display: none; /* a opção escolhida já aparece em verde */
+  }
 }
