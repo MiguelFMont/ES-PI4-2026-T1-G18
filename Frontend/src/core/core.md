@@ -49,4 +49,6 @@ As páginas são servidas pelo Backend (`npm run dev` na pasta `Backend`, depois
 
 ## Estilos (`styles/`)
 
+A fonte do projeto é a **Nunito** (Google Fonts), definida no `body` de `styles/global.css` com peso 500 (um pouco mais grossa que o normal) e alternativas (`Roboto`, `system-ui`, `sans-serif`) para o caso de ela não carregar. Ela é carregada por três `<link>` no `<head>` de cada página (`preconnect` para `fonts.googleapis.com` e `fonts.gstatic.com`, mais a folha de estilos `css2?family=Nunito`), então **toda página nova precisa desses `<link>`**. Os campos, botões e listas herdam a fonte (`font: inherit`).
+
 Guarda reset, variáveis e estilos globais. Estilos específicos ficam em `styles/` de cada feature.
