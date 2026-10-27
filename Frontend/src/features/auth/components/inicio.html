@@ -37,11 +37,12 @@
                 <div class="second-column">
                     <h2 class="title title-second">Entrar no FinanceAI</h2>
                     <p class="description description-second">use seu e-mail para entrar:</p>
-                    <form class="form">
-                        <input type="email" placeholder="Email" required>
-                        <input type="password" placeholder="Senha" required>
+                    <form class="form" id="login-form">
+                        <input type="email" id="login-email" placeholder="Email" required>
+                        <input type="password" id="login-senha" placeholder="Senha" required>
                         <a class="password" href="#">Esqueceu sua senha?</a>
-                        <button class="btn btn-second">Entrar</button>
+                        <p id="login-erro" role="alert" aria-live="polite"></p>
+                        <button class="btn btn-second" type="submit">Entrar</button>
                     </form>
                 </div>
                 <div class="first-column">
