@@ -2,6 +2,7 @@ package com.financeai.core;
 
 import java.util.HashMap;
 import java.util.Map;
+import com.financeai.auth.AuthHandler;
 
 public class HandlerRegistry
 {
@@ -26,7 +27,8 @@ public class HandlerRegistry
     {
         HandlerRegistry registry = new HandlerRegistry();
 
-        new EcoHandler().registrarEm (registry);   // handler de teste da Sprint 0
+        new EcoHandler().registrarEm (registry);
+        new AuthHandler().registrarEm (registry);   // handler de teste da Sprint 0
 
         return registry;
     }
