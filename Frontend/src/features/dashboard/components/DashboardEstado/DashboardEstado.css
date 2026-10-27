@@ -1,0 +1,35 @@
+.dashboard-estado {
+    background-color: var(--fundo-card);
+    border: 1px solid var(--borda);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    color: var(--texto-suave);
+}
+
+.dashboard-estado[hidden] {
+    display: none;
+}
+
+.dashboard-estado--erro {
+    border-color: var(--negativo);
+    color: var(--negativo);
+}
+
+.dashboard-estado__botao {
+    padding: 0.5rem 1rem;
+    border-radius: 0.6rem;
+    border: 1px solid var(--destaque);
+    background: transparent;
+    color: var(--texto);
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.dashboard-estado__botao:hover {
+    background: var(--destaque);
+    color: var(--destaque-texto);
+}

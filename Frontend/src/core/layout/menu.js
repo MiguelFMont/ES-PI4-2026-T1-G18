@@ -1,24 +1,63 @@
+// src/core/layout/menu.js
 import { clearSession } from '../session/storage.js';
 import { irParaLogin } from '../session/login.js';
 import { alternarTema, temaAtual } from '../theme/theme.js';
 
-// O texto do botão diz para qual tema ele leva: estando no claro, "Tema escuro".
-const rotuloTema = (tema) => (tema === 'claro' ? 'Tema escuro' : 'Tema claro');
+function rotuloTema() {
+  return temaAtual() === 'claro' ? 'Tema escuro' : 'Tema claro';
+}
 
-/**
- * Liga os botões do menu lateral que já está escrito no HTML da página (#botao-tema e #botao-sair).
- * Os links do menu ficam no próprio HTML de cada página; cada feature acrescenta o seu lá.
- */
 export function ligarMenu(raiz = document) {
   const botaoTema = raiz.querySelector('#botao-tema');
-  botaoTema.textContent = rotuloTema(temaAtual());
-  botaoTema.addEventListener('click', () => {
-    // o texto do botão muda junto com a troca, dentro da animação
-    alternarTema({ origem: botaoTema, aoAplicar: (novo) => (botaoTema.textContent = rotuloTema(novo)) });
-  });
+  if (botaoTema) {
+    botaoTema.textContent = rotuloTema();
+    botaoTema.addEventListener('click', (evento) => {
+      // Se o navegador não suportar View Transitions, troca direto
+      if (!document.startViewTransition) {
+        alternarTema();
+        botaoTema.textContent = rotuloTema();
+        return;
+      }
 
-  raiz.querySelector('#botao-sair').addEventListener('click', () => {
-    clearSession();
-    irParaLogin();
-  });
+      // Pega o centro do botão ou a posição do clique para iniciar o círculo
+      const rect = botaoTema.getBoundingClientRect();
+      const x = evento.clientX || rect.left + rect.width / 2;
+      const y = evento.clientY || rect.top + rect.height / 2;
+
+      // Calcula o raio até o canto mais distante da tela
+      const raioMaximo = Math.hypot(
+        Math.max(x, window.innerWidth - x),
+        Math.max(y, window.innerHeight - y)
+      );
+
+      const transicao = document.startViewTransition(() => {
+        alternarTema();
+        botaoTema.textContent = rotuloTema();
+      });
+
+      transicao.ready.then(() => {
+        document.documentElement.animate(
+          {
+            clipPath: [
+              `circle(0px at ${x}px ${y}px)`,
+              `circle(${raioMaximo}px at ${x}px ${y}px)`,
+            ],
+          },
+          {
+            duration: 550,
+            easing: 'ease-in-out',
+            pseudoElement: '::view-transition-new(root)',
+          }
+        );
+      });
+    });
+  }
+
+  const botaoSair = raiz.querySelector('#botao-sair');
+  if (botaoSair) {
+    botaoSair.addEventListener('click', () => {
+      clearSession();
+      irParaLogin();
+    });
+  }
 }

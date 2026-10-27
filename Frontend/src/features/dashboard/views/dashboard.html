@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard — FinanceAI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
+
+    <!-- CSS Global e CSS da Feature + Componentes -->
+    <link rel="stylesheet" href="../../../core/styles/global.css" />
+    <link rel="stylesheet" href="../styles/dashboard.css" />
+    <link rel="stylesheet" href="../components/DashboardHeader/DashboardHeader.css" />
+    <link rel="stylesheet" href="../components/DashboardResumo/DashboardResumo.css" />
+    <link rel="stylesheet" href="../components/DashboardEstado/DashboardEstado.css" />
+</head>
+<body class="com-sessao">
+    <!-- Sidebar Lateral (segue as classes do global.css) -->
+    <header id="main-header">
+        <div class="menu-lateral">
+        <span class="menu-lateral__marca">FinanceAI</span>
+
+        <nav class="main-nav" aria-label="Menu principal">
+            <a href="/dashboard" data-rota="dashboard" aria-current="page">Início</a>
+            <a href="/transactions" data-rota="transactions">Transações</a>
+        </nav>
+
+        <div class="menu-lateral__rodape">
+            <button type="button" id="botao-tema">Tema claro</button>
+            <button type="button" id="botao-sair">Sair</button>
+        </div>
+        </div>
+    </header>
+
+    <!-- Conteúdo Principal onde os componentes são injetados -->
+    <main id="app-content">
+        <section class="dashboard-container" aria-labelledby="dashboard-title">
+        <!-- Componentes conectados via data-incluir -->
+        <div data-incluir="../components/DashboardHeader/DashboardHeader.html"></div>
+        <div data-incluir="../components/DashboardEstado/DashboardEstado.html"></div>
+        <div data-incluir="../components/DashboardResumo/DashboardResumo.html"></div>
+        </section>
+    </main>
+
+    <script type="module" src="../index.js"></script>
+</body>
+</html>
