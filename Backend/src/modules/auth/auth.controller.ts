@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { authService } from "./auth.service";
-import { registerSchema, loginSchema } from "./auth.dto";
+import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema} from "./auth.dto";
 import { AuthenticatedRequest } from "../../middlewares/auth.middleware";
 
 export const authController = {
@@ -35,4 +35,30 @@ export const authController = {
             next(error);
         }
     },
+    async forgotPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+        const dados = forgotPasswordSchema.parse(req.body);
+        await authService.forgotPassword(dados);
+
+        res.status(200).json({
+            message: "você receberá uma solicitação por email."
+        });
+    } catch (error) {
+        next(error);
+    }
+},
+
+async resetPassword(req: Request, res: Response, next: NextFunction) {
+    try {
+        const dados = resetPasswordSchema.parse(req.body);
+        await authService.resetPassword(dados);
+
+        res.status(200).json({
+            message: "Senha redefinida com sucesso."
+        });
+    } catch (error) {
+        next(error);
+    }
+},
 };
+

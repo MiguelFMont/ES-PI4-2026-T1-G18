@@ -5,6 +5,8 @@ interface UserDocument {
     email: string;
     cpf: string;
     senhaHash: string;
+    resetPasswordTokenHash?: string;
+    resetPasswordExpiresAt?: Date;
     mfaEnabled: boolean;
     mfaSecret?: string;
     plano: "free" | "pro";
@@ -20,6 +22,8 @@ const UserSchema = new Schema<UserDocument>(
         email: { type: String, required: true, unique: true },
         cpf: { type: String, required: true, unique: true },
         senhaHash: { type: String, required: true },
+        resetPasswordTokenHash: { type: String, select: false },
+        resetPasswordExpiresAt: { type: Date, select: false },
         mfaEnabled: { type: Boolean, default: false },
         mfaSecret: { type: String, select: false },
         plano: {

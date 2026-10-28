@@ -3,7 +3,8 @@ import { authRepository } from "./auth.repository";
 import { javaServerClient } from "../../java-client/java-server.client";
 import { env } from "../../config/env";
 import { AppError } from "../../shared/errors/app-error";
-import { RegisterDto, LoginDto } from "./auth.dto";
+import { RegisterDto, LoginDto, ForgotPasswordDto, ResetPasswordDto } from "./auth.dto";
+import { randomBytes, createHash } from "node:crypto";
 
 export const authService = {
     async register(dados: RegisterDto) {
@@ -102,5 +103,59 @@ export const authService = {
             plano: usuario.plano,
             mfaEnabled: usuario.mfaEnabled
         };
+    },
+
+    async forgotPassword(dados: ForgotPasswordDto) {
+        const usuario = await authRepository.findByEmail(dados.email);
+
+        if (!usuario) {
+            return;
+        }
+
+        const token = randomBytes(32).toString("hex");
+
+        const tokenHash = createHash("sha256")
+            .update(token)
+            .digest("hex");
+
+        const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+        await authRepository.savePasswordResetToken(
+            usuario._id.toString(),
+            tokenHash,
+            expiresAt
+        );
+        //link para pagina de redefinir pelo link sem ser por email
+        const link = `http://localhost:3001/src/features/auth/components/redefinirSenha.html?token=${token}`;
+        console.log("Link de recuperação de senha:", link);
+    },
+
+    async resetPassword(dados: ResetPasswordDto) {
+        const tokenHash = createHash("sha256")
+            .update(dados.token)
+            .digest("hex");
+
+        const { hash } = await javaServerClient.enviarPedido<
+            { senha: string },
+            { hash: string }
+        >(
+            "PedidoHashSenha",
+            "RespostaHashSenha",
+            { senha: dados.senha }
+        );
+
+        const usuario = await authRepository.resetPassword(
+            tokenHash,
+            hash
+        );
+
+        if (!usuario) {
+            throw new AppError(
+                "Link de recuperação inválido ou expirado",
+                400,
+                "INVALID_RESET_TOKEN"
+            );
+        }
     }
 };
+

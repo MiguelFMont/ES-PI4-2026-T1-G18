@@ -35,4 +35,35 @@ export const authRepository = {
 
         return usuario?.mfaSecret ?? null;
     },
+
+    async savePasswordResetToken(
+        userId: string,
+        tokenHash: string,
+        expiresAt: Date
+    ) {
+        return UserModel.findByIdAndUpdate(
+            userId,
+            {
+                resetPasswordTokenHash: tokenHash,
+                resetPasswordExpiresAt: expiresAt
+            },
+            { new: true }
+        ).lean();
+    },
+
+    async resetPassword(
+        tokenHash: string,
+        senhaHash: string
+    ) {
+        return UserModel.findOneAndUpdate(
+            {
+                resetPasswordTokenHash: tokenHash,
+                resetPasswordExpiresAt: { $gt: new Date() }
+            },
+            {
+                $set: { senhaHash }, $unset: {resetPasswordTokenHash: "", resetPasswordExpiresAt: ""}
+            },
+            { new: true }
+        ).lean();
+    },
 };

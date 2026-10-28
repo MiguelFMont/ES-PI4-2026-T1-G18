@@ -149,6 +149,15 @@
     outline: 3px solid var(--foco);
     outline-offset: 2px;
 }
+.password {
+    color: var(--destaque);
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.password:hover {
+    text-decoration: underline;
+}
 /*login ativo  */
 .sign-in-js .card::before {
     left: 60%;
