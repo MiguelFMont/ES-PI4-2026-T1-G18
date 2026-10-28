@@ -23,10 +23,11 @@
                     <h2 class="title title-second">Criar Conta</h2>
                     <p class="description description-second">utilize seus dados para registro:</p>
                     <form class="form">
-                        <input type="text" placeholder="Nome" required>
-                        <input type="email" placeholder="Email" required>
-                        <input type="text" placeholder="CPF" required>
-                        <input type="password" placeholder="Senha" required>
+                        <input type="text" id="cadastro-nome" placeholder="Nome Completo" required>
+                        <input type="email"  id="cadastro-email" placeholder="Email" required>
+                        <input type="text"  id="cadastro-cpf" placeholder="CPF" required>
+                        <input type="password"  id="cadastro-senha" placeholder="Senha" required>
+                        <p id="cadastro-erro" role="alert" aria-live="polite"></p>
                         <button class="btn btn-second">Cadastrar</button>
                     </form>
                 </div>

@@ -13,7 +13,6 @@ btnSignup.addEventListener("click", function () {
 
 // Seleciona o formulário de login
 const loginForm = document.querySelector("#login-form");
-
 const loginEmail = document.querySelector("#login-email");
 const loginSenha = document.querySelector("#login-senha");
 const loginErro = document.querySelector("#login-erro");
@@ -49,5 +48,61 @@ loginForm.addEventListener("submit", async function (event) {
         loginErro.textContent =
             "Não foi possível conectar ao servidor.";
         console.error("Erro no login:", error);
+    }
+});
+// Seleciona o formulário de cadastro
+const cadastroForm = document.querySelector("#cadastro-form");
+
+const cadastroNome = document.querySelector("#cadastro-nome");
+const cadastroEmail = document.querySelector("#cadastro-email");
+const cadastroCpf = document.querySelector("#cadastro-cpf");
+const cadastroSenha = document.querySelector("#cadastro-senha");
+const cadastroErro = document.querySelector("#cadastro-erro");
+
+// Executa quando o usuário envia o cadastro
+cadastroForm.addEventListener("submit", async function (event) {
+    event.preventDefault();
+    cadastroErro.textContent = "";
+    const dados = {
+        nome: cadastroNome.value.trim(),
+        email: cadastroEmail.value.trim(),
+        cpf: cadastroCpf.value.replace(/\D/g, ""),
+        senha: cadastroSenha.value
+    };
+
+    if (!dados.nome || !dados.email || !dados.cpf || !dados.senha) {
+        cadastroErro.textContent = "Preencha todos os campos.";
+        return;
+    }
+    if (dados.cpf.length !== 11) {
+        cadastroErro.textContent = "O CPF deve conter 11 dígitos.";
+        return;
+    }
+    try {
+        const resposta = await fetch("/v1/auth/register", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(dados)
+        });
+
+        const resultado = await resposta.json();
+        if (!resposta.ok) {
+            cadastroErro.textContent =
+                resultado.message ||
+                resultado.error ||
+                "Não foi possível realizar o cadastro.";
+            return;
+        }
+        cadastroForm.reset();
+        // Exibe a tela de login após o cadastro
+        body.className = "sign-in-js";
+
+    } catch (error) {
+        cadastroErro.textContent =
+            "Não foi possível conectar ao servidor.";
+
+        console.error("Erro no cadastro:", error);
     }
 });
