@@ -38,12 +38,21 @@ loginForm.addEventListener("submit", async function (event) {
         });
         const resultado = await resposta.json();
         if (!resposta.ok) {
-            loginErro.textContent =
-                resultado.message || "Não foi possível realizar o login.";
+            if (resposta.status === 401) {
+                loginErro.textContent = "E-mail ou senha incorretos.";
+            } else {
+                 loginErro.textContent = "Não foi possível realizar o login. Tente novamente.";
+            }    
             return;
         }
-        console.log("Login realizado com sucesso!");
-        //armazenar o token e redirecionar
+        if (!resultado.token) {
+            loginErro.textContent = "O servidor não retornou um token.";
+            return;
+        }
+        sessionStorage.setItem("token", resultado.token);
+        //qual rota recebe apos o login(exemplo trocar para a ofical)
+        window.location.href = "/#dashboard";
+
     } catch (error) {
         loginErro.textContent =
             "Não foi possível conectar ao servidor.";
@@ -89,10 +98,13 @@ cadastroForm.addEventListener("submit", async function (event) {
 
         const resultado = await resposta.json();
         if (!resposta.ok) {
+            const mensagem = resultado.error?.message || resultado.message;
             cadastroErro.textContent =
-                resultado.message ||
-                resultado.error ||
-                "Não foi possível realizar o cadastro.";
+                typeof mensagem === "string"
+                    ? mensagem
+                    : resposta.status === 409
+                        ? "Este e-mail ou CPF já está cadastrado."
+                        : "Não foi possível realizar o cadastro.";
             return;
         }
         cadastroForm.reset();
