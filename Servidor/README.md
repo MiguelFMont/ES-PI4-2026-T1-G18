@@ -60,6 +60,23 @@ Os campos de cada mensagem estão nos `.md` de `exemplo/` (um por `PedidoXxx`/`R
 
 Cada grupo mexe só na própria pasta e adiciona **uma linha** em `HandlerRegistry.criarPadrao()`. Se um grupo precisar de uma operação nova, cria o par `PedidoXxx`/`RespostaXxx` e o registra no seu handler, combinando os campos com quem implementa o lado do Backend.
 
+Quando uma mensagem já está implementada, o contrato vale pelo `.java` (o `.md` de `exemplo/` pode estar desatualizado).
+
+### Grupo 4 — Mentor IA (`mentoria/`, implementado)
+
+A API de IA é chamada pelo Backend **entre** os dois pedidos: contexto → IA → filtro.
+
+| Mensagem | `dados` |
+|---|---|
+| `PedidoMontarContextoIA` | `{ "diaDoMes": 28, "transacoes": [{ "tipo": "despesa", "valor": 1400, "categoria": "Moradia", "descricao": "Aluguel", "data": "2026-10-05T12:00:00.000Z" }, ...] }`: as transações do mês atual do usuário; `diaDoMes` de 1 a 31 (base da média diária) |
+| `RespostaMontarContextoIA` | `{ "contexto": "Mês atual (até o dia 28): receitas R$ 4.500,00; despesas R$ 1.897,85; ..." }`: resumo em texto com totais, poupança, % por categoria, média diária e as 3 maiores despesas, já formatados em pt-BR |
+| `PedidoFiltrarResposta` | `{ "resposta": "<texto que a IA devolveu>" }` |
+| `RespostaFiltrarResposta` | `{ "respostaFiltrada": "<texto sem recomendação de ativo>" }` |
+
+- **As contas são do Java** (`MentorHandler.montarContexto`), porque a IA erra aritmética. Até 8 categorias aparecem no resumo; as demais somam em "demais categorias". As descrições (texto livre do usuário) entram cortadas em 40 caracteres e numa linha só.
+- **O filtro** (`FiltroDeAtivos`) analisa frase a frase. Uma frase é removida quando tem **um ativo específico** (código da B3, como `PETR4` ou `MXRF11`, ou um nome de uma lista de criptomoedas e empresas) **e** linguagem de recomendação (compre, venda, aporte, invista, recomendo, mantenha...). Recusas explícitas ("não posso recomendar PETR4") passam; "não posso recomendar, mas compre ITUB4" não passa, porque cada trecho depois de "mas/porém/contudo" é julgado separado. Se alguma frase sai, o aviso `FiltroDeAtivos.AVISO` é acrescentado no fim; se quase nada sobra, a resposta vira só o aviso.
+- `diaDoMes` fora de 1 a 31, `valor` negativo ou `tipo` diferente de `receita`/`despesa` respondem `Erro` `VALIDATION`.
+
 ## `exemplo/`: documentação de cada arquivo
 
 `src/main/java/com/financeai/` tem as pastas de cada pacote. Em cada pasta há uma subpasta `exemplo/` com um `.md` para cada arquivo `.java` planejado, explicando o que ele deve ter e trazendo um exemplo de implementação. Ao implementar, crie o `.java` no pacote correspondente; o `.md` fica como referência (e pode ser apagado quando o projeto estiver andando). Os exemplos foram compilados juntos com o `core` e as operações foram testadas (hash e conferência de senha, TOTP com o vetor da RFC 6238, categorização, indicadores, comparação de períodos, progresso de meta, rentabilidade com juros compostos, parcelamentos, contexto e filtro da IA).
@@ -79,7 +96,7 @@ src/main/java/com/financeai/
 
 ## Estado atual (Sprint 0)
 
-Já implementados como código: o `Main` e o `core/` (`Comunicado`, `Parceiro`, `Aceitadora`, `Supervisora`, `Handler`, `HandlerRegistry`, `ErroDeNegocio`, `Teclado`), mais o `EcoHandler`, um handler de teste: `PedidoEco` devolve `RespostaEco` com os mesmos `dados`; com `{"falhar":"negocio"}` responde `Erro` `TESTE_NEGOCIO` e com `{"falhar":"interno"}` responde `Erro` `INTERNAL_ERROR`. Os handlers dos grupos ainda são `.md` de exemplo.
+Já implementados como código: o `Main` e o `core/` (`Comunicado`, `Parceiro`, `Aceitadora`, `Supervisora`, `Handler`, `HandlerRegistry`, `ErroDeNegocio`, `Teclado`), mais o `EcoHandler`, um handler de teste: `PedidoEco` devolve `RespostaEco` com os mesmos `dados`; com `{"falhar":"negocio"}` responde `Erro` `TESTE_NEGOCIO` e com `{"falhar":"interno"}` responde `Erro` `INTERNAL_ERROR`. Também já são código o `AuthHandler` (hash e conferência de senha) e o `MentorHandler` (contexto e filtro do Mentor IA, ver "Grupo 4" acima). Os outros handlers dos grupos ainda são `.md` de exemplo.
 
 ## Build com Maven
 

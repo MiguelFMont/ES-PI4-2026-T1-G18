@@ -14,6 +14,9 @@ const envSchema = z.object({
   JAVA_SERVER_TIMEOUT_MS: z.coerce.number().default(5000),
   JAVA_SERVER_POOL_SIZE: z.coerce.number().int().min(1).default(5),
   GENAI_API_KEY: z.string().optional(),
+  GENAI_BASE_URL: z.string().url().default("https://api.groq.com/openai/v1"),
+  GENAI_MODEL: z.string().default("openai/gpt-oss-120b"),
+  GENAI_TIMEOUT_MS: z.coerce.number().default(20000),
 });
 
 const parsed = envSchema.safeParse(process.env);

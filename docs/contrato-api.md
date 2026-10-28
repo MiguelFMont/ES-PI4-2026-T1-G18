@@ -12,7 +12,7 @@ Documento vivo que descreve **o que o Backend aceita e devolve**. É a referênc
 | Transações | `/v1/transactions` | 2 | **Cadastro e listagem (com filtros e paginação) documentados** (seção 2); edição, exclusão, duplicação e importação planejadas |
 | Autenticação e conta | `/v1/auth` | 1 | A documentar |
 | Painel e análise | `/v1/dashboard` | 3 | A documentar |
-| Mentor financeiro (IA) | `/v1/mentor-ia` | 4 | A documentar |
+| Mentor financeiro (IA) | `/v1/mentor-ia` | 4 | **Chat (enviar mensagem e histórico) documentado** (seção 3); alertas planejados |
 | Metas | `/v1/goals` | 5 | A documentar |
 | Investimentos | `/v1/investments` | 5 | A documentar |
 
@@ -329,7 +329,106 @@ Exemplo de `400` para `?valorMin=100&valorMax=50`:
 
 ---
 
-## 3. Dados de exemplo (seed)
+## 3. Mentor financeiro (IA) — `/v1/mentor-ia` (Grupo 4)
+
+Todas as rotas exigem token. O chat usa as **transações do mês atual** do usuário (do dia 1 até hoje, no horário de Brasília) para responder; quanto mais transações cadastradas, melhor a resposta.
+
+Regras que valem para toda resposta da IA:
+- É **educacional**: explica gastos, orçamento e conceitos. Não substitui um consultor.
+- **Nunca recomenda comprar, vender ou aportar em um ativo específico** (ação, fundo, criptomoeda, título). A resposta passa por um filtro no Servidor de cálculos: a frase que recomenda um ativo é removida e um aviso é acrescentado no final.
+- Os números citados (totais, percentuais por categoria, média diária) são calculados pelo Servidor de cálculos, não pela IA.
+
+### 3.1 Objeto `ChatMessage`
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `id` | texto | Identificador da mensagem |
+| `autor` | `"usuario"` ou `"ia"` | Quem escreveu |
+| `texto` | texto | Conteúdo. O da IA pode ter **markdown simples** (`**negrito**`, listas com `-`): o Frontend pode mostrar como texto puro ou converter |
+| `criadaEm` | texto (ISO 8601) | Quando foi enviada |
+
+### 3.2 Enviar mensagem
+
+`POST /v1/mentor-ia/chat` → `200 OK`
+
+| Campo | Tipo | Obrigatório | Regra |
+|---|---|---|---|
+| `texto` | texto | Sim | De 1 a 2000 caracteres (espaços nas pontas são removidos) |
+
+A resposta **demora alguns segundos** (normalmente de 1 a 5; o máximo é 20, depois disso a rota devolve `503`). Mostre um estado de "pensando" e desabilite o botão de enviar enquanto espera. A pergunta e a resposta só são salvas no histórico quando a IA responde: se a rota der erro, nada é salvo e o usuário pode tentar de novo.
+
+Exemplo:
+
+```json
+{ "texto": "Qual categoria pesa mais nos meus gastos e quanto ela representa?" }
+```
+
+Resposta `200`:
+
+```json
+{
+  "pergunta": {
+    "id": "6ae25d66e542d862dbe113fc",
+    "autor": "usuario",
+    "texto": "Qual categoria pesa mais nos meus gastos e quanto ela representa?",
+    "criadaEm": "2026-10-28T20:39:02.684Z"
+  },
+  "resposta": {
+    "id": "6ae25d66e542d862dbe113fd",
+    "autor": "ia",
+    "texto": "A categoria que pesa mais nos seus gastos é **Moradia**, com gasto de **R$ 1.400,00**, o que corresponde a **48,2 %** do total das despesas.",
+    "criadaEm": "2026-10-28T20:39:02.687Z"
+  }
+}
+```
+
+(Capturado com os dados do seed: `npm run seed:transacoes`.) Quando o usuário pede um ativo específico (`"Devo comprar PETR4 com o que sobrou?"`), a IA recusa e orienta sobre orçamento: "Não posso recomendar a compra de um ativo específico. Posso ajudar a entender como o seu saldo disponível pode ser alocado, ...".
+
+Erros:
+
+| Status | `code` | Quando |
+|---|---|---|
+| 400 | `VALIDATION_ERROR` | `texto` ausente, vazio ou com mais de 2000 caracteres |
+| 401 | `UNAUTHENTICATED` | Sem token ou token inválido |
+| 429 | `GENAI_RATE_LIMITED` | Acabou o limite de uso gratuito da API de IA. Mostre "tente de novo em alguns minutos" |
+| 502 | `GENAI_ERROR` | A API de IA respondeu com erro ou sem conteúdo |
+| 503 | `GENAI_UNAVAILABLE` | A API de IA está fora do ar, demorou mais de 20 s ou não foi configurada no Backend |
+| 503 | `JAVA_SERVER_UNAVAILABLE` | O Servidor de cálculos está fora do ar (ele monta o resumo e filtra a resposta) |
+
+### 3.3 Histórico do chat
+
+`GET /v1/mentor-ia/chat` → `200 OK`, com as **últimas 50 mensagens** do usuário, da **mais antiga para a mais nova** (a ordem de exibição do chat). Sem conversa, devolve `[]`.
+
+```json
+[
+  {
+    "id": "6ae25d66e542d862dbe113fc",
+    "autor": "usuario",
+    "texto": "Qual categoria pesa mais nos meus gastos e quanto ela representa?",
+    "criadaEm": "2026-10-28T20:39:02.684Z"
+  },
+  {
+    "id": "6ae25d66e542d862dbe113fd",
+    "autor": "ia",
+    "texto": "A categoria que pesa mais nos seus gastos é **Moradia**, ...",
+    "criadaEm": "2026-10-28T20:39:02.687Z"
+  }
+]
+```
+
+As 6 mensagens mais recentes também são enviadas à IA junto com a pergunta nova, para ela entender perguntas de continuação ("como reduzir isso?", "explica melhor"). Ela só conhece o mês atual: perguntas sobre meses anteriores recebem "não tenho essa informação".
+
+Erros: `401 UNAUTHENTICATED`.
+
+### 3.4 Rotas planejadas (ainda não existem)
+
+| Método e rota | Para quê |
+|---|---|
+| `GET /v1/mentor-ia/alerts` | Alertas proativos (gasto fora do padrão, fatura próxima, dinheiro parado). Quem gera os alertas ainda está em definição |
+
+---
+
+## 4. Dados de exemplo (seed)
 
 Para desenvolver sem digitar tudo, o Backend tem um script que insere cerca de 33 transações dos últimos 3 meses (receitas, despesas, várias categorias e formas de pagamento), com datas relativas a hoje. Na pasta `Backend`, com a `MONGO_URI` no `.env`:
 

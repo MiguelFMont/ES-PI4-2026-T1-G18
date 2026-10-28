@@ -7,11 +7,13 @@ import { Router } from "express";
 import sistemaRouter from "./sistema/sistema.routes";
 import transactionsRouter from "./transactions/transactions.routes";
 import dashboardRouter from "./dashboard/dashboard.routes";
+import mentorIaRouter from "./mentor-ia/mentor-ia.routes";
 
 const router = Router();
 
 router.use("/transactions", transactionsRouter);
 router.use("/dashboard", dashboardRouter);
+router.use("/mentor-ia", mentorIaRouter);
 router.use(sistemaRouter);
 
 export default router;

@@ -1,5 +1,7 @@
 # PedidoMontarContextoIA.java — Pedido de montagem do contexto da IA
 
+> **Já implementado, com contrato diferente deste exemplo:** os campos agora são `diaDoMes` e `transacoes` (o Java calcula os totais). Vale o `../PedidoMontarContextoIA.java` e a seção "Grupo 4" do `Servidor/README.md`.
+
 ## O que deve ter neste arquivo
 - Pedido enviado pelo Backend ao Servidor (`tipo` `"PedidoMontarContextoIA"`). Par: `RespostaMontarContextoIA`.
 - É um POJO simples que representa o campo `dados` do `Comunicado`. Os nomes dos campos são exatamente os do JSON trocado com o Backend, então qualquer mudança aqui é uma mudança de **contrato** e precisa ser combinada com o Backend.

@@ -1,5 +1,7 @@
 # mentor-ia.service.ts — Regras de negócio do mentor financeiro
 
+> **Já implementado** em `../mentor-ia.service.ts` (chat; os alertas ainda não). Diferenças deste exemplo: o Backend manda ao Java as transações do mês (não os totais), e o cliente da IA está em `../genai.client.ts`. Ver a seção "Mentor IA" do `Backend/README.md`.
+
 ## O que deve ter neste arquivo
 - `sendMessage`: (1) lê os dados financeiros do usuário no MongoDB (totais do mês e transações recentes) e os manda ao Servidor Java, que monta o contexto resumido (`PedidoMontarContextoIA`); (2) chama a API externa de IA generativa com esse contexto + a mensagem do usuário (**no Backend**, fora do escopo deste exemplo: um client HTTP separado, com `GENAI_API_KEY`); (3) manda a resposta da IA ao Servidor Java para filtrar (`PedidoFiltrarResposta`): a restrição de nunca recomendar compra/venda de ativo específico é garantida no Java, sem depender só do prompt; (4) salva a troca no histórico.
 - `getHistory`/`listAlerts`: leitura simples via `mentorIaRepository`.

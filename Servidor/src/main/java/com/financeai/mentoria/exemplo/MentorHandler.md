@@ -1,5 +1,7 @@
 # MentorHandler.java — Handlers do Grupo 4 (Mentor Financeiro com IA)
 
+> **Já implementado.** A versão real calcula o resumo do mês no Java e usa um filtro frase a frase (`../FiltroDeAtivos.java`).
+
 ## O que deve ter neste arquivo
 - Registra `PedidoMontarContextoIA` e `PedidoFiltrarResposta`. A chamada à API de IA generativa **não** acontece aqui: ela é feita pelo Backend, entre os dois pedidos (contexto → IA → filtro).
 - `montarContexto`: transforma os dados financeiros que o Backend enviou (totais e transações recentes) num texto resumido, pronto para virar o contexto do prompt. O Java não acessa o MongoDB, então o Backend precisa mandar esses dados no pedido.

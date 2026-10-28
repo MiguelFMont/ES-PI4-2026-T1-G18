@@ -63,7 +63,7 @@ Quando uma operação falha, o Servidor responde `{"tipo":"Erro","dados":{"code"
 
 Em cada pasta há uma subpasta `exemplo/` com um `.md` para cada arquivo `.ts` planejado, explicando o que o arquivo deve ter (e o que **não** é responsabilidade dele) e trazendo um exemplo de implementação. Ao implementar, crie o `.ts` na pasta correspondente; o `.md` fica como referência (e pode ser apagado quando o projeto estiver andando).
 
-**Já implementados como código** (base da Sprint 0): `config/env.ts`, `http/app.ts`, `http/server.ts`, `database/mongo.connection.ts`, `java-client/` (`comunicado`, `parceiro`, `java-server.client`), `middlewares/error-handler.middleware.ts`, `shared/errors/` (`app-error`, `error-codes`) `modules/sistema/` (`/v1/health` e `/v1/eco`, para testar o caminho até o Servidor), `middlewares/auth.middleware.ts` e o módulo `modules/transactions/` (cadastro e listagem, Grupo 2), que serve de modelo para os outros. O restante dos módulos dos grupos está só nos `.md`.
+**Já implementados como código** (base da Sprint 0): `config/env.ts`, `http/app.ts`, `http/server.ts`, `database/mongo.connection.ts`, `java-client/` (`comunicado`, `parceiro`, `java-server.client`), `middlewares/error-handler.middleware.ts`, `shared/errors/` (`app-error`, `error-codes`) `modules/sistema/` (`/v1/health` e `/v1/eco`, para testar o caminho até o Servidor), `middlewares/auth.middleware.ts` o módulo `modules/transactions/` (cadastro e listagem, Grupo 2), que serve de modelo para os outros, e o módulo `modules/mentor-ia/` (chat com a IA, Grupo 4; ver "Mentor IA" abaixo). O restante dos módulos dos grupos está só nos `.md`.
 
 ## Estrutura de pastas
 
@@ -105,6 +105,25 @@ Cada grupo só mexe no seu módulo e, em `http/app.ts`, adiciona a linha do `app
 - O Frontend envia `Authorization: Bearer <token>` nas demais requisições. O `authMiddleware` verifica o token e coloca o usuário em `req.user`; token ausente, inválido ou expirado devolve `401`.
 - As rotas de todos os módulos (exceto `register` e `login`) usam o `authMiddleware`, e os controllers sempre usam `req.user.id`, nunca um `userId` vindo do corpo da requisição.
 
+## Mentor IA (API de IA generativa)
+
+O chat do Mentor (`POST /v1/mentor-ia/chat`, contrato na seção 3 de `../docs/contrato-api.md`) passa pelas três camadas:
+
+```
+1. Backend lê no MongoDB as transações do mês (horário de Brasília) e as 6 últimas mensagens do chat
+2. Servidor Java  PedidoMontarContextoIA -> resumo com totais, % por categoria, média diária e maiores despesas
+3. Backend chama a API de IA (genai.client.ts) com instruções + resumo + histórico + pergunta
+4. Servidor Java  PedidoFiltrarResposta  -> remove frases que recomendam um ativo específico
+5. Backend salva a pergunta e a resposta juntas (coleção chatmessages) e devolve as duas
+```
+
+- **Por que o Java faz as contas:** modelos de linguagem erram aritmética. A IA recebe os números prontos e é instruída a não calcular nada novo.
+- **Por que o filtro fica no Java:** a regra "nunca recomendar ativo" não pode depender só do prompt (o modelo pode desobedecer). O filtro analisa frase a frase e deixa passar as recusas ("Não posso recomendar...").
+- **Provedor:** [Groq](https://console.groq.com), gratuito e sem cartão, com o modelo `openai/gpt-oss-120b`. A chamada usa o formato de chat da OpenAI (`/chat/completions`) e fica isolada em `modules/mentor-ia/genai.client.ts`: para trocar de provedor ou modelo basta mudar `GENAI_BASE_URL` e `GENAI_MODEL` no `.env`.
+- **Chave:** cada integrante cria a sua em [console.groq.com/keys](https://console.groq.com/keys) e coloca em `GENAI_API_KEY` no `.env` (nunca em commit, issue ou chat). Chaves separadas também separam os limites de uso.
+- **Limites do plano gratuito** (por conta, conferir no console do Groq): cerca de 1.000 requisições/dia e 8.000 tokens/minuto. Uma mensagem do chat gasta em torno de 500 a 1.500 tokens, por isso o resumo é enxuto e só 6 mensagens anteriores entram no prompt. Estourou o limite: a rota devolve `429 GENAI_RATE_LIMITED`.
+- **Sem `GENAI_API_KEY`** o Backend sobe normalmente e só o chat responde `503 GENAI_UNAVAILABLE`.
+
 ## Pontos em aberto
 
 - **MFA no login:** o `login` devolve `mfaEnabled`; o fluxo completo (token temporário até validar o código) será definido por outro integrante do grupo de Autenticação.
@@ -124,7 +143,9 @@ cp .env.example .env   # ajuste JWT_SECRET e MONGO_URI
 | `MONGO_URI`, `MONGO_DB` | MongoDB Atlas. Sem `MONGO_URI` o Backend sobe sem banco (só `/v1/health` e `/v1/eco`) |
 | `JAVA_SERVER_HOST`, `JAVA_SERVER_PORT` | Onde está o Servidor Java (padrão `localhost:3000`) |
 | `JAVA_SERVER_TIMEOUT_MS`, `JAVA_SERVER_POOL_SIZE` | Timeout por pedido (5000) e máximo de conexões simultâneas (5) |
-| `GENAI_API_KEY` | Chave da API de IA generativa (Mentor IA) |
+| `GENAI_API_KEY` | Chave da API de IA generativa (Mentor IA; ver "Mentor IA" acima). Sem ela, só o chat responde `503` |
+| `GENAI_BASE_URL`, `GENAI_MODEL` | Provedor e modelo da IA (padrão Groq, `https://api.groq.com/openai/v1` e `openai/gpt-oss-120b`) |
+| `GENAI_TIMEOUT_MS` | Tempo máximo de espera pela IA (20000) |
 
 O `.env` está no `.gitignore` e nunca deve ser commitado.
 
