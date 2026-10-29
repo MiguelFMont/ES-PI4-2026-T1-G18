@@ -1,0 +1,114 @@
+/* Componente TransactionFilters: cartão de filtros, mais compacto que o resto da página, com todos os
+   campos numa linha (quebra em mais linhas só quando a tela é estreita).
+   Cartão, botões e utilitários de grade ficam em styles/transactions.css. */
+
+.transactions-cartao--compacto {
+  gap: 0.6rem;
+  padding: 0.9rem 1rem;
+}
+
+.transactions-cartao--compacto h2 {
+  font-size: 0.95rem;
+}
+
+.transactions-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.9rem 0.75rem; /* o quadro Período se projeta para baixo; o espaço entre linhas evita encostar na seguinte */
+}
+
+.transactions-filtros .campo {
+  flex: 1 1 6.5rem;
+  gap: 0.2rem;
+}
+
+.transactions-filtros .campo:first-child {
+  flex-basis: 9rem; /* descrição: um pouco mais larga */
+}
+
+/* Quadro "Período": a largura dele é a do calendário (17,5 rem) e encolhe junto se a tela ficar menor.
+   A margem negativa embaixo faz as caixas Início/Final alinharem com os outros campos da linha. */
+.transactions-filtros .campo--periodo {
+  display: block;
+  flex: 0 1 17.5rem;
+  max-width: 100%;
+  min-width: 0;
+  margin: 0 0 calc(-1 * (0.75rem + 1px));
+  margin-top: -10px;
+  margin-bottom: 0px;
+  padding: 0.5rem 0.8rem 0.75rem;
+  border: var(--borda-elemento, 0);
+  border-radius: 0.6rem;
+  box-shadow: var(--sombra);
+}
+
+.transactions-filtros .campo--periodo > legend {
+  padding: 0 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+}
+
+.campo--periodo > .campo__erro {
+  margin-top: 0.2rem;
+}
+
+.transactions-filtros .campo:nth-last-child(2),
+.transactions-filtros .campo:nth-last-child(3) {
+  flex: 0.6 1 5.5rem; /* valor mínimo e máximo */
+}
+
+.transactions-filtros__acoes {
+  flex: 0 0 auto;
+}
+
+/* campos menores que o padrão de shared/styles/campos.css */
+.transactions-filtros .campo label {
+  font-size: 0.75rem;
+}
+
+.transactions-filtros .campo input:not([type='radio']):not([type='checkbox']),
+.transactions-filtros .campo select {
+  min-height: 2.1rem;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.85rem;
+  border-radius: 0.5rem;
+}
+
+.transactions-filtros .transactions-botao {
+  min-height: 2.1rem;
+  padding: 0.25rem 0.9rem;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+/* Campo Período: duas caixas ("Início" e "Final") com calendário (lógica em shared/components/Calendario.js; o estilo
+   do calendário está em shared/styles/calendario.css). */
+
+.periodo__caixas {
+  display: flex;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+/* cada caixa com o rótulo ("Início", "Final") acima, como os outros filtros */
+.periodo__item {
+  display: grid;
+  flex: 1 1 0;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.transactions-filtros .campo--periodo input.periodo__caixa {
+  width: 100%;
+  min-width: 0;
+  text-align: center;
+  box-shadow: none; /* as caixas de data não têm sombra; o fundo levemente mais escuro as destaca do quadro */
+  background: color-mix(in srgb, var(--texto) 5%, var(--fundo-campo));
+}
+
+/* o anel vermelho de erro continua valendo nas caixas de data */
+.transactions-filtros .campo--periodo input.periodo__caixa[aria-invalid='true'] {
+  box-shadow: 0 0 0 2px var(--negativo);
+}

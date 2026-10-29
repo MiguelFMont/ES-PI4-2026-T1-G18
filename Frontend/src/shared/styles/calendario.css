@@ -1,0 +1,211 @@
+/* Calendário compartilhado (shared/components/Calendario.js e calendario/Calendario.html).
+   Usa as variáveis de tema de core/styles/global.css. */
+
+/* a área do campo (a que tem data-calendario) é a referência de posição do calendário */
+[data-calendario] {
+  position: relative;
+}
+
+/* O calendário fica sempre no DOM e aparece com uma descida leve: .calendario--aberto é ligada pelo JS ao passar o mouse
+   ou ao chegar com Tab. */
+.calendario {
+  opacity: 0;
+  visibility: hidden; /* fechado, não recebe clique nem foco */
+  transform: translateY(-0.6rem);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s 0.2s;
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: -1px; /* cobre a borda do quadro: mesma largura exata, e acompanha se o quadro encolher */
+  right: -1px;
+  z-index: 30;
+  padding: 0.75rem;
+  border: var(--borda-elemento, 0);
+  border-radius: 0.75rem;
+  background: var(--fundo-card);
+  box-shadow: var(--sombra-flutuante);
+}
+
+/* campo de data única (data-calendario="unico", no formulário): o calendário tem a largura mínima necessária, e não a do campo */
+[data-calendario='unico'] .calendario {
+  right: auto;
+  left: 0;
+  min-width: 17rem;
+}
+
+.calendario--aberto {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s;
+}
+
+.calendario:focus {
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .calendario,
+  .calendario--aberto {
+    transition: none;
+  }
+}
+
+/* Atalhos de período (campo Período). O calendário fica sempre com a largura do campo, logo abaixo dele. Havendo espaço
+   à esquerda do campo, os atalhos formam um painel ao lado do calendário (.calendario--atalhos-esquerda, ligada
+   pelo JS); sem espaço, ficam numa grade de duas colunas acima do mês. */
+.calendario__atalhos {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.3rem;
+  margin-bottom: 0.6rem;
+}
+
+.calendario--atalhos-esquerda .calendario__atalhos {
+  position: absolute;
+  top: 0;
+  bottom: 0; /* mesma altura do calendário */
+  right: calc(100% + 0.25rem);
+  display: flex;
+  flex-direction: column;
+  width: 9.5rem;
+  margin: 0;
+  padding: 0.5rem;
+  border: var(--borda-elemento, 0);
+  border-radius: 0.75rem;
+  background: var(--fundo-card);
+  box-shadow: var(--sombra-flutuante);
+}
+
+.calendario--atalhos-esquerda .calendario__atalho {
+  flex: 1; /* os botões dividem a altura do painel por igual */
+  text-align: left;
+}
+
+.calendario__atalho,
+.calendario__nav,
+.calendario__limpar {
+  border: var(--borda-elemento, 0);
+  border-radius: 0.4rem;
+  box-shadow: var(--sombra);
+  color: var(--texto);
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  transition: scale 0.1s ease, box-shadow 0.1s ease, background-color var(--duracao-cor) ease, color var(--duracao-cor) ease;
+}
+
+.calendario__atalho {
+  padding: 0.4rem 0.5rem;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+/* hover ou Tab: os botões se preenchem com a cor principal */
+.calendario__atalho:hover,
+.calendario__nav:hover,
+.calendario__limpar:hover,
+.calendario__atalho:focus-visible,
+.calendario__nav:focus-visible,
+.calendario__limpar:focus-visible {
+  color: var(--destaque-texto);
+  background: var(--destaque);
+}
+
+.calendario__atalho:focus-visible,
+.calendario__nav:focus-visible,
+.calendario__limpar:focus-visible {
+  outline: none;
+  scale: 1.05;
+  box-shadow: var(--sombra-foco);
+}
+
+.calendario__cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.calendario__mes {
+  display: inline-block;
+  font-weight: 600;
+}
+
+.calendario__mes::first-letter {
+  text-transform: uppercase; /* "outubro de 2026" -> "Outubro de 2026" */
+}
+
+.calendario__nav {
+  width: 2rem;
+  height: 2rem;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.calendario__grade {
+  table-layout: fixed; /* sete colunas iguais, que acompanham a largura do calendário */
+  width: 100%;
+  border-collapse: collapse;
+  text-align: center;
+}
+
+.calendario__grade th {
+  padding-bottom: 0.25rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+}
+
+.calendario__grade td {
+  padding: 1px 0;
+}
+
+.calendario__dia {
+  width: 100%;
+  max-width: 2.4rem;
+  height: 2rem;
+  border: 0;
+  border-radius: 0.4rem;
+  color: var(--texto);
+  background: transparent;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+/* passar o mouse em um dia: verde escuro com a mesma borda arredondada do dia selecionado */
+.calendario__dia:hover {
+  background: color-mix(in srgb, var(--destaque) 22%, transparent);
+}
+
+.calendario__dia--hoje {
+  box-shadow: inset 0 0 0 1px var(--texto-suave);
+}
+
+/* sem contorno de foco: o dia focado fica com o mesmo verde escuro do hover (o início e o final, logo abaixo, mantêm o verde forte) */
+.calendario__dia:focus-visible {
+  outline: none;
+  background: color-mix(in srgb, var(--destaque) 22%, transparent);
+}
+
+.calendario__dia--inicio,
+.calendario__dia--fim,
+.calendario__dia--inicio:hover,
+.calendario__dia--fim:hover,
+.calendario__dia--inicio:focus-visible,
+.calendario__dia--fim:focus-visible {
+  color: var(--destaque-texto);
+  background: var(--destaque);
+  font-weight: 700;
+}
+
+.calendario__rodape {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+.calendario__limpar {
+  padding: 0.2rem 0.6rem;
+  font-size: 0.8rem;
+}

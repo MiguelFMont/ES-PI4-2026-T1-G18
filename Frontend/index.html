@@ -8,7 +8,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap">
-    <link rel="stylesheet" href="./src/core/styles/global.css">
+    <link rel="stylesheet" href="./src/core/styles/global.css">    
+    <!-- Para comparar o visual sem sombras (bordas finas no lugar delas), troque o global.css acima por
+         ./src/core/styles/global-sem-sombras.css (é o mesmo arquivo com as sombras trocadas por bordas). -->
+    <!-- <link rel="stylesheet" href="./src/core/styles/global-sem-sombras.css"> -->
+    <link rel="stylesheet" href="./src/shared/styles/notificacao.css">
 </head>
 <body>
     <!-- Header ou Navbar (SerÃ¡ injetado ou fixo aqui) -->
@@ -17,7 +21,7 @@
             <p class="menu-lateral__marca">FinanceAI</p>
             <nav class="main-nav" aria-label="Principal">
                 <a href="#dashboard" data-rota="dashboard">Início</a>
-                <a href="/transactions">Transações</a>
+                <a href="#transactions" data-rota="transactions">Transações</a>
             </nav>
             <div class="menu-lateral__rodape">
                 <button type="button" id="botao-tema">Tema claro</button>

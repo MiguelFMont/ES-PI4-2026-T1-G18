@@ -19,7 +19,7 @@
   width: 100%;
   min-height: 2.75rem;
   padding: 0.5rem 0.75rem;
-  border: 0;
+  border: var(--borda-elemento, 0);
   border-radius: 0.6rem;
   box-shadow: var(--sombra);
   color: var(--texto);
@@ -82,10 +82,10 @@
     box-sizing: border-box;
     margin-block: 0.3rem;
     padding: 0.35rem;
-    border: 0;
+    border: var(--borda-elemento, 0);
     border-radius: 0.75rem;
     background: var(--fundo-card);
-    box-shadow: 0 12px 28px rgb(0 0 0 / 0.28);
+    box-shadow: var(--sombra-flutuante);
 
     /* descida suave ao abrir (a mesma do calendário) */
     opacity: 1;
@@ -129,5 +129,96 @@
 
   .campo select option::checkmark {
     display: none; /* a opção escolhida já aparece em verde */
+  }
+}
+
+/* Selects com lista própria (shared/components/seletor.js): a lista abre ao passar o mouse ou ao chegar por Tab,
+   com o visual do calendário (cantos arredondados, sombra e a mesma descida suave). */
+.campo--seletor {
+  position: relative;
+}
+
+/* o clique vai para o campo, e não para o select, para não abrir a lista nativa do navegador */
+.campo--seletor select {
+  pointer-events: none;
+  text-align: center;
+  text-align-last: center; /* centraliza também o texto da opção escolhida, e não só as da lista */
+  justify-content: center;
+  position: relative;
+  padding-inline: 0.6rem;
+}
+
+/* O texto exibido do select é o <button><selectedcontent> escrito no começo de cada select (no HTML). Ele ocupa o campo
+   todo e centraliza o texto na área à esquerda da setinha: a folga da direita (--folga-seta) é a largura da seta.
+   Para mover o texto, mude o padding: aumentar o de cima o desce, e aumentar o da direita o leva para a esquerda. */
+.campo--seletor select > button {
+  --folga-seta: 1.4rem;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem var(--folga-seta) 0 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: inherit;
+}
+
+.campo--seletor select::picker-icon {
+  position: absolute;
+  right: 0.7rem;
+}
+
+.seletor__lista {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  right: 0;
+  z-index: 30; /* sem min-width: a largura é a do campo (left e right em 0), como no calendário do período */
+  padding: 0.35rem;
+  border: var(--borda-elemento, 0);
+  border-radius: 0.75rem;
+  background: var(--fundo-card);
+  box-shadow: var(--sombra-flutuante);
+
+  /* fechada: invisível e fora do Tab; aberta: desce suavemente (a mesma animação do calendário) */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-0.6rem);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s 0.2s;
+}
+
+.seletor__lista--aberta {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s;
+}
+
+.seletor__opcao {
+  padding: 0.5rem 0.7rem;
+  border-radius: 0.5rem;
+  color: var(--texto);
+  font-size: 0.85rem;
+  text-align: center;
+  cursor: pointer;
+}
+
+.seletor__opcao:hover {
+  background: color-mix(in srgb, var(--destaque) 22%, transparent);
+}
+
+.seletor__opcao--escolhida,
+.seletor__opcao--escolhida:hover {
+  color: var(--destaque-texto);
+  background: var(--destaque);
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .seletor__lista,
+  .seletor__lista--aberta {
+    transition: none;
   }
 }

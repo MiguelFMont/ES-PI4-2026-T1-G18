@@ -1,0 +1,96 @@
+<!-- Componente: formulário "Nova transação". Lógica em TransactionForm.js.
+     É um painel que desce do topo da tela por cima do conteúdo (CSS em TransactionForm.css);
+     o fundo escurece a página enquanto ele está aberto. -->
+<div id="transactions-fundo" class="transactions-fundo"></div>
+<div id="transactions-painel-form" class="transactions-painel" role="dialog" aria-modal="true"
+  aria-labelledby="transactions-form-titulo">
+  <section class="transactions-cartao" aria-labelledby="transactions-form-titulo">
+    <div class="transactions-form-topo">
+      <h2 id="transactions-form-titulo">Nova transação</h2>
+      <button type="button" id="botao-fechar-form" class="transactions-botao transactions-botao--secundario">Fechar</button>
+    </div>
+
+    <form id="form-transacao" class="transactions-form" novalidate>
+      <fieldset class="transactions-tipo">
+        <legend>Tipo *</legend>
+        <div class="transactions-opcoes">
+          <label class="transactions-opcao">
+            <input type="radio" name="tipo" value="despesa" checked>
+            <span>Despesa</span>
+          </label>
+          <label class="transactions-opcao">
+            <input type="radio" name="tipo" value="receita">
+            <span>Receita</span>
+          </label>
+        </div>
+        <p class="campo__erro" id="campo-tipo-erro" hidden></p>
+      </fieldset>
+
+      <div class="campo transactions-campo--larga">
+        <label for="campo-descricao">Descrição *</label>
+        <input type="text" id="campo-descricao" name="descricao" placeholder="Ex: Supermercado, Uber, Salário" autocomplete="off">
+        <p class="campo__erro" id="campo-descricao-erro" hidden></p>
+      </div>
+
+      <div class="campo">
+        <label for="campo-valor">Valor (R$) *</label>
+        <input type="text" id="campo-valor" name="valor" inputmode="decimal" placeholder="0,00" autocomplete="off">
+        <p class="campo__erro" id="campo-valor-erro" hidden></p>
+      </div>
+
+      <!-- Data: o mesmo calendário do filtro Período (abre ao passar o mouse); também dá para digitar dd/mm/aaaa. -->
+      <div class="campo" data-calendario="unico">
+        <label for="campo-data">Data *</label>
+        <input type="text" id="campo-data" name="data" class="calendario__caixa" placeholder="dd/mm/aaaa"
+          inputmode="numeric" maxlength="10" autocomplete="off" aria-haspopup="dialog" aria-expanded="false">
+        <div data-incluir="/src/shared/components/calendario/Calendario.html"></div>
+        <p class="campo__erro" id="campo-data-erro" hidden></p>
+      </div>
+
+      <div class="campo campo--seletor">
+        <label for="campo-categoria">Categoria *</label>
+        <select id="campo-categoria" name="categoria" aria-controls="lista-campo-categoria" aria-expanded="false">
+        <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
+      <option value="">Selecione...</option>
+      <option value="Alimentacao">Alimentação</option>
+      <option value="Transporte">Transporte</option>
+      <option value="Moradia">Moradia</option>
+      <option value="Saude">Saúde</option>
+      <option value="Lazer">Lazer</option>
+      <option value="Educacao">Educação</option>
+      <option value="Salario">Salário</option>
+      <option value="Outros">Outros</option>
+    </select>
+        <div class="seletor__lista" id="lista-campo-categoria" role="listbox" aria-label="Categoria"></div>
+        <p class="campo__erro" id="campo-categoria-erro" hidden></p>
+      </div>
+
+      <div class="campo campo--seletor">
+        <label for="campo-formaPagamento">Método de pagamento *</label>
+        <select id="campo-formaPagamento" name="formaPagamento" aria-controls="lista-campo-formaPagamento" aria-expanded="false">
+        <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
+      <option value="">Selecione...</option>
+      <option value="dinheiro">Dinheiro</option>
+      <option value="pix">Pix</option>
+      <option value="debito">Cartão de débito</option>
+      <option value="credito">Cartão de crédito</option>
+      <option value="boleto">Boleto</option>
+      <option value="outro">Outro</option>
+    </select>
+        <div class="seletor__lista" id="lista-campo-formaPagamento" role="listbox" aria-label="Método de pagamento"></div>
+        <p class="campo__erro" id="campo-formaPagamento-erro" hidden></p>
+      </div>
+
+      <div class="campo transactions-campo--larga">
+        <label for="campo-observacoes">Observações</label>
+        <textarea id="campo-observacoes" name="observacoes" rows="3" maxlength="300" placeholder="Informações adicionais (opcional)"></textarea>
+        <p class="campo__erro" id="campo-observacoes-erro" hidden></p>
+        <p class="transactions-contador" id="contador-observacoes" aria-hidden="true">0/300</p>
+      </div>
+
+      <div class="transactions-acoes transactions-campo--larga">
+        <button type="submit" id="botao-salvar" class="transactions-botao">Adicionar transação →</button>
+      </div>
+    </form>
+  </section>
+</div>

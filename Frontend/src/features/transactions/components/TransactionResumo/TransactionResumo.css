@@ -1,0 +1,42 @@
+/* Componente TransactionResumo: três cartões estreitos (Entradas, Saídas e Saldo) acima dos filtros. */
+
+.transactions-resumo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.transactions-resumo__item {
+  width: 11rem; /* cartões estreitos, alinhados à esquerda; só a altura segue o padrão */
+  padding: 0.6rem 1rem;
+  border: var(--borda-elemento, 0);
+  border-radius: 0.75rem;
+  background: var(--fundo-card);
+  box-shadow: var(--sombra);
+}
+
+.transactions-resumo__item dt {
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+}
+
+.transactions-resumo__item dd {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.transactions-resumo__valor--receita {
+  color: var(--positivo);
+}
+
+.transactions-resumo__valor--despesa {
+  color: var(--negativo);
+}
+
+.barra{
+  background-color:var(--backgroundBarra);
+  border-radius: 12px;
+  box-shadow: var(--sombra);
+  height: 3.4rem;
+  width: 4.5px;
+}

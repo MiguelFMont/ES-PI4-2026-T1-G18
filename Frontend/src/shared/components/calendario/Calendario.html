@@ -1,0 +1,55 @@
+<!-- Componente compartilhado: calendário que abre embaixo de um campo de data (lógica em shared/components/Calendario.js).
+     Entra dentro do elemento do campo (o que tem data-calendario) por data-incluir. Os botões ficam fora da ordem do
+     Tab (tabindex="-1"): com o teclado, digite a data no campo. Os atalhos de período só aparecem no campo Período. -->
+<div class="calendario" role="dialog" aria-label="Escolher a data" tabindex="-1">
+  <div class="calendario__atalhos" hidden>
+    <button type="button" class="calendario__atalho" data-atalho="hoje" tabindex="-1">Hoje</button>
+    <button type="button" class="calendario__atalho" data-atalho="ontem" tabindex="-1">Ontem</button>
+    <button type="button" class="calendario__atalho" data-atalho="7-dias" tabindex="-1">Últimos 7 dias</button>
+    <button type="button" class="calendario__atalho" data-atalho="30-dias" tabindex="-1">Últimos 30 dias</button>
+    <button type="button" class="calendario__atalho" data-atalho="mes-atual" tabindex="-1">Mês atual</button>
+    <button type="button" class="calendario__atalho" data-atalho="mes-passado" tabindex="-1">Mês passado</button>
+    <button type="button" class="calendario__atalho" data-atalho="ano-atual" tabindex="-1">Ano atual</button>
+    <button type="button" class="calendario__atalho" data-atalho="tudo" tabindex="-1">Tudo</button>
+  </div>
+
+  <div class="calendario__principal">
+  <div class="calendario__cabecalho">
+    <button type="button" class="calendario__nav" data-nav="-1" aria-label="Mês anterior" tabindex="-1">‹</button>
+    <span class="calendario__mes" aria-live="polite"></span>
+    <button type="button" class="calendario__nav" data-nav="1" aria-label="Próximo mês" tabindex="-1">›</button>
+  </div>
+
+  <table class="calendario__grade">
+    <thead>
+      <tr>
+        <th scope="col" abbr="domingo">D</th>
+        <th scope="col" abbr="segunda">S</th>
+        <th scope="col" abbr="terça">T</th>
+        <th scope="col" abbr="quarta">Q</th>
+        <th scope="col" abbr="quinta">Q</th>
+        <th scope="col" abbr="sexta">S</th>
+        <th scope="col" abbr="sábado">S</th>
+      </tr>
+    </thead>
+    <tbody class="calendario__semanas"></tbody>
+  </table>
+
+  <div class="calendario__rodape">
+    <button type="button" class="calendario__limpar" tabindex="-1">Limpar</button>
+  </div>
+  </div>
+
+  <!-- Modelo de uma semana: o JS copia este bloco e preenche os dias do mês. -->
+  <template class="calendario__modelo-semana">
+    <tr>
+      <td><button type="button" class="calendario__dia" tabindex="-1"></button></td>
+      <td><button type="button" class="calendario__dia" tabindex="-1"></button></td>
+      <td><button type="button" class="calendario__dia" tabindex="-1"></button></td>
+      <td><button type="button" class="calendario__dia" tabindex="-1"></button></td>
+      <td><button type="button" class="calendario__dia" tabindex="-1"></button></td>
+      <td><button type="button" class="calendario__dia" tabindex="-1"></button></td>
+      <td><button type="button" class="calendario__dia" tabindex="-1"></button></td>
+    </tr>
+  </template>
+</div>

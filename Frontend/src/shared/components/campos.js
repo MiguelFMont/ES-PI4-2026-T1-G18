@@ -34,3 +34,40 @@ export function ligarCampo(raiz, id) {
     },
   };
 }
+
+/**
+ * Faz o campo aceitar só dígitos, vírgula e ponto (valores em dinheiro). Impede a digitação de letras e limpa o que
+ * for colado. Só restringe os caracteres; se o número faz sentido, quem valida é o formulário.
+ */
+export function aceitarSomenteNumeros(controle) {
+  const PERMITIDOS = /^[\d.,]*$/;
+  controle.addEventListener('beforeinput', (evento) => {
+    if (evento.data && !PERMITIDOS.test(evento.data)) evento.preventDefault();
+  });
+  controle.addEventListener('input', () => {
+    const limpo = controle.value.replace(/[^\d.,]/g, '');
+    if (limpo !== controle.value) controle.value = limpo; // colar texto com letras
+  });
+}
+
+/**
+ * Máscara de valor em dinheiro: os dígitos entram pelos centavos e o campo já mostra o valor formatado.
+ * Digitar 1 mostra "0,01"; depois 1 de novo, "0,11"; depois 5, "1,15"; e assim por diante (com ponto nos milhares).
+ * Letras e símbolos são ignorados, inclusive ao colar. Apagar tira o último dígito.
+ */
+export function aplicarMascaraMoeda(controle) {
+  const LIMITE_DIGITOS = 11; // até 999.999.999,99
+  controle.addEventListener('beforeinput', (evento) => {
+    if (evento.data && /\D/.test(evento.data)) evento.preventDefault();
+  });
+  controle.addEventListener('input', () => {
+    const digitos = controle.value.replace(/\D/g, '').replace(/^0+/, '').slice(0, LIMITE_DIGITOS);
+    if (!digitos) {
+      controle.value = '';
+      return;
+    }
+    const centavos = digitos.padStart(3, '0');
+    const inteiro = centavos.slice(0, -2).replace(/\B(?=(\d{3})+$)/g, '.');
+    controle.value = `${inteiro},${centavos.slice(-2)}`;
+  });
+}
