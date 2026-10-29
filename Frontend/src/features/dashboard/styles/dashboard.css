@@ -1,0 +1,15 @@
+/* src/features/dashboard/styles/dashboard.css */
+.dashboard-container {
+    padding: 2rem 2.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    max-width: 1200px;
+}
+
+@media (max-width: 767px) {
+    .dashboard-container {
+        padding: 1.25rem 1rem;
+        gap: 1rem;
+    }
+}

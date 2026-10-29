@@ -205,6 +205,13 @@ body.com-sessao #main-header {
     box-shadow: var(--sombra-foco);
 }
 
+/* Animação circular de troca de tema (View Transitions API) */
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+}
+
 @media (max-width: 767px) {
     body.com-sessao {
         grid-template-columns: 1fr;

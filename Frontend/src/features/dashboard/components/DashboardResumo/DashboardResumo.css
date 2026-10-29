@@ -1,0 +1,44 @@
+.dashboard-resumo {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+}
+
+.dashboard-resumo[hidden] {
+    display: none;
+}
+
+.resumo-card {
+    background-color: var(--fundo-card);
+    border: 1px solid var(--borda);
+    border-radius: 0.75rem;
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.resumo-card__rotulo {
+    font-size: 0.85rem;
+    color: var(--texto-suave);
+}
+
+.resumo-card__valor {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--texto);
+}
+
+.resumo-card__valor--positivo {
+    color: var(--positivo);
+}
+
+.resumo-card__valor--negativo {
+    color: var(--negativo);   
+}
+
+@media (max-width: 767px) {
+    .dashboard-resumo {
+        grid-template-columns: 1fr;
+    }
+}
