@@ -23,6 +23,17 @@ const TELAS = {
     ],
     modulo: () => import('../features/transactions/index.js'),
   },
+  'mentor-ia': {
+    titulo: 'Mentor IA',
+    html: '/src/features/mentor-ia/views/mentor-ia.html',
+    css: [
+      '/src/shared/styles/campos.css',
+      '/src/features/mentor-ia/styles/mentor-ia.css',
+      '/src/features/mentor-ia/components/MentorConversa/MentorConversa.css',
+      '/src/features/mentor-ia/components/MentorEntrada/MentorEntrada.css',
+    ],
+    modulo: () => import('../features/mentor-ia/index.js'),
+  },
 };
 
 let telaAtual = null; // { modulo, links } da tela montada agora

@@ -18,6 +18,7 @@ const ATALHOS_DO_INDEX: Record<string, string> = {
   "/login": "/#login",
   "/dashboard": "/#dashboard",
   "/transactions": "/#transactions",
+  "/mentor-ia": "/#mentor-ia",
 };
 
 export const frontendRouter = Router();

@@ -1,0 +1,84 @@
+/* Página do Mentor IA: layout, cartão do chat e botões. Cada componente tem o seu CSS na própria pasta
+   (components/<Nome>/<Nome>.css). Usa as variáveis de tema de core/styles/global.css. */
+
+/* A página ocupa a altura da janela: o cabeçalho fica no topo, o cartão preenche o resto e a conversa rola por dentro
+   dele (o campo da pergunta fica sempre visível embaixo). */
+.mentor-ia-page {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 1.25rem;
+  height: 100dvh;
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+}
+
+.mentor-ia-page [hidden] {
+  display: none !important; /* os estados do HTML usam o atributo hidden, mesmo em elementos com display próprio */
+}
+
+.mentor-ia-cabecalho h1 {
+  font-size: 1.75rem;
+}
+
+.mentor-ia-subtitulo {
+  color: var(--texto-suave);
+  margin-top: 0.25rem;
+}
+
+.mentor-ia-cartao {
+  border: var(--borda-elemento, 0);
+  border-radius: 1rem;
+  background: var(--fundo-card);
+  box-shadow: var(--sombra);
+}
+
+.mentor-ia-chat {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.mentor-ia-botao {
+  transition: scale 0.1s ease, box-shadow 0.1s ease, background-color var(--duracao-cor) ease, color var(--duracao-cor) ease;
+  min-height: 2.75rem;
+  padding: 0.5rem 1.25rem;
+  border: var(--borda-elemento, 0);
+  border-radius: 0.6rem;
+  color: var(--destaque-texto);
+  background: var(--destaque);
+  box-shadow: var(--sombra);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* com o teclado (Tab) o botão cresce do mesmo jeito que no hover: não há contorno de foco */
+.mentor-ia-botao:hover:not(:disabled),
+.mentor-ia-botao:focus-visible:not(:disabled) {
+  scale: 1.01;
+}
+
+.mentor-ia-botao:focus-visible {
+  outline: none;
+  box-shadow: var(--sombra-foco);
+}
+
+.mentor-ia-botao:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* no celular o menu fica em cima da tela: a página volta a crescer com o conteúdo e a conversa ganha altura própria */
+@media (max-width: 767px) {
+  .mentor-ia-page {
+    height: auto;
+    grid-template-rows: auto auto;
+    padding: 1.25rem 1rem;
+  }
+
+  .mentor-ia-cabecalho h1 {
+    font-size: 1.5rem;
+  }
+}

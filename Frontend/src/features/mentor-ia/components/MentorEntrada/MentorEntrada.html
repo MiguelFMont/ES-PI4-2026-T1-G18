@@ -1,0 +1,18 @@
+<!-- Componente: campo da pergunta e botão Enviar. Lógica em MentorEntrada.js. -->
+<form id="mentor-entrada" class="mentor-entrada" novalidate>
+  <div class="campo mentor-entrada__campo">
+    <label for="mentor-texto" class="so-leitor">Sua pergunta</label>
+    <textarea id="mentor-texto" name="texto" rows="1" maxlength="2000" autocomplete="off"
+      placeholder="Pergunte sobre seus gastos, orçamento ou um conceito financeiro"
+      aria-describedby="mentor-dica"></textarea>
+  </div>
+  <button type="submit" id="mentor-enviar" class="mentor-ia-botao" disabled>Enviar</button>
+
+  <div class="mentor-entrada__rodape">
+    <p id="mentor-dica">
+      Enter envia e Shift + Enter quebra a linha. Conteúdo educacional: o Mentor não recomenda comprar ou vender
+      ativos específicos.
+    </p>
+    <p id="mentor-contador" class="mentor-entrada__contador">0/2000</p>
+  </div>
+</form>
