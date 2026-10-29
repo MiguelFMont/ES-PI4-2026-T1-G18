@@ -12,8 +12,8 @@ npm run dev
 
 Abra `http://localhost:3001`. O Backend precisa do `.env` preenchido (ver `Backend/README.md`) e serve:
 
-- `/` abre o `index.html` (login e dashboard, por rotas `#`);
-- `/transactions` abre a página de Transações. Os endereços das páginas ficam em `Backend/src/http/frontend.ts`: quem criar uma página nova acrescenta uma linha lá;
+- `/` abre o `index.html`, a única página: ele tem o menu fixo e um roteador por `#` (`#login`, `#dashboard`, `#transactions`) que troca só o conteúdo de `#app-content` (SPA);
+- `/transactions`, `/login` e `/dashboard` são atalhos que redirecionam para `/#transactions` etc. Ficam em `Backend/src/http/frontend.ts`: quem criar uma tela nova acrescenta uma linha lá e uma entrada em `TELAS` no `src/app/main.js`;
 - `/v1/...` é a API.
 
 Não abra o `index.html` com duplo clique (`file://`): módulos ES e `fetch` não funcionam assim.
@@ -41,15 +41,17 @@ src/
   core/                    infraestrutura compartilhada (HTTP, sessão, tema, menu, inclusão de componentes)
   shared/                  componentes e estilos reutilizáveis por várias features
   features/<feature>/      uma pasta por funcionalidade
-    views/                   a página (HTML)
+    views/                   a tela (HTML, só o miolo: o menu fica no index.html)
     components/<Nome>/       um componente = <Nome>.html (estrutura) + <Nome>.js (comportamento)
     services/                chamadas ao Backend
     utils/                   regras sem tela (validação, formatação...)
     styles/                  CSS da feature
-    index.js                 entrada da página: confere a sessão e liga tudo
+    index.js                 entrada da tela: montar(container) liga tudo e desmontar() desliga ao sair
 ```
 
 Regra: **a estrutura é HTML; o JavaScript só cuida de comportamento** (chamar a API, validar, preencher dados). Textos vindos da API entram sempre por `textContent`.
+
+Componentes compartilhados em `src/shared/`: `Calendario.js` (calendário com atalhos de período), `seletor.js` (lista dos selects que abre ao passar o mouse), `notificacao.js` (`notificar(mensagem, 'sucesso' | 'erro' | 'info')`) e `campos.js` (ligar campos e `aceitarSomenteNumeros`). Para comparar o visual sem sombras, troque o `global.css` do `index.html` por `global-sem-sombras.css`.
 
 A comunicação com o Backend é REST/HTTP: os services chamam exclusivamente `apiFetch` de `src/core/http/api.js`, que centraliza a URL base (`/v1`, a mesma origem da página), o token JWT, a leitura de respostas e os erros HTTP. Para outro ambiente, defina `window.FINANCEAI_API_URL` antes do módulo principal.
 

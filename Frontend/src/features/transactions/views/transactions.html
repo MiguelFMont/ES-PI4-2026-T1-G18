@@ -1,0 +1,21 @@
+<!--
+  Tela de Transações (extrato), um fragmento: não é um documento completo. O index.html (menu, fontes e
+  estilos globais) fica sempre aberto e o roteador (app/main.js) coloca este conteúdo em #app-content, junto
+  com os CSS da tela. Toda a estrutura é HTML (este arquivo e os componentes); o JavaScript só junta os
+  componentes e liga a lógica pelos ids (validar, chamar a API, preencher a tabela).
+  Os caminhos começam em / (a raiz do Frontend).
+-->
+<section class="transactions-page" aria-labelledby="transactions-titulo">
+    <div class="transactions-cabecalho">
+        <div>
+            <h1 id="transactions-titulo">Transações</h1>
+            <p class="transactions-subtitulo">Extrato das suas receitas e despesas.</p>
+        </div>
+    </div>
+
+    <!-- Componentes da tela: cada um é um arquivo HTML em components/<Nome>/, incluído aqui pelo JS (core/views/includes.js). -->
+    <div data-incluir="/src/features/transactions/components/TransactionResumo/TransactionResumo.html"></div>
+    <div data-incluir="/src/features/transactions/components/TransactionFilters/TransactionFilters.html"></div>
+    <div data-incluir="/src/features/transactions/components/TransactionExtrato/TransactionExtrato.html"></div>
+    <div data-incluir="/src/features/transactions/components/TransactionForm/TransactionForm.html"></div>
+</section>

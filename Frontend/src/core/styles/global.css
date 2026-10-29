@@ -16,14 +16,27 @@
     --borda: #272b35;
     --texto: #f4f5f7;
     --texto-suave: #9aa1b2;
-    --destaque: #c6f432;
+    --destaque: #c6f432  ;
     --destaque-texto: #0b0c10;
     --positivo: #4ade80;
     --negativo: #f87171;
     --foco: #c6f432;
+    /* duração da mudança de cor dos botões ao passar o mouse ou chegar por Tab (a mesma suavidade da troca de tema) */
+    --duracao-cor: 0.4s;
     /* sombra bem suave dos cartões, botões e campos (no lugar de bordas) */
     --sombra: 0 1px 2px rgba(48, 46, 46, 0.044), 0 2px 8px rgba(58, 56, 56, 0.18);
+    /* sombra pequena de quem está com o foco do teclado (no lugar do contorno) */
+    --sombra-foco: 0 2px 6px rgb(0 0 0 / 0.5);
     --backgroundBarra:rgba(211, 211, 211, 0.071);
+    /* sombra de quem flutua por cima da tela (calendário, listas, painel, notificações) */
+    --sombra-flutuante: 0 12px 28px rgb(0 0 0 / 0.4);
+    /* contorno de cartões, campos e botões: nenhum neste estilo (a sombra os destaca). O global-sem-sombras.css troca
+       isto por uma borda fina. */
+    --borda-elemento: 0;
+    /* fundo levemente mais cinza das linhas do extrato */
+    --fundo-linha: color-mix(in srgb, var(--texto) 5%, var(--fundo-card));
+    /* fundo, mais escuro ainda, de cada campo editável dentro da linha */
+    --fundo-celula: color-mix(in srgb, var(--texto) 10%, var(--fundo-card));
 }
 
 :root[data-tema='claro'] {
@@ -33,12 +46,14 @@
     --borda: #d0d5dd;
     --texto: #101828;
     --texto-suave: #475467;
-    --destaque: #4d7c0f;
+    --destaque: #1E6B47  ;
     --destaque-texto: #ffffff;
     --positivo: #067647;
     --negativo: #b42318;
     --foco: grey;
     --sombra: 0 2px 1px rgb(16 24 40 / 0.03), 0 1px 4px rgb(16 24 40 / 0.07);
+    --sombra-foco: 0 2px 6px rgb(16 24 40 / 0.2);
+    --sombra-flutuante: 0 12px 28px rgb(16 24 40 / 0.18);
     /*cor da barra que separa o botão "nova transação" dos cards de
         entrada, saida e saldo. Coloquei aqui porque ela muda o tom
         de acordo com o tema da pagina (claro/escuro)
@@ -161,7 +176,7 @@ body.com-sessao #main-header {
 .menu-lateral__rodape button {
     min-height: 2.5rem;
     padding: 0.5rem 0.75rem;
-    border: 0;
+    border: var(--borda-elemento, 0);
     border-radius: 0.6rem;
     color: var(--texto);
     background: var(--fundo-campo);
@@ -170,10 +185,24 @@ body.com-sessao #main-header {
     cursor: pointer;
 }
 
+.main-nav a,
+.menu-lateral__rodape button {
+    transition: scale 0.1s ease, box-shadow 0.1s ease, background-color var(--duracao-cor) ease, color var(--duracao-cor) ease;
+}
+
+/* hover ou Tab: o botão se preenche com a cor principal */
+.menu-lateral__rodape button:hover,
+.menu-lateral__rodape button:focus-visible {
+    color: var(--destaque-texto);
+    background: var(--destaque);
+}
+
+/* navegando com Tab: sem contorno, o item cresce um pouco (como o hover dos botões) e ganha uma sombra pequena */
 .main-nav a:focus-visible,
 .menu-lateral__rodape button:focus-visible {
-    outline: 3px solid var(--foco);
-    outline-offset: 2px;
+    outline: none;
+    scale: 1.01;
+    box-shadow: var(--sombra-foco);
 }
 
 @media (max-width: 767px) {

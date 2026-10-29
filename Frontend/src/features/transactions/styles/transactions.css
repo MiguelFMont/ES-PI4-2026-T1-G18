@@ -1,0 +1,121 @@
+/* Página de Transações: layout e partes comuns aos componentes (cartão, botões, botões).
+   Cada componente tem o seu CSS na própria pasta (components/<Nome>/<Nome>.css).
+   Usa as variáveis de tema de core/styles/global.css. */
+
+.transactions-page {
+  display: grid;
+  gap: 1.5rem;
+  max-width: 100rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+
+.transactions-page [hidden] {
+  display: none !important; /* os estados do HTML usam o atributo hidden, mesmo em elementos com display próprio */
+}
+
+.transactions-cabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.transactions-cabecalho h1 {
+  font-size: 1.75rem;
+}
+
+.transactions-subtitulo {
+  color: var(--texto-suave);
+  margin-top: 0.25rem;
+}
+
+.transactions-cartao {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem;
+  border: var(--borda-elemento, 0);
+  border-radius: 1rem;
+  background: var(--fundo-card);
+  box-shadow: var(--sombra);
+}
+
+.transactions-cartao h2 {
+  font-size: 1.1rem;
+}
+
+.transactions-campo--larga {
+  grid-column: 1 / -1;
+}
+
+.transactions-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.transactions-botao {
+  transition: scale 0.1s ease, box-shadow 0.1s ease, background-color var(--duracao-cor) ease, color var(--duracao-cor) ease;
+  min-height: 2.75rem;
+  padding: 0.5rem 1.25rem;
+  border: var(--borda-elemento, 0);
+  border-radius: 0.6rem;
+  color: var(--destaque-texto);
+  background: var(--destaque); /* botão primário: verde */
+  box-shadow: var(--sombra);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.transactions-botao--secundario {
+  color: var(--texto-suave);
+  background: var(--fundo-campo); /* secundário: neutro, para não herdar o verde do primário */
+  border: var(--borda-elemento, 0);
+  font-weight: 600;
+}
+/* hover ou Tab: o botão secundário se preenche com a cor principal (o primário já é verde); desativado não muda */
+.transactions-botao--secundario:hover:not(:disabled),
+.transactions-botao--secundario:focus-visible:not(:disabled) {
+  color: var(--destaque-texto);
+  background: var(--destaque);
+}
+
+/* vale para os botões primários e secundários, menos o desativado. Com o teclado (Tab) o botão cresce do mesmo jeito
+   que no hover: não há contorno de foco. */
+.transactions-botao:hover:not(:disabled),
+.transactions-botao:focus-visible:not(:disabled) {
+  scale: 1.01;
+}
+
+.transactions-botao:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.transactions-botao:focus-visible {
+  outline: none;
+  box-shadow: var(--sombra-foco); /* no lugar do contorno: uma sombra pequena (e o scale de cima) */
+}
+
+/* botão de ação destrutiva (excluir): vermelho no lugar do verde */
+.transactions-botao--perigo {
+  color: var(--white);
+  background: var(--negativo);
+}
+
+.transactions-botao--perigo:hover:not(:disabled),
+.transactions-botao--perigo:focus-visible:not(:disabled) {
+  background: color-mix(in srgb, var(--negativo) 82%, var(--black));
+}
+
+@media (max-width: 767px) {
+  .transactions-acoes {
+    justify-content: stretch;
+  }
+
+  .transactions-acoes .transactions-botao {
+    flex: 1;
+  }
+}

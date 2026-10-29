@@ -1,0 +1,128 @@
+<!-- Componente: extrato (contagem, quantidade por página, seleção em lote, lista e paginação). Lógica em TransactionExtrato.js
+     e EdicaoCelula.js. Um cartão cobre todo o extrato; cada transação é um bloco dentro dele e cada campo, um bloco ainda mais escuro, que se edita ao clicar. -->
+<!-- Extrato: mostra só um destes estados por vez (carregando, erro ou conteúdo) -->
+<div id="transactions-extrato" class="transactions-extrato">
+  <p id="extrato-carregando" class="transactions-estado">Carregando transações...</p>
+
+  <div id="extrato-erro" class="transactions-estado" hidden>
+    <p id="extrato-erro-texto" role="alert"></p>
+    <button type="button" id="extrato-tentar-novamente" class="transactions-botao">Tentar novamente</button>
+  </div>
+
+  <div id="extrato-conteudo" class="transactions-extrato__conteudo transactions-cartao" hidden>
+    <div class="transactions-resumo-area">
+      <p id="extrato-contagem" class="transactions-contagem"></p>
+
+      <!-- Quantas transações aparecem por página (mesma lista dos filtros, que abre ao passar o mouse) -->
+      <div class="campo campo--seletor extrato-por-pagina">
+        <label for="extrato-limite">Por página</label>
+        <select id="extrato-limite" aria-controls="lista-extrato-limite" aria-expanded="false">
+          <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
+          <option value="20">20</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </select>
+        <div class="seletor__lista" id="lista-extrato-limite" role="listbox" aria-label="Transações por página"></div>
+      </div>
+    </div>
+
+    <!-- Barra das transações selecionadas: aparece quando há pelo menos uma marcada -->
+    <div id="extrato-selecao" class="extrato-selecao" role="region" aria-label="Transações selecionadas" hidden>
+      <p id="extrato-selecao-texto" class="extrato-selecao__texto" aria-live="polite"></p>
+      <div class="extrato-selecao__acoes">
+        <button type="button" id="extrato-editar-varias" class="transactions-botao transactions-botao--secundario"
+          aria-expanded="false" aria-controls="extrato-edicao-lote">Editar</button>
+        <button type="button" id="extrato-excluir-varias" class="transactions-botao transactions-botao--perigo">Excluir</button>
+        <button type="button" id="extrato-limpar-selecao" class="transactions-botao transactions-botao--secundario">Cancelar seleção</button>
+      </div>
+
+      <!-- Edição em lote: só muda o que for escolhido ("Manter" deixa como está) -->
+      <form id="extrato-edicao-lote" class="extrato-edicao-lote" novalidate hidden>
+        <div class="campo">
+          <label for="lote-categoria">Categoria</label>
+          <select id="lote-categoria" name="categoria">
+            <option value="">Manter</option>
+            <option value="Alimentacao">Alimentação</option>
+            <option value="Transporte">Transporte</option>
+            <option value="Moradia">Moradia</option>
+            <option value="Saude">Saúde</option>
+            <option value="Lazer">Lazer</option>
+            <option value="Educacao">Educação</option>
+            <option value="Salario">Salário</option>
+            <option value="Outros">Outros</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label for="lote-formaPagamento">Pagamento</label>
+          <select id="lote-formaPagamento" name="formaPagamento">
+            <option value="">Manter</option>
+            <option value="dinheiro">Dinheiro</option>
+            <option value="pix">Pix</option>
+            <option value="debito">Cartão de débito</option>
+            <option value="credito">Cartão de crédito</option>
+            <option value="boleto">Boleto</option>
+            <option value="outro">Outro</option>
+          </select>
+        </div>
+        <button type="submit" class="transactions-botao">Aplicar</button>
+      </form>
+    </div>
+
+    <p id="extrato-vazio" class="transactions-estado" hidden></p>
+
+    <div id="extrato-lista" class="transactions-extrato__conteudo" hidden>
+      <div class="transactions-tabela-rolavel">
+        <table class="transactions-tabela">
+          <caption class="so-leitor">Extrato, da transação mais recente para a mais antiga. Clique em um campo para editar.</caption>
+          <thead>
+            <tr>
+              <th scope="col" class="extrato-col-selecao">
+                <input type="checkbox" id="extrato-selecionar-todas" aria-label="Selecionar todas as transações da página">
+              </th>
+              <th scope="col">Data</th>
+              <th scope="col">
+                <!-- os dois rótulos seguem as larguras dos campos Descrição e Observações de cada linha -->
+                <div class="extrato-descricao">
+                  <span class="transactions-descricao">Descrição</span>
+                  <span class="transactions-observacoes">Observações</span>
+                </div>
+              </th>
+              <th scope="col">Categoria</th>
+              <th scope="col">Pagamento</th>
+              <th scope="col">Tipo</th>
+              <th scope="col" class="transactions-valor">Valor</th>
+            </tr>
+          </thead>
+          <tbody id="extrato-linhas"></tbody>
+        </table>
+      </div>
+
+      <nav class="transactions-paginacao" aria-label="Paginação do extrato">
+        <button type="button" id="pagina-anterior">Anterior</button>
+        <span id="pagina-info" aria-live="polite"></span>
+        <button type="button" id="pagina-proxima">Próxima</button>
+      </nav>
+    </div>
+  </div>
+</div>
+
+<!-- Modelo de uma linha do extrato: o JS copia este bloco para cada transação e só preenche os textos. Cada campo é um
+     botão: clicar nele troca o texto por um campo de edição (EdicaoCelula.js). -->
+<template id="modelo-linha-extrato">
+  <tr>
+    <td class="extrato-col-selecao">
+      <input type="checkbox" data-selecao aria-label="Selecionar transação">
+    </td>
+    <td><button type="button" class="extrato-celula" data-campo="data"></button></td>
+    <td class="extrato-col-descricao">
+      <div class="extrato-descricao">
+        <button type="button" class="extrato-celula transactions-descricao" data-campo="descricao"></button>
+        <button type="button" class="extrato-celula transactions-observacoes" data-campo="observacoes"></button>
+      </div>
+    </td>
+    <td><button type="button" class="extrato-celula" data-campo="categoria"></button></td>
+    <td><button type="button" class="extrato-celula" data-campo="formaPagamento"></button></td>
+    <td><button type="button" class="extrato-celula" data-campo="tipo"></button></td>
+    <td class="transactions-valor"><button type="button" class="extrato-celula" data-campo="valor"></button></td>
+  </tr>
+</template>

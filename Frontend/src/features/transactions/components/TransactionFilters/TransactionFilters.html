@@ -1,0 +1,100 @@
+<!-- Componente: cartão de filtros. Lógica em TransactionFilters.js (a lista dos selects abre ao passar o mouse ou ao
+     chegar por Tab, em shared/components/seletor.js). -->
+<section class="transactions-cartao transactions-cartao--compacto" aria-labelledby="transactions-filtros-titulo">
+  <h2 id="transactions-filtros-titulo">Filtros</h2>
+
+  <form id="form-filtros" class="transactions-filtros" novalidate>
+    <div class="campo">
+      <label for="filtro-busca">Descrição</label>
+      <input type="text" id="filtro-busca" name="busca" placeholder="Buscar..." autocomplete="off">
+      <p class="campo__erro" id="filtro-busca-erro" hidden></p>
+    </div>
+
+    <div class="campo campo--seletor">
+      <label for="filtro-tipo">Tipo</label>
+      <select id="filtro-tipo" name="tipo" aria-controls="lista-filtro-tipo" aria-expanded="false">
+        <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
+        <option value="">Todos</option>
+        <option value="despesa">Despesas</option>
+        <option value="receita">Receitas</option>
+      </select>
+      <div class="seletor__lista" id="lista-filtro-tipo" role="listbox" aria-label="Tipo"></div>
+      <p class="campo__erro" id="filtro-tipo-erro" hidden></p>
+    </div>
+
+    <div class="campo campo--seletor">
+      <label for="filtro-categoria">Categoria</label>
+      <select id="filtro-categoria" name="categoria" aria-controls="lista-filtro-categoria" aria-expanded="false">
+        <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
+    <option value="">Todas</option>
+    <option value="Alimentacao">Alimentação</option>
+    <option value="Transporte">Transporte</option>
+    <option value="Moradia">Moradia</option>
+    <option value="Saude">Saúde</option>
+    <option value="Lazer">Lazer</option>
+    <option value="Educacao">Educação</option>
+    <option value="Salario">Salário</option>
+    <option value="Outros">Outros</option>
+  </select>
+      <div class="seletor__lista" id="lista-filtro-categoria" role="listbox" aria-label="Categoria"></div>
+      <p class="campo__erro" id="filtro-categoria-erro" hidden></p>
+    </div>
+
+    <div class="campo campo--seletor">
+      <label for="filtro-formaPagamento">Pagamento</label>
+      <select id="filtro-formaPagamento" name="formaPagamento" aria-controls="lista-filtro-formaPagamento" aria-expanded="false">
+        <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
+    <option value="">Todos</option>
+    <option value="dinheiro">Dinheiro</option>
+    <option value="pix">Pix</option>
+    <option value="debito">Cartão de débito</option>
+    <option value="credito">Cartão de crédito</option>
+    <option value="boleto">Boleto</option>
+    <option value="outro">Outro</option>
+  </select>
+      <div class="seletor__lista" id="lista-filtro-formaPagamento" role="listbox" aria-label="Pagamento"></div>
+      <p class="campo__erro" id="filtro-formaPagamento-erro" hidden></p>
+    </div>
+
+    <!-- Período: um quadro com borda e o título "Período" contornando as duas caixas ("Início" e "Final"). O calendário
+         (com os atalhos 1 semana, 30 dias, 1 a 3 meses...) abre ao passar o mouse e tem exatamente a largura deste
+         quadro. Também dá para digitar dd/mm/aaaa em cada caixa. Lógica em shared/components/Calendario.js. -->
+    <fieldset class="campo campo--periodo periodo" data-calendario>
+      <legend>Período</legend>
+      <div class="periodo__caixas">
+        <div class="periodo__item">
+          <label for="filtro-periodo-inicio">Início</label>
+          <input type="text" id="filtro-periodo-inicio" name="periodoInicio" class="calendario__caixa periodo__caixa" placeholder="dd/mm/aaaa"
+            inputmode="numeric" maxlength="10" autocomplete="off" aria-haspopup="dialog" aria-expanded="false">
+        </div>
+        <div class="periodo__item">
+          <label for="filtro-periodo-fim">Final</label>
+          <input type="text" id="filtro-periodo-fim" name="periodoFim" class="calendario__caixa periodo__caixa" placeholder="dd/mm/aaaa"
+            inputmode="numeric" maxlength="10" autocomplete="off" aria-haspopup="dialog" aria-expanded="false">
+        </div>
+      </div>
+      <div data-incluir="/src/shared/components/calendario/Calendario.html"></div>
+      <p class="campo__erro" id="filtro-periodo-erro" hidden></p>
+    </fieldset>
+
+    <div class="campo">
+      <label for="filtro-valorMin">Valor mín. (R$)</label>
+      <input type="text" id="filtro-valorMin" name="valorMin" inputmode="decimal" placeholder="0,00" autocomplete="off">
+      <p class="campo__erro" id="filtro-valorMin-erro" hidden></p>
+    </div>
+
+    <div class="campo">
+      <label for="filtro-valorMax">Valor máx. (R$)</label>
+      <input type="text" id="filtro-valorMax" name="valorMax" inputmode="decimal" placeholder="0,00" autocomplete="off">
+      <p class="campo__erro" id="filtro-valorMax-erro" hidden></p>
+    </div>
+
+    <div class="transactions-filtros__acoes">
+      <button type="button" id="botao-limpar-filtros" class="transactions-botao transactions-botao--secundario">Limpar filtros</button>
+    </div>
+    <!-- Modelo de uma opção das listas de Tipo, Categoria e Pagamento: o JS copia este bloco para cada <option>. -->
+    <template id="modelo-opcao-seletor">
+      <div class="seletor__opcao" role="option"></div>
+    </template>
+  </form>
+</section>

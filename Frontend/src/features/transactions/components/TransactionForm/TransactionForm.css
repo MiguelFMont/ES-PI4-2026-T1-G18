@@ -1,0 +1,133 @@
+/* Componente TransactionForm: formulário "Nova transação". Cartão, botões e utilitários de grade ficam em styles/transactions.css. */
+
+.transactions-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 1rem;
+}
+
+.transactions-tipo {
+  border: 0;
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.transactions-tipo legend {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+  margin-bottom: 0.35rem;
+}
+
+.transactions-opcoes {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.transactions-opcao {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
+  position: relative;
+  border: var(--borda-elemento, 0);
+  border-radius: 0.6rem;
+  background: var(--fundo-campo);
+  box-shadow: var(--sombra);
+  cursor: pointer;
+  transition: scale 0.1s ease;
+}
+
+/* sem a bolinha: o botão de opção continua no HTML (e no teclado), só não aparece */
+.transactions-opcao input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.transactions-opcao:has(input:checked) {
+  font-weight: 700;
+  box-shadow: 0 0 0 2px var(--destaque); /* opção escolhida: anel verde, sem borda */
+}
+
+.transactions-opcao:has(input:focus-visible) {
+  scale: var(--escala-foco, 1.03); /* com Tab: cresce um pouco, como os outros campos */
+}
+
+.transactions-contador {
+  margin-top: 0.25rem;
+  text-align: right;
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+}
+
+/* Painel que desce do topo por cima do conteúdo (abre com .transactions-painel--aberto, via JS) */
+.transactions-fundo {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgb(0 0 0 / 0.55);
+  opacity: 0;
+  visibility: hidden; /* fechado, não recebe clique nem foco */
+  transition: opacity 0.3s ease, visibility 0s 0.3s;
+}
+
+.transactions-fundo--aberto {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.3s ease, visibility 0s;
+}
+
+.transactions-painel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 15rem; /* largura do menu lateral (core/styles/global.css): o painel cobre só o conteúdo */
+  z-index: 50;
+  max-height: 100vh;
+  overflow-y: auto;
+  padding: 1rem;
+  transform: translateY(-100%);
+  visibility: hidden;
+  transition: transform 0.35s ease, visibility 0s 0.35s;
+}
+
+.transactions-painel--aberto {
+  transform: translateY(0);
+  visibility: visible;
+  transition: transform 0.35s ease, visibility 0s;
+}
+
+.transactions-painel .transactions-cartao {
+  max-width: 56rem;
+  margin: 0 auto;
+  box-shadow: var(--sombra-flutuante);
+}
+
+.transactions-form-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+body.transactions-painel-aberto {
+  overflow: hidden;
+}
+
+@media (max-width: 767px) {
+  .transactions-painel {
+    left: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .transactions-fundo,
+  .transactions-painel {
+    transition: none;
+  }
+}

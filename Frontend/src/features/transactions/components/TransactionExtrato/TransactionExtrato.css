@@ -1,0 +1,348 @@
+/* Componente TransactionExtrato: contagem, seleção em lote, lista de transações, paginação e estados. */
+.transactions-extrato,
+.transactions-extrato__conteudo {
+  display: grid;
+  gap: 1rem;
+}
+
+.transactions-extrato--carregando {
+  opacity: 0.6;
+}
+
+.transactions-resumo-area {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.transactions-contagem {
+  color: var(--texto-suave);
+}
+
+/* "Por página": campo pequeno, com a mesma aparência dos filtros */
+.extrato-por-pagina {
+  flex: 0 0 7rem;
+  gap: 0.2rem;
+}
+
+.extrato-por-pagina label {
+  font-size: 0.75rem;
+}
+
+.extrato-por-pagina select {
+  min-height: 2.1rem;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.85rem;
+  border-radius: 0.5rem;
+}
+
+/* Barra das transações selecionadas (dentro do cartão do extrato, no tom das linhas) */
+.extrato-selecao {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  padding: 0.6rem 1rem;
+  border: var(--borda-elemento, 0);
+  border-radius: 0.75rem;
+  background: var(--fundo-linha);
+}
+
+.extrato-selecao__texto {
+  font-weight: 700;
+}
+
+.extrato-selecao__acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.extrato-selecao .transactions-botao {
+  min-height: 2.1rem;
+  padding: 0.25rem 0.9rem;
+  font-size: 0.85rem;
+}
+
+.extrato-edicao-lote {
+  display: flex;
+  flex: 1 0 100%;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.extrato-edicao-lote .campo {
+  flex: 0 1 12rem;
+}
+
+.extrato-edicao-lote select {
+  min-height: 2.1rem;
+  font-size: 0.85rem;
+}
+
+.extrato-edicao-lote .transactions-botao {
+  min-height: 2.1rem;
+  padding: 0.25rem 0.9rem;
+}
+
+/* Um cartão (.transactions-cartao, no HTML) cobre todo o extrato. Dentro dele, cada transação é um bloco (fundo
+   --fundo-linha) e cada campo, um bloco ainda mais escuro (--fundo-celula). Não há linhas divisórias; a tabela
+   continua sendo uma <table> para os leitores de tela, só o visual muda. */
+.transactions-tabela-rolavel {
+  position: relative; /* prende os textos .so-leitor da tabela dentro da área rolável */
+  overflow-x: auto;
+}
+
+.transactions-tabela {
+  width: 100%;
+  min-width: 63rem; /* abaixo disso a área rola na horizontal, em vez de apertar os campos */
+  table-layout: fixed; /* a largura das colunas não depende do conteúdo: abrir um editor não move nada */
+  border-collapse: separate;
+  border-spacing: 0 0.4rem;
+}
+
+/* larguras das colunas (a Descrição, com as observações, fica com o que sobrar) */
+.transactions-tabela th:nth-child(1) { width: 2.4rem; }
+.transactions-tabela th:nth-child(2) { width: 8rem; } /* cabe a data inteira (dd/mm/aaaa) */
+.transactions-tabela th:nth-child(4) { width: 8.5rem; }
+.transactions-tabela th:nth-child(5) { width: 10rem; }
+.transactions-tabela th:nth-child(6) { width: 6.5rem; }
+.transactions-tabela th:nth-child(7) { width: 11rem; } /* cabe valores grandes, como + R$ 1.234.567,89 */
+
+.transactions-tabela th,
+.transactions-tabela td {
+  padding: 0.3rem 0.25rem;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.transactions-tabela th {
+  padding-block: 0 0.1rem;
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+  white-space: nowrap;
+}
+
+.transactions-tabela tbody td {
+  background: var(--fundo-linha);
+  border-block: var(--borda-elemento, 0);
+}
+
+.transactions-tabela tbody td:first-child {
+  padding-left: 0.6rem;
+  border-radius: 0.75rem 0 0 0.75rem;
+}
+
+.transactions-tabela tbody td:last-child {
+  padding-right: 0.5rem;
+  border-radius: 0 0.75rem 0.75rem 0;
+}
+
+.transactions-linha--selecionada td {
+  background: color-mix(in srgb, var(--destaque) 18%, var(--fundo-linha));
+}
+
+.extrato-col-selecao {
+  text-align: center !important;
+}
+
+.extrato-col-selecao input {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--destaque);
+  cursor: pointer;
+}
+
+/* descrição e observações lado a lado, na mesma linha */
+.extrato-descricao {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.extrato-descricao .transactions-descricao {
+  flex: 1 1 55%;
+}
+
+.extrato-descricao .transactions-observacoes {
+  flex: 1 1 45%;
+}
+
+/* rótulos da coluna (Descrição e Observações) alinhados com o texto dos campos abaixo */
+.transactions-tabela th .extrato-descricao > span {
+  min-width: 0; /* encolhe junto com os campos de baixo, para ficarem alinhados */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-inline: 0.6rem;
+  color: var(--texto-suave);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+/* Cada campo é um botão que parece um campo: fundo mais escuro e, ao clicar, vira um campo de edição do mesmo tamanho */
+.extrato-celula {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 0.35rem 0.6rem;
+  border: 0;
+  border-radius: 0.5rem;
+  color: inherit;
+  background: var(--fundo-celula);
+  font: inherit;
+  font-weight: inherit;
+  line-height: 1.3;
+  text-align: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: text;
+  transition: background-color 0.15s ease;
+}
+
+.extrato-celula:hover,
+.extrato-celula:focus-visible {
+  outline: none;
+  background: color-mix(in srgb, var(--texto) 16%, var(--fundo-card));
+}
+
+.extrato-celula:focus-visible {
+  box-shadow: var(--sombra-foco);
+}
+
+.transactions-descricao {
+  font-weight: 600;
+}
+
+.transactions-observacoes {
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+}
+
+/* observações em branco: o campo aparece com uma dica apagada */
+.extrato-celula--vazia {
+  font-style: italic;
+  opacity: 0.6;
+}
+
+.transactions-valor {
+  text-align: right !important;
+  white-space: nowrap;
+  font-weight: 700;
+}
+
+.transactions-valor--receita {
+  color: var(--positivo);
+}
+
+.transactions-valor--despesa {
+  color: var(--negativo);
+}
+
+/* Campo de edição: ocupa exatamente o lugar do campo clicado (a largura e a altura vêm do JS, EdicaoCelula.js), com a
+   mesma fonte e o mesmo espaçamento, sem crescer ao ganhar o foco. A mensagem de erro flutua abaixo, sem empurrar nada. */
+.extrato-editor {
+  position: relative;
+  display: block;
+  flex: none;
+  min-width: 0;
+}
+
+.extrato-editor input,
+.extrato-editor select {
+  width: 100%;
+  height: 100%;
+  min-height: 0 !important;
+  padding: 0.35rem 0.6rem !important;
+  border-radius: 0.5rem;
+  background: var(--fundo-campo);
+  box-shadow: 0 0 0 2px var(--destaque) !important;
+  font: inherit;
+  line-height: 1.3;
+  text-align: inherit;
+  scale: none !important;
+}
+
+.extrato-editor input[aria-invalid='true'],
+.extrato-editor select[aria-invalid='true'] {
+  box-shadow: 0 0 0 2px var(--negativo) !important;
+}
+
+.extrato-editor--valor input {
+  text-align: right;
+}
+
+.extrato-editor__erro {
+  position: absolute;
+  top: calc(100% + 0.2rem);
+  left: 0;
+  z-index: 5;
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.4rem;
+  background: var(--fundo-card);
+  box-shadow: var(--sombra-flutuante);
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.transactions-extrato__conteudo .transactions-estado {
+  padding: 0.75rem 0.25rem;
+  background: none;
+  box-shadow: none;
+  border: 0;
+}
+
+.transactions-estado {
+  display: grid;
+  justify-items: start;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  border: var(--borda-elemento, 0);
+  border-radius: 1rem;
+  background: var(--fundo-card);
+  box-shadow: var(--sombra);
+  color: var(--texto-suave);
+}
+
+.transactions-paginacao {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  color: var(--texto-suave);
+}
+
+.transactions-paginacao button {
+  min-height: 2.5rem;
+  padding: 0.4rem 1rem;
+  border: var(--borda-elemento, 0);
+  border-radius: 0.6rem;
+  color: var(--texto);
+  background: var(--fundo-card);
+  box-shadow: var(--sombra);
+  font: inherit;
+  cursor: pointer;
+  transition: scale 0.1s ease, box-shadow 0.1s ease, background-color var(--duracao-cor) ease, color var(--duracao-cor) ease;
+}
+
+.transactions-paginacao button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* hover ou Tab: o botão se preenche com a cor principal (o desativado não) */
+.transactions-paginacao button:hover:not(:disabled),
+.transactions-paginacao button:focus-visible:not(:disabled) {
+  color: var(--destaque-texto);
+  background: var(--destaque);
+}
+
+.transactions-paginacao button:focus-visible:not(:disabled) {
+  outline: none;
+  scale: 1.01; /* com Tab, o botão cresce um pouco e ganha uma sombra pequena (sem contorno) */
+  box-shadow: var(--sombra-foco);
+}

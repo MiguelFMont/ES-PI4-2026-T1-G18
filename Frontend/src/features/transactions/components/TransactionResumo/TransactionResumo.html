@@ -1,0 +1,21 @@
+<!-- Componente: resumo do extrato (Entradas, Saídas e Saldo do que passa nos filtros). Lógica em TransactionResumo.js. -->
+<dl class="transactions-resumo" aria-label="Resumo do extrato">
+  <div class="transactions-resumo__item">
+    <dt>Entradas</dt>
+    <dd id="resumo-entradas" class="transactions-resumo__valor--receita">—</dd>
+  </div>
+  <div class="transactions-resumo__item">
+    <dt>Saídas</dt>
+    <dd id="resumo-saidas" class="transactions-resumo__valor--despesa">—</dd>
+  </div>
+  <div class="transactions-resumo__item">
+    <dt>Saldo</dt>
+    <dd id="resumo-saldo">—</dd>
+  </div>
+  
+  <div class="barra"></div>
+
+  <button type="button" id="botao-alternar-form" class="transactions-botao transactions-botao--secundario"
+    aria-expanded="false" aria-haspopup="dialog" aria-controls="transactions-painel-form">Nova transação</button>
+
+</dl>
