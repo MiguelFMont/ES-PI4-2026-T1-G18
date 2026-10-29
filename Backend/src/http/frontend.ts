@@ -8,16 +8,16 @@ import express, { Router } from "express";
 // src/http -> Backend -> raiz do repositório -> Frontend (o mesmo caminho vale em dist/http)
 const PASTA_FRONTEND = path.resolve(__dirname, "../../../Frontend");
 
-// Endereço amigável -> arquivo da página. Quem criar uma tela nova acrescenta uma linha aqui.
+// Endereço amigável -> arquivo da página. O Frontend é um SPA: só o index.html é uma página.
 const PAGINAS: Record<string, string> = {
   "/": "index.html",
-  "/transactions": "src/features/transactions/views/transactions.html",
 };
 
-// O login e o dashboard são rotas internas do index.html (roteador por #).
+// As telas são rotas internas do index.html (roteador por #). Quem criar uma tela nova acrescenta uma linha aqui.
 const ATALHOS_DO_INDEX: Record<string, string> = {
   "/login": "/#login",
   "/dashboard": "/#dashboard",
+  "/transactions": "/#transactions",
 };
 
 export const frontendRouter = Router();

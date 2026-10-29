@@ -8,8 +8,8 @@ export const transactionsRouter = Router();
 // Transações sempre pertencem a um usuário logado.
 transactionsRouter.use(authMiddleware);
 
-transactionsRouter.get("/listar", transactionsController.list);
-transactionsRouter.post("/criar", transactionsController.create);
+transactionsRouter.get("/", transactionsController.list);
+transactionsRouter.post("/", transactionsController.create);
 
 export default transactionsRouter;
 
