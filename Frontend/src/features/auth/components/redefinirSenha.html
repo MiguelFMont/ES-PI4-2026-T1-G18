@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinanceAI</title>
+    <link rel="stylesheet" href="../../../core/styles/global.css">
+    <link rel="stylesheet" href="../styles/recuperarSenha.css">
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h2 class="title">Redefinir Senha</h2>
+            <p class="description">Digite sua nova senha</p>
+
+            <form class="form" id="redefinir-form">
+                <input type="password" id="nova-senha" placeholder="Nova senha" required>
+                <input type="password" id="confirmar-senha" placeholder="Confirmar senha" required>
+                <p id="redefinir-erro" role="alert" aria-live="polite"></p>
+                <button class="btn" type="submit">Redefinir senha</button>
+            </form>
+
+            <a class="password" href="inicio.html">Voltar ao login</a>
+        </div>
+    </div>
+    <script type="module" src="redefinirSenha.js"></script>
+</body>
+</html>

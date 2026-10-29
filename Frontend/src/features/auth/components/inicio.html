@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinanceAI</title>
+    <link rel="stylesheet" href="../../../core/styles/global.css">
+    <link rel="stylesheet" href="../styles/inicio.css">
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+
+            <!-- CADASTRO -->
+            <div class="content first-content">
+                <div class="first-column">
+                    <h2 class="title title-primary">Bem-vindo de volta!</h2>
+                    <p class="description description-primary">Para manter-se conectado</p>
+                    <p class="description description-primary">faça login com suas informações</p>
+                    <button id="signin" class="btn btn-primary" type="button">Entrar</button>
+                </div>
+                <div class="second-column">
+                    <h2 class="title title-second">Criar Conta</h2>
+                    <p class="description description-second">utilize seus dados para registro:</p>
+                    <form class="form" id="cadastro-form">
+                        <input type="text" id="cadastro-nome" placeholder="Nome Completo" required>
+                        <input type="email"  id="cadastro-email" placeholder="Email" required>
+                        <input type="text"  id="cadastro-cpf" placeholder="CPF" required>
+                        <input type="password"  id="cadastro-senha" placeholder="Senha" required>
+                        <p id="cadastro-erro" role="alert" aria-live="polite"></p>
+                        <button class="btn btn-second">Cadastrar</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- LOGIN -->
+            <div class="content second-content">
+                <div class="second-column">
+                    <h2 class="title title-second">Entrar no FinanceAI</h2>
+                    <p class="description description-second">use seu e-mail para entrar:</p>
+                    <form class="form" id="login-form">
+                        <input type="email" id="login-email" placeholder="Email" required>
+                        <input type="password" id="login-senha" placeholder="Senha" required>
+                        <a class="password" href="recuperarSenha.html">Esqueceu sua senha?</a>
+                        <p id="login-erro" role="alert" aria-live="polite"></p>
+                        <button class="btn btn-second" type="submit">Entrar</button>
+                    </form>
+                </div>
+                <div class="first-column">
+                    <h2 class="title title-primary">Olá, amigo!</h2>
+                    <p class="description description-primary">Entre com seus dados pessoais</p>
+                    <p class="description description-primary">e comece sua jornada conosco</p>
+                    <button id="signup" class="btn btn-primary" type="button">Criar Conta</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <script type="module" src="inicio.js"></script>
+</body>
+</html>
