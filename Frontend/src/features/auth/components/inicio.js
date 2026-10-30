@@ -49,7 +49,7 @@ loginForm.addEventListener("submit", async function (event) {
             loginErro.textContent = "O servidor não retornou um token.";
             return;
         }
-        sessionStorage.setItem("token", resultado.token);
+        localStorage.setItem("@FinanceAI:token", resultado.token);
         //qual rota recebe apos o login(exemplo trocar para a ofical)
         window.location.href = "/#dashboard";
 
