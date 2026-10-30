@@ -12,8 +12,8 @@ npm run dev
 
 Abra `http://localhost:3001`. O Backend precisa do `.env` preenchido (ver `Backend/README.md`) e serve:
 
-- `/` abre o `index.html`, a única página: ele tem o menu fixo e um roteador por `#` (`#login`, `#dashboard`, `#transactions`) que troca só o conteúdo de `#app-content` (SPA);
-- `/transactions`, `/login` e `/dashboard` são atalhos que redirecionam para `/#transactions` etc. Ficam em `Backend/src/http/frontend.ts`: quem criar uma tela nova acrescenta uma linha lá e uma entrada em `TELAS` no `src/app/main.js`;
+- `/` abre o `index.html`, a única página: ele tem o menu fixo e um roteador por `#` (`#dashboard`, `#transactions`) que troca só o conteúdo de `#app-content` (SPA);
+- `/transactions` e `/dashboard` são atalhos que redirecionam para `/#transactions` etc.; `/login` leva à página de login (`features/auth/components/inicio.html`, independente do `index.html`). Ficam em `Backend/src/http/frontend.ts`: quem criar uma tela nova acrescenta uma linha lá e uma entrada em `TELAS` no `src/app/main.js`;
 - `/v1/...` é a API.
 
 Não abra o `index.html` com duplo clique (`file://`): módulos ES e `fetch` não funcionam assim.
@@ -35,7 +35,7 @@ Dá para usar o Live Server do VS Code se a raiz dele for a pasta `Frontend` (`l
 ## Organização
 
 ```text
-index.html                 shell com roteador por # (login e dashboard)
+index.html                 shell com roteador por # (dashboard e telas das features; o login é uma página à parte)
 src/
   app/main.js              inicializa as rotas e protege as privadas
   core/                    infraestrutura compartilhada (HTTP, sessão, tema, menu, inclusão de componentes)
