@@ -1,9 +1,8 @@
-// Para onde vai quem está sem sessão: o login é uma rota do index.html, servido pelo Backend na raiz (/).
-export const URL_LOGIN = '/#login';
+// Para onde vai quem está sem sessão: a página de login (feature auth), independente do index.html.
+export const URL_LOGIN = '/src/features/auth/components/inicio.html';
 
 /** Leva à tela de login. `substituir` troca a página atual no histórico (sem deixar "voltar" para ela). */
 export function irParaLogin({ substituir = false } = {}) {
-  const jaNoLogin = window.location.pathname === '/' && window.location.hash === '#login';
-  if (jaNoLogin) return;
+  if (window.location.pathname === URL_LOGIN) return;
   window.location[substituir ? 'replace' : 'assign'](URL_LOGIN);
 }

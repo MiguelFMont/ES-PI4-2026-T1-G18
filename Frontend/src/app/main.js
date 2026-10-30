@@ -1,8 +1,8 @@
 import { hasToken } from '../core/session/storage.js';
 import { iniciarTema } from '../core/theme/theme.js';
 import { ligarMenu } from '../core/layout/menu.js';
+import { URL_LOGIN } from '../core/session/login.js';
 
-const PUBLIC_ROUTES = new Set(['login']);
 const appContent = document.querySelector('#app-content');
 
 // Telas feitas em arquivos (modelo SPA): o roteador busca o HTML, carrega os CSS e o módulo da tela, escreve o HTML
@@ -97,12 +97,12 @@ async function renderRoute() {
   for (const link of document.querySelectorAll('link[data-tela]')) link.remove(); // sobras de uma montagem interrompida
 
   let route = currentRoute();
-  if (!PUBLIC_ROUTES.has(route) && !hasToken()) {
-    navigate('login');
-    route = 'login';
-  } else if (route === 'login' && hasToken()) {
+  if (route === 'login' && hasToken()) {
     navigate('dashboard');
     route = 'dashboard';
+  } else if (route === 'login' || !hasToken()) {
+    window.location.replace(URL_LOGIN); // o login é uma página independente (feature auth), fora do roteador
+    return;
   }
 
   document.title = TELAS[route] ? `${TELAS[route].titulo} | FinanceAI` : 'FinanceAI';
@@ -119,13 +119,6 @@ async function renderRoute() {
   }
 
   switch (route) {
-    case 'login':
-      appContent.innerHTML = `
-        <section aria-labelledby="login-title">
-          <h1 id="login-title">Entrar no FinanceAI</h1>
-          <p>A tela de autenticação será fornecida pela feature auth.</p>
-        </section>`;
-      break;
     case 'dashboard':
       appContent.innerHTML = `
         <section aria-labelledby="dashboard-title">

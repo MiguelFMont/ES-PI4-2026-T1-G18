@@ -13,9 +13,9 @@ const PAGINAS: Record<string, string> = {
   "/": "index.html",
 };
 
-// As telas são rotas internas do index.html (roteador por #). Quem criar uma tela nova acrescenta uma linha aqui.
+// Atalhos: as telas do SPA são rotas internas do index.html (roteador por #); o login é uma página independente.
 const ATALHOS_DO_INDEX: Record<string, string> = {
-  "/login": "/#login",
+  "/login": "/src/features/auth/components/inicio.html",
   "/dashboard": "/#dashboard",
   "/transactions": "/#transactions",
 };

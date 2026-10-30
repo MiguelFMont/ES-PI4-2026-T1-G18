@@ -29,11 +29,11 @@ Use caminhos relativos à base e opções padrão do `fetch` (`method`, `body`, 
 
 ## Sessão (`session/`)
 
-`login.js` guarda o endereço do login (`URL_LOGIN`, `/#login`) e `irParaLogin()`. `storage.js` encapsula `localStorage` e padroniza a chave `@FinanceAI:token`, exportando `getToken`, `hasToken`, `saveToken` e `clearSession`. O login salva o token recebido e o logout limpa a sessão. O cliente HTTP envia `Authorization: Bearer <token>` quando há token. Não grave senhas nem registre tokens em logs.
+`login.js` guarda o endereço do login (`URL_LOGIN`, a página `features/auth/components/inicio.html`) e `irParaLogin()`. `storage.js` encapsula `localStorage` e padroniza a chave `@FinanceAI:token`, exportando `getToken`, `hasToken`, `saveToken` e `clearSession`. O login salva o token recebido e o logout limpa a sessão. O cliente HTTP envia `Authorization: Bearer <token>` quando há token. Não grave senhas nem registre tokens em logs.
 
 ## Telas, roteador e menu (`app/main.js`, `layout/`, `views/`)
 
-O Frontend é um SPA: o `index.html` tem o menu lateral e `<main id="app-content">`, e o roteador de `app/main.js` (por `#`) troca só esse conteúdo, sem recarregar a página. O menu, o tema e a conferência de sessão (sem token vai para `#login`) ficam no roteador e rodam uma vez.
+O Frontend é um SPA: o `index.html` tem o menu lateral e `<main id="app-content">`, e o roteador de `app/main.js` (por `#`) troca só esse conteúdo, sem recarregar a página. O menu, o tema e a conferência de sessão (sem token vai para a página de login, que fica fora do roteador) ficam no roteador e rodam uma vez.
 
 Toda a estrutura das telas é HTML: cada tela é um **fragmento** em `features/<feature>/views/<tela>.html` (só o miolo, sem `<html>`, `<head>` nem menu) com, onde cada componente entra, um `<div data-incluir="/src/features/<feature>/components/Algo/Algo.html"></div>`. Cada componente é uma pasta em `features/<feature>/components/<Nome>/`, com a estrutura em `<Nome>.html` (formulários, listas suspensas e, para conteúdo repetido como a linha de uma tabela, um `<template>`), os estilos em `<Nome>.css` e o comportamento em `<Nome>.js`. O JavaScript não monta marcação: ele só liga o comportamento aos elementos pelos `id`s e `data-campo` (chamar a API, validar, mostrar e esconder estados, preencher textos com `textContent`).
 
