@@ -25,18 +25,33 @@ export function criarTransacao(dados) {
   });
 }
 
-/**
- * Edita uma transação (PUT /transactions/:id). `dados` é o corpo completo, no mesmo formato de criarTransacao:
- * { tipo, valor, data, descricao, categoria, formaPagamento, observacoes? }. Devolve a transação atualizada.
- */
-export function atualizarTransacao(id, dados) {
-  return apiFetch(`/transactions/${encodeURIComponent(id)}`, {
-    method: 'PUT',
-    body: JSON.stringify(dados),
-  });
+// O Backend aceita até 100 itens por chamada em lote; acima disso o service envia em blocos e soma os resultados.
+const LIMITE_LOTE = 100;
+
+async function emBlocos(lista, enviar) {
+  const total = { afetadas: 0, naoEncontradas: [] };
+  for (let inicio = 0; inicio < lista.length; inicio += LIMITE_LOTE) {
+    const resultado = await enviar(lista.slice(inicio, inicio + LIMITE_LOTE));
+    total.afetadas += resultado.afetadas;
+    total.naoEncontradas.push(...resultado.naoEncontradas);
+  }
+  return total;
 }
 
-/** Exclui uma transação (DELETE /transactions/:id). Não há exclusão em lote: a tela chama uma vez por transação. */
-export function excluirTransacao(id) {
-  return apiFetch(`/transactions/${encodeURIComponent(id)}`, { method: 'DELETE' });
+/**
+ * Edita transações (PATCH /transactions/bulk); para uma só, mande um item. `itens` é uma lista de
+ * { id, alteracoes }, em que `alteracoes` leva só os campos que mudaram (observacoes "" apaga a observação).
+ * Devolve { afetadas, naoEncontradas: [ids] }; o lote não é tudo ou nada.
+ */
+export function atualizarTransacoesEmLote(itens) {
+  return emBlocos(itens, (bloco) =>
+    apiFetch('/transactions/bulk', { method: 'PATCH', body: JSON.stringify({ itens: bloco }) })
+  );
+}
+
+/** Exclui transações (POST /transactions/bulk-delete); para uma só, mande um id. Devolve { afetadas, naoEncontradas: [ids] }. */
+export function excluirTransacoesEmLote(ids) {
+  return emBlocos(ids, (bloco) =>
+    apiFetch('/transactions/bulk-delete', { method: 'POST', body: JSON.stringify({ ids: bloco }) })
+  );
 }

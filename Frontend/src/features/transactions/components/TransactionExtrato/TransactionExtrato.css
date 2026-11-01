@@ -79,7 +79,8 @@
   flex: 0 1 12rem;
 }
 
-.extrato-edicao-lote select {
+.extrato-edicao-lote select,
+.extrato-edicao-lote input {
   min-height: 2.1rem;
   font-size: 0.85rem;
 }
@@ -220,6 +221,11 @@
 .transactions-observacoes {
   font-size: 0.85rem;
   color: var(--texto-suave);
+}
+
+/* campo alterado e ainda não confirmado: um anel na cor de destaque */
+.extrato-celula--alterada {
+  box-shadow: 0 0 0 2px var(--destaque);
 }
 
 /* observações em branco: o campo aparece com uma dica apagada */
