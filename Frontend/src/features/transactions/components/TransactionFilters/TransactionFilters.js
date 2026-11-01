@@ -1,4 +1,4 @@
-import { aceitarSomenteNumeros, ligarCampo } from '../../../../shared/components/campos.js';
+import { aplicarMascaraMoeda, ligarCampo } from '../../../../shared/components/campos.js';
 import { ligarCalendario } from '../../../../shared/components/Calendario.js';
 import { notificar } from '../../../../shared/components/notificacao.js';
 import { mesAtual } from '../../../../shared/utils/dateRange.js';
@@ -18,8 +18,8 @@ export function iniciarFiltros(raiz, { aoMudar, signal }) {
   const campos = Object.fromEntries(NOMES.map((nome) => [nome, ligarCampo(raiz, `filtro-${nome}`)]));
   const periodo = ligarCalendario(raiz.querySelector('#form-filtros .periodo'), { signal }); // "Início" e "Final"
 
-  aceitarSomenteNumeros(campos.valorMin.controle);
-  aceitarSomenteNumeros(campos.valorMax.controle);
+  aplicarMascaraMoeda(campos.valorMin.controle); // o valor já aparece formatado (1 -> 0,01; 1500 -> 15,00)
+  aplicarMascaraMoeda(campos.valorMax.controle);
 
   // Os erros de data inicial e final aparecem no campo Período (que tem as duas).
   const campoDoErro = (nome) => (nome === 'dataInicio' || nome === 'dataFim' ? periodo : campos[nome]);
