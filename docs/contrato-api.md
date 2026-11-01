@@ -9,7 +9,7 @@ Documento vivo que descreve **o que o Backend aceita e devolve**. É a referênc
 | Módulo | Prefixo | Grupo | Estado |
 |---|---|---|---|
 | Sistema | `/v1/health`, `/v1/eco` | Todos | Documentado (seção 1.6) |
-| Transações | `/v1/transactions` | 2 | **Cadastro e listagem (com filtros e paginação) documentados** (seção 2); edição, exclusão, duplicação e importação planejadas |
+| Transações | `/v1/transactions` | 2 | **Cadastro, listagem (com filtros e paginação), edição e exclusão em lote documentados** (seção 2); duplicação e importação planejadas |
 | Autenticação e conta | `/v1/auth` | 1 | A documentar |
 | Painel e análise | `/v1/dashboard` | 3 | A documentar |
 | Mentor financeiro (IA) | `/v1/mentor-ia` | 4 | **Chat (enviar mensagem e histórico) documentado** (seção 3); alertas planejados |
@@ -318,12 +318,61 @@ Exemplo de `400` para `?valorMin=100&valorMax=50`:
 }
 ```
 
-### 2.6 Rotas planejadas (ainda não existem)
+### 2.6 Editar transações
+
+`PATCH /v1/transactions/bulk` → `200 OK`.
+
+**Não existe `PUT` nem `DELETE` por id: a edição e a exclusão só acontecem em lote.** Para mexer em uma única transação, envie um lote de um item. O lote **não é tudo ou nada**: o Backend faz o que existe e devolve os ids que não encontrou. Cada chamada aceita de 1 a **100** itens, sem ids repetidos (a tela divide em blocos quando passa disso).
+
+Cada transação leva as **suas próprias** alterações. A edição é **parcial**: `alteracoes` leva só os campos que mudam e precisa ter ao menos um.
+
+```json
+{
+  "itens": [
+    { "id": "6ae4a14014fb37bcbb2d7fac", "alteracoes": { "descricao": "Mercado", "valor": 11.5, "observacoes": "" } },
+    { "id": "6ae4a14014fb37bcbb2d7fad", "alteracoes": { "categoria": "Lazer", "tipo": "receita" } }
+  ]
+}
+```
+
+| Campo de `alteracoes` | Tipo | Regra |
+|---|---|---|
+| `tipo` | `"receita"` ou `"despesa"` | |
+| `valor` | número | Maior que zero |
+| `categoria` | texto | Não vazio |
+| `data` | texto (data ISO) | Ex.: `"2026-10-30"` |
+| `descricao` | texto | Não vazio |
+| `formaPagamento` | texto | Uma das formas da seção 2.2. Aqui **não** há valor padrão: o que não for enviado não muda |
+| `observacoes` | texto | Até 300 caracteres. **`""` apaga a observação** |
+
+`origem` e `id` dentro de `alteracoes` são ignorados: a origem nunca muda.
+
+Resposta:
+
+```json
+{ "afetadas": 1, "naoEncontradas": ["6ae4a14014fb37bcbb2d7fad"] }
+```
+
+`naoEncontradas` traz os ids que não existem ou são de outro usuário (os dois casos são tratados igual, sem revelar de quem é).
+
+Erros: `400 VALIDATION_ERROR` (lista vazia, mais de 100 itens, ids repetidos ou mal formados, `alteracoes` vazia ou com campo inválido: nesse caso **nada** do lote é aplicado) e `401 UNAUTHENTICATED`.
+
+### 2.7 Excluir transações
+
+`POST /v1/transactions/bulk-delete` → `200 OK` (é `POST` porque um `DELETE` com corpo não é confiável em todos os clientes). Também vale um lote de um id só.
+
+```json
+{ "ids": ["6ae4a14014fb37bcbb2d7fac", "6ae4a14014fb37bcbb2d7fad"] }
+```
+
+A resposta tem o mesmo formato da edição (`afetadas` e `naoEncontradas`). Excluir um id que já foi excluído o devolve em `naoEncontradas`.
+
+Erros: `400 VALIDATION_ERROR` (lista vazia, mais de 100 ids, ids repetidos ou mal formados) e `401 UNAUTHENTICATED`.
+
+### 2.8 Rotas planejadas (ainda não existem)
 
 | Método e rota | Para quê | Issue |
 |---|---|---|
-| `PUT /v1/transactions/:id` | Editar uma transação, incluindo a categoria | #35 |
-| `DELETE /v1/transactions/:id` | Excluir | A definir |
 | `POST /v1/transactions/:id/duplicate` | Duplicar um lançamento | #49 |
 | `POST /v1/transactions/import` | Importar do sandbox da Pluggy | #46 |
 
