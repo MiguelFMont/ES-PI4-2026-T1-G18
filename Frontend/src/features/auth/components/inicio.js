@@ -98,7 +98,10 @@ cadastroForm.addEventListener("submit", async function (event) {
 
         const resultado = await resposta.json();
         if (!resposta.ok) {
-            const mensagem = resultado.error?.message || resultado.message;
+            // Exibe a mensagem de erro retornada pelo servidor
+            const mensagem = resultado.error?.details?.cpf?.[0]
+            ||  resultado.error?.details?.senha?.[0] || resultado.message
+            || resultado.error?.message;
             cadastroErro.textContent =
                 typeof mensagem === "string"
                     ? mensagem
