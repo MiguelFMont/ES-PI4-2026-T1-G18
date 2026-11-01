@@ -6,6 +6,8 @@ import {
   TransactionFiltersDto,
   TransactionListResponseDto,
   TransactionResponseDto,
+  UpdateTransactionDto,
+  BulkResultDto,
 } from "./transactions.dto";
 
 // Sprint 1: a categoria vem do usuário; se faltar, usa "Outros".
@@ -53,5 +55,18 @@ export const transactionsService = {
       userId,
     });
     return paraDto(transacao);
+  },
+
+  // Lote: não é tudo ou nada. Faz o que existe e devolve os ids que não foram encontrados.
+  async updateMany(userId: string, itens: { id: string; alteracoes: UpdateTransactionDto }[]): Promise<BulkResultDto> {
+    const existentes = await transactionsRepository.idsDoUsuario(userId, itens.map((i) => i.id));
+    const afetadas = await transactionsRepository.updateMany(userId, itens.filter((i) => existentes.has(i.id)));
+    return { afetadas, naoEncontradas: itens.map((i) => i.id).filter((id) => !existentes.has(id)) };
+  },
+
+  async removeMany(userId: string, ids: string[]): Promise<BulkResultDto> {
+    const existentes = await transactionsRepository.idsDoUsuario(userId, ids);
+    const afetadas = await transactionsRepository.removeMany(userId, [...existentes]);
+    return { afetadas, naoEncontradas: ids.filter((id) => !existentes.has(id)) };
   },
 };
