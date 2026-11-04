@@ -104,6 +104,25 @@ export const authService = {
             mfaEnabled: usuario.mfaEnabled
         };
     },
+    
+    async atualizarPlano(id: string) {
+    const usuario = await authRepository.atualizarPlano(id);
+
+    if (!usuario) {
+        throw new AppError(
+            "Usuário não encontrado",
+            404,
+            "USER_NOT_FOUND"
+        );
+    }
+
+    return {
+        id: usuario._id.toString(),
+        nome: usuario.nome,
+        email: usuario.email,
+        plano: usuario.plano
+    };
+},
 
     async forgotPassword(dados: ForgotPasswordDto) {
         const usuario = await authRepository.findByEmail(dados.email);

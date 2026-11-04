@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinanceAI</title>
+    <link rel="stylesheet" href="../../../core/styles/global.css">
+    <link rel="stylesheet" href="../styles/PlanoConta.css">
+</head>
+<body>
+    <div class="container">
+        <div class="content">
+            <h2 class="title">Escolha seu plano</h2>
+            <p class="description">Encontre o plano ideal para organizar suas finanças</p>
+
+            <div class="planos">
+                <button class="btn-plano ativo" id="btn-free" type="button">Free</button>
+                <button class="btn-plano" id="btn-pro" type="button">Pro</button>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span class="plano-tipo" id="plano-tipo">Plano Free</span>
+                    <span class="plano-status" id="plano-status">Plano atual</span>
+                </div>
+
+                <h3 class="card-title" id="card-title">Free</h3>
+                <p class="card-description" id="card-description">
+                    Organize suas finanças de forma simples
+                </p>
+
+                <div class="preco">
+                    <span class="valor" id="valor">R$ 0</span>
+                    <span class="periodo" id="periodo">/ mês</span>
+                </div>
+
+                <button class="btn" id="btn-upgrade" type="button" disabled>
+                    Plano atual
+                </button>
+
+                <div class="beneficios">
+                    <h4>O que está incluso:</h4>
+                    <ul id="lista-beneficios">
+                        <li>Controle de receitas e despesas</li>
+                        <li>Visualização das transações</li>
+                        <li>Organização financeira básica</li>
+                    </ul>
+                </div>
+            </div>
+
+            <p id="plano-erro" role="alert" aria-live="polite"></p>
+            <a href="#" id="btn-voltar" class="btn-voltar">
+                voltar para perfil
+            </a>
+        </div>
+    </div>
+
+    <script type="module" src="./PlanoConta.js"></script>
+</body>
+</html>

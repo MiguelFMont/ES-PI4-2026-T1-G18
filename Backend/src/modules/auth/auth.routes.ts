@@ -10,5 +10,6 @@ authRouter.post("/login", authController.login);
 authRouter.post("/forgot-password", authController.forgotPassword);
 authRouter.post("/reset-password", authController.resetPassword);
 authRouter.get("/me", authMiddleware, authController.me);
+authRouter.patch("/me/plano", authMiddleware, authController.atualizarPlano);
 
 //authRouter.use("/mfa", mfaRouter);

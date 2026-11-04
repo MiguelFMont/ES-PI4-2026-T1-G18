@@ -1,0 +1,217 @@
+
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+    background-color: var(--fundo);
+}
+
+.content {
+    width: min(450px, 92vw);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.title {
+    font-size: 28px;
+    font-weight: bold;
+    color: var(--texto);
+}
+.description {
+    font-size: 14px;
+    color: var(--texto-suave);
+    line-height: 1.6;
+    margin-top: 10px;
+    margin-bottom: 25px;
+}
+
+.planos {
+    display: flex;
+    width: 100%;
+    padding: 5px;
+    gap: 5px;
+    border-radius: 12px;
+    background-color: var(--fundo-card);
+    border: 1px solid var(--borda);
+    margin-bottom: 20px;
+}
+
+.btn-plano {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--texto-suave);
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.btn-plano.ativo {
+    background-color: var(--destaque);
+    color: var(--destaque-texto);
+}
+
+.card {
+    width: 100%;
+    padding: 35px 30px;
+    background-color: var(--fundo-card);
+    border: 1px solid var(--borda);
+    border-radius: 15px;
+    text-align: left;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 25px;
+}
+
+.plano-tipo {
+    font-size: 13px;
+    color: var(--texto-suave);
+}
+
+.plano-status {
+    font-size: 11px;
+    padding: 6px 10px;
+    border-radius: 20px;
+    background-color: var(--fundo-campo);
+    color: var(--destaque);
+}
+
+.card-icon {
+    color: var(--destaque);
+    font-size: 35px;
+    margin-bottom: 15px;
+}
+
+.card-title {
+    font-size: 26px;
+    font-weight: bold;
+    color: var(--texto);
+    margin-bottom: 8px;
+}
+
+.card-description {
+    font-size: 14px;
+    color: var(--texto-suave);
+    line-height: 1.5;
+    margin-bottom: 25px;
+}
+
+.preco {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    margin-bottom: 25px;
+}
+
+.valor {
+    font-size: 32px;
+    font-weight: bold;
+    color: var(--texto);
+}
+
+.periodo {
+    font-size: 13px;
+    color: var(--texto-suave);
+}
+
+.btn {
+    width: 100%;
+    border-radius: 8px;
+    text-transform: uppercase;
+    font-size: 12px;
+    padding: 15px;
+    cursor: pointer;
+    font-weight: bold;
+    border: none;
+    background-color: var(--destaque);
+    color: var(--destaque-texto);
+}
+
+.btn:hover:not(:disabled) {
+    background-color: var(--fundo-campo);
+    color: var(--destaque);
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.beneficios {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid var(--borda);
+}
+
+.beneficios h4 {
+    font-size: 14px;
+    color: var(--texto);
+    margin-bottom: 15px;
+}
+
+.beneficios ul {
+    list-style: none;
+    padding: 0;
+}
+
+.beneficios li {
+    font-size: 13px;
+    color: var(--texto-suave);
+    line-height: 1.7;
+    margin-bottom: 10px;
+}
+/* Adiciona o ícone de check antes de cada item da lista */
+.beneficios li::before {
+    content: "✓";
+    color: var(--destaque);
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+#plano-erro {
+    font-size: 13px;
+    color: var(--texto-suave);
+    margin-top: 15px;
+}
+
+.btn:focus-visible,
+.btn-plano:focus-visible {
+    outline: 3px solid var(--foco);
+    outline-offset: 2px;
+}
+.btn-voltar {
+    display: inline-block;
+    margin-top: 20px;
+    color: var(--destaque); 
+    font-size: 14px;
+    text-decoration: none;
+}
+
+.btn-voltar:hover {
+    color: var(--texto); 
+    text-decoration: underline;
+}
+@media (max-width: 480px) {
+    .card {
+        padding: 25px 20px;
+    }
+
+    .title {
+        font-size: 24px;
+    }
+
+    .valor {
+        font-size: 28px;
+    }
+}
