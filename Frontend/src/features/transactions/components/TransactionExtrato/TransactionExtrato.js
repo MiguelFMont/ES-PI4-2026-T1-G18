@@ -2,11 +2,12 @@ import { confirmar, notificar } from '../../../../shared/components/notificacao.
 import { formatarData, formatarMoeda } from '../../utils/format.js';
 import { CATEGORIAS, FORMAS_PAGAMENTO, TIPOS, rotuloDe } from '../../utils/constants.js';
 import { aplicarMascaraMoeda } from '../../../../shared/components/campos.js';
+import { ligarCalendario } from '../../../../shared/components/Calendario.js';
 import { validarCampo } from '../../utils/formValidation.js';
 import { iniciarEdicao, valorParaEditar } from './EdicaoCelula.js';
 
 // Campos que a edição em lote pode mudar, na ordem do formulário (vazio ou "Manter" não muda).
-const CAMPOS_LOTE = ['descricao', 'tipo', 'valor', 'data', 'categoria', 'formaPagamento', 'observacoes'];
+const CAMPOS_LOTE = ['data', 'descricao', 'observacoes', 'categoria', 'formaPagamento', 'tipo', 'valor'];
 
 const ROTULOS_CAMPO = {
   data: 'data',
@@ -27,7 +28,7 @@ const ROTULOS_CAMPO = {
  *   salvarAlteracoes(itens), editarVarias(transacoes, mudancas) e excluirVarias(transacoes) devolvem uma Promise,
  *   avisam o resultado e atualizam a lista; se falharem, a área mantém o que o usuário estava fazendo.
  */
-export function iniciarExtrato(raiz, { irParaPagina, tentarNovamente, mudarLimite, salvarAlteracoes, editarVarias, excluirVarias }) {
+export function iniciarExtrato(raiz, { irParaPagina, tentarNovamente, mudarLimite, salvarAlteracoes, editarVarias, excluirVarias, signal }) {
   const area = raiz.querySelector('#transactions-extrato');
   const carregando = raiz.querySelector('#extrato-carregando');
   const erro = raiz.querySelector('#extrato-erro');
@@ -43,6 +44,7 @@ export function iniciarExtrato(raiz, { irParaPagina, tentarNovamente, mudarLimit
   const selecionarTodas = raiz.querySelector('#extrato-selecionar-todas');
   const botaoEditarVarias = raiz.querySelector('#extrato-editar-varias');
   const edicaoLote = raiz.querySelector('#extrato-edicao-lote');
+  const dataLote = ligarCalendario(edicaoLote.querySelector('[data-calendario]'), { signal }); // o mesmo calendário dos filtros
   const barraPendentes = raiz.querySelector('#extrato-pendentes');
   const botaoConfirmar = raiz.querySelector('#extrato-confirmar-alteracoes');
   const botaoDescartar = raiz.querySelector('#extrato-descartar-alteracoes');
@@ -209,7 +211,8 @@ export function iniciarExtrato(raiz, { irParaPagina, tentarNovamente, mudarLimit
     for (const campo of CAMPOS_LOTE) {
       const bruto = edicaoLote.elements[campo].value.trim();
       if (!bruto) continue; // vazio ou "Manter": não muda
-      const { erro, valor } = validarCampo(campo, bruto);
+      // a data é digitada como dd/mm/aaaa: o calendário a converte (e devolve vazio se estiver inválida)
+      const { erro, valor } = campo === 'data' ? validarCampo('data', dataLote.ler() || '') : validarCampo(campo, bruto);
       if (erro) erros[campo] = erro;
       else mudancas[campo] = valor;
     }

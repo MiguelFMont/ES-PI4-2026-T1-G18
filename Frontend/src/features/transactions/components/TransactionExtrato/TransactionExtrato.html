@@ -47,32 +47,28 @@
 
       <!-- Edição em lote: só muda o que for preenchido ou escolhido (vazio ou "Manter" deixa como está) -->
       <form id="extrato-edicao-lote" class="extrato-edicao-lote" novalidate hidden>
+        <!-- Os campos seguem a ordem das colunas do extrato. Listas e calendário são os mesmos dos filtros (abrem ao passar o mouse). -->
+        <div class="campo" data-calendario="unico">
+          <label for="lote-data">Data</label>
+          <input type="text" id="lote-data" name="data" class="calendario__caixa" placeholder="Manter"
+            inputmode="numeric" maxlength="10" autocomplete="off" aria-haspopup="dialog" aria-expanded="false">
+          <div data-incluir="/src/shared/components/calendario/Calendario.html"></div>
+          <p class="campo__erro" id="lote-data-erro" hidden></p>
+        </div>
         <div class="campo">
           <label for="lote-descricao">Descrição</label>
           <input type="text" id="lote-descricao" name="descricao" placeholder="Manter" autocomplete="off">
           <p class="campo__erro" id="lote-descricao-erro" hidden></p>
         </div>
         <div class="campo">
-          <label for="lote-tipo">Tipo</label>
-          <select id="lote-tipo" name="tipo">
-            <option value="">Manter</option>
-            <option value="despesa">Despesa</option>
-            <option value="receita">Receita</option>
-          </select>
+          <label for="lote-observacoes">Observações</label>
+          <input type="text" id="lote-observacoes" name="observacoes" placeholder="Manter" maxlength="300" autocomplete="off">
+          <p class="campo__erro" id="lote-observacoes-erro" hidden></p>
         </div>
-        <div class="campo">
-          <label for="lote-valor">Valor (R$)</label>
-          <input type="text" id="lote-valor" name="valor" inputmode="decimal" placeholder="Manter" autocomplete="off">
-          <p class="campo__erro" id="lote-valor-erro" hidden></p>
-        </div>
-        <div class="campo">
-          <label for="lote-data">Data</label>
-          <input type="date" id="lote-data" name="data">
-          <p class="campo__erro" id="lote-data-erro" hidden></p>
-        </div>
-        <div class="campo">
+        <div class="campo campo--seletor">
           <label for="lote-categoria">Categoria</label>
-          <select id="lote-categoria" name="categoria">
+          <select id="lote-categoria" name="categoria" aria-controls="lista-lote-categoria" aria-expanded="false">
+            <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
             <option value="">Manter</option>
             <option value="Alimentacao">Alimentação</option>
             <option value="Transporte">Transporte</option>
@@ -83,10 +79,12 @@
             <option value="Salario">Salário</option>
             <option value="Outros">Outros</option>
           </select>
+          <div class="seletor__lista" id="lista-lote-categoria" role="listbox" aria-label="Categoria"></div>
         </div>
-        <div class="campo">
+        <div class="campo campo--seletor">
           <label for="lote-formaPagamento">Pagamento</label>
-          <select id="lote-formaPagamento" name="formaPagamento">
+          <select id="lote-formaPagamento" name="formaPagamento" aria-controls="lista-lote-formaPagamento" aria-expanded="false">
+            <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
             <option value="">Manter</option>
             <option value="dinheiro">Dinheiro</option>
             <option value="pix">Pix</option>
@@ -95,11 +93,22 @@
             <option value="boleto">Boleto</option>
             <option value="outro">Outro</option>
           </select>
+          <div class="seletor__lista" id="lista-lote-formaPagamento" role="listbox" aria-label="Pagamento"></div>
+        </div>
+        <div class="campo campo--seletor">
+          <label for="lote-tipo">Tipo</label>
+          <select id="lote-tipo" name="tipo" aria-controls="lista-lote-tipo" aria-expanded="false">
+            <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
+            <option value="">Manter</option>
+            <option value="despesa">Despesa</option>
+            <option value="receita">Receita</option>
+          </select>
+          <div class="seletor__lista" id="lista-lote-tipo" role="listbox" aria-label="Tipo"></div>
         </div>
         <div class="campo">
-          <label for="lote-observacoes">Observações</label>
-          <input type="text" id="lote-observacoes" name="observacoes" placeholder="Manter" maxlength="300" autocomplete="off">
-          <p class="campo__erro" id="lote-observacoes-erro" hidden></p>
+          <label for="lote-valor">Valor (R$)</label>
+          <input type="text" id="lote-valor" name="valor" inputmode="decimal" placeholder="Manter" autocomplete="off">
+          <p class="campo__erro" id="lote-valor-erro" hidden></p>
         </div>
         <button type="submit" class="transactions-botao">Aplicar</button>
       </form>

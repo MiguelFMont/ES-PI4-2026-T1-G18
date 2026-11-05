@@ -47,7 +47,7 @@
   padding: 0.6rem 1rem;
   border: var(--borda-elemento, 0);
   border-radius: 0.75rem;
-  background: var(--fundo-linha);
+  background: color-mix(in srgb, var(--texto) 2.5%, var(--fundo-card)); /* só um pouco mais claro que o cartão */
 }
 
 .extrato-selecao__texto {
@@ -151,11 +151,57 @@
   text-align: center !important;
 }
 
+/* Caixas de seleção: fundo cinza e cantos bem arredondados. Marcada, ficam na cor de destaque com o "visto". */
 .extrato-col-selecao input {
-  width: 1.1rem;
-  height: 1.1rem;
-  accent-color: var(--destaque);
+  appearance: none;
+  display: inline-grid;
+  place-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  margin: 0;
+  border: 0;
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, var(--texto) 16%, var(--fundo-card));
   cursor: pointer;
+  transition: background-color var(--duracao-cor) ease, box-shadow 0.1s ease, scale 0.1s ease;
+}
+
+.extrato-col-selecao input::after {
+  content: '';
+  width: 0.7rem;
+  height: 0.7rem;
+  background: var(--destaque-texto);
+  clip-path: polygon(14% 52%, 0 66%, 38% 100%, 100% 22%, 86% 8%, 38% 72%); /* o visto */
+  scale: 0;
+  transition: scale 0.1s ease;
+}
+
+.extrato-col-selecao input:hover {
+  background: color-mix(in srgb, var(--texto) 26%, var(--fundo-card));
+}
+
+.extrato-col-selecao input:checked,
+.extrato-col-selecao input:indeterminate {
+  background: var(--destaque);
+}
+
+.extrato-col-selecao input:checked::after {
+  scale: 1;
+}
+
+/* "algumas selecionadas" no cabeçalho: um traço no lugar do visto */
+.extrato-col-selecao input:indeterminate::after {
+  clip-path: none;
+  width: 0.65rem;
+  height: 0.16rem;
+  border-radius: 0.1rem;
+  scale: 1;
+}
+
+.extrato-col-selecao input:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--destaque); /* anel de foco do teclado */
+  scale: var(--escala-foco, 1.03);
 }
 
 /* descrição e observações lado a lado, na mesma linha */

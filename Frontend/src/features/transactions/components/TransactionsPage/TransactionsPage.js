@@ -27,6 +27,7 @@ export function iniciarPaginaTransacoes(raiz, { signal } = {}) {
 
   const resumo = iniciarResumo(raiz);
   const extrato = iniciarExtrato(raiz, {
+    signal,
     irParaPagina: (numero) => carregar(numero),
     tentarNovamente: () => carregar(estado.pagina),
     mudarLimite: (quantidade) => {
