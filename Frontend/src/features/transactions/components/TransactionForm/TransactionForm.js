@@ -3,6 +3,7 @@ import { aplicarMascaraMoeda, ligarCampo } from '../../../../shared/components/c
 import { ligarCalendario } from '../../../../shared/components/Calendario.js';
 import { notificar } from '../../../../shared/components/notificacao.js';
 import { dataDeHoje } from '../../utils/format.js';
+import { CATEGORIAS, rotuloDe } from '../../utils/constants.js';
 import { LIMITE_OBSERVACOES, MENSAGENS_CAMPO, validarFormulario } from '../../utils/formValidation.js';
 
 const ORDEM_DOS_CAMPOS = ['tipo', 'descricao', 'valor', 'data', 'categoria', 'formaPagamento', 'observacoes'];
@@ -113,8 +114,9 @@ export function iniciarFormulario(raiz, { aoSalvar, signal }) {
 
     botaoSalvar.disabled = true;
     botaoSalvar.textContent = 'Salvando...';
+    let criada;
     try {
-      await criarTransacao(dados);
+      criada = await criarTransacao(dados);
     } catch (erro) {
       botaoSalvar.disabled = false;
       botaoSalvar.textContent = TEXTO_BOTAO;
@@ -139,7 +141,12 @@ export function iniciarFormulario(raiz, { aoSalvar, signal }) {
     botaoSalvar.textContent = TEXTO_BOTAO;
     limparParaProximo();
     fecharPainel();
-    notificar('Transação cadastrada.', 'sucesso');
+    // sem categoria escolhida, o Servidor sugeriu uma: o usuário fica sabendo qual foi
+    const sugerida = dados.categoria === undefined && criada?.categoria;
+    notificar(
+      sugerida ? `Transação cadastrada. Categoria sugerida: ${rotuloDe(CATEGORIAS, criada.categoria)}.` : 'Transação cadastrada.',
+      'sucesso'
+    );
     await aoSalvar();
   });
 
