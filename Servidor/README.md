@@ -48,7 +48,7 @@ Tudo que é CRUD (cadastro, listagens, edição) fica no Backend.
 
 ## Mensagens por grupo (contrato com o Backend)
 
-Os campos de cada mensagem estão nos `.md` de `exemplo/` (um por `PedidoXxx`/`RespostaXxx`) e precisam ser **idênticos** aos que o Backend envia e espera.
+Os campos de cada mensagem estão no `.java` dela (quando já implementada) ou no `.md` de `exemplo/` (um por `PedidoXxx`/`RespostaXxx`, enquanto for só planejada) e precisam ser **idênticos** aos que o Backend envia e espera.
 
 | Grupo | Pedido → Resposta | Handler |
 |---|---|---|
@@ -60,7 +60,19 @@ Os campos de cada mensagem estão nos `.md` de `exemplo/` (um por `PedidoXxx`/`R
 
 Cada grupo mexe só na própria pasta e adiciona **uma linha** em `HandlerRegistry.criarPadrao()`. Se um grupo precisar de uma operação nova, cria o par `PedidoXxx`/`RespostaXxx` e o registra no seu handler, combinando os campos com quem implementa o lado do Backend.
 
-Quando uma mensagem já está implementada, o contrato vale pelo `.java` (o `.md` de `exemplo/` pode estar desatualizado).
+Quando uma mensagem já está implementada, o contrato vale pelo `.java` (o `.md` de `exemplo/` pode estar desatualizado). Por isso `core/` e `transactions/` já não têm pasta `exemplo/`: tudo o que havia nelas virou código.
+
+### Grupo 2 — Transações (`transactions/`, implementado)
+
+| Mensagem | `dados` |
+|---|---|
+| `PedidoCategorizarTransacao` | `{ "descricao": "UBER EATS *PEDIDO", "valor": 54.9 }`. A categoria sai só da `descricao`; o `valor` faz parte do contrato, mas hoje não influencia a decisão |
+| `RespostaCategorizarTransacao` | `{ "categoria": "Alimentacao" }`: uma das categorias do contrato da API (`Alimentacao`, `Transporte`, `Moradia`, `Saude`, `Lazer`, `Educacao`, `Salario`, `Outros`) |
+
+- **Como decide** (`TransactionsHandler`): a descrição é normalizada (minúsculas, sem acentos, só letras, sem palavras como `de`, `credito` e `pix`) e comparada **por palavra inteira** com grupos `{ categoria, palavras... }`. **A ordem dos grupos é a prioridade**: as exceções vêm primeiro (`uber eats` é comida, `mercado livre` não é supermercado). Sem palavra conhecida, `Outros`. A lista completa e os cuidados estão em [`docs/palavras-chave-categorias.md`](../docs/palavras-chave-categorias.md).
+- `descricao` ausente ou em branco responde `Erro` `VALIDATION`.
+- **Quem chama é o Backend** (`transactionsService.sugerirCategoria`), no cadastro de uma transação sem `categoria`. Se o Servidor estiver fora do ar, o cadastro não falha: a transação é salva como `Outros`. Outros erros do Servidor (como `UNKNOWN_TYPE`, de um Servidor desatualizado) continuam sendo erro.
+- No Frontend, a opção **Automática** da categoria é o que dispara esse pedido.
 
 ### Grupo 4 — Mentor IA (`mentoria/`, implementado)
 
@@ -96,7 +108,7 @@ src/main/java/com/financeai/
 
 ## Estado atual (Sprint 0)
 
-Já implementados como código: o `Main` e o `core/` (`Comunicado`, `Parceiro`, `Aceitadora`, `Supervisora`, `Handler`, `HandlerRegistry`, `ErroDeNegocio`, `Teclado`), mais o `EcoHandler`, um handler de teste: `PedidoEco` devolve `RespostaEco` com os mesmos `dados`; com `{"falhar":"negocio"}` responde `Erro` `TESTE_NEGOCIO` e com `{"falhar":"interno"}` responde `Erro` `INTERNAL_ERROR`. Também já são código o `AuthHandler` (hash e conferência de senha) e o `MentorHandler` (contexto e filtro do Mentor IA, ver "Grupo 4" acima). Os outros handlers dos grupos ainda são `.md` de exemplo.
+Já implementados como código: o `Main` e o `core/` (`Comunicado`, `Parceiro`, `Aceitadora`, `Supervisora`, `Handler`, `HandlerRegistry`, `ErroDeNegocio`, `Teclado`), mais o `EcoHandler`, um handler de teste: `PedidoEco` devolve `RespostaEco` com os mesmos `dados`; com `{"falhar":"negocio"}` responde `Erro` `TESTE_NEGOCIO` e com `{"falhar":"interno"}` responde `Erro` `INTERNAL_ERROR`. Também já são código o `AuthHandler` (hash e conferência de senha), o `TransactionsHandler` (categorização de transações, ver "Grupo 2" acima) e o `MentorHandler` (contexto e filtro do Mentor IA, ver "Grupo 4" acima). Os outros handlers dos grupos ainda são `.md` de exemplo.
 
 ## Build com Maven
 
