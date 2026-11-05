@@ -43,6 +43,16 @@ export const transactionFiltersSchema = z
   });
 
 export type CreateTransactionDto = z.infer<typeof createTransactionSchema>;
+
+// Mensagens trocadas com o Servidor Java (Servidor/src/main/java/com/financeai/transactions/): os nomes dos campos
+// são exatamente os do JSON de PedidoCategorizarTransacao e de RespostaCategorizarTransacao.
+export interface PedidoCategorizarTransacao {
+  descricao: string;
+  valor: number;
+}
+export interface RespostaCategorizarTransacao {
+  categoria: string;
+}
 export type TransactionFiltersDto = z.infer<typeof transactionFiltersSchema>;
 
 // O que o Frontend recebe: `id` no lugar de `_id`, sem `userId` nem campos internos do Mongo.
