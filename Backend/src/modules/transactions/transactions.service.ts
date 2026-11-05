@@ -3,14 +3,21 @@ import { transactionsRepository } from "./transactions.repository";
 import { TransactionDocument } from "./transactions.model";
 import {
   CreateTransactionDto,
+  PedidoCategorizarTransacao,
+  RespostaCategorizarTransacao,
   TransactionFiltersDto,
   TransactionListResponseDto,
   TransactionResponseDto,
 } from "./transactions.dto";
+import { javaServerClient } from "../../java-client/java-server.client";
+import { AppError } from "../../shared/errors/app-error";
 
-// Sprint 1: a categoria vem do usuário; se faltar, usa "Outros".
-// Sprint 2 (issue #34): se faltar, o Servidor Java sugere a categoria (PedidoCategorizarTransacao).
+// Se a categoria não vier, o Servidor Java a sugere pela descrição (PedidoCategorizarTransacao, issue #34).
+// "Outros" é a categoria quando o Servidor não acha nenhuma palavra-chave e também quando ele está fora do ar.
 const CATEGORIA_PADRAO = "Outros";
+
+// Códigos de AppError (java-client) que significam "o Servidor Java não respondeu".
+const CODES_SERVIDOR_INDISPONIVEL = ["JAVA_SERVER_UNAVAILABLE", "JAVA_SERVER_SHUTTING_DOWN"];
 
 // valores em reais: arredonda em 2 casas para a soma de decimais não deixar "0.30000000000000004"
 const emReais = (valor: number) => Math.round(valor * 100) / 100;
@@ -46,10 +53,30 @@ export const transactionsService = {
     };
   },
 
+  // Pede ao Servidor Java a categoria de uma transação. Cadastrar não pode depender de um serviço de apoio: se o
+  // Servidor estiver fora do ar, devolve "Outros" (e avisa no log). Qualquer outro erro dele (resposta inesperada,
+  // validação) continua sendo erro, porque indicaria um problema no contrato entre Backend e Servidor.
+  async sugerirCategoria(descricao: string, valor: number): Promise<string> {
+    try {
+      const resposta = await javaServerClient.enviarPedido<PedidoCategorizarTransacao, RespostaCategorizarTransacao>(
+        "PedidoCategorizarTransacao",
+        "RespostaCategorizarTransacao",
+        { descricao, valor }
+      );
+      return resposta.categoria;
+    } catch (erro) {
+      if (erro instanceof AppError && CODES_SERVIDOR_INDISPONIVEL.includes(erro.code)) {
+        console.warn(`[transactions] Servidor Java indisponível: categoria "${CATEGORIA_PADRAO}" para "${descricao}"`);
+        return CATEGORIA_PADRAO;
+      }
+      throw erro;
+    }
+  },
+
   async create(userId: string, dados: CreateTransactionDto) {
     const transacao = await transactionsRepository.create({
       ...dados,
-      categoria: dados.categoria ?? CATEGORIA_PADRAO,
+      categoria: dados.categoria ?? (await transactionsService.sugerirCategoria(dados.descricao, dados.valor)),
       userId,
     });
     return paraDto(transacao);
