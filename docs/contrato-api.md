@@ -90,7 +90,7 @@ Todas as rotas exigem token. Um usuário só vê e altera as próprias transaç�
 | `id` | texto | Identificador da transação |
 | `tipo` | `"receita"` ou `"despesa"` | Se o dinheiro entrou ou saiu |
 | `valor` | número | Valor em reais, sempre positivo |
-| `categoria` | texto | Categoria (ver 2.3). Se não for enviada no cadastro, vale `"Outros"` |
+| `categoria` | texto | Categoria (ver 2.3). Se não for enviada no cadastro, o Servidor Java a sugere pela descrição (ver 2.4); sem palavra-chave conhecida, vale `"Outros"` |
 | `data` | texto (ISO 8601) | Data da movimentação |
 | `descricao` | texto | Descrição livre |
 | `formaPagamento` | texto | Uma das formas de pagamento (ver 2.2). Se não for enviada, vale `"outro"` |
@@ -115,7 +115,7 @@ O campo `categoria` é texto livre, mas o Frontend deve oferecer esta lista para
 | `valor` | **número** | Sim | Maior que zero. Texto como `"10"` é recusado |
 | `data` | texto | Sim | Data válida (ver 1.3) |
 | `descricao` | texto | Sim | Não vazio (espaços nas pontas são removidos) |
-| `categoria` | texto | Não | Se faltar, vale `"Outros"` |
+| `categoria` | texto | Não | Se faltar, o Backend pede ao Servidor Java (`PedidoCategorizarTransacao`) uma categoria pela `descricao`: `"Uber Eats"` vira `Alimentacao`, `"Farmácia"` vira `Saude`. Sem palavra-chave conhecida, vale `"Outros"`. Se o Servidor estiver fora do ar, a transação é salva com `"Outros"` (o cadastro não falha). Se vier preenchida, é usada como está |
 | `formaPagamento` | texto | Não | Uma da lista 2.2. Se faltar, vale `"outro"` |
 | `observacoes` | texto | Não | Até 300 caracteres (espaços nas pontas são removidos). Texto vazio é o mesmo que não enviar |
 | `origem` | texto | Não | `manual` (padrão) ou `pluggy` |
