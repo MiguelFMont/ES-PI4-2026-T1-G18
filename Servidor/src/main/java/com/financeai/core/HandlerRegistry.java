@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import com.financeai.auth.AuthHandler;
 import com.financeai.mentoria.MentorHandler;
+import com.financeai.transactions.TransactionsHandler;
 
 public class HandlerRegistry
 {
@@ -31,6 +32,7 @@ public class HandlerRegistry
         new EcoHandler().registrarEm (registry);
         new AuthHandler().registrarEm (registry);   // handler de teste da Sprint 0
         new MentorHandler().registrarEm (registry);
+        new TransactionsHandler().registrarEm(registry);
 
         return registry;
     }
