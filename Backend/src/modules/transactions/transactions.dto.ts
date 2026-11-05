@@ -42,6 +42,40 @@ export const transactionFiltersSchema = z
     path: ["valorMin"],
   });
 
+// Alterações de UMA transação na edição em lote: parcial (só o que muda), sem valores padrão e sem `origem`.
+export const updateTransactionSchema = z.object({
+  tipo: z.enum(["receita", "despesa"]),
+  valor: z.number().positive(),
+  categoria: z.string().trim().min(1),
+  data: z.coerce.date(),
+  descricao: z.string().trim().min(1),
+  observacoes: z.string().trim().max(300), // "" = apagar; sem transform
+  formaPagamento: z.enum(FORMAS_PAGAMENTO), // sem default
+})
+  .partial()
+  .refine((d) => Object.keys(d).length > 0, { message: "Informe ao menos um campo para alterar" });
+
+const idSchema = z.string().regex(/^[a-f\d]{24}$/i, "Id inválido");
+
+// Máximo de itens por chamada em lote: o mesmo limite de itens por página da listagem.
+const LIMITE_LOTE = 100;
+const semRepetidos = (ids: string[]) => new Set(ids).size === ids.length;
+
+// Edição em lote: cada transação leva as suas próprias alterações.
+export const bulkUpdateSchema = z.object({
+  itens: z
+    .array(z.object({ id: idSchema, alteracoes: updateTransactionSchema }))
+    .min(1)
+    .max(LIMITE_LOTE)
+    .refine((itens) => semRepetidos(itens.map((i) => i.id)), { message: "Ids repetidos" }),
+});
+
+export const bulkDeleteSchema = z.object({
+  ids: z.array(idSchema).min(1).max(LIMITE_LOTE).refine(semRepetidos, { message: "Ids repetidos" }),
+});
+
+export type UpdateTransactionDto = z.infer<typeof updateTransactionSchema>;
+export type BulkUpdateDto = z.infer<typeof bulkUpdateSchema>;
 export type CreateTransactionDto = z.infer<typeof createTransactionSchema>;
 
 // Mensagens trocadas com o Servidor Java (Servidor/src/main/java/com/financeai/transactions/): os nomes dos campos
@@ -66,6 +100,12 @@ export interface TransactionResponseDto {
   observacoes?: string; // só aparece quando foi informada
   formaPagamento: FormaPagamento;
   origem: "manual" | "pluggy";
+}
+
+// Resposta das operações em lote: quantas foram feitas e quais ids não existem (ou não são do usuário).
+export interface BulkResultDto {
+  afetadas: number;
+  naoEncontradas: string[];
 }
 
 // Entradas, saídas e saldo de TODAS as transações que passam nos filtros (não só da página).

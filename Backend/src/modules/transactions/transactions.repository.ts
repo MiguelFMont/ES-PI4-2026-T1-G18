@@ -1,8 +1,22 @@
 // src/modules/transactions/transactions.repository.ts
 import { TransactionModel } from "./transactions.model";
-import { CreateTransactionDto, TransactionFiltersDto } from "./transactions.dto";
+import { CreateTransactionDto, TransactionFiltersDto, UpdateTransactionDto } from "./transactions.dto";
 
 const UM_DIA_MS = 24 * 60 * 60 * 1000;
+
+// Converte as alterações de uma transação (edição em lote) em operadores do Mongo. `observacoes: ""` apaga o campo ($unset); sem isso o
+// Mongoose ignoraria o undefined e a observação antiga ficaria.
+function montarAtualizacao(dados: UpdateTransactionDto) {
+  const { observacoes, ...resto } = dados;
+  const set: Record<string, unknown> = { ...resto };
+  const atualizacao: Record<string, unknown> = {};
+  if (observacoes !== undefined) {
+    if (observacoes === "") atualizacao.$unset = { observacoes: "" };
+    else set.observacoes = observacoes;
+  }
+  if (Object.keys(set).length > 0) atualizacao.$set = set;
+  return atualizacao;
+}
 
 // O texto digitado na busca vira trecho literal: um "." ou "(" digitado não é padrão de busca.
 function escaparRegex(texto: string): string {
@@ -62,5 +76,28 @@ export const transactionsRepository = {
   async create(dados: CreateTransactionDto & { userId: string; categoria: string }) {
     const transacao = await TransactionModel.create(dados);
     return transacao.toObject();
+  },
+
+  // Dos ids pedidos, os que existem e são do usuário (o resto é "não encontrada").
+  async idsDoUsuario(userId: string, ids: string[]) {
+    const docs = await TransactionModel.find({ _id: { $in: ids }, userId }).select("_id").lean();
+    return new Set(docs.map((d) => d._id.toString()));
+  },
+
+  // Cada transação recebe as suas alterações; o filtro com o userId garante que só o dono altera.
+  async updateMany(userId: string, itens: { id: string; alteracoes: UpdateTransactionDto }[]) {
+    if (itens.length === 0) return 0;
+    const resultado = await TransactionModel.bulkWrite(
+      itens.map(({ id, alteracoes }) => ({
+        updateOne: { filter: { _id: id, userId }, update: montarAtualizacao(alteracoes) },
+      }))
+    );
+    return resultado.matchedCount;
+  },
+
+  async removeMany(userId: string, ids: string[]) {
+    if (ids.length === 0) return 0;
+    const resultado = await TransactionModel.deleteMany({ _id: { $in: ids }, userId });
+    return resultado.deletedCount;
   },
 };
