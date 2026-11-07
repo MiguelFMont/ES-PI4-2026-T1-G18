@@ -205,6 +205,7 @@
 
 @media (max-width: 767px) {
   .mentor-conversa {
+    flex: none;
     height: 65dvh;
     min-height: 20rem;
     padding: 1rem;

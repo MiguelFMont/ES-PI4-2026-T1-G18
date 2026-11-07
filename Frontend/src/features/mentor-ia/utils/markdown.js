@@ -43,6 +43,7 @@ export function markdownParaElementos(texto) {
       const tag = item ? 'UL' : 'OL';
       if (!lista || lista.tagName !== tag) {
         lista = document.createElement(tag.toLowerCase());
+        if (numerado) lista.start = Number.parseInt(linha, 10);
         fragmento.append(lista);
       }
       paragrafo = null;
