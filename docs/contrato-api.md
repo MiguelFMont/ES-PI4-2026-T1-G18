@@ -12,7 +12,7 @@ Documento vivo que descreve **o que o Backend aceita e devolve**. É a referênc
 | Transações | `/v1/transactions` | 2 | **Cadastro, listagem (com filtros e paginação), edição e exclusão em lote documentados** (seção 2); duplicação e importação planejadas |
 | Autenticação e conta | `/v1/auth` | 1 | A documentar |
 | Painel e análise | `/v1/dashboard` | 3 | A documentar |
-| Mentor financeiro (IA) | `/v1/mentor-ia` | 4 | **Chat (enviar mensagem e histórico) documentado** (seção 3); alertas planejados |
+| Mentor financeiro (IA) | `/v1/mentor-ia` | 4 | **Chat (enviar mensagem e histórico) e alertas (listar e marcar como lido) documentados** (seção 3) |
 | Metas | `/v1/goals` | 5 | A documentar |
 | Investimentos | `/v1/investments` | 5 | A documentar |
 
@@ -469,11 +469,96 @@ As 6 mensagens mais recentes também são enviadas à IA junto com a pergunta no
 
 Erros: `401 UNAUTHENTICATED`.
 
-### 3.4 Rotas planejadas (ainda não existem)
+### 3.4 Objeto `Alert`
 
-| Método e rota | Para quê |
-|---|---|
-| `GET /v1/mentor-ia/alerts` | Alertas proativos (gasto fora do padrão, fatura próxima, dinheiro parado). Quem gera os alertas ainda está em definição |
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `id` | texto | Identificador do alerta |
+| `tipo` | `"gasto_fora_do_padrao"`, `"fatura_proxima"` ou `"dinheiro_parado"` | Qual regra gerou o alerta (seção 3.5) |
+| `titulo` | texto | Título curto, por exemplo `"Fatura do cartão perto do vencimento"` |
+| `mensagem` | texto | Uma ou duas frases em português, com os valores já formatados (`"R$ 1.234,56"`). Pode ser mostrada como está |
+| `dados` | objeto | Os números do alerta, para o Frontend montar a própria tela (campos por tipo na seção 3.5). Valores em reais, datas em ISO 8601 |
+| `lido` | booleano | Sempre `false` na listagem; `true` depois de `PATCH .../lido` |
+| `criadaEm` | texto (ISO 8601) | Quando o alerta apareceu pela primeira vez |
+
+### 3.5 Como os alertas são gerados
+
+Os alertas são **gerados pelo Backend no momento em que são lidos** (`GET /v1/mentor-ia/alerts`), a partir das transações reais do usuário: não há job agendado nem gancho no cadastro de transações. Por isso a listagem sempre reflete o estado atual, inclusive transações editadas ou excluídas.
+
+- Cada alerta tem uma chave por período (por exemplo, a fatura de novembro de 2026): ler os alertas de novo **não duplica** nada, só atualiza os números do mesmo alerta.
+- Um alerta **marcado como lido não volta** no mesmo período.
+- Um alerta **não lido cuja condição deixou de valer** (por exemplo, o usuário excluiu o gasto que o gerou, ou o período passou) é **removido** na leitura seguinte.
+- Datas e meses são os de **Brasília**. O histórico lido vai do dia 1 do 3º mês anterior até hoje.
+
+| `tipo` | Quando aparece | `dados` |
+|---|---|---|
+| `gasto_fora_do_padrao` | Numa categoria de despesa, o gasto do **mês atual até hoje** já é **pelo menos 2 vezes o maior gasto mensal** dessa categoria nos **3 meses anteriores**, com **pelo menos R$ 200 a mais**, e a categoria teve gasto em pelo menos 2 desses 3 meses. Um alerta por categoria e por mês | `categoria`, `valorAtual`, `maiorMesAnterior`, `mediaMensal` (média dos meses anteriores com gasto) |
+| `fatura_proxima` | Faltam **5 dias ou menos** para o vencimento da fatura e ela tem valor. Um alerta por fatura (mês do vencimento) | `valor`, `vencimento`, `diasParaVencer`, `inicioDoCiclo`, `fechamento` |
+| `dinheiro_parado` | O que sobrou (receitas menos despesas) desde o dia 1 do 3º mês anterior é de **pelo menos R$ 500** e de **pelo menos 1 mês de despesas** (média dos meses anteriores com movimento), há movimento em pelo menos 2 dos 3 meses anteriores e **nenhuma transação na categoria `Investimento`/`Investimentos`** no período. Um alerta por mês | `saldo`, `receitas`, `despesas`, `despesaMensalMedia`, `desde` |
+
+**Suposição da fatura:** ainda não existe cartão cadastrado (o Grupo 5 vai simular faturas). Até lá a fatura é **estimada** como a soma das despesas com `formaPagamento: "credito"` do ciclo fechado, supondo **vencimento todo dia 10** e **fechamento 7 dias antes (dia 3)**: a fatura que vence em 10/11 tem as compras no crédito de 03/10 a 02/11. Quando houver cartão de verdade, a regra passa a usar o vencimento e o valor dele.
+
+O alerta de dinheiro parado é **educativo**: sugere separar uma reserva de emergência ou estudar opções de investimento, e nunca cita ativo, produto ou instituição.
+
+Os limites foram escolhidos para **não gerar nenhum `gasto_fora_do_padrao` com os dados do seed** (seção 4) em nenhum dia do ano. Com o seed aparecem só alertas verdadeiros: `fatura_proxima` do dia 5 ao dia 10 de cada mês (o seed tem compras no crédito todo mês) e `dinheiro_parado` (o seed tem sobra de salário e nenhum investimento). Para ver um gasto fora do padrão, cadastre por exemplo uma despesa de R$ 1.500 em `Alimentacao` no mês atual.
+
+### 3.6 Listar alertas
+
+`GET /v1/mentor-ia/alerts` → `200 OK`, com os alertas **não lidos** do usuário, dos **mais recentes para os mais antigos**. Sem alertas, devolve `[]`. Não depende do Servidor de cálculos nem da API de IA.
+
+```json
+[
+  {
+    "id": "6af1bbb52676e89cd05622c2",
+    "tipo": "gasto_fora_do_padrao",
+    "titulo": "Gasto fora do padrão em Alimentacao",
+    "mensagem": "Em novembro você já gastou R$ 2.070,85 com Alimentacao, 3,2 vezes o maior gasto mensal dessa categoria nos últimos 3 meses (R$ 647,40).",
+    "dados": { "categoria": "Alimentacao", "valorAtual": 2070.85, "maiorMesAnterior": 647.4, "mediaMensal": 400.55 },
+    "lido": false,
+    "criadaEm": "2026-11-09T12:26:22.541Z"
+  },
+  {
+    "id": "6af1bba92676e89cd05622bf",
+    "tipo": "dinheiro_parado",
+    "titulo": "Dinheiro parado na conta",
+    "mensagem": "Desde 01/08 sobraram R$ 7.083,00 (receitas menos despesas), mais do que você gasta em um mês (R$ 1.664,68 em média), e não há nenhum investimento registrado. Se esse dinheiro está parado, considere separar uma reserva de emergência ou estudar opções de investimento.",
+    "dados": { "saldo": 7083, "receitas": 15670, "despesas": 8587, "despesaMensalMedia": 1664.68, "desde": "2026-08-01T03:00:00.000Z" },
+    "lido": false,
+    "criadaEm": "2026-11-09T12:26:10.837Z"
+  },
+  {
+    "id": "6af1bba92676e89cd05622be",
+    "tipo": "fatura_proxima",
+    "titulo": "Fatura do cartão perto do vencimento",
+    "mensagem": "A fatura do cartão de crédito vence amanhã (10/11): são R$ 434,70 em compras no crédito de 03/10 a 02/11. Reserve esse valor para não pagar juros.",
+    "dados": {
+      "valor": 434.7,
+      "vencimento": "2026-11-10T03:00:00.000Z",
+      "diasParaVencer": 1,
+      "inicioDoCiclo": "2026-10-03T03:00:00.000Z",
+      "fechamento": "2026-11-03T03:00:00.000Z"
+    },
+    "lido": false,
+    "criadaEm": "2026-11-09T12:26:10.837Z"
+  }
+]
+```
+
+(Capturado em 09/11/2026 com os dados do seed mais uma despesa de R$ 1.500 em `Alimentacao`.)
+
+Erros: `401 UNAUTHENTICATED`.
+
+### 3.7 Marcar alerta como lido
+
+`PATCH /v1/mentor-ia/alerts/:id/lido` → `200 OK`, sem corpo na requisição. Devolve o alerta (objeto `Alert`) com `lido: true`. Ele deixa de aparecer na listagem e não volta no mesmo período. Marcar de novo um alerta já lido também devolve `200`.
+
+Erros:
+
+| Status | `code` | Quando |
+|---|---|---|
+| 400 | `VALIDATION_ERROR` | `id` não tem 24 caracteres hexadecimais |
+| 401 | `UNAUTHENTICATED` | Sem token ou token inválido |
+| 404 | `ALERT_NOT_FOUND` | O alerta não existe ou é de outro usuário |
 
 ---
 
