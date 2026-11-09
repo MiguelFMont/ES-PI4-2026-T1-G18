@@ -14,6 +14,10 @@ const envSchema = z.object({
   JAVA_SERVER_TIMEOUT_MS: z.coerce.number().default(5000),
   JAVA_SERVER_POOL_SIZE: z.coerce.number().int().min(1).default(5),
   GENAI_API_KEY: z.string().optional(),
+  // Pluggy (Open Finance, sandbox): Client ID e Client Secret da aplicação criada no Dashboard da Pluggy. Só o Backend
+  // pode ter estas credenciais (nunca no Frontend, nunca no Git). Sem elas, o Backend sobe e só a importação da Pluggy fica indisponível.
+  PLUGGY_CLIENT_ID: z.string().optional(),
+  PLUGGY_CLIENT_SECRET: z.string().optional(),
   GENAI_BASE_URL: z.string().url().default("https://api.groq.com/openai/v1"),
   GENAI_MODEL: z.string().default("openai/gpt-oss-120b"),
   GENAI_TIMEOUT_MS: z.coerce.number().default(20000),
