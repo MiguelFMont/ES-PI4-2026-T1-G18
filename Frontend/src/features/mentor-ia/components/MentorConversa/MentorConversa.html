@@ -1,0 +1,41 @@
+<!-- Componente: a conversa com o Mentor (histórico, boas-vindas com sugestões e o "pensando"). Lógica em MentorConversa.js.
+     Mostra só um destes estados por vez: carregando, erro, boas-vindas (sem conversa) ou mensagens. -->
+<div id="mentor-conversa" class="mentor-conversa" aria-busy="true">
+  <p id="conversa-carregando" class="mentor-estado">Carregando a conversa...</p>
+
+  <div id="conversa-erro" class="mentor-estado" hidden>
+    <p id="conversa-erro-texto" role="alert"></p>
+    <button type="button" id="conversa-tentar-novamente" class="mentor-ia-botao">Tentar novamente</button>
+  </div>
+
+  <div id="conversa-boas-vindas" class="mentor-boas-vindas" hidden>
+    <h2>Olá! Sou o seu mentor financeiro.</h2>
+    <p>
+      Eu olho as transações deste mês para explicar para onde vai o seu dinheiro e ajudar a montar um orçamento.
+      Quanto mais transações cadastradas, melhor a resposta. Comece por uma destas perguntas ou escreva a sua.
+    </p>
+    <ul class="mentor-sugestoes" aria-label="Sugestões de pergunta">
+      <li><button type="button" class="mentor-sugestao">Qual categoria pesa mais nos meus gastos?</button></li>
+      <li><button type="button" class="mentor-sugestao">Quanto estou gastando por dia, em média?</button></li>
+      <li><button type="button" class="mentor-sugestao">Como posso montar um orçamento para o resto do mês?</button></li>
+      <li><button type="button" class="mentor-sugestao">O que é uma reserva de emergência?</button></li>
+    </ul>
+  </div>
+
+  <!-- role="log": o leitor de tela anuncia as mensagens novas que entram no fim da lista -->
+  <ol id="conversa-mensagens" class="mentor-mensagens" role="log" aria-label="Mensagens" hidden></ol>
+
+  <div id="conversa-pensando" class="mentor-pensando" role="status" hidden>
+    <span class="mentor-pensando__pontos" aria-hidden="true"><span></span><span></span><span></span></span>
+    <span>O Mentor está pensando...</span>
+  </div>
+
+  <!-- Uma mensagem, copiada pelo JS. O texto entra por textContent (o da IA passa por utils/markdown.js). -->
+  <template id="modelo-mensagem">
+    <li class="mentor-mensagem">
+      <p class="mentor-mensagem__autor"></p>
+      <div class="mentor-mensagem__texto"></div>
+      <time class="mentor-mensagem__horario"></time>
+    </li>
+  </template>
+</div>

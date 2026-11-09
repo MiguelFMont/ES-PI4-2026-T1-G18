@@ -1,0 +1,217 @@
+/* Componente MentorConversa: a área que rola, os balões das mensagens, as boas-vindas e o "pensando". */
+
+.mentor-conversa {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem;
+  scroll-behavior: smooth;
+}
+
+.mentor-estado {
+  display: grid;
+  justify-items: center;
+  gap: 0.75rem;
+  margin: auto;
+  color: var(--texto-suave);
+  text-align: center;
+}
+
+/* ---- boas-vindas (sem conversa) ---- */
+
+.mentor-boas-vindas {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 36rem;
+  margin: auto;
+  text-align: center;
+}
+
+.mentor-boas-vindas h2 {
+  font-size: 1.25rem;
+}
+
+.mentor-boas-vindas p {
+  color: var(--texto-suave);
+  line-height: 1.5;
+}
+
+.mentor-sugestoes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  list-style: none;
+}
+
+.mentor-sugestao {
+  transition: scale 0.1s ease, box-shadow 0.1s ease, background-color var(--duracao-cor) ease, color var(--duracao-cor) ease;
+  padding: 0.55rem 0.9rem;
+  border: var(--borda-elemento, 0);
+  border-radius: 999px;
+  color: var(--texto);
+  background: var(--fundo-linha);
+  box-shadow: var(--sombra);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.mentor-sugestao:hover,
+.mentor-sugestao:focus-visible {
+  outline: none;
+  scale: 1.01;
+  color: var(--destaque-texto);
+  background: var(--destaque);
+}
+
+.mentor-sugestao:focus-visible {
+  box-shadow: var(--sombra-foco);
+}
+
+/* ---- mensagens ---- */
+
+.mentor-mensagens {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  list-style: none;
+}
+
+.mentor-mensagem {
+  display: grid;
+  gap: 0.25rem;
+  max-width: min(85%, 42rem);
+}
+
+.mentor-mensagem--usuario {
+  align-self: flex-end;
+  justify-items: end;
+}
+
+.mentor-mensagem--ia {
+  align-self: flex-start;
+}
+
+.mentor-mensagem__autor {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--destaque);
+}
+
+.mentor-mensagem__texto {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  border-radius: 1rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.mentor-mensagem--usuario .mentor-mensagem__texto {
+  border-bottom-right-radius: 0.3rem;
+  color: var(--destaque-texto);
+  background: var(--destaque);
+  white-space: pre-wrap; /* mantém as quebras de linha (Shift + Enter) do que o usuário escreveu */
+}
+
+.mentor-mensagem--ia .mentor-mensagem__texto {
+  border-bottom-left-radius: 0.3rem;
+  color: var(--texto);
+  background: var(--fundo-linha);
+}
+
+.mentor-mensagem__texto ul,
+.mentor-mensagem__texto ol {
+  display: grid;
+  gap: 0.25rem;
+  padding-left: 1.25rem;
+}
+
+.mentor-mensagem__horario {
+  font-size: 0.75rem;
+  color: var(--texto-suave);
+}
+
+/* pergunta enviada, esperando a resposta (ainda não está salva) */
+.mentor-mensagem--pendente {
+  opacity: 0.7;
+}
+
+.mentor-mensagem--pendente .mentor-mensagem__horario {
+  visibility: hidden;
+}
+
+/* ---- "pensando" ---- */
+
+.mentor-pensando {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  border-radius: 1rem;
+  border-bottom-left-radius: 0.3rem;
+  color: var(--texto-suave);
+  background: var(--fundo-linha);
+  font-size: 0.9rem;
+}
+
+.mentor-pensando__pontos {
+  display: inline-flex;
+  gap: 0.25rem;
+}
+
+.mentor-pensando__pontos span {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--destaque);
+  animation: mentor-pulo 1.2s ease-in-out infinite;
+}
+
+.mentor-pensando__pontos span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.mentor-pensando__pontos span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes mentor-pulo {
+  0%, 60%, 100% {
+    opacity: 0.35;
+    translate: 0 0;
+  }
+  30% {
+    opacity: 1;
+    translate: 0 -0.25rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mentor-conversa {
+    scroll-behavior: auto;
+  }
+
+  .mentor-pensando__pontos span {
+    animation: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .mentor-conversa {
+    flex: none;
+    height: 65dvh;
+    min-height: 20rem;
+    padding: 1rem;
+  }
+
+  .mentor-mensagem {
+    max-width: 92%;
+  }
+}

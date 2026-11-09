@@ -1,0 +1,45 @@
+/* Componente MentorEntrada: campo da pergunta e botão Enviar, presos embaixo do cartão do chat. */
+
+.mentor-entrada {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 0.5rem 0.75rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid var(--borda);
+}
+
+.mentor-entrada__campo {
+  --escala-foco: 1.01; /* o campo é largo: crescer 3% (o padrão de campos.css) seria um salto grande */
+}
+
+.mentor-entrada__campo textarea {
+  max-height: 10rem;
+  resize: none;
+  line-height: 1.5;
+}
+
+.mentor-entrada__rodape {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+}
+
+.mentor-entrada__contador {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 767px) {
+  .mentor-entrada {
+    padding: 0.75rem 1rem;
+  }
+
+  .mentor-entrada__rodape {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+}
