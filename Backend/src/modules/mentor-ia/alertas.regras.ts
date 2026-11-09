@@ -218,8 +218,8 @@ export function gerarAlertas(transacoes: TransacaoParaAlerta[], hoje: Date): Ale
   ];
 }
 
-// Início do período que as regras leem (do 1º dia do 3º mês anterior): o repositório busca só isso.
-export function inicioDoHistorico(hoje: Date): Date {
-  const { ano, mes } = diaEmBrasilia(hoje);
-  return inicioDoDia(ano, mes - MESES_DE_HISTORICO, 1);
+// Período que as regras leem (do dia 1 do 3º mês anterior até o fim de hoje): o repositório busca só isso.
+export function periodoDoHistorico(hoje: Date): { inicio: Date; fim: Date } {
+  const { ano, mes, dia } = diaEmBrasilia(hoje);
+  return { inicio: inicioDoDia(ano, mes - MESES_DE_HISTORICO, 1), fim: inicioDoDia(ano, mes, dia + 1) };
 }
