@@ -131,8 +131,10 @@ public class MentorHandler
     {
         PedidoFiltrarResposta p = pedido.dadosComo (PedidoFiltrarResposta.class);
 
-        return Comunicado.de (RespostaFiltrarResposta.TIPO,
-                              new RespostaFiltrarResposta(FiltroDeAtivos.filtrar(p.getResposta())));
+        // primeiro o assunto (resposta fora de financas vira a recusa inteira), depois os ativos
+        String resposta = FiltroDeAtivos.filtrar (FiltroDeEscopo.filtrar (p.getResposta()));
+
+        return Comunicado.de (RespostaFiltrarResposta.TIPO, new RespostaFiltrarResposta(resposta));
     }
 
     // a descricao e texto livre do usuario: vai curta e numa linha so para o prompt
