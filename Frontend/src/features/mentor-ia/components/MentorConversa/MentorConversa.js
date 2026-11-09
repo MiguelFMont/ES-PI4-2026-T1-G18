@@ -16,20 +16,27 @@ export function iniciarConversa(raiz, { tentarNovamente, escolherSugestao }) {
   const pensando = raiz.querySelector('#conversa-pensando');
   const modelo = raiz.querySelector('#modelo-mensagem');
 
+  const sugestoes = [...raiz.querySelectorAll('.mentor-sugestao')];
+
   raiz.querySelector('#conversa-tentar-novamente').addEventListener('click', () => tentarNovamente());
-  for (const botao of raiz.querySelectorAll('.mentor-sugestao')) {
+  for (const botao of sugestoes) {
     botao.addEventListener('click', () => escolherSugestao(botao.textContent.trim()));
   }
 
+  // As boas-vindas ficam enquanto o usuário não perguntou nada. Se o Mentor já mandou um insight sozinho, a lista
+  // aparece junto, embaixo das sugestões (que continuam à mão para a primeira pergunta).
   function mostrar(estado) {
+    const comInsights = estado === 'boas-vindas' && lista.childElementCount > 0;
     carregando.hidden = estado !== 'carregando';
     erro.hidden = estado !== 'erro';
     boasVindas.hidden = estado !== 'boas-vindas';
-    lista.hidden = estado !== 'mensagens';
+    lista.hidden = !(estado === 'mensagens' || comInsights);
+    area.classList.toggle('mentor-conversa--boas-vindas-com-insight', comInsights);
     area.setAttribute('aria-busy', String(estado === 'carregando'));
   }
 
-  const semMensagens = () => lista.childElementCount === 0;
+  const semPerguntas = () => !lista.querySelector('.mentor-mensagem--usuario');
+  const estadoDaConversa = () => (semPerguntas() ? 'boas-vindas' : 'mensagens');
 
   function rolarParaOFim() {
     area.scrollTop = area.scrollHeight;
@@ -57,7 +64,7 @@ export function iniciarConversa(raiz, { tentarNovamente, escolherSugestao }) {
     /** `mensagens`: o histórico de GET /mentor-ia/chat, da mais antiga para a mais nova. */
     mostrarHistorico(mensagens) {
       lista.replaceChildren(...mensagens.map((m) => montarMensagem(modelo, m)));
-      mostrar(semMensagens() ? 'boas-vindas' : 'mensagens');
+      mostrar(estadoDaConversa());
       rolarParaOFim();
     },
 
@@ -77,7 +84,7 @@ export function iniciarConversa(raiz, { tentarNovamente, escolherSugestao }) {
         },
         remover() {
           item.remove();
-          if (semMensagens()) mostrar('boas-vindas');
+          mostrar(estadoDaConversa()); // era a primeira pergunta: voltam as boas-vindas (com os insights, se houver)
         },
       };
     },
@@ -87,8 +94,22 @@ export function iniciarConversa(raiz, { tentarNovamente, escolherSugestao }) {
       rolarParaOFim();
     },
 
+    /**
+     * Acrescenta as explicações que o Mentor mandou sem pergunta (POST /mentor-ia/chat/proativa) no fim da conversa.
+     * Uma mensagem que já esteja na tela (mesmo id) não é repetida.
+     */
+    adicionarProativas(mensagens) {
+      const novas = mensagens.filter((m) => ![...lista.children].some((item) => item.dataset.id === String(m.id)));
+      if (novas.length === 0) return;
+      for (const mensagem of novas) adicionar(mensagem);
+      mostrar(estadoDaConversa());
+      rolarParaOFim();
+    },
+
+    /** Mostra o "pensando". Enquanto ele aparece, as sugestões ficam desativadas (uma pergunta por vez). */
     pensando(ativo) {
       pensando.hidden = !ativo;
+      for (const botao of sugestoes) botao.disabled = ativo;
       if (ativo) rolarParaOFim();
     },
   };
@@ -105,10 +126,17 @@ function montarMensagem(modelo, mensagem) {
   const item = modelo.content.firstElementChild.cloneNode(true);
   const daIa = mensagem.autor === 'ia';
   item.classList.add(daIa ? 'mentor-mensagem--ia' : 'mentor-mensagem--usuario');
+  if (mensagem.id != null) item.dataset.id = String(mensagem.id);
 
   const autor = item.querySelector('.mentor-mensagem__autor');
-  autor.textContent = daIa ? 'Mentor' : 'Você';
+  autor.querySelector('.mentor-mensagem__nome').textContent = daIa ? 'Mentor' : 'Você';
   if (!daIa) autor.classList.add('so-leitor'); // o balão do usuário já se distingue pela posição e pela cor
+
+  // Explicação que o Mentor mandou sem pergunta: selo "Insight" ao lado do nome e um friso no balão.
+  if (daIa && mensagem.proativa === true) {
+    item.classList.add('mentor-mensagem--proativa');
+    autor.querySelector('.mentor-mensagem__selo').hidden = false;
+  }
 
   const texto = item.querySelector('.mentor-mensagem__texto');
   if (daIa) {

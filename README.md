@@ -79,6 +79,14 @@ mvn exec:java -Dexec.mainClass=com.financeai.Main
 # Passo a passo em Backend/README.md (seção "MongoDB Atlas")
 ```
 
+### Testes automatizados
+```
+cd Backend && npm test      # node:test; MongoDB em memória, IA e Servidor Java simulados (sem .env)
+cd Servidor && mvn test     # JUnit 5
+# Integração Backend -> Servidor Java (com o Servidor no ar): JAVA_SERVER_INTEGRACAO=1 npm test
+# Detalhes na seção "Testes" de Backend/README.md e Servidor/README.md (ainda não há CI)
+```
+
 ## Estrutura do repositório
 
 ```

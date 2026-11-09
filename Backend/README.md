@@ -117,6 +117,8 @@ O chat do Mentor (`POST /v1/mentor-ia/chat`, contrato na seção 3 de `../docs/c
 5. Backend salva a pergunta e a resposta juntas (coleção chatmessages) e devolve as duas
 ```
 
+**Mensagem proativa** (`POST /v1/mentor-ia/chat/proativa`, seção 3.8 do contrato): o Frontend chama ao abrir o chat e o Mentor inicia a conversa explicando os alertas não lidos que ainda não explicou (`explicadoEm` vazio). Sem alerta novo, a rota devolve `[]` sem chamar a IA nem o Servidor Java. Com alerta novo, segue o mesmo caminho acima, com três diferenças: os alertas (título e mensagem, já com os números) entram no fim do resumo; no lugar da pergunta vai uma instrução interna, que não é salva; e não vão mensagens anteriores (a instrução se basta e economiza tokens). Depois do filtro, o Backend marca `explicadoEm` só nos alertas ainda sem marca (update atômico) e salva **uma** mensagem `ia` com `proativa: true`. Se nenhum alerta foi marcado, outra aba já os explicou e a mensagem é descartada. Se a IA ou o filtro falharem, nada é salvo e os alertas são explicados na próxima abertura.
+
 - **Por que o Java faz as contas:** modelos de linguagem erram aritmética. A IA recebe os números prontos e é instruída a não calcular nada novo.
 - **Por que o filtro fica no Java:** a regra "nunca recomendar ativo" não pode depender só do prompt (o modelo pode desobedecer). O filtro analisa frase a frase e deixa passar as recusas ("Não posso recomendar...").
 - **Provedor:** [Groq](https://console.groq.com), gratuito e sem cartão, com o modelo `openai/gpt-oss-120b`. A chamada usa o formato de chat da OpenAI (`/chat/completions`) e fica isolada em `modules/mentor-ia/genai.client.ts`: para trocar de provedor ou modelo basta mudar `GENAI_BASE_URL` e `GENAI_MODEL` no `.env`.
@@ -127,7 +129,6 @@ O chat do Mentor (`POST /v1/mentor-ia/chat`, contrato na seção 3 de `../docs/c
 ## Pontos em aberto
 
 - **MFA no login:** o `login` devolve `mfaEnabled`; o fluxo completo (token temporário até validar o código) será definido por outro integrante do grupo de Autenticação.
-- **Alertas do Mentor IA:** quem os gera (job agendado ou fluxo do chat) ainda não está definido.
 - **Contratos Backend↔Servidor:** os tipos de mensagem e seus campos (`PedidoXxx`/`RespostaXxx`) precisam ser os mesmos nos dois lados. A lista completa está em `../Servidor/README.md`.
 
 ## Configuração
@@ -178,6 +179,48 @@ curl localhost:3001/v1/health                       # {"status":"ok"}: Backend d
 curl -X POST localhost:3001/v1/eco -H "content-type: application/json" -d '{"oi":1}'
 # {"oi":1}: Backend -> socket -> Servidor Java -> de volta
 ```
+
+## Testes
+
+Os testes usam o executor nativo do Node (`node:test`) com o `tsx`, sem framework extra. Ficam em `__tests__/` dentro do módulo (hoje só o `mentor-ia`) e seguem o padrão `*.test.ts`.
+
+```bash
+npm test                    # todos os *.test.ts de src/
+npx tsc --noEmit -p .       # confere os tipos (inclusive dos testes)
+```
+
+O `npm test` **não precisa** de `.env`, do Atlas, da chave da IA nem do Servidor Java: o arquivo `__tests__/ambiente.ts` define as variáveis de ambiente dos testes antes de qualquer import, e o resto é simulado:
+
+| Peça | Nos testes |
+|---|---|
+| MongoDB | Em memória (`mongodb-memory-server`). Na **primeira** execução o pacote baixa o binário do MongoDB (cerca de 800 MB, fica em cache em `~/.cache/mongodb-binaries`) |
+| API de IA | `fetch` simulado só para `GENAI_BASE_URL` (`__tests__/apoio.ts`) |
+| Servidor Java | `javaServerClient.enviarPedido` simulado; o teste de integração (abaixo) usa o de verdade |
+| Rotas | O `app` Express sobe numa porta livre e é chamado com `fetch` |
+
+O que está coberto no Mentor IA (Grupo 4):
+
+- **`genai.client`**: mensagens enviadas à IA (instruções + resumo, histórico com `ia` → `assistant` e `usuario` → `user`, pergunta); sem `GENAI_API_KEY` → `503 GENAI_UNAVAILABLE`; `429` → `GENAI_RATE_LIMITED`; outro erro → `502 GENAI_ERROR`; sem rede ou timeout → `503`; resposta vazia → `502`.
+- **`mentor-ia.service`**: o fluxo pergunta/resposta (contexto no Java só com os campos das transações, sem `userId`; o contexto vai para a IA; a resposta da IA passa pelo filtro; é a resposta **filtrada** que é salva e devolvida), o mês de Brasília (`dataInicio` e `diaDoMes`), e que nada é salvo se a IA, o contexto ou o filtro falham.
+- **`mentor-ia.repository`**: `saveExchange` grava pergunta e resposta em ordem; `findRecent` devolve as N mais recentes da mais antiga para a mais nova; isolamento por `userId`.
+- **Rotas**: `401` sem token, `400 VALIDATION_ERROR` para `texto` inválido, `200` com as duas mensagens, erros da IA/Servidor com o status do contrato, e `GET /chat` devolvendo só o histórico do dono do token.
+- **`alertas.regras`** (`alertas.regras.test.ts`, sem banco): gasto fora do padrão (fator 2× e R$ 200 a mais, logo abaixo de cada limite, histórico mínimo de 2 dos 3 meses, chave e mensagem), fatura próxima (só do dia 5 ao 10, ciclo de 03 do mês anterior a 02 só com despesas no `credito`, fatura zerada), dinheiro parado (saldo mínimo, 1 mês de despesas, categoria `Investimento` com ou sem acento suprime, mensagem sem ativo nem produto), `formatarReais`, fuso de Brasília e virada do ano.
+- **Seed sem falso-positivo**: o seed (`database/seeds/transactions.seed.dados.ts`) é recriado para cada dia de 2026 (00:30, 12:30 e 23:30 de Brasília) e nenhum `gasto_fora_do_padrao` aparece; só `fatura_proxima` (dias 5 a 10) e `dinheiro_parado`. Com uma despesa de R$ 1.500 em `Alimentacao` hoje, o alerta aparece (só não no dia 1 do mês).
+- **Rotas de alertas** (`alertas.routes.test.ts`, relógio fixado com `mock.timers`): `401` sem token; o gasto acima do padrão aparece no `GET /alerts`; ler de novo não duplica; outro usuário recebe `[]`; `PATCH /alerts/:id/lido` → `200` com `lido: true` e o alerta sai da listagem sem voltar; id malformado → `400 VALIDATION_ERROR`; alerta de outro usuário → `404 ALERT_NOT_FOUND`; o não lido some quando a condição deixa de valer (gasto excluído, fatura vencida) e o lido fica como histórico.
+- **Mensagem proativa** (`mentor-ia.proativa.test.ts`): `POST /v1/mentor-ia/chat/proativa` de ponta a ponta e no service — sem alerta devolve `[]` sem chamar a IA nem o Java; com alerta novo salva uma única mensagem `proativa: true` com o texto do filtro e marca `explicadoEm`; erros da IA/filtro não salvam nada e o alerta é explicado na próxima chamada; duas chamadas simultâneas salvam uma só mensagem; histórico, `401` e isolamento entre usuários.
+
+A regra "nunca recomendar ativo" é testada nos dois lados: no Backend, que a resposta salva e devolvida é sempre a do filtro; no Servidor, o filtro em si (`mvn test`, ver `../Servidor/README.md`).
+
+### Integração com o Servidor Java
+
+`__tests__/servidor-java.integracao.test.ts` manda `PedidoFiltrarResposta` e `PedidoMontarContextoIA` para o Servidor de verdade (e roda o `sendMessage` com o filtro real). Fica **pulado** no `npm test` comum; para rodar, suba o Servidor (`../Servidor`) e defina `JAVA_SERVER_INTEGRACAO=1` (a porta vem de `JAVA_SERVER_PORT`, padrão 3000):
+
+```bash
+JAVA_SERVER_INTEGRACAO=1 npm test                    # bash
+$env:JAVA_SERVER_INTEGRACAO="1"; npm test            # PowerShell
+```
+
+Ainda não há CI configurado no repositório: os testes rodam localmente.
 
 ## Contrato da API e dados de exemplo
 
