@@ -1,0 +1,6 @@
+{
+  // Build de produção (npm run build): igual ao tsconfig.json, mas sem os testes em dist/.
+  // O tsconfig.json continua incluindo os testes, para o editor e o `tsc --noEmit` checarem os tipos.
+  "extends": "./tsconfig.json",
+  "exclude": ["src/**/__tests__/**"]
+}
