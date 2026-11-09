@@ -5,6 +5,7 @@ import { ChatMessageResponseDto, ChatReplyResponseDto } from "./mentor-ia.dto";
 import { chamarApiDeIaGenerativa } from "./genai.client";
 import { transactionsRepository } from "../transactions/transactions.repository";
 import { javaServerClient } from "../../java-client/java-server.client";
+import { mesAtualEmBrasilia } from "./datas";
 
 // O Servidor Java resume as transações do mês (totais, % por categoria...), então elas não
 // vão cruas para a IA. 100 é o máximo por página da listagem de transações.
@@ -12,17 +13,6 @@ const TRANSACOES_DO_MES = 100;
 // mensagens anteriores no prompt: o limite gratuito do Groq é por tokens/minuto
 const MENSAGENS_ANTERIORES = 6;
 const MENSAGENS_NO_HISTORICO = 50;
-
-// O mês do usuário é o de Brasília (UTC-3, sem horário de verão desde 2019), não o do servidor.
-const FUSO_BRASILIA_MS = 3 * 60 * 60 * 1000;
-
-function mesAtualEmBrasilia() {
-  const agora = new Date(Date.now() - FUSO_BRASILIA_MS); // campos UTC = data/hora de Brasília
-  return {
-    inicio: new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), 1) + FUSO_BRASILIA_MS),
-    diaDoMes: agora.getUTCDate(),
-  };
-}
 
 interface TransacaoResumida {
   tipo: "receita" | "despesa";
