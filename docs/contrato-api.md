@@ -12,7 +12,7 @@ Documento vivo que descreve **o que o Backend aceita e devolve**. É a referênc
 | Transações | `/v1/transactions` | 2 | **Cadastro, listagem (com filtros e paginação), edição e exclusão em lote documentados** (seção 2); duplicação e importação planejadas |
 | Autenticação e conta | `/v1/auth` | 1 | A documentar |
 | Painel e análise | `/v1/dashboard` | 3 | A documentar |
-| Mentor financeiro (IA) | `/v1/mentor-ia` | 4 | **Chat (enviar mensagem e histórico) e alertas (listar e marcar como lido) documentados** (seção 3) |
+| Mentor financeiro (IA) | `/v1/mentor-ia` | 4 | **Chat (enviar mensagem, histórico e mensagem proativa) e alertas (listar e marcar como lido) documentados** (seção 3) |
 | Metas | `/v1/goals` | 5 | A documentar |
 | Investimentos | `/v1/investments` | 5 | A documentar |
 
@@ -394,6 +394,7 @@ Regras que valem para toda resposta da IA:
 | `id` | texto | Identificador da mensagem |
 | `autor` | `"usuario"` ou `"ia"` | Quem escreveu |
 | `texto` | texto | Conteúdo. O da IA pode ter **markdown simples** (`**negrito**`, listas com `-`): o Frontend pode mostrar como texto puro ou converter |
+| `proativa` | `true` (opcional) | Só aparece nas mensagens que o Mentor mandou sozinho, explicando padrões identificados (seção 3.8). Nas demais mensagens o campo **não vem** (trate ausência como `false`) |
 | `criadaEm` | texto (ISO 8601) | Quando foi enviada |
 
 ### 3.2 Enviar mensagem
@@ -464,6 +465,8 @@ Erros:
   }
 ]
 ```
+
+As mensagens proativas (seção 3.8) também aparecem no histórico, com `"proativa": true`, na ordem em que foram criadas.
 
 As 6 mensagens mais recentes também são enviadas à IA junto com a pergunta nova, para ela entender perguntas de continuação ("como reduzir isso?", "explica melhor"). Ela só conhece o mês atual: perguntas sobre meses anteriores recebem "não tenho essa informação".
 
@@ -559,6 +562,56 @@ Erros:
 | 400 | `VALIDATION_ERROR` | `id` não tem 24 caracteres hexadecimais |
 | 401 | `UNAUTHENTICATED` | Sem token ou token inválido |
 | 404 | `ALERT_NOT_FOUND` | O alerta não existe ou é de outro usuário |
+
+### 3.8 Mensagem proativa do Mentor
+
+`POST /v1/mentor-ia/chat/proativa` → `200 OK`, sem corpo na requisição. Faz o Mentor **iniciar a conversa** explicando, em linguagem natural, os padrões identificados nas transações do usuário, sem esperar uma pergunta.
+
+**Quando chamar:** ao abrir a tela do chat, logo depois de carregar o histórico (`GET /chat`). Se vier uma mensagem, acrescente-a no fim da conversa. A chamada pode ser **silenciosa**: em caso de erro, basta ignorar (o chat continua funcionando e o Backend tenta de novo na próxima abertura).
+
+**O que é um padrão:** cada alerta **não lido** (seção 3.5) que o Mentor **ainda não explicou**. A rota recalcula os alertas como `GET /alerts` e:
+- **Sem padrão novo**, devolve `{ "mensagens": [] }` na hora, sem chamar a IA nem o Servidor de cálculos. É o caso mais comum: cada alerta é explicado **uma única vez**, então chamar de novo devolve `[]` até surgir um padrão novo (por exemplo, um gasto fora do padrão).
+- **Com padrão novo**, a IA escreve **uma** mensagem curta (até 2 parágrafos ou uma lista) que explica todos os padrões novos juntos, com os números deles, e termina com uma pergunta ou um convite para continuar a conversa. A mensagem passa pelo mesmo filtro de ativos do chat, é salva no histórico (objeto `ChatMessage` com `autor: "ia"` e `proativa: true`) e devolvida em `mensagens`. Os alertas explicados continuam aparecendo em `GET /alerts` até serem marcados como lidos.
+
+A instrução interna que pede a explicação **não é salva** no histórico: o usuário vê só a mensagem da IA. Como no `POST /chat`, a resposta demora alguns segundos quando há padrão novo.
+
+Resposta `200` com padrão novo:
+
+```json
+{
+  "mensagens": [
+    {
+      "id": "6af1be0a9322b6d9b51951ce",
+      "autor": "ia",
+      "texto": "**Padrões identificados no seu fluxo financeiro**\n\n- **Gasto fora do padrão em Alimentação:** Você já gastou **R$ 2.070,85** em alimentação neste mês, o que é **3,2 vezes** o maior gasto mensal dessa categoria nos últimos três meses (máximo de **R$ 647,40**). ...\n- **Dinheiro parado na conta:** Desde 01/08, o saldo acumulado sem uso chegou a **R$ 7.083,00**, valor que supera em muito seu gasto médio mensal (**R$ 1.664,68**). ...\n- **Fatura do cartão perto do vencimento:** Amanhã (10/11) vence a fatura de **R$ 434,70** referente a compras feitas de 03/10 a 02/11. ...\n\nComo podemos trabalhar juntos para equilibrar esses pontos e melhorar seu orçamento? Estou aqui para ajudar no que precisar.",
+      "proativa": true,
+      "criadaEm": "2026-11-09T12:35:22.831Z"
+    }
+  ]
+}
+```
+
+(Capturado em 09/11/2026 com os dados do seed mais uma despesa de R$ 1.500 em `Alimentacao`; trechos encurtados com `...`.)
+
+Resposta `200` sem padrão novo (sem alertas, ou todos já explicados):
+
+```json
+{ "mensagens": [] }
+```
+
+`mensagens` é sempre uma lista, com 0 ou 1 mensagem.
+
+**Duas abas ao mesmo tempo:** se duas chamadas chegarem juntas, só uma delas salva a explicação; a outra devolve `[]`. Se o Mentor já explicou parte dos padrões enquanto a outra chamada esperava a IA, pode sair uma segunda mensagem repetindo esses padrões junto com o novo (caso raro, aceito).
+
+Erros (os mesmos de `POST /chat`; em todos, nada é salvo e os padrões continuam sem explicação, para a próxima abertura):
+
+| Status | `code` | Quando |
+|---|---|---|
+| 401 | `UNAUTHENTICATED` | Sem token ou token inválido |
+| 429 | `GENAI_RATE_LIMITED` | Acabou o limite de uso gratuito da API de IA |
+| 502 | `GENAI_ERROR` | A API de IA respondeu com erro ou sem conteúdo |
+| 503 | `GENAI_UNAVAILABLE` | A API de IA está fora do ar, demorou mais de 20 s ou não foi configurada no Backend |
+| 503 | `JAVA_SERVER_UNAVAILABLE` | O Servidor de cálculos está fora do ar |
 
 ---
 
