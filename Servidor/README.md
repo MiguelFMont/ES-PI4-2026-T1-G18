@@ -127,6 +127,21 @@ Com o servidor no ar, abra uma conexão TCP na porta (por exemplo `telnet localh
 
 A resposta esperada é `{"tipo":"RespostaEco","dados":{"oi":1}}`. Um `tipo` sem handler devolve `{"tipo":"Erro",...}` e `{"tipo":"PedidoParaSair","dados":{}}` encerra a conexão.
 
+## Testes
+
+Testes automatizados com JUnit 5 (dependência de teste no `pom.xml`, executada pelo `maven-surefire-plugin`), em `src/test/java/`, no mesmo pacote da classe testada. Não precisam do Servidor no ar nem de rede.
+
+```bash
+mvn test        # ou mvn -q test
+```
+
+Cobertura atual (Grupo 4, `mentoria/`):
+
+- **`FiltroDeAtivosTest`**: remove frases que recomendam ativo (código da B3 como `PETR4`/`MXRF11` ou nomes como "bitcoin") e acrescenta o `AVISO`; deixa passar recusas explícitas ("Não posso recomendar PETR4"); "não posso recomendar, mas compre ITUB4" é removida; texto sem ativo volta igual; resposta vazia ou quase toda removida vira só o aviso; linhas e listas do markdown são preservadas. Também testa `recomendaAtivo` frase a frase.
+- **`MentorHandlerTest`**: `PedidoMontarContextoIA` pelo `HandlerRegistry` (totais em pt-BR como `R$ 1.400,00`, percentuais por categoria, média diária, maiores despesas, "demais categorias", mês sem transações) e os erros `VALIDATION` (`diaDoMes` fora de 1 a 31, `tipo` inválido, valor negativo); `PedidoFiltrarResposta` usando o filtro.
+
+O caminho Backend → Servidor (socket) é testado pelo teste de integração do Backend, com este Servidor no ar (ver "Testes" em `../Backend/README.md`). Ainda não há CI configurado.
+
 ## Pontos em aberto
 
 - **Biblioteca JSON:** os exemplos usam Gson. Se o professor preferir outra, só `Comunicado` muda.

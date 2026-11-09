@@ -6,8 +6,9 @@
   "main": "src/http/server.ts",
   "scripts": {
     "dev": "tsx watch src/http/server.ts",
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.build.json",
     "start": "node dist/http/server.js",
+    "test": "node --import tsx --test \"src/**/*.test.ts\"",
     "seed:transacoes": "tsx src/database/seeds/transactions.seed.ts"
   },
   "dependencies": {
@@ -24,6 +25,7 @@
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^20.14.0",
+    "mongodb-memory-server": "^11.3.0",
     "tsx": "^4.16.0",
     "typescript": "^5.5.0"
   }

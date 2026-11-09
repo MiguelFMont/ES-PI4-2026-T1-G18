@@ -179,6 +179,44 @@ curl -X POST localhost:3001/v1/eco -H "content-type: application/json" -d '{"oi"
 # {"oi":1}: Backend -> socket -> Servidor Java -> de volta
 ```
 
+## Testes
+
+Os testes usam o executor nativo do Node (`node:test`) com o `tsx`, sem framework extra. Ficam em `__tests__/` dentro do módulo (hoje só o `mentor-ia`) e seguem o padrão `*.test.ts`.
+
+```bash
+npm test                    # todos os *.test.ts de src/
+npx tsc --noEmit -p .       # confere os tipos (inclusive dos testes)
+```
+
+O `npm test` **não precisa** de `.env`, do Atlas, da chave da IA nem do Servidor Java: o arquivo `__tests__/ambiente.ts` define as variáveis de ambiente dos testes antes de qualquer import, e o resto é simulado:
+
+| Peça | Nos testes |
+|---|---|
+| MongoDB | Em memória (`mongodb-memory-server`). Na **primeira** execução o pacote baixa o binário do MongoDB (cerca de 800 MB, fica em cache em `~/.cache/mongodb-binaries`) |
+| API de IA | `fetch` simulado só para `GENAI_BASE_URL` (`__tests__/apoio.ts`) |
+| Servidor Java | `javaServerClient.enviarPedido` simulado; o teste de integração (abaixo) usa o de verdade |
+| Rotas | O `app` Express sobe numa porta livre e é chamado com `fetch` |
+
+O que está coberto no Mentor IA (Grupo 4):
+
+- **`genai.client`**: mensagens enviadas à IA (instruções + resumo, histórico com `ia` → `assistant` e `usuario` → `user`, pergunta); sem `GENAI_API_KEY` → `503 GENAI_UNAVAILABLE`; `429` → `GENAI_RATE_LIMITED`; outro erro → `502 GENAI_ERROR`; sem rede ou timeout → `503`; resposta vazia → `502`.
+- **`mentor-ia.service`**: o fluxo pergunta/resposta (contexto no Java só com os campos das transações, sem `userId`; o contexto vai para a IA; a resposta da IA passa pelo filtro; é a resposta **filtrada** que é salva e devolvida), o mês de Brasília (`dataInicio` e `diaDoMes`), e que nada é salvo se a IA, o contexto ou o filtro falham.
+- **`mentor-ia.repository`**: `saveExchange` grava pergunta e resposta em ordem; `findRecent` devolve as N mais recentes da mais antiga para a mais nova; isolamento por `userId`.
+- **Rotas**: `401` sem token, `400 VALIDATION_ERROR` para `texto` inválido, `200` com as duas mensagens, erros da IA/Servidor com o status do contrato, e `GET /chat` devolvendo só o histórico do dono do token.
+
+A regra "nunca recomendar ativo" é testada nos dois lados: no Backend, que a resposta salva e devolvida é sempre a do filtro; no Servidor, o filtro em si (`mvn test`, ver `../Servidor/README.md`).
+
+### Integração com o Servidor Java
+
+`__tests__/servidor-java.integracao.test.ts` manda `PedidoFiltrarResposta` e `PedidoMontarContextoIA` para o Servidor de verdade (e roda o `sendMessage` com o filtro real). Fica **pulado** no `npm test` comum; para rodar, suba o Servidor (`../Servidor`) e defina `JAVA_SERVER_INTEGRACAO=1` (a porta vem de `JAVA_SERVER_PORT`, padrão 3000):
+
+```bash
+JAVA_SERVER_INTEGRACAO=1 npm test                    # bash
+$env:JAVA_SERVER_INTEGRACAO="1"; npm test            # PowerShell
+```
+
+Ainda não há CI configurado no repositório: os testes rodam localmente.
+
 ## Contrato da API e dados de exemplo
 
 - **Contrato da API:** [`../docs/contrato-api.md`](../docs/contrato-api.md) descreve as convenções (autenticação, formatos, erros) e as rotas de cada módulo, com exemplos reais. Quem cria ou muda uma rota atualiza esse documento no mesmo Pull Request.
