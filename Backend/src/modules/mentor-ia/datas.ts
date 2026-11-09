@@ -19,10 +19,6 @@ export function inicioDoDia(ano: number, mes: number, dia: number): Date {
   return new Date(Date.UTC(ano, mes, dia) + FUSO_BRASILIA_MS);
 }
 
-export function diasNoMes(ano: number, mes: number): number {
-  return new Date(Date.UTC(ano, mes + 1, 0)).getUTCDate();
-}
-
 // Início do mês atual (dia 1, meia-noite de Brasília) e o dia de hoje.
 export function mesAtualEmBrasilia(agora = new Date()) {
   const { ano, mes, dia } = diaEmBrasilia(agora);
