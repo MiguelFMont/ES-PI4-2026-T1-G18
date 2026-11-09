@@ -30,6 +30,7 @@ const TELAS = {
     css: [
       '/src/shared/styles/campos.css',
       '/src/features/mentor-ia/styles/mentor-ia.css',
+      '/src/features/mentor-ia/components/MentorAlertas/MentorAlertas.css',
       '/src/features/mentor-ia/components/MentorConversa/MentorConversa.css',
       '/src/features/mentor-ia/components/MentorEntrada/MentorEntrada.css',
     ],
