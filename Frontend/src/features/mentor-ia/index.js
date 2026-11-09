@@ -7,9 +7,13 @@
 //   index.js                                         este arquivo: montar() liga a tela e desmontar() desliga
 //   components/<Nome>/<Nome>.html + <Nome>.js        um componente = uma pasta, com a estrutura (HTML) e o comportamento (JS):
 //     MentorPage/      (só JS)                       coordena a tela: consulta a API e conecta os componentes
-//     MentorConversa/                                histórico, boas-vindas com sugestões e o "pensando"
+//     MentorAlertas/                                 alertas no topo do chat (gasto fora do padrão, fatura, dinheiro parado)
+//     MentorConversa/                                histórico, boas-vindas com sugestões, insights do Mentor e o "pensando"
 //     MentorEntrada/                                 campo da pergunta e botão Enviar
-//   services/mentorIaService.js                      chamadas ao Backend (GET e POST em /mentor-ia/chat)
+//   services/mentorIaService.js                      chamadas ao Backend (/mentor-ia/chat, /chat/proativa e /alerts)
+//
+// Ao abrir a tela, depois do histórico, o Mentor puxa o assunto sem esperar pergunta: mostra os alertas não lidos e
+// pede um insight (POST /mentor-ia/chat/proativa), que entra na conversa com o selo "Insight".
 //   utils/markdown.js                                markdown simples da resposta da IA -> elementos (sem innerHTML)
 //   utils/format.js                                  horário das mensagens
 import { incluirFragmentos } from '../../core/views/includes.js';
@@ -24,7 +28,10 @@ export async function montar(container) {
   iniciarPaginaMentor(container, { signal: controlador.signal });
 }
 
-/** Desliga a tela ao sair dela: cancela a carga do histórico e descarta uma resposta que ainda esteja a caminho. */
+/**
+ * Desliga a tela ao sair dela: cancela a carga do histórico, dos alertas e do insight e descarta uma resposta que
+ * ainda esteja a caminho.
+ */
 export function desmontar() {
   controlador?.abort();
   controlador = null;
