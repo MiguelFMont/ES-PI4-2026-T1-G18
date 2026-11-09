@@ -20,7 +20,7 @@ Mesma palavra, categoria diferente. Se estas não vierem antes, 'uber' vira tran
 
 **Saude** (3): `posto saude`, `mensalidade academia`, `plano saude`
 
-**Outros** (10): `mercado livre`, `mercado pago`, `mercadopago`, `shopee`, `shein`, `aliexpress`, `magazine luiza`, `casas bahia`, `americanas`, `amazon compras`
+**Outros** (12): `mercado livre`, `mercado pago`, `mercadopago`, `shopee`, `shein`, `aliexpress`, `magazine luiza`, `casas bahia`, `americanas`, `amazon compras`, `fatura cartao`, `pagamento fatura`
 
 **Lazer** (6): `amazon prime`, `prime video`, `disney plus`, `hbo max`, `youtube premium`, `apple tv`
 
@@ -34,7 +34,7 @@ Depois das exceções, vale a primeira categoria que tiver uma das palavras.
 
 **Transporte** (39): `uber`, `cabify`, `indriver`, `taxi`, `onibus`, `metro`, `cptm`, `sptrans`, `bilhete unico`, `rodoviaria`, `passagem`, `posto`, `combustivel`, `gasolina`, `etanol`, `diesel`, `ipiranga`, `shell`, `petrobras`, `estacionamento`, `zona azul`, `estapar`, `pedagio`, `sem parar`, `conectcar`, `veloe`, `localiza`, `movida`, `unidas`, `oficina`, `mecanica`, `borracharia`, `lava jato`, `detran`, `ipva`, `licenciamento`, `latam`, `gol linhas`, `azul linhas`
 
-**Moradia** (35): `aluguel`, `condominio`, `iptu`, `agua`, `sabesp`, `copasa`, `sanepar`, `cedae`, `energia`, `luz`, `enel`, `cpfl`, `cemig`, `equatorial`, `neoenergia`, `celesc`, `copel`, `gas`, `comgas`, `naturgy`, `ultragaz`, `liquigas`, `internet`, `fibra`, `vivo fibra`, `claro net`, `oi fibra`, `tim live`, `leroy merlin`, `telhanorte`, `tok stok`, `diarista`, `faxina`, `dedetizacao`, `seguro residencial`
+**Moradia** (38): `aluguel`, `condominio`, `iptu`, `agua`, `sabesp`, `copasa`, `sanepar`, `cedae`, `energia`, `luz`, `enel`, `cpfl`, `cemig`, `equatorial`, `neoenergia`, `celesc`, `copel`, `gas`, `comgas`, `naturgy`, `ultragaz`, `liquigas`, `internet`, `fibra`, `vivo fibra`, `claro net`, `oi fibra`, `tim live`, `leroy merlin`, `telhanorte`, `tok stok`, `diarista`, `faxina`, `dedetizacao`, `seguro residencial`, `eletrobras`, `light sa`, `vivo`
 
 **Saude** (43): `farmacia`, `drogaria`, `drogasil`, `droga raia`, `raia`, `pacheco`, `pague menos`, `panvel`, `ultrafarma`, `nissei`, `venancio`, `onofre`, `hospital`, `clinica`, `consulta`, `medico`, `dentista`, `odontologia`, `laboratorio`, `exame`, `fleury`, `dasa`, `delboni`, `sabin`, `unimed`, `amil`, `bradesco saude`, `sulamerica`, `hapvida`, `notredame`, `intermedica`, `prevent senior`, `psicologo`, `terapia`, `fisioterapia`, `academia`, `smart fit`, `bluefit`, `bodytech`, `selfit`, `pilates`, `otica`, `oculos`
 
@@ -53,6 +53,7 @@ Depois das exceções, vale a primeira categoria que tiver uma das palavras.
 | `luz`, `gas`, `agua`, `show`, `clube` | Palavras comuns, podem aparecer em nomes de lojas | Aceitável; revise com dados reais |
 | `ferias`, `bonus` | Podem ser outras coisas | Só vale como receita (`type: CREDIT`); considere checar o tipo |
 | `academia` | Saúde ou lazer | Escolhi Saude |
+| `fatura cartao`, `pagamento fatura` | Pagar a fatura do cartão aparece na conta corrente e as compras já estão no cartão: contar os dois dobra o gasto | Forçadas para Outros; a importação da Pluggy também deve tratar isso como transferência |
 | Compras online (Amazon, Shopee, Shein...) | Não dá para saber o que foi comprado | Forçadas para Outros |
 | Companhias aéreas | Podem ser viagem de lazer | Coloquei em Transporte |
 
@@ -69,12 +70,12 @@ Cada linha é um grupo `(categoria, palavras)`, na ordem de aplicação. Use `Li
 private static final String[][] REGRAS = {
     { "Alimentacao", "uber eats", "ifood", "rappi", "aiqfome" },
     { "Saude", "posto saude", "mensalidade academia", "plano saude" },
-    { "Outros", "mercado livre", "mercado pago", "mercadopago", "shopee", "shein", "aliexpress", "magazine luiza", "casas bahia", "americanas", "amazon compras" },
+    { "Outros", "mercado livre", "mercado pago", "mercadopago", "shopee", "shein", "aliexpress", "magazine luiza", "casas bahia", "americanas", "amazon compras", "fatura cartao", "pagamento fatura" },
     { "Lazer", "amazon prime", "prime video", "disney plus", "hbo max", "youtube premium", "apple tv" },
     { "Salario", "salario", "pagamento salario", "folha pagamento", "folha pgto", "adiantamento salarial", "decimo terceiro", "ferias", "rescisao", "pro labore", "comissao", "bonus" },
     { "Alimentacao", "supermercado", "hipermercado", "mercado", "atacadao", "assai", "carrefour", "makro", "atacarejo", "hortifruti", "sacolao", "acougue", "padaria", "panificadora", "confeitaria", "cafeteria", "starbucks", "restaurante", "lanchonete", "pizzaria", "hamburgueria", "churrascaria", "sorveteria", "doceria", "marmita", "lanche", "mcdonalds", "burger king", "bobs", "subway", "habibs", "giraffas", "outback", "spoleto", "madero", "kfc", "popeyes", "dominos", "pizza hut" },
     { "Transporte", "uber", "cabify", "indriver", "taxi", "onibus", "metro", "cptm", "sptrans", "bilhete unico", "rodoviaria", "passagem", "posto", "combustivel", "gasolina", "etanol", "diesel", "ipiranga", "shell", "petrobras", "estacionamento", "zona azul", "estapar", "pedagio", "sem parar", "conectcar", "veloe", "localiza", "movida", "unidas", "oficina", "mecanica", "borracharia", "lava jato", "detran", "ipva", "licenciamento", "latam", "gol linhas", "azul linhas" },
-    { "Moradia", "aluguel", "condominio", "iptu", "agua", "sabesp", "copasa", "sanepar", "cedae", "energia", "luz", "enel", "cpfl", "cemig", "equatorial", "neoenergia", "celesc", "copel", "gas", "comgas", "naturgy", "ultragaz", "liquigas", "internet", "fibra", "vivo fibra", "claro net", "oi fibra", "tim live", "leroy merlin", "telhanorte", "tok stok", "diarista", "faxina", "dedetizacao", "seguro residencial" },
+    { "Moradia", "aluguel", "condominio", "iptu", "agua", "sabesp", "copasa", "sanepar", "cedae", "energia", "luz", "enel", "cpfl", "cemig", "equatorial", "neoenergia", "celesc", "copel", "gas", "comgas", "naturgy", "ultragaz", "liquigas", "internet", "fibra", "vivo fibra", "claro net", "oi fibra", "tim live", "leroy merlin", "telhanorte", "tok stok", "diarista", "faxina", "dedetizacao", "seguro residencial", "eletrobras", "light sa", "vivo" },
     { "Saude", "farmacia", "drogaria", "drogasil", "droga raia", "raia", "pacheco", "pague menos", "panvel", "ultrafarma", "nissei", "venancio", "onofre", "hospital", "clinica", "consulta", "medico", "dentista", "odontologia", "laboratorio", "exame", "fleury", "dasa", "delboni", "sabin", "unimed", "amil", "bradesco saude", "sulamerica", "hapvida", "notredame", "intermedica", "prevent senior", "psicologo", "terapia", "fisioterapia", "academia", "smart fit", "bluefit", "bodytech", "selfit", "pilates", "otica", "oculos" },
     { "Lazer", "netflix", "spotify", "disney", "globoplay", "paramount", "deezer", "tidal", "steam", "playstation", "psn", "xbox", "nintendo", "epic games", "riot games", "cinema", "cinemark", "kinoplex", "ingresso", "sympla", "eventim", "teatro", "show", "parque", "hopi hari", "beto carrero", "hotel", "airbnb", "booking", "decolar", "cvc", "pousada", "hostel", "balada", "clube", "boliche", "streaming" },
     { "Educacao", "escola", "colegio", "faculdade", "universidade", "mensalidade", "matricula", "curso", "cursinho", "idiomas", "wizard", "fisk", "ccaa", "cultura inglesa", "yazigi", "udemy", "coursera", "alura", "rocketseat", "duolingo", "hotmart", "kumon", "livro", "saraiva", "material escolar", "anhanguera", "estacio", "unip", "uninove", "ead", "vestibular", "enem" },
