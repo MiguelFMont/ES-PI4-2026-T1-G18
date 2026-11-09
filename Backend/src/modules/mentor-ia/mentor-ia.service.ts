@@ -27,6 +27,7 @@ function paraDto(m: ChatMessageDocument & { _id: { toString(): string } }): Chat
     id: m._id.toString(),
     autor: m.autor,
     texto: m.texto,
+    ...(m.proativa && { proativa: true as const }),
     criadaEm: m.createdAt.toISOString(),
   };
 }
