@@ -15,6 +15,12 @@ export const mentorIaRepository = {
     return [p.toObject(), r.toObject()] as const;
   },
 
+  // Mensagem que o Mentor manda sem pergunta do usuário (explicação dos alertas).
+  async saveMensagemProativa(userId: string, texto: string) {
+    const m = await ChatMessageModel.create({ userId, autor: "ia", texto, proativa: true });
+    return m.toObject();
+  },
+
   // As `limite` mensagens mais recentes do usuário, da mais antiga para a mais nova.
   async findRecent(userId: string, limite: number) {
     const docs = await ChatMessageModel.find({ userId })

@@ -6,6 +6,7 @@ export interface ChatMessageDocument {
   userId: string;
   autor: "usuario" | "ia";
   texto: string;
+  proativa?: boolean; // mensagem que o Mentor mandou sozinho, explicando alertas (POST /chat/proativa)
   createdAt: Date;
 }
 
@@ -14,6 +15,7 @@ const ChatMessageSchema = new Schema<ChatMessageDocument>(
     userId: { type: String, required: true },
     autor: { type: String, enum: ["usuario", "ia"], required: true },
     texto: { type: String, required: true },
+    proativa: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

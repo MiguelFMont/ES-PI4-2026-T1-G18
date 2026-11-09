@@ -117,6 +117,8 @@ O chat do Mentor (`POST /v1/mentor-ia/chat`, contrato na seção 3 de `../docs/c
 5. Backend salva a pergunta e a resposta juntas (coleção chatmessages) e devolve as duas
 ```
 
+**Mensagem proativa** (`POST /v1/mentor-ia/chat/proativa`, seção 3.8 do contrato): o Frontend chama ao abrir o chat e o Mentor inicia a conversa explicando os alertas não lidos que ainda não explicou (`explicadoEm` vazio). Sem alerta novo, a rota devolve `[]` sem chamar a IA nem o Servidor Java. Com alerta novo, segue o mesmo caminho acima, com três diferenças: os alertas (título e mensagem, já com os números) entram no fim do resumo; no lugar da pergunta vai uma instrução interna, que não é salva; e não vão mensagens anteriores (a instrução se basta e economiza tokens). Depois do filtro, o Backend marca `explicadoEm` só nos alertas ainda sem marca (update atômico) e salva **uma** mensagem `ia` com `proativa: true`. Se nenhum alerta foi marcado, outra aba já os explicou e a mensagem é descartada. Se a IA ou o filtro falharem, nada é salvo e os alertas são explicados na próxima abertura.
+
 - **Por que o Java faz as contas:** modelos de linguagem erram aritmética. A IA recebe os números prontos e é instruída a não calcular nada novo.
 - **Por que o filtro fica no Java:** a regra "nunca recomendar ativo" não pode depender só do prompt (o modelo pode desobedecer). O filtro analisa frase a frase e deixa passar as recusas ("Não posso recomendar...").
 - **Provedor:** [Groq](https://console.groq.com), gratuito e sem cartão, com o modelo `openai/gpt-oss-120b`. A chamada usa o formato de chat da OpenAI (`/chat/completions`) e fica isolada em `modules/mentor-ia/genai.client.ts`: para trocar de provedor ou modelo basta mudar `GENAI_BASE_URL` e `GENAI_MODEL` no `.env`.
@@ -127,7 +129,6 @@ O chat do Mentor (`POST /v1/mentor-ia/chat`, contrato na seção 3 de `../docs/c
 ## Pontos em aberto
 
 - **MFA no login:** o `login` devolve `mfaEnabled`; o fluxo completo (token temporário até validar o código) será definido por outro integrante do grupo de Autenticação.
-- **Alertas do Mentor IA:** quem os gera (job agendado ou fluxo do chat) ainda não está definido.
 - **Contratos Backend↔Servidor:** os tipos de mensagem e seus campos (`PedidoXxx`/`RespostaXxx`) precisam ser os mesmos nos dois lados. A lista completa está em `../Servidor/README.md`.
 
 ## Configuração

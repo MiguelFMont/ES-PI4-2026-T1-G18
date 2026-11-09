@@ -13,6 +13,7 @@ export interface ChatMessageResponseDto {
   id: string;
   autor: "usuario" | "ia";
   texto: string;
+  proativa?: true; // só nas mensagens proativas do Mentor; nas demais o campo não vem
   criadaEm: string; // ISO 8601
 }
 
@@ -20,6 +21,11 @@ export interface ChatMessageResponseDto {
 export interface ChatReplyResponseDto {
   pergunta: ChatMessageResponseDto;
   resposta: ChatMessageResponseDto;
+}
+
+// Resposta de POST /chat/proativa: a explicação do Mentor, já salva no histórico, ou [] sem padrão novo.
+export interface ChatProativaResponseDto {
+  mensagens: ChatMessageResponseDto[];
 }
 
 // Parâmetro :id de PATCH /alerts/:id/lido
