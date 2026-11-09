@@ -15,6 +15,14 @@ export const mentorIaController = {
     }
   },
 
+  async proactiveMessage(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      res.status(200).json(await mentorIaService.proactiveMessage(req.user!.id));
+    } catch (error) {
+      next(error);
+    }
+  },
+
   async history(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
       res.status(200).json(await mentorIaService.getHistory(req.user!.id));

@@ -25,6 +25,8 @@ const INSTRUCOES = [
 const indisponivel = () =>
   new AppError("Mentor IA indisponível no momento", 503, "GENAI_UNAVAILABLE");
 
+// `texto` é a pergunta do usuário ou, na mensagem proativa, uma instrução interna do Backend:
+// nos dois casos as INSTRUCOES acima continuam valendo.
 export async function chamarApiDeIaGenerativa(
   contexto: string,
   texto: string,
