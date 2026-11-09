@@ -14,7 +14,7 @@ import {
   gerarAlertas,
 } from "../alertas.regras";
 import { diaEmBrasilia, inicioDoDia } from "../datas";
-import { EXEMPLOS } from "../../../database/seeds/transactions.seed.dados";
+import { seedEm } from "./seed";
 
 const UMA_HORA_MS = 60 * 60 * 1000;
 
@@ -36,21 +36,6 @@ const despesa = (valor: number, categoria: string, quando: string, forma?: strin
 const receita = (valor: number, categoria: string, quando: string) => transacao("receita", valor, categoria, quando, "pix");
 
 const tipos = (alertas: AlertaCandidato[]) => alertas.map((a) => a.tipo);
-
-// Recria os EXEMPLOS do seed para um "hoje" simulado. O seed usa meio-dia no fuso da máquina
-// (setHours(12)), o que depende de onde roda; aqui a data é montada de forma determinística como meio-dia
-// de Brasília de `diasAtras` dias antes do dia de hoje em Brasília: é o que o seed grava numa máquina no
-// horário de Brasília, que é o caso de uso (npm run seed:transacoes no Brasil).
-function seedEm(hoje: Date): TransacaoParaAlerta[] {
-  const { ano, mes, dia } = diaEmBrasilia(hoje);
-  return EXEMPLOS.map(({ tipo, valor, categoria, formaPagamento, diasAtras }) => ({
-    tipo,
-    valor,
-    categoria,
-    formaPagamento,
-    data: new Date(inicioDoDia(ano, mes, dia - diasAtras).getTime() + 12 * UMA_HORA_MS),
-  }));
-}
 
 // Todos os dias de 2026 no horário pedido de Brasília (ex.: 12.5 = 12:30)
 function diasDe2026(hora: number): Date[] {
