@@ -165,4 +165,14 @@ class MentorHandlerTest
         assertEquals (FiltroDeAtivos.AVISO,
                       resposta.getDados().getAsJsonObject().get("respostaFiltrada").getAsString());
     }
+
+    @Test
+    void filtrarRespostaPeloRegistryUsaOFiltroDeEscopo () throws Exception
+    {
+        String codigo = "Claro! ```python\\ndef soma(a, b):\\n    return a + b\\n```";
+        Comunicado resposta = enviar (PedidoFiltrarResposta.TIPO, "{\"resposta\":\"" + codigo + "\"}");
+
+        assertEquals (FiltroDeEscopo.AVISO,
+                      resposta.getDados().getAsJsonObject().get("respostaFiltrada").getAsString());
+    }
 }

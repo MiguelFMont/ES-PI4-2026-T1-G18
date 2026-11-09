@@ -2,7 +2,7 @@
 import "./ambiente";
 import { afterEach, describe, mock, test } from "node:test";
 import assert from "node:assert/strict";
-import { chamarApiDeIaGenerativa } from "../genai.client";
+import { chamarApiDeIaGenerativa, MARCADOR_FORA_DO_ESCOPO } from "../genai.client";
 import { env } from "../../../config/env";
 import { respostaDaIa, simularApiDeIa } from "./apoio";
 
@@ -29,6 +29,10 @@ describe("genai.client (chamarApiDeIaGenerativa)", () => {
     assert.equal(sistema.role, "system");
     assert.match(sistema.content, /Resumo financeiro do usuário: Mês atual: despesas R\$ 1\.400,00\./);
     assert.match(sistema.content, /Nunca recomende comprar, vender ou aportar em um ativo específico/);
+    // só finanças pessoais: fora do assunto responde só o marcador, que o Servidor Java troca pela recusa
+    assert.match(sistema.content, /Seu único assunto é finanças pessoais/);
+    assert.ok(sistema.content.includes(`responda somente ${MARCADOR_FORA_DO_ESCOPO}`));
+    assert.match(sistema.content, /Nunca escreva código/);
     assert.deepEqual(resto, [
       { role: "user", content: "Oi" },
       { role: "assistant", content: "Olá! Como posso ajudar?" },

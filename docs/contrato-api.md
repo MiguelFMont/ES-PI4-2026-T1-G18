@@ -384,6 +384,7 @@ Todas as rotas exigem token. O chat usa as **transações do mês atual** do usu
 
 Regras que valem para toda resposta da IA:
 - É **educacional**: explica gastos, orçamento e conceitos. Não substitui um consultor.
+- **Só fala de finanças pessoais** (gastos e receitas, orçamento, dívidas, cartão, reserva de emergência, conceitos de investimento). Pedidos de outro assunto (programação, exercícios, redação, curiosidades...) e respostas com **código** viram uma recusa padrão: "Sou o Mentor Financeiro do FinanceAI e só posso ajudar com finanças pessoais: ... Quer conversar sobre algum desses temas?". A recusa é salva no histórico como uma resposta comum.
 - **Nunca recomenda comprar, vender ou aportar em um ativo específico** (ação, fundo, criptomoeda, título). A resposta passa por um filtro no Servidor de cálculos: a frase que recomenda um ativo é removida e um aviso é acrescentado no final.
 - Os números citados (totais, percentuais por categoria, média diária) são calculados pelo Servidor de cálculos, não pela IA.
 
