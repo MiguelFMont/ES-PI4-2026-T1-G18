@@ -16,7 +16,7 @@ public class TransactionsHandler
 
     // Palavras que nao ajudam a descobrir o que foi comprado. Saem da descricao ANTES da comparacao, e as palavras-chave
     // abaixo ja estao escritas sem elas (ex.: "posto saude", nao "posto de saude"). Se esta lista mudar, as
-    // palavras-chave precisam ser refeitas com a mesma lista (ver plano-migracao/palavras-chave-categorias.md).
+    // palavras-chave precisam ser refeitas com a mesma lista (ver docs/palavras-chave-categorias.md).
     private static final Set<String> RUIDO = Set.of (
         "compra", "no", "na", "de", "do", "da", "debito", "credito", "pix", "enviado", "enviada", "recebido",
         "transf", "ted", "doc", "br", "com", "pedido", "ltda", "av", "sao", "paulo", "help");
