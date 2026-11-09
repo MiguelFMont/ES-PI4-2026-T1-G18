@@ -1,0 +1,18 @@
+<!-- Componente: alertas do Mentor (gasto fora do padrão, fatura próxima e dinheiro parado), numa faixa no topo do
+     cartão do chat. Lógica em MentorAlertas.js. Fica escondido enquanto não há alertas. -->
+<section id="mentor-alertas" class="mentor-alertas" aria-labelledby="mentor-alertas-titulo" hidden>
+  <h2 id="mentor-alertas-titulo" class="mentor-alertas__titulo">Alertas para você</h2>
+  <ul id="mentor-alertas-lista" class="mentor-alertas__lista"></ul>
+
+  <!-- Um alerta, copiado pelo JS. Os textos entram por textContent. O tipo aparece escrito (não só pela cor). -->
+  <template id="modelo-alerta">
+    <li class="mentor-alerta">
+      <div class="mentor-alerta__conteudo">
+        <p class="mentor-alerta__tipo"></p>
+        <h3 class="mentor-alerta__titulo"></h3>
+        <p class="mentor-alerta__mensagem"></p>
+      </div>
+      <button type="button" class="mentor-alerta__entendi">Entendi</button>
+    </li>
+  </template>
+</section>

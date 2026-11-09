@@ -1,5 +1,6 @@
 <!-- Componente: a conversa com o Mentor (histórico, boas-vindas com sugestões e o "pensando"). Lógica em MentorConversa.js.
-     Mostra só um destes estados por vez: carregando, erro, boas-vindas (sem conversa) ou mensagens. -->
+     Mostra só um destes estados por vez: carregando, erro, boas-vindas (o usuário ainda não perguntou nada) ou
+     mensagens. Nas boas-vindas, os insights que o Mentor mandou sozinho aparecem embaixo das sugestões. -->
 <div id="mentor-conversa" class="mentor-conversa" aria-busy="true">
   <p id="conversa-carregando" class="mentor-estado">Carregando a conversa...</p>
 
@@ -30,10 +31,14 @@
     <span>O Mentor está pensando...</span>
   </div>
 
-  <!-- Uma mensagem, copiada pelo JS. O texto entra por textContent (o da IA passa por utils/markdown.js). -->
+  <!-- Uma mensagem, copiada pelo JS. O texto entra por textContent (o da IA passa por utils/markdown.js).
+       O selo "Insight" só aparece nas explicações que o Mentor mandou sem pergunta (proativa: true). -->
   <template id="modelo-mensagem">
     <li class="mentor-mensagem">
-      <p class="mentor-mensagem__autor"></p>
+      <p class="mentor-mensagem__autor">
+        <span class="mentor-mensagem__nome"></span>
+        <span class="mentor-mensagem__selo" hidden>Insight<span class="so-leitor">, enviado sem você perguntar</span></span>
+      </p>
       <div class="mentor-mensagem__texto"></div>
       <time class="mentor-mensagem__horario"></time>
     </li>

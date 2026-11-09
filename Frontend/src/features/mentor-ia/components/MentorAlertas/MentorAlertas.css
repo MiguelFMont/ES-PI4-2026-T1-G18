@@ -1,0 +1,112 @@
+/* Componente MentorAlertas: faixa de alertas no topo do cartão do chat, acima da conversa. Usa as variáveis de tema
+   de core/styles/global.css, então funciona nos temas claro e escuro. */
+
+.mentor-alertas {
+  flex: none; /* a conversa (flex: 1) fica com o resto da altura do cartão */
+  display: grid;
+  gap: 0.6rem;
+  max-height: 30dvh; /* com muitos alertas a faixa rola por dentro e a conversa continua visível */
+  overflow-y: auto;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--borda);
+}
+
+.mentor-alertas__titulo {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--texto-suave);
+}
+
+.mentor-alertas__lista {
+  display: grid;
+  gap: 0.6rem;
+  list-style: none;
+}
+
+/* Cada tipo tem uma cor (friso à esquerda e nome do tipo); o nome escrito é o que diz o tipo, a cor só reforça. */
+.mentor-alerta {
+  --cor-alerta: var(--texto-suave);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: var(--fundo-linha);
+  box-shadow: inset 4px 0 0 var(--cor-alerta);
+}
+
+.mentor-alerta[data-tipo='gasto_fora_do_padrao'] { --cor-alerta: var(--negativo); }
+.mentor-alerta[data-tipo='fatura_proxima'] { --cor-alerta: var(--destaque); }
+.mentor-alerta[data-tipo='dinheiro_parado'] { --cor-alerta: var(--positivo); }
+
+.mentor-alerta__conteudo {
+  display: grid;
+  flex: 1 1 18rem; /* no celular o botão desce para a linha de baixo */
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.mentor-alerta__tipo {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--cor-alerta);
+}
+
+.mentor-alerta__titulo {
+  font-size: 0.95rem;
+}
+
+.mentor-alerta__mensagem {
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--texto-suave);
+  overflow-wrap: anywhere;
+}
+
+/* botão discreto (como as sugestões da conversa): o principal da tela continua sendo o Enviar */
+.mentor-alerta__entendi {
+  transition: scale 0.1s ease, box-shadow 0.1s ease, background-color var(--duracao-cor) ease, color var(--duracao-cor) ease;
+  flex: none;
+  min-height: 2.75rem;
+  padding: 0.5rem 1rem;
+  border: var(--borda-elemento, 0);
+  border-radius: 0.6rem;
+  color: var(--texto);
+  background: var(--fundo-card);
+  box-shadow: var(--sombra);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mentor-alerta__entendi:hover:not(:disabled),
+.mentor-alerta__entendi:focus-visible:not(:disabled) {
+  outline: none;
+  scale: 1.01;
+  color: var(--destaque-texto);
+  background: var(--destaque);
+}
+
+.mentor-alerta__entendi:focus-visible {
+  outline: none;
+  box-shadow: var(--sombra-foco);
+}
+
+/* esperando o Backend marcar como lido */
+.mentor-alerta__entendi:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+@media (max-width: 767px) {
+  .mentor-alertas {
+    max-height: none; /* no celular a página rola inteira: a faixa cresce com os alertas */
+    padding: 0.75rem 1rem;
+  }
+
+  .mentor-alerta__entendi {
+    margin-left: auto;
+  }
+}

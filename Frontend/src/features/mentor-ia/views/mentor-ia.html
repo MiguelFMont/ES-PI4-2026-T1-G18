@@ -2,7 +2,7 @@
   Tela do Mentor IA (chat), um fragmento: não é um documento completo. O index.html (menu, fontes e estilos
   globais) fica sempre aberto e o roteador (app/main.js) coloca este conteúdo em #app-content, junto com os CSS
   da tela. Toda a estrutura é HTML (este arquivo e os componentes); o JavaScript só junta os componentes e liga
-  a lógica pelos ids (carregar o histórico, enviar a pergunta, mostrar a resposta).
+  a lógica pelos ids (carregar o histórico e os alertas, enviar a pergunta, mostrar a resposta).
   Os caminhos começam em / (a raiz do Frontend).
 -->
 <section class="mentor-ia-page" aria-labelledby="mentor-ia-titulo">
@@ -11,8 +11,9 @@
         <p class="mentor-ia-subtitulo">Tire dúvidas sobre os seus gastos do mês, orçamento e conceitos financeiros.</p>
     </div>
 
-    <!-- Um cartão com a conversa (rola por dentro) e, embaixo, o campo da pergunta. -->
+    <!-- Um cartão com os alertas no topo (só quando houver), a conversa (rola por dentro) e, embaixo, o campo da pergunta. -->
     <div class="mentor-ia-cartao mentor-ia-chat">
+        <div data-incluir="/src/features/mentor-ia/components/MentorAlertas/MentorAlertas.html"></div>
         <div data-incluir="/src/features/mentor-ia/components/MentorConversa/MentorConversa.html"></div>
         <div data-incluir="/src/features/mentor-ia/components/MentorEntrada/MentorEntrada.html"></div>
     </div>

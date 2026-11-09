@@ -30,6 +30,11 @@
   text-align: center;
 }
 
+/* boas-vindas com um insight do Mentor embaixo: em vez de centralizar na altura, ficam no topo e o insight segue */
+.mentor-conversa--boas-vindas-com-insight .mentor-boas-vindas {
+  margin: 0 auto;
+}
+
 .mentor-boas-vindas h2 {
   font-size: 1.25rem;
 }
@@ -73,6 +78,15 @@
   box-shadow: var(--sombra-foco);
 }
 
+/* enquanto o Mentor pensa (por exemplo, no insight da abertura) as sugestões esperam */
+.mentor-sugestao:disabled {
+  scale: none;
+  color: var(--texto);
+  background: var(--fundo-linha);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* ---- mensagens ---- */
 
 .mentor-mensagens {
@@ -98,9 +112,23 @@
 }
 
 .mentor-mensagem__autor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
   font-size: 0.8rem;
   font-weight: 700;
   color: var(--destaque);
+}
+
+/* selo "Insight" das explicações que o Mentor mandou sem pergunta (o texto já diz o que é; a cor só reforça) */
+.mentor-mensagem__selo {
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  color: var(--destaque-texto);
+  background: var(--destaque);
+  font-size: 0.7rem;
+  letter-spacing: 0.02em;
 }
 
 .mentor-mensagem__texto {
@@ -123,6 +151,11 @@
   border-bottom-left-radius: 0.3rem;
   color: var(--texto);
   background: var(--fundo-linha);
+}
+
+/* insight do Mentor: o mesmo balão da IA, com um friso da cor principal à esquerda */
+.mentor-mensagem--proativa .mentor-mensagem__texto {
+  box-shadow: inset 3px 0 0 var(--destaque);
 }
 
 .mentor-mensagem__texto ul,
