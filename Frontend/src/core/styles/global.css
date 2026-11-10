@@ -242,3 +242,12 @@ body.com-sessao #main-header {
         margin-left: auto;
     }
 }
+.valores-ocultos .valor-financeiro {
+    font-size: 0 !important;
+}
+
+.valores-ocultos .valor-financeiro::after {
+    content: "••••••";
+    font-size: 16px;
+    color: var(--texto, #ffffff) !important;
+}

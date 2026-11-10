@@ -1,0 +1,456 @@
+/* CORES DO TEMA ESCURO */
+
+:root[data-tema="escuro"] .minha-conta {
+    --conta-fundo: #0e0e11;
+    --conta-card: #17181d;
+    --conta-campo: #202127;
+    --conta-borda: #2b2d37;
+    --conta-texto: #f5f5f7;
+    --conta-suave: #a0a5b5;
+    --conta-hover: #24262e;
+    --conta-destaque: #c4f52b;
+}
+
+/* CORES DO TEMA CLARO */
+
+:root[data-tema="claro"] .minha-conta {
+    --conta-fundo: #ffffff;
+    --conta-card: #f6f7f9;
+    --conta-campo: #e9ecf1;
+    --conta-borda: #d5dae4;
+    --conta-texto: #182235;
+    --conta-suave: #64748b;
+    --conta-hover: #e9edf3;
+    --conta-destaque: #1d704e;
+}
+
+/* ESTRUTURA PRINCIPAL */
+
+.minha-conta {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 28px;
+    color: var(--conta-texto);
+    font-family: inherit;
+}
+
+.minha-conta * {
+    box-sizing: border-box;
+}
+
+/* CABEÇALHO */
+
+.minha-conta__cabecalho h1 {
+    margin: 0 0 8px;
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--conta-texto);
+}
+
+.minha-conta__cabecalho p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--conta-suave);
+}
+
+/* ABAS */
+
+.minha-conta__abas {
+    display: flex;
+    gap: 5px;
+    width: fit-content;
+    max-width: 100%;
+    padding: 5px;
+    margin: 26px 0;
+    border: 1px solid var(--conta-borda);
+    border-radius: 10px;
+    background: var(--conta-card);
+    overflow-x: auto;
+}
+
+.minha-conta .aba {
+    padding: 11px 18px;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--conta-suave);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.minha-conta .aba:hover {
+    color: var(--conta-texto);
+}
+
+.minha-conta .aba.ativo {
+    background: var(--conta-campo);
+    color: var(--conta-texto);
+    font-weight: 700;
+}
+
+/* ========================================
+   VISÃO GERAL
+======================================== */
+
+.visao-geral {
+    display: grid;
+    grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+    gap: 20px;
+    align-items: stretch;
+}
+
+/* COLUNA DO USUÁRIO */
+
+.visao-geral__coluna-usuario {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 24px;
+    border: 1px solid var(--conta-borda);
+    border-radius: 13px;
+    background: var(--conta-card);
+}
+
+.visao-geral__coluna-opcoes {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-width: 0;
+}
+
+/* AVATAR E INFORMAÇÕES */
+
+.visao-geral__usuario {
+    text-align: center;
+}
+
+.usuario__avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 76px;
+    height: 76px;
+    margin: 0 auto 14px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #a63bd8, #ee459e);
+    color: #ffffff;
+    font-size: 30px;
+    font-weight: 800;
+}
+
+.visao-geral__usuario h2 {
+    margin: 0 0 5px;
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--conta-texto);
+    overflow-wrap: anywhere;
+}
+
+.visao-geral__usuario p {
+    margin: 0;
+    font-size: 12px;
+    color: var(--conta-suave);
+    overflow-wrap: anywhere;
+}
+
+/* PLANO E BANCO */
+
+.usuario__estatisticas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 24px;
+}
+
+.usuario__estatistica {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    min-height: 58px;
+    padding: 10px 6px;
+    border-radius: 9px;
+    background: var(--conta-campo);
+}
+
+.usuario__estatistica span {
+    color: var(--conta-suave);
+    font-size: 11px;
+}
+
+.usuario__estatistica strong {
+    color: var(--conta-texto);
+    font-size: 12px;
+    overflow-wrap: anywhere;
+}
+
+/* CARTÃO PRO */
+
+.visao-geral__premium {
+    position: relative;
+    padding: 17px;
+    border: 1px solid #344462;
+    border-radius: 11px;
+    background: linear-gradient(125deg, #17251b, #192b4c);
+}
+
+.pro__selo {
+    display: inline-block;
+    padding: 4px 7px;
+    border-radius: 5px;
+    background: #c4f52b;
+    color: #152000;
+    font-size: 10px;
+    font-weight: 900;
+}
+
+.pro__brilho {
+    position: absolute;
+    top: 18px;
+    right: 16px;
+}
+
+.pro__brilho::after {
+    content: "✦";
+    color: #c4f52b;
+    font-size: 22px;
+}
+
+.visao-geral__premium p {
+    margin: 17px 0;
+    color: #e3e9f3;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.minha-conta .botao-assinatura {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    margin: 0 auto;
+    padding: 11px 17px;
+    border-radius: 7px;
+    background: #c4f52b;
+    color: #182400;
+    font-size: 12px;
+    font-weight: 800;
+    text-decoration: none;
+    transition: filter .2s;
+}
+
+.minha-conta .botao-assinatura:hover {
+    filter: brightness(.93);
+}
+
+/* GRUPOS DE OPÇÕES*/
+
+.grupo-opcoes {
+    padding: 10px 0 0;
+    border: 1px solid var(--conta-borda);
+    border-radius: 13px;
+    background: var(--conta-card);
+    overflow: hidden;
+}
+
+.grupo-opcoes h3 {
+    margin: 0;
+    padding: 7px 18px 14px;
+    color: var(--conta-suave);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+.minha-conta .opcao-conta {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    padding: 16px 18px;
+    border: none;
+    border-top: 1px solid var(--conta-borda);
+    background: transparent;
+    color: var(--conta-texto);
+    text-decoration: none;
+    text-align: left;
+    font: inherit;
+    cursor: pointer;
+}
+
+.minha-conta .opcao-conta:hover {
+    background: var(--conta-hover);
+}
+
+.opcao-conta__icone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: var(--conta-campo);
+    color: var(--conta-texto);
+    font-size: 17px;
+}
+
+.opcao-conta__texto {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.opcao-conta__texto strong {
+    color: var(--conta-texto);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.opcao-conta__texto small {
+    color: var(--conta-suave);
+    font-size: 11px;
+}
+
+.opcao-conta__seta {
+    margin-left: auto;
+    color: var(--conta-suave);
+    font-size: 20px;
+}
+
+/* ABA PERFIL*/
+
+.perfil-conta,
+.preferencias-conta,
+.seguranca-conta {
+    padding: 25px;
+    border: 1px solid var(--conta-borda);
+    border-radius: 13px;
+    background: var(--conta-card);
+}
+
+.secao-cabecalho {
+    margin-bottom: 26px;
+}
+
+.secao-cabecalho h2 {
+    margin: 0 0 8px;
+    color: var(--conta-texto);
+    font-size: 21px;
+}
+
+.secao-cabecalho p {
+    margin: 0;
+    color: var(--conta-suave);
+    font-size: 13px;
+}
+
+.perfil-conta__dados {
+    display: grid;
+    gap: 18px;
+}
+
+.campo-perfil {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.campo-perfil label {
+    color: var(--conta-texto);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.campo-perfil input {
+    width: 100%;
+    padding: 13px;
+    border: 1px solid var(--conta-borda);
+    border-radius: 8px;
+    background: var(--conta-campo);
+    color: var(--conta-texto);
+    font: inherit;
+}
+
+.perfil-conta .botao-assinatura {
+    margin: 8px 0 0;
+}
+
+/* SEGURANÇA */
+
+.preferencia-item,
+.seguranca-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--conta-borda);
+}
+
+.preferencia-item:last-child,
+.seguranca-item:last-child {
+    border-bottom: none;
+}
+
+.preferencia-item__informacoes h3,
+.seguranca-item__informacoes h3 {
+    margin: 0 0 7px;
+    color: var(--conta-texto);
+    font-size: 15px;
+}
+
+.preferencia-item__informacoes p,
+.seguranca-item__informacoes p {
+    margin: 0;
+    color: var(--conta-suave);
+    font-size: 12px;
+}
+
+.minha-conta .botao-seguranca {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 11px 16px;
+    border-radius: 7px;
+    background: var(--conta-destaque);
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+/* ========================================
+   RESPONSIVIDADE
+======================================== */
+
+@media (max-width: 750px) {
+    .minha-conta {
+        padding: 18px;
+    }
+
+    .visao-geral {
+        grid-template-columns: 1fr;
+    }
+
+    .minha-conta__abas {
+        width: 100%;
+    }
+}
+
+@media (max-width: 450px) {
+    .minha-conta .aba {
+        padding: 10px;
+        font-size: 12px;
+    }
+
+    .seguranca-item {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}

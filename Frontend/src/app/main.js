@@ -2,6 +2,7 @@ import { hasToken } from '../core/session/storage.js';
 import { iniciarTema } from '../core/theme/theme.js';
 import { ligarMenu } from '../core/layout/menu.js';
 import { URL_LOGIN } from '../core/session/login.js';
+import { iniciarOcultacaoValores } from '../core/privacy/valores.js';
 
 const appContent = document.querySelector('#app-content');
 
@@ -23,14 +24,23 @@ const TELAS = {
     ],
     modulo: () => import('../features/transactions/index.js'),
   },
+  perfil: {
+
+    titulo: 'Minha conta',
+    html: '/src/features/perfil/components/minhaConta.html',
+  css: [
+      '/src/features/perfil/styles/minhaConta.css',
+    ],
+  modulo: () => import('../features/Perfil/index.js'),
+},
 };
 
 let telaAtual = null; // { modulo, links } da tela montada agora
 let sequencia = 0; // descarta uma montagem que ficou para trás se o usuário já foi para outra rota
 
 iniciarTema();
-
 ligarMenu();
+iniciarOcultacaoValores();
 
 // O menu está escrito no index.html; aqui só se mostra (com sessão) e se marca o item da rota atual.
 function renderMenu(route) {
