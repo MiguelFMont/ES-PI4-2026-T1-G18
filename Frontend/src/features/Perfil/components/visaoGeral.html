@@ -1,0 +1,74 @@
+<section class="visao-geral">
+    <div class="visao-geral__coluna-usuario">
+        <div class="visao-geral__usuario">
+            <div class="usuario__avatar">
+                <span id="usuario-inicial">U</span>
+            </div>
+            <h2 id="usuario-nome">Carregando...</h2>
+            <p id="usuario-email"></p>
+
+            <div class="usuario__estatisticas">
+                <div class="usuario__estatistica">
+                    <span>Plano</span>
+                    <strong id="usuario-plano">Free</strong>
+                </div>
+                <div class="usuario__estatistica">
+                    <span>Banco</span>
+                    <strong id="usuario-banco">Não informado</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="visao-geral__premium">
+            <span class="pro__selo">PRO</span>
+            <span class="pro__brilho" aria-hidden="true"></span>
+            <p id="plano-descricao">
+                Conecte suas contas e tenha controle total
+                das suas finanças.
+            </p>
+            <a href="/src/features/auth/components/PlanoConta.html" class="botao-assinatura" id="botao-assinatura">Assinar agora</a>
+        </div>
+    </div>
+
+    <div class="visao-geral__coluna-opcoes">
+        <div class="grupo-opcoes">
+            <h3>GERAL</h3>
+            <button type="button" class="opcao-conta" data-destino="perfil">
+                <span class="opcao-conta__icone">♙</span>
+                <span class="opcao-conta__texto">
+                    <strong>Perfil</strong>
+                    <small>Informações pessoais</small>
+                </span>
+                <span class="opcao-conta__seta">›</span>
+            </button>
+            <a href="/src/features/auth/components/PlanoConta.html" class="opcao-conta">
+                <span class="opcao-conta__icone">💳</span>
+                <span class="opcao-conta__texto">
+                    <strong>Assinatura</strong>
+                    <small>Gerencie seu plano</small>
+                </span>
+                <span class="opcao-conta__seta">›</span>
+            </a>
+        </div>
+
+        <div class="grupo-opcoes">
+            <h3>SEGURANÇA</h3>
+            <button type="button" class="opcao-conta" data-destino="seguranca">
+                <span class="opcao-conta__icone">🔒</span>
+                <span class="opcao-conta__texto">
+                    <strong>Alterar senha</strong>
+                    <small>Gerencie sua senha de acesso</small>
+                </span>
+                <span class="opcao-conta__seta">›</span>
+            </button>
+            <a href="/src/features/auth/components/centralAjuda.html" class="opcao-conta">
+                <span class="opcao-conta__icone">⚑</span>
+                <span class="opcao-conta__texto">
+                    <strong>Reportar problema</strong>
+                    <small>Nos ajude a melhorar</small>
+                </span>
+                <span class="opcao-conta__seta">›</span>
+            </a>
+        </div>
+    </div>
+</section>
