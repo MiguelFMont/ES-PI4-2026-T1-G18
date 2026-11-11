@@ -64,8 +64,12 @@ export const authController = {
     // Adicionando o método atualizarPlano
     async atualizarPlano(req: AuthenticatedRequest, res: Response, next: NextFunction) {
         try {
-            const usuario = await authService.atualizarPlano(req.user!.id);
-
+            const plano = req.body?.plano;
+            if (plano !== "free" && plano !== "pro") {
+            res.status(400).json({ message: "Plano inválido." });
+            return;
+        }
+        const usuario = await authService.atualizarPlano(req.user!.id, plano);
             res.status(200).json(usuario);
         } catch (error) {
             next(error);

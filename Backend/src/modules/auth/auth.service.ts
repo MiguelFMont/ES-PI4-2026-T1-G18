@@ -105,8 +105,8 @@ export const authService = {
         };
     },
     
-    async atualizarPlano(id: string) {
-    const usuario = await authRepository.atualizarPlano(id);
+    async atualizarPlano(id: string,  plano: "free" | "pro") {
+    const usuario = await authRepository.atualizarPlano(id, plano);
 
     if (!usuario) {
         throw new AppError(

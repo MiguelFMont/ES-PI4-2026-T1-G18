@@ -10,10 +10,10 @@ export const authRepository = {
         return UserModel.findById(id).lean();
     },
     
-    async atualizarPlano(userId: string) {
+    async atualizarPlano(userId: string, plano: "free" | "pro") {
         return UserModel.findByIdAndUpdate(
             userId,
-            { plano: "pro" },
+            { plano},
             { new: true }
         ).lean();
     },

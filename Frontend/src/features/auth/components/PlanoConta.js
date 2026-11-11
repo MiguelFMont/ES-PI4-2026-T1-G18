@@ -14,8 +14,10 @@ const planoErro = document.querySelector("#plano-erro");
 
 const token = localStorage.getItem("@FinanceAI:token");
 let planoAtual = null;
+let planoSelecionado = "free";
 
 function mostrarPlano(plano) {
+    planoSelecionado = plano;
     btnFree.classList.toggle("ativo", plano === "free");
     btnPro.classList.toggle("ativo", plano === "pro");
 
@@ -55,8 +57,12 @@ function mostrarPlano(plano) {
     const planoSelecionadoAtual = plano === planoAtual;
     // Atualiza o status do plano e o botão de upgrade
     planoStatus.textContent = planoSelecionadoAtual ? "Plano atual" : "Disponível";
-    btnUpgrade.textContent = planoSelecionadoAtual ? "Plano atual" : "Obter plano Pro";
-    btnUpgrade.disabled = planoSelecionadoAtual || plano !== "pro";
+    btnUpgrade.textContent = planoSelecionadoAtual 
+    ? "Plano atual" 
+    : plano === "pro"
+        ?"Obter plano Pro"
+        : "Obter plano Free";
+    btnUpgrade.disabled = planoSelecionadoAtual;
 }
 
 btnFree.addEventListener("click", function () {
@@ -100,7 +106,7 @@ async function carregarPlano() {
 }
 // Adiciona o evento de clique ao botão de upgrade
 btnUpgrade.addEventListener("click", async function () {
-    if (planoAtual === "pro" || btnUpgrade.disabled) {
+    if (planoSelecionado === planoAtual || btnUpgrade.disabled) {
         return;
     }
     planoErro.textContent = "";
@@ -109,11 +115,16 @@ btnUpgrade.addEventListener("click", async function () {
         const resposta = await fetch("/v1/auth/me/plano", {
             method: "PATCH",
             headers: {
-                Authorization: `Bearer ${token}`
-            }
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ plano: planoSelecionado })
         });
 
         const usuario = await resposta.json();
+        console.log("Plano solicitado:", planoSelecionado);
+        console.log("Status da resposta:", resposta.status);
+        console.log("Resposta do backend:", usuario);
         if (!resposta.ok) {
             //se a requisição falhar, exibe a mensagem de erro e habilita o botão de upgrade novamente
             planoErro.textContent = "Não foi possível atualizar o plano.";
