@@ -9,10 +9,10 @@ Documento vivo que descreve **o que o Backend aceita e devolve**. É a referênc
 | Módulo | Prefixo | Grupo | Estado |
 |---|---|---|---|
 | Sistema | `/v1/health`, `/v1/eco` | Todos | Documentado (seção 1.6) |
-| Transações | `/v1/transactions` | 2 | **Cadastro e listagem (com filtros e paginação) documentados** (seção 2); edição, exclusão, duplicação e importação planejadas |
+| Transações | `/v1/transactions` | 2 | **Cadastro, listagem (com filtros e paginação), edição e exclusão em lote documentados** (seção 2); duplicação e importação planejadas |
 | Autenticação e conta | `/v1/auth` | 1 | A documentar |
 | Painel e análise | `/v1/dashboard` | 3 | A documentar |
-| Mentor financeiro (IA) | `/v1/mentor-ia` | 4 | **Chat (enviar mensagem e histórico) documentado** (seção 3); alertas planejados |
+| Mentor financeiro (IA) | `/v1/mentor-ia` | 4 | **Chat (enviar mensagem, histórico e mensagem proativa) e alertas (listar e marcar como lido) documentados** (seção 3) |
 | Metas | `/v1/goals` | 5 | A documentar |
 | Investimentos | `/v1/investments` | 5 | A documentar |
 
@@ -90,7 +90,7 @@ Todas as rotas exigem token. Um usuário só vê e altera as próprias transaç�
 | `id` | texto | Identificador da transação |
 | `tipo` | `"receita"` ou `"despesa"` | Se o dinheiro entrou ou saiu |
 | `valor` | número | Valor em reais, sempre positivo |
-| `categoria` | texto | Categoria (ver 2.3). Se não for enviada no cadastro, vale `"Outros"` |
+| `categoria` | texto | Categoria (ver 2.3). Se não for enviada no cadastro, o Servidor Java a sugere pela descrição (ver 2.4); sem palavra-chave conhecida, vale `"Outros"` |
 | `data` | texto (ISO 8601) | Data da movimentação |
 | `descricao` | texto | Descrição livre |
 | `formaPagamento` | texto | Uma das formas de pagamento (ver 2.2). Se não for enviada, vale `"outro"` |
@@ -115,7 +115,7 @@ O campo `categoria` é texto livre, mas o Frontend deve oferecer esta lista para
 | `valor` | **número** | Sim | Maior que zero. Texto como `"10"` é recusado |
 | `data` | texto | Sim | Data válida (ver 1.3) |
 | `descricao` | texto | Sim | Não vazio (espaços nas pontas são removidos) |
-| `categoria` | texto | Não | Se faltar, vale `"Outros"` |
+| `categoria` | texto | Não | Se faltar, o Backend pede ao Servidor Java (`PedidoCategorizarTransacao`) uma categoria pela `descricao`: `"Uber Eats"` vira `Alimentacao`, `"Farmácia"` vira `Saude`. Sem palavra-chave conhecida, vale `"Outros"`. Se o Servidor estiver fora do ar, a transação é salva com `"Outros"` (o cadastro não falha). Se vier preenchida, é usada como está |
 | `formaPagamento` | texto | Não | Uma da lista 2.2. Se faltar, vale `"outro"` |
 | `observacoes` | texto | Não | Até 300 caracteres (espaços nas pontas são removidos). Texto vazio é o mesmo que não enviar |
 | `origem` | texto | Não | `manual` (padrão) ou `pluggy` |
@@ -318,12 +318,61 @@ Exemplo de `400` para `?valorMin=100&valorMax=50`:
 }
 ```
 
-### 2.6 Rotas planejadas (ainda não existem)
+### 2.6 Editar transações
+
+`PATCH /v1/transactions/bulk` → `200 OK`.
+
+**Não existe `PUT` nem `DELETE` por id: a edição e a exclusão só acontecem em lote.** Para mexer em uma única transação, envie um lote de um item. O lote **não é tudo ou nada**: o Backend faz o que existe e devolve os ids que não encontrou. Cada chamada aceita de 1 a **100** itens, sem ids repetidos (a tela divide em blocos quando passa disso).
+
+Cada transação leva as **suas próprias** alterações. A edição é **parcial**: `alteracoes` leva só os campos que mudam e precisa ter ao menos um.
+
+```json
+{
+  "itens": [
+    { "id": "6ae4a14014fb37bcbb2d7fac", "alteracoes": { "descricao": "Mercado", "valor": 11.5, "observacoes": "" } },
+    { "id": "6ae4a14014fb37bcbb2d7fad", "alteracoes": { "categoria": "Lazer", "tipo": "receita" } }
+  ]
+}
+```
+
+| Campo de `alteracoes` | Tipo | Regra |
+|---|---|---|
+| `tipo` | `"receita"` ou `"despesa"` | |
+| `valor` | número | Maior que zero |
+| `categoria` | texto | Não vazio |
+| `data` | texto (data ISO) | Ex.: `"2026-10-30"` |
+| `descricao` | texto | Não vazio |
+| `formaPagamento` | texto | Uma das formas da seção 2.2. Aqui **não** há valor padrão: o que não for enviado não muda |
+| `observacoes` | texto | Até 300 caracteres. **`""` apaga a observação** |
+
+`origem` e `id` dentro de `alteracoes` são ignorados: a origem nunca muda.
+
+Resposta:
+
+```json
+{ "afetadas": 1, "naoEncontradas": ["6ae4a14014fb37bcbb2d7fad"] }
+```
+
+`naoEncontradas` traz os ids que não existem ou são de outro usuário (os dois casos são tratados igual, sem revelar de quem é).
+
+Erros: `400 VALIDATION_ERROR` (lista vazia, mais de 100 itens, ids repetidos ou mal formados, `alteracoes` vazia ou com campo inválido: nesse caso **nada** do lote é aplicado) e `401 UNAUTHENTICATED`.
+
+### 2.7 Excluir transações
+
+`POST /v1/transactions/bulk-delete` → `200 OK` (é `POST` porque um `DELETE` com corpo não é confiável em todos os clientes). Também vale um lote de um id só.
+
+```json
+{ "ids": ["6ae4a14014fb37bcbb2d7fac", "6ae4a14014fb37bcbb2d7fad"] }
+```
+
+A resposta tem o mesmo formato da edição (`afetadas` e `naoEncontradas`). Excluir um id que já foi excluído o devolve em `naoEncontradas`.
+
+Erros: `400 VALIDATION_ERROR` (lista vazia, mais de 100 ids, ids repetidos ou mal formados) e `401 UNAUTHENTICATED`.
+
+### 2.8 Rotas planejadas (ainda não existem)
 
 | Método e rota | Para quê | Issue |
 |---|---|---|
-| `PUT /v1/transactions/:id` | Editar uma transação, incluindo a categoria | #35 |
-| `DELETE /v1/transactions/:id` | Excluir | A definir |
 | `POST /v1/transactions/:id/duplicate` | Duplicar um lançamento | #49 |
 | `POST /v1/transactions/import` | Importar do sandbox da Pluggy | #46 |
 
@@ -335,6 +384,7 @@ Todas as rotas exigem token. O chat usa as **transações do mês atual** do usu
 
 Regras que valem para toda resposta da IA:
 - É **educacional**: explica gastos, orçamento e conceitos. Não substitui um consultor.
+- **Só fala de finanças pessoais** (gastos e receitas, orçamento, dívidas, cartão, reserva de emergência, conceitos de investimento). Pedidos de outro assunto (programação, exercícios, redação, curiosidades...) e respostas com **código** viram uma recusa padrão: "Sou o Mentor Financeiro do FinanceAI e só posso ajudar com finanças pessoais: ... Quer conversar sobre algum desses temas?". A recusa é salva no histórico como uma resposta comum.
 - **Nunca recomenda comprar, vender ou aportar em um ativo específico** (ação, fundo, criptomoeda, título). A resposta passa por um filtro no Servidor de cálculos: a frase que recomenda um ativo é removida e um aviso é acrescentado no final.
 - Os números citados (totais, percentuais por categoria, média diária) são calculados pelo Servidor de cálculos, não pela IA.
 
@@ -345,6 +395,7 @@ Regras que valem para toda resposta da IA:
 | `id` | texto | Identificador da mensagem |
 | `autor` | `"usuario"` ou `"ia"` | Quem escreveu |
 | `texto` | texto | Conteúdo. O da IA pode ter **markdown simples** (`**negrito**`, listas com `-`): o Frontend pode mostrar como texto puro ou converter |
+| `proativa` | `true` (opcional) | Só aparece nas mensagens que o Mentor mandou sozinho, explicando padrões identificados (seção 3.8). Nas demais mensagens o campo **não vem** (trate ausência como `false`) |
 | `criadaEm` | texto (ISO 8601) | Quando foi enviada |
 
 ### 3.2 Enviar mensagem
@@ -416,15 +467,152 @@ Erros:
 ]
 ```
 
+As mensagens proativas (seção 3.8) também aparecem no histórico, com `"proativa": true`, na ordem em que foram criadas.
+
 As 6 mensagens mais recentes também são enviadas à IA junto com a pergunta nova, para ela entender perguntas de continuação ("como reduzir isso?", "explica melhor"). Ela só conhece o mês atual: perguntas sobre meses anteriores recebem "não tenho essa informação".
 
 Erros: `401 UNAUTHENTICATED`.
 
-### 3.4 Rotas planejadas (ainda não existem)
+### 3.4 Objeto `Alert`
 
-| Método e rota | Para quê |
-|---|---|
-| `GET /v1/mentor-ia/alerts` | Alertas proativos (gasto fora do padrão, fatura próxima, dinheiro parado). Quem gera os alertas ainda está em definição |
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `id` | texto | Identificador do alerta |
+| `tipo` | `"gasto_fora_do_padrao"`, `"fatura_proxima"` ou `"dinheiro_parado"` | Qual regra gerou o alerta (seção 3.5) |
+| `titulo` | texto | Título curto, por exemplo `"Fatura do cartão perto do vencimento"` |
+| `mensagem` | texto | Uma ou duas frases em português, com os valores já formatados (`"R$ 1.234,56"`). Pode ser mostrada como está |
+| `dados` | objeto | Os números do alerta, para o Frontend montar a própria tela (campos por tipo na seção 3.5). Valores em reais, datas em ISO 8601 |
+| `lido` | booleano | Sempre `false` na listagem; `true` depois de `PATCH .../lido` |
+| `criadaEm` | texto (ISO 8601) | Quando o alerta apareceu pela primeira vez |
+
+### 3.5 Como os alertas são gerados
+
+Os alertas são **gerados pelo Backend no momento em que são lidos** (`GET /v1/mentor-ia/alerts`), a partir das transações reais do usuário: não há job agendado nem gancho no cadastro de transações. Por isso a listagem sempre reflete o estado atual, inclusive transações editadas ou excluídas.
+
+- Cada alerta tem uma chave por período (por exemplo, a fatura de novembro de 2026): ler os alertas de novo **não duplica** nada, só atualiza os números do mesmo alerta.
+- Um alerta **marcado como lido não volta** no mesmo período.
+- Um alerta **não lido cuja condição deixou de valer** (por exemplo, o usuário excluiu o gasto que o gerou, ou o período passou) é **removido** na leitura seguinte.
+- Datas e meses são os de **Brasília**. O histórico lido vai do dia 1 do 3º mês anterior até hoje.
+
+| `tipo` | Quando aparece | `dados` |
+|---|---|---|
+| `gasto_fora_do_padrao` | Numa categoria de despesa, o gasto do **mês atual até hoje** já é **pelo menos 2 vezes o maior gasto mensal** dessa categoria nos **3 meses anteriores**, com **pelo menos R$ 200 a mais**, e a categoria teve gasto em pelo menos 2 desses 3 meses. Um alerta por categoria e por mês | `categoria`, `valorAtual`, `maiorMesAnterior`, `mediaMensal` (média dos meses anteriores com gasto) |
+| `fatura_proxima` | Faltam **5 dias ou menos** para o vencimento da fatura e ela tem valor. Um alerta por fatura (mês do vencimento) | `valor`, `vencimento`, `diasParaVencer`, `inicioDoCiclo`, `fechamento` |
+| `dinheiro_parado` | O que sobrou (receitas menos despesas) desde o dia 1 do 3º mês anterior é de **pelo menos R$ 500** e de **pelo menos 1 mês de despesas** (média dos meses anteriores com movimento), há movimento em pelo menos 2 dos 3 meses anteriores e **nenhuma transação na categoria `Investimento`/`Investimentos`** no período. Um alerta por mês | `saldo`, `receitas`, `despesas`, `despesaMensalMedia`, `desde` |
+
+**Suposição da fatura:** ainda não existe cartão cadastrado (o Grupo 5 vai simular faturas). Até lá a fatura é **estimada** como a soma das despesas com `formaPagamento: "credito"` do ciclo fechado, supondo **vencimento todo dia 10** e **fechamento 7 dias antes (dia 3)**: a fatura que vence em 10/11 tem as compras no crédito de 03/10 a 02/11. Quando houver cartão de verdade, a regra passa a usar o vencimento e o valor dele.
+
+O alerta de dinheiro parado é **educativo**: sugere separar uma reserva de emergência ou estudar opções de investimento, e nunca cita ativo, produto ou instituição.
+
+Os limites foram escolhidos para **não gerar nenhum `gasto_fora_do_padrao` com os dados do seed** (seção 4) em nenhum dia do ano. Com o seed aparecem só alertas verdadeiros: `fatura_proxima` do dia 5 ao dia 10 de cada mês (o seed tem compras no crédito todo mês) e `dinheiro_parado` (o seed tem sobra de salário e nenhum investimento). Para ver um gasto fora do padrão, cadastre por exemplo uma despesa de R$ 1.500 em `Alimentacao` no mês atual.
+
+### 3.6 Listar alertas
+
+`GET /v1/mentor-ia/alerts` → `200 OK`, com os alertas **não lidos** do usuário, dos **mais recentes para os mais antigos**. Sem alertas, devolve `[]`. Não depende do Servidor de cálculos nem da API de IA.
+
+```json
+[
+  {
+    "id": "6af1bbb52676e89cd05622c2",
+    "tipo": "gasto_fora_do_padrao",
+    "titulo": "Gasto fora do padrão em Alimentacao",
+    "mensagem": "Em novembro você já gastou R$ 2.070,85 com Alimentacao, 3,2 vezes o maior gasto mensal dessa categoria nos últimos 3 meses (R$ 647,40).",
+    "dados": { "categoria": "Alimentacao", "valorAtual": 2070.85, "maiorMesAnterior": 647.4, "mediaMensal": 400.55 },
+    "lido": false,
+    "criadaEm": "2026-11-09T12:26:22.541Z"
+  },
+  {
+    "id": "6af1bba92676e89cd05622bf",
+    "tipo": "dinheiro_parado",
+    "titulo": "Dinheiro parado na conta",
+    "mensagem": "Desde 01/08 sobraram R$ 7.083,00 (receitas menos despesas), mais do que você gasta em um mês (R$ 1.664,68 em média), e não há nenhum investimento registrado. Se esse dinheiro está parado, considere separar uma reserva de emergência ou estudar opções de investimento.",
+    "dados": { "saldo": 7083, "receitas": 15670, "despesas": 8587, "despesaMensalMedia": 1664.68, "desde": "2026-08-01T03:00:00.000Z" },
+    "lido": false,
+    "criadaEm": "2026-11-09T12:26:10.837Z"
+  },
+  {
+    "id": "6af1bba92676e89cd05622be",
+    "tipo": "fatura_proxima",
+    "titulo": "Fatura do cartão perto do vencimento",
+    "mensagem": "A fatura do cartão de crédito vence amanhã (10/11): são R$ 434,70 em compras no crédito de 03/10 a 02/11. Reserve esse valor para não pagar juros.",
+    "dados": {
+      "valor": 434.7,
+      "vencimento": "2026-11-10T03:00:00.000Z",
+      "diasParaVencer": 1,
+      "inicioDoCiclo": "2026-10-03T03:00:00.000Z",
+      "fechamento": "2026-11-03T03:00:00.000Z"
+    },
+    "lido": false,
+    "criadaEm": "2026-11-09T12:26:10.837Z"
+  }
+]
+```
+
+(Capturado em 09/11/2026 com os dados do seed mais uma despesa de R$ 1.500 em `Alimentacao`.)
+
+Erros: `401 UNAUTHENTICATED`.
+
+### 3.7 Marcar alerta como lido
+
+`PATCH /v1/mentor-ia/alerts/:id/lido` → `200 OK`, sem corpo na requisição. Devolve o alerta (objeto `Alert`) com `lido: true`. Ele deixa de aparecer na listagem e não volta no mesmo período. Marcar de novo um alerta já lido também devolve `200`.
+
+Erros:
+
+| Status | `code` | Quando |
+|---|---|---|
+| 400 | `VALIDATION_ERROR` | `id` não tem 24 caracteres hexadecimais |
+| 401 | `UNAUTHENTICATED` | Sem token ou token inválido |
+| 404 | `ALERT_NOT_FOUND` | O alerta não existe ou é de outro usuário |
+
+### 3.8 Mensagem proativa do Mentor
+
+`POST /v1/mentor-ia/chat/proativa` → `200 OK`, sem corpo na requisição. Faz o Mentor **iniciar a conversa** explicando, em linguagem natural, os padrões identificados nas transações do usuário, sem esperar uma pergunta.
+
+**Quando chamar:** ao abrir a tela do chat, logo depois de carregar o histórico (`GET /chat`). Se vier uma mensagem, acrescente-a no fim da conversa. A chamada pode ser **silenciosa**: em caso de erro, basta ignorar (o chat continua funcionando e o Backend tenta de novo na próxima abertura).
+
+**O que é um padrão:** cada alerta **não lido** (seção 3.5) que o Mentor **ainda não explicou**. A rota recalcula os alertas como `GET /alerts` e:
+- **Sem padrão novo**, devolve `{ "mensagens": [] }` na hora, sem chamar a IA nem o Servidor de cálculos. É o caso mais comum: cada alerta é explicado **uma única vez**, então chamar de novo devolve `[]` até surgir um padrão novo (por exemplo, um gasto fora do padrão).
+- **Com padrão novo**, a IA escreve **uma** mensagem curta (até 2 parágrafos ou uma lista) que explica todos os padrões novos juntos, com os números deles, e termina com uma pergunta ou um convite para continuar a conversa. A mensagem passa pelo mesmo filtro de ativos do chat, é salva no histórico (objeto `ChatMessage` com `autor: "ia"` e `proativa: true`) e devolvida em `mensagens`. Os alertas explicados continuam aparecendo em `GET /alerts` até serem marcados como lidos.
+
+A instrução interna que pede a explicação **não é salva** no histórico: o usuário vê só a mensagem da IA. Como no `POST /chat`, a resposta demora alguns segundos quando há padrão novo.
+
+Resposta `200` com padrão novo:
+
+```json
+{
+  "mensagens": [
+    {
+      "id": "6af1be0a9322b6d9b51951ce",
+      "autor": "ia",
+      "texto": "**Padrões identificados no seu fluxo financeiro**\n\n- **Gasto fora do padrão em Alimentação:** Você já gastou **R$ 2.070,85** em alimentação neste mês, o que é **3,2 vezes** o maior gasto mensal dessa categoria nos últimos três meses (máximo de **R$ 647,40**). ...\n- **Dinheiro parado na conta:** Desde 01/08, o saldo acumulado sem uso chegou a **R$ 7.083,00**, valor que supera em muito seu gasto médio mensal (**R$ 1.664,68**). ...\n- **Fatura do cartão perto do vencimento:** Amanhã (10/11) vence a fatura de **R$ 434,70** referente a compras feitas de 03/10 a 02/11. ...\n\nComo podemos trabalhar juntos para equilibrar esses pontos e melhorar seu orçamento? Estou aqui para ajudar no que precisar.",
+      "proativa": true,
+      "criadaEm": "2026-11-09T12:35:22.831Z"
+    }
+  ]
+}
+```
+
+(Capturado em 09/11/2026 com os dados do seed mais uma despesa de R$ 1.500 em `Alimentacao`; trechos encurtados com `...`.)
+
+Resposta `200` sem padrão novo (sem alertas, ou todos já explicados):
+
+```json
+{ "mensagens": [] }
+```
+
+`mensagens` é sempre uma lista, com 0 ou 1 mensagem.
+
+**Duas abas ao mesmo tempo:** se duas chamadas chegarem juntas, só uma delas salva a explicação; a outra devolve `[]`. Se o Mentor já explicou parte dos padrões enquanto a outra chamada esperava a IA, pode sair uma segunda mensagem repetindo esses padrões junto com o novo (caso raro, aceito).
+
+Erros (os mesmos de `POST /chat`; em todos, nada é salvo e os padrões continuam sem explicação, para a próxima abertura):
+
+| Status | `code` | Quando |
+|---|---|---|
+| 401 | `UNAUTHENTICATED` | Sem token ou token inválido |
+| 429 | `GENAI_RATE_LIMITED` | Acabou o limite de uso gratuito da API de IA |
+| 502 | `GENAI_ERROR` | A API de IA respondeu com erro ou sem conteúdo |
+| 503 | `GENAI_UNAVAILABLE` | A API de IA está fora do ar, demorou mais de 20 s ou não foi configurada no Backend |
+| 503 | `JAVA_SERVER_UNAVAILABLE` | O Servidor de cálculos está fora do ar |
 
 ---
 

@@ -1,4 +1,4 @@
-import { atualizarTransacao, excluirTransacao, listarTransacoes } from '../../services/transactionsService.js';
+import { atualizarTransacoesEmLote, excluirTransacoesEmLote, listarTransacoes } from '../../services/transactionsService.js';
 import { notificar } from '../../../../shared/components/notificacao.js';
 import { ligarSeletores } from '../../../../shared/components/seletor.js';
 import { iniciarFormulario } from '../TransactionForm/TransactionForm.js';
@@ -7,13 +7,6 @@ import { iniciarExtrato } from '../TransactionExtrato/TransactionExtrato.js';
 import { iniciarResumo } from '../TransactionResumo/TransactionResumo.js';
 
 const ITENS_POR_PAGINA_INICIAL = 20;
-
-/** Corpo completo para a API (PUT) a partir de uma transação da lista e das mudanças. Observações vazias vão como "". */
-function corpoDeEdicao(transacao, mudancas) {
-  const { tipo, descricao, valor, categoria, formaPagamento, observacoes = '' } = { ...transacao, ...mudancas };
-  const data = mudancas.data ?? String(transacao.data).slice(0, 10);
-  return { tipo, descricao, valor, categoria, data, formaPagamento, observacoes };
-}
 
 /**
  * Liga a lógica da página de Transações (extrato) ao HTML de views/transactions.html (já dentro do container):
@@ -34,43 +27,48 @@ export function iniciarPaginaTransacoes(raiz, { signal } = {}) {
 
   const resumo = iniciarResumo(raiz);
   const extrato = iniciarExtrato(raiz, {
+    signal,
     irParaPagina: (numero) => carregar(numero),
     tentarNovamente: () => carregar(estado.pagina),
     mudarLimite: (quantidade) => {
       estado.limite = quantidade;
       carregar(1);
     },
-    editarCampo: async (transacao, campo, valor) => {
-      try {
-        await atualizarTransacao(transacao.id, corpoDeEdicao(transacao, { [campo]: valor }));
-      } catch (erro) {
-        notificar(erro?.status ? 'Não foi possível salvar a alteração.' : (erro?.message ?? 'Erro inesperado.'), 'erro');
-        throw erro; // o campo de edição continua aberto
-      }
-      notificar('Alteração salva.', 'sucesso');
-      await carregar(estado.pagina);
-    },
-    editarVarias: (transacoes, mudancas) => executarEmLote(transacoes, (t) => atualizarTransacao(t.id, corpoDeEdicao(t, mudancas)), {
+    salvarAlteracoes: (itens) => enviarLote(() => atualizarTransacoesEmLote(itens), {
       sucesso: (n) => (n === 1 ? 'Transação alterada.' : `${n} transações alteradas.`),
-      falha: 'Não foi possível alterar as transações.',
+      falha: 'Não foi possível salvar as alterações.',
     }),
-    excluirVarias: (transacoes) => executarEmLote(transacoes, (t) => excluirTransacao(t.id), {
+    editarVarias: (transacoes, mudancas) => enviarLote(
+      () => atualizarTransacoesEmLote(transacoes.map((t) => ({ id: t.id, alteracoes: mudancas }))),
+      {
+        sucesso: (n) => (n === 1 ? 'Transação alterada.' : `${n} transações alteradas.`),
+        falha: 'Não foi possível alterar as transações.',
+      }
+    ),
+    excluirVarias: (transacoes) => enviarLote(() => excluirTransacoesEmLote(transacoes.map((t) => t.id)), {
       sucesso: (n) => (n === 1 ? 'Transação excluída.' : `${n} transações excluídas.`),
       falha: 'Não foi possível excluir as transações.',
     }),
   });
 
-  // Não há endpoint em lote: faz uma chamada por transação e conta quantas deram certo.
-  async function executarEmLote(transacoes, operacao, textos) {
-    const resultados = await Promise.allSettled(transacoes.map(operacao));
-    const falhas = resultados.filter((r) => r.status === 'rejected').length;
-    const feitas = resultados.length - falhas;
+  // Chama um endpoint em lote, avisa o resultado e atualiza a lista. O lote não é tudo ou nada: ids que não existem
+  // mais voltam em `naoEncontradas` e contam como falha parcial. Se a chamada falhar, o erro segue para quem chamou.
+  async function enviarLote(chamada, textos) {
+    let resultado;
+    try {
+      resultado = await chamada();
+    } catch (erro) {
+      notificar(erro?.status ? textos.falha : (erro?.message ?? 'Erro inesperado.'), 'erro');
+      throw erro;
+    }
 
-    if (falhas === 0) notificar(textos.sucesso(feitas), 'sucesso');
-    else if (feitas === 0) notificar(textos.falha, 'erro');
-    else notificar(`${feitas} concluídas e ${falhas} com erro. Tente as restantes de novo.`, 'erro');
+    const { afetadas, naoEncontradas } = resultado;
+    if (naoEncontradas.length === 0) notificar(textos.sucesso(afetadas), 'sucesso');
+    else if (afetadas === 0) notificar(`${textos.falha} As transações não foram encontradas (talvez já tenham sido excluídas).`, 'erro');
+    else notificar(`${afetadas} concluídas e ${naoEncontradas.length} não encontradas (talvez já tenham sido excluídas).`, 'erro');
 
     await carregar(estado.pagina);
+    return resultado;
   }
 
   async function carregar(pagina) {
@@ -113,4 +111,14 @@ export function iniciarPaginaTransacoes(raiz, { signal } = {}) {
       carregar(1);
     },
   });
+
+  // Recarregar ou fechar a página com alterações não confirmadas pede confirmação ao navegador. A troca de tela
+  // dentro do SPA é tratada pelo roteador (app/main.js), que pergunta usando temPendencias().
+  window.addEventListener('beforeunload', (evento) => {
+    if (!extrato.temPendencias()) return;
+    evento.preventDefault();
+    evento.returnValue = '';
+  }, { signal });
+
+  return { temPendencias: () => extrato.temPendencias() };
 }

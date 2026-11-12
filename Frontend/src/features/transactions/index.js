@@ -11,7 +11,7 @@
 //     TransactionResumo/                             resumo: Entradas, Saídas e Saldo (acima dos filtros)
 //     TransactionFilters/                            cartão de filtros
 //     TransactionExtrato/                            extrato: contagem, por página, seleção em lote, lista editável (EdicaoCelula.js) e paginação
-//   services/transactionsService.js                  chamadas ao Backend (GET, POST, PUT e DELETE em /transactions)
+//   services/transactionsService.js                  chamadas ao Backend (GET e POST em /transactions; PATCH /bulk e POST /bulk-delete para editar e excluir)
 //   utils/constants.js                               valores aceitos pela API e seus rótulos
 //   utils/format.js                                  formatação de moeda e data
 //   utils/formValidation.js                          regras de validação do formulário (sem tela)
@@ -21,16 +21,23 @@ import { incluirFragmentos } from '../../core/views/includes.js';
 import { iniciarPaginaTransacoes } from './components/TransactionsPage/TransactionsPage.js';
 
 let controlador = null; // um AbortController por montagem: o abort() desliga tudo o que a tela ligou fora dela
+let pagina = null; // o que a página devolve ao ser ligada (temPendencias)
 
 /** Liga a tela. `container` já tem o HTML de views/transactions.html. */
 export async function montar(container) {
   await incluirFragmentos(container); // junta os componentes HTML antes de ligar a lógica
   controlador = new AbortController();
-  iniciarPaginaTransacoes(container, { signal: controlador.signal });
+  pagina = iniciarPaginaTransacoes(container, { signal: controlador.signal });
+}
+
+/** O roteador pergunta antes de sair da tela: há alterações marcadas e ainda não confirmadas? */
+export function temPendencias() {
+  return pagina?.temPendencias() ?? false;
 }
 
 /** Desliga a tela ao sair dela: remove os ouvintes do document e descarta respostas que ainda estejam a caminho. */
 export function desmontar() {
   controlador?.abort();
   controlador = null;
+  pagina = null;
 }

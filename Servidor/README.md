@@ -48,7 +48,7 @@ Tudo que é CRUD (cadastro, listagens, edição) fica no Backend.
 
 ## Mensagens por grupo (contrato com o Backend)
 
-Os campos de cada mensagem estão nos `.md` de `exemplo/` (um por `PedidoXxx`/`RespostaXxx`) e precisam ser **idênticos** aos que o Backend envia e espera.
+Os campos de cada mensagem estão no `.java` dela (quando já implementada) ou no `.md` de `exemplo/` (um por `PedidoXxx`/`RespostaXxx`, enquanto for só planejada) e precisam ser **idênticos** aos que o Backend envia e espera.
 
 | Grupo | Pedido → Resposta | Handler |
 |---|---|---|
@@ -60,7 +60,19 @@ Os campos de cada mensagem estão nos `.md` de `exemplo/` (um por `PedidoXxx`/`R
 
 Cada grupo mexe só na própria pasta e adiciona **uma linha** em `HandlerRegistry.criarPadrao()`. Se um grupo precisar de uma operação nova, cria o par `PedidoXxx`/`RespostaXxx` e o registra no seu handler, combinando os campos com quem implementa o lado do Backend.
 
-Quando uma mensagem já está implementada, o contrato vale pelo `.java` (o `.md` de `exemplo/` pode estar desatualizado).
+Quando uma mensagem já está implementada, o contrato vale pelo `.java` (o `.md` de `exemplo/` pode estar desatualizado). Por isso `core/` e `transactions/` já não têm pasta `exemplo/`: tudo o que havia nelas virou código.
+
+### Grupo 2 — Transações (`transactions/`, implementado)
+
+| Mensagem | `dados` |
+|---|---|
+| `PedidoCategorizarTransacao` | `{ "descricao": "UBER EATS *PEDIDO", "valor": 54.9 }`. A categoria sai só da `descricao`; o `valor` faz parte do contrato, mas hoje não influencia a decisão |
+| `RespostaCategorizarTransacao` | `{ "categoria": "Alimentacao" }`: uma das categorias do contrato da API (`Alimentacao`, `Transporte`, `Moradia`, `Saude`, `Lazer`, `Educacao`, `Salario`, `Outros`) |
+
+- **Como decide** (`TransactionsHandler`): a descrição é normalizada (minúsculas, sem acentos, só letras, sem palavras como `de`, `credito` e `pix`) e comparada **por palavra inteira** com grupos `{ categoria, palavras... }`. **A ordem dos grupos é a prioridade**: as exceções vêm primeiro (`uber eats` é comida, `mercado livre` não é supermercado). Sem palavra conhecida, `Outros`. A lista completa e os cuidados estão em [`docs/palavras-chave-categorias.md`](../docs/palavras-chave-categorias.md).
+- `descricao` ausente ou em branco responde `Erro` `VALIDATION`.
+- **Quem chama é o Backend** (`transactionsService.sugerirCategoria`), no cadastro de uma transação sem `categoria`. Se o Servidor estiver fora do ar, o cadastro não falha: a transação é salva como `Outros`. Outros erros do Servidor (como `UNKNOWN_TYPE`, de um Servidor desatualizado) continuam sendo erro.
+- No Frontend, a opção **Automática** da categoria é o que dispara esse pedido.
 
 ### Grupo 4 — Mentor IA (`mentoria/`, implementado)
 
@@ -74,6 +86,7 @@ A API de IA é chamada pelo Backend **entre** os dois pedidos: contexto → IA �
 | `RespostaFiltrarResposta` | `{ "respostaFiltrada": "<texto sem recomendação de ativo>" }` |
 
 - **As contas são do Java** (`MentorHandler.montarContexto`), porque a IA erra aritmética. Até 8 categorias aparecem no resumo; as demais somam em "demais categorias". As descrições (texto livre do usuário) entram cortadas em 40 caracteres e numa linha só.
+- **O filtro de assunto** (`FiltroDeEscopo`) roda antes: o prompt manda a IA responder só `FORA_DO_ESCOPO` quando o pedido não é de finanças pessoais, e uma resposta com esse marcador **ou com código** (bloco ``` ou linhas como `def soma(a, b):`, `function`, `return a + b`, `console.log(`) vira inteira a recusa `FiltroDeEscopo.AVISO`. O prompt sozinho não basta: o modelo pode aceitar escrever código mesmo assim.
 - **O filtro** (`FiltroDeAtivos`) analisa frase a frase. Uma frase é removida quando tem **um ativo específico** (código da B3, como `PETR4` ou `MXRF11`, ou um nome de uma lista de criptomoedas e empresas) **e** linguagem de recomendação (compre, venda, aporte, invista, recomendo, mantenha...). Recusas explícitas ("não posso recomendar PETR4") passam; "não posso recomendar, mas compre ITUB4" não passa, porque cada trecho depois de "mas/porém/contudo" é julgado separado. Se alguma frase sai, o aviso `FiltroDeAtivos.AVISO` é acrescentado no fim; se quase nada sobra, a resposta vira só o aviso.
 - `diaDoMes` fora de 1 a 31, `valor` negativo ou `tipo` diferente de `receita`/`despesa` respondem `Erro` `VALIDATION`.
 
@@ -96,7 +109,7 @@ src/main/java/com/financeai/
 
 ## Estado atual (Sprint 0)
 
-Já implementados como código: o `Main` e o `core/` (`Comunicado`, `Parceiro`, `Aceitadora`, `Supervisora`, `Handler`, `HandlerRegistry`, `ErroDeNegocio`, `Teclado`), mais o `EcoHandler`, um handler de teste: `PedidoEco` devolve `RespostaEco` com os mesmos `dados`; com `{"falhar":"negocio"}` responde `Erro` `TESTE_NEGOCIO` e com `{"falhar":"interno"}` responde `Erro` `INTERNAL_ERROR`. Também já são código o `AuthHandler` (hash e conferência de senha) e o `MentorHandler` (contexto e filtro do Mentor IA, ver "Grupo 4" acima). Os outros handlers dos grupos ainda são `.md` de exemplo.
+Já implementados como código: o `Main` e o `core/` (`Comunicado`, `Parceiro`, `Aceitadora`, `Supervisora`, `Handler`, `HandlerRegistry`, `ErroDeNegocio`, `Teclado`), mais o `EcoHandler`, um handler de teste: `PedidoEco` devolve `RespostaEco` com os mesmos `dados`; com `{"falhar":"negocio"}` responde `Erro` `TESTE_NEGOCIO` e com `{"falhar":"interno"}` responde `Erro` `INTERNAL_ERROR`. Também já são código o `AuthHandler` (hash e conferência de senha), o `TransactionsHandler` (categorização de transações, ver "Grupo 2" acima) e o `MentorHandler` (contexto e filtro do Mentor IA, ver "Grupo 4" acima). Os outros handlers dos grupos ainda são `.md` de exemplo.
 
 ## Build com Maven
 
@@ -126,6 +139,22 @@ Com o servidor no ar, abra uma conexão TCP na porta (por exemplo `telnet localh
 ```
 
 A resposta esperada é `{"tipo":"RespostaEco","dados":{"oi":1}}`. Um `tipo` sem handler devolve `{"tipo":"Erro",...}` e `{"tipo":"PedidoParaSair","dados":{}}` encerra a conexão.
+
+## Testes
+
+Testes automatizados com JUnit 5 (dependência de teste no `pom.xml`, executada pelo `maven-surefire-plugin`), em `src/test/java/`, no mesmo pacote da classe testada. Não precisam do Servidor no ar nem de rede.
+
+```bash
+mvn test        # ou mvn -q test
+```
+
+Cobertura atual (Grupo 4, `mentoria/`):
+
+- **`FiltroDeAtivosTest`**: remove frases que recomendam ativo (código da B3 como `PETR4`/`MXRF11` ou nomes como "bitcoin") e acrescenta o `AVISO`; deixa passar recusas explícitas ("Não posso recomendar PETR4"); "não posso recomendar, mas compre ITUB4" é removida; texto sem ativo volta igual; resposta vazia ou quase toda removida vira só o aviso; linhas e listas do markdown são preservadas. Também testa `recomendaAtivo` frase a frase.
+- **`FiltroDeEscopoTest`**: o marcador `FORA_DO_ESCOPO` (puro, em negrito, entre colchetes) e respostas com código (Python, JavaScript, Java, C, imports) viram a recusa; respostas de finanças com listas, parênteses, "função da reserva", "Classe de ativos", "Importante:" e "print (captura da tela)" passam iguais.
+- **`MentorHandlerTest`**: `PedidoMontarContextoIA` pelo `HandlerRegistry` (totais em pt-BR como `R$ 1.400,00`, percentuais por categoria, média diária, maiores despesas, "demais categorias", mês sem transações) e os erros `VALIDATION` (`diaDoMes` fora de 1 a 31, `tipo` inválido, valor negativo); `PedidoFiltrarResposta` usando os filtros de ativos e de assunto.
+
+O caminho Backend → Servidor (socket) é testado pelo teste de integração do Backend, com este Servidor no ar (ver "Testes" em `../Backend/README.md`). Ainda não há CI configurado.
 
 ## Pontos em aberto
 

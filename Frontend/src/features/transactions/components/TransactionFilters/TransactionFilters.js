@@ -1,4 +1,4 @@
-import { aceitarSomenteNumeros, ligarCampo } from '../../../../shared/components/campos.js';
+import { aplicarMascaraMoeda, ligarCampo } from '../../../../shared/components/campos.js';
 import { ligarCalendario } from '../../../../shared/components/Calendario.js';
 import { notificar } from '../../../../shared/components/notificacao.js';
 import { mesAtual } from '../../../../shared/utils/dateRange.js';
@@ -9,7 +9,7 @@ const NOMES = ['busca', 'tipo', 'categoria', 'formaPagamento', 'valorMin', 'valo
 /**
  * Liga a lógica ao cartão "Filtros" (HTML em TransactionFilters.html). Aplica sozinho quando um campo muda (ou ao
  * apertar Enter) e chama `aoMudar(parametros)` com os parâmetros da API. A tela já nasce filtrada pelo mês atual: o
- * primeiro `aoMudar` acontece aqui, ao ligar os filtros. "Limpar filtros" apaga tudo, inclusive o período.
+ * primeiro `aoMudar` acontece aqui, ao ligar os filtros. "Limpar filtros" apaga os campos e volta o período ao mês atual.
  * "Limpar filtros" já aplica. Campos inválidos mostram uma mensagem curta no campo e uma notificação geral, e não consultam.
  * (As listas dos selects são ligadas pela página, com ligarSeletores.)
  */
@@ -18,8 +18,8 @@ export function iniciarFiltros(raiz, { aoMudar, signal }) {
   const campos = Object.fromEntries(NOMES.map((nome) => [nome, ligarCampo(raiz, `filtro-${nome}`)]));
   const periodo = ligarCalendario(raiz.querySelector('#form-filtros .periodo'), { signal }); // "Início" e "Final"
 
-  aceitarSomenteNumeros(campos.valorMin.controle);
-  aceitarSomenteNumeros(campos.valorMax.controle);
+  aplicarMascaraMoeda(campos.valorMin.controle); // o valor já aparece formatado (1 -> 0,01; 1500 -> 15,00)
+  aplicarMascaraMoeda(campos.valorMax.controle);
 
   // Os erros de data inicial e final aparecem no campo Período (que tem as duas).
   const campoDoErro = (nome) => (nome === 'dataInicio' || nome === 'dataFim' ? periodo : campos[nome]);
@@ -50,13 +50,18 @@ export function iniciarFiltros(raiz, { aoMudar, signal }) {
     evento.preventDefault();
     aplicar();
   });
+  // o período padrão é o mês atual, na abertura da tela e ao limpar os filtros
+  function voltarAoMesAtual() {
+    const { inicio, fim } = mesAtual();
+    periodo.definirIso(inicio, fim);
+  }
+
   raiz.querySelector('#botao-limpar-filtros').addEventListener('click', () => {
-    for (const campo of [...Object.values(campos), periodo]) campo.definir('');
+    for (const campo of Object.values(campos)) campo.definir('');
+    voltarAoMesAtual();
     aplicar();
   });
 
-  // estado inicial: o mês atual
-  const { inicio, fim } = mesAtual();
-  periodo.definirIso(inicio, fim);
+  voltarAoMesAtual();
   aplicar();
 }

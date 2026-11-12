@@ -3,6 +3,7 @@ import { iniciarTema } from '../core/theme/theme.js';
 import { ligarMenu } from '../core/layout/menu.js';
 import { URL_LOGIN } from '../core/session/login.js';
 import { iniciarOcultacaoValores } from '../core/privacy/valores.js';
+import { confirmar } from '../shared/components/notificacao.js';
 
 const appContent = document.querySelector('#app-content');
 
@@ -33,9 +34,22 @@ const TELAS = {
     ],
   modulo: () => import('../features/Perfil/index.js'),
 },
+  'mentor-ia': {
+    titulo: 'Mentor IA',
+    html: '/src/features/mentor-ia/views/mentor-ia.html',
+    css: [
+      '/src/shared/styles/campos.css',
+      '/src/features/mentor-ia/styles/mentor-ia.css',
+      '/src/features/mentor-ia/components/MentorAlertas/MentorAlertas.css',
+      '/src/features/mentor-ia/components/MentorConversa/MentorConversa.css',
+      '/src/features/mentor-ia/components/MentorEntrada/MentorEntrada.css',
+    ],
+    modulo: () => import('../features/mentor-ia/index.js'),
+  },
 };
 
-let telaAtual = null; // { modulo, links } da tela montada agora
+let telaAtual = null; // { modulo } da tela montada agora
+let rotaAtual = null; // a rota que está na tela (para voltar a ela se o usuário desistir de sair)
 let sequencia = 0; // descarta uma montagem que ficou para trás se o usuário já foi para outra rota
 
 iniciarTema();
@@ -102,6 +116,19 @@ async function montarTela(tela, minha) {
 
 async function renderRoute() {
   if (!appContent) return;
+
+  // Sair de uma tela com alterações não confirmadas pede confirmação; se o usuário desistir, volta para a rota dela.
+  if (telaAtual?.modulo.temPendencias?.() && currentRoute() !== rotaAtual) {
+    const sair = await confirmar(
+      'Você tem alterações que ainda não foram confirmadas. Se sair agora, elas serão descartadas. Deseja sair?',
+      'aviso'
+    );
+    if (!sair) {
+      history.replaceState(null, '', `#${rotaAtual}`); // não dispara hashchange
+      return;
+    }
+  }
+
   const minha = ++sequencia;
   desmontarTela();
   for (const link of document.querySelectorAll('link[data-tela]')) link.remove(); // sobras de uma montagem interrompida
@@ -115,6 +142,7 @@ async function renderRoute() {
     return;
   }
 
+  rotaAtual = route;
   document.title = TELAS[route] ? `${TELAS[route].titulo} | FinanceAI` : 'FinanceAI';
   window.scrollTo(0, 0);
 

@@ -10,7 +10,10 @@ transactionsRouter.use(authMiddleware);
 
 transactionsRouter.get("/", transactionsController.list);
 transactionsRouter.post("/", transactionsController.create);
+// Edição e exclusão só existem em lote (um item só também vale): não há PUT nem DELETE por id.
+transactionsRouter.patch("/bulk", transactionsController.updateMany);
+transactionsRouter.post("/bulk-delete", transactionsController.removeMany);
 
 export default transactionsRouter;
 
-// Próximas sprints: PUT /:id (#35), DELETE /:id, POST /:id/duplicate (#49), POST /import (#46)
+// Próximas sprints: POST /:id/duplicate (#49), POST /import (#46)

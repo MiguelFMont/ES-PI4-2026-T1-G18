@@ -58,7 +58,8 @@ export function aceitarSomenteNumeros(controle) {
 export function aplicarMascaraMoeda(controle) {
   const LIMITE_DIGITOS = 11; // até 999.999.999,99
   controle.addEventListener('beforeinput', (evento) => {
-    if (evento.data && /\D/.test(evento.data)) evento.preventDefault();
+    // só barra uma tecla solta; um texto colado ou digitado de uma vez passa e o `input` abaixo tira o que não é dígito
+    if (evento.data && evento.data.length === 1 && /\D/.test(evento.data)) evento.preventDefault();
   });
   controle.addEventListener('input', () => {
     const digitos = controle.value.replace(/\D/g, '').replace(/^0+/, '').slice(0, LIMITE_DIGITOS);
