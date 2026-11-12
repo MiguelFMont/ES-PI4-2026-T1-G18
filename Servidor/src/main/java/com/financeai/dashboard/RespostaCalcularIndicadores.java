@@ -10,8 +10,8 @@ public class RespostaCalcularIndicadores
 
     public RespostaCalcularIndicadores (double saldo, double economia, double fluxoDeCaixa)
     {
-        this.saldo = saldo;
-        this.economia = economia;
+        this.saldo        = saldo;
+        this.economia     = economia;
         this.fluxoDeCaixa = fluxoDeCaixa;
     }
 
@@ -28,5 +28,10 @@ public class RespostaCalcularIndicadores
     public double getFluxoDeCaixa ()
     {
         return this.fluxoDeCaixa;
+    }
+
+    public String toString ()
+    {
+        return ("" + this.saldo + "/" + this.economia + "/" + this.fluxoDeCaixa);
     }
 }

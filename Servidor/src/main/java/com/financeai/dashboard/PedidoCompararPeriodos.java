@@ -9,8 +9,21 @@ public class PedidoCompararPeriodos
 
     private List < Map < String, Object > > periodos;
 
+    public PedidoCompararPeriodos ()
+    {}
+
+    public PedidoCompararPeriodos (List < Map < String, Object > > periodos)
+    {
+        this.periodos = periodos;
+    }
+
     public List < Map < String, Object > > getPeriodos ()
     {
         return this.periodos;
+    }
+
+    public String toString ()
+    {
+        return (PedidoCompararPeriodos.TIPO + ": " + this.periodos);
     }
 }
