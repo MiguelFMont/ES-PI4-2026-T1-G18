@@ -34,6 +34,7 @@ public class HandlerRegistry
         new AuthHandler().registrarEm (registry);   // handler de teste da Sprint 0
         new MentorHandler().registrarEm (registry);
         new TransactionsHandler().registrarEm(registry);
+        new DashboardHandler().registrarEm(registry);
 
         return registry;
     }
