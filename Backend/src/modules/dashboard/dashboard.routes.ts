@@ -9,7 +9,6 @@ dashboardRouter.use(authMiddleware);
 
 dashboardRouter.get("/summary", dashboardController.summary);
 dashboardRouter.get("/by-category", dashboardController.byCategory);
+dashboardRouter.get("/compare", dashboardController.compare);
 
 export default dashboardRouter;
-
-// Próximas sprints: GET /compare (comparação entre períodos via Servidor Java)
