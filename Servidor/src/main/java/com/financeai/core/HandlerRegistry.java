@@ -3,6 +3,7 @@ package com.financeai.core;
 import java.util.HashMap;
 import java.util.Map;
 import com.financeai.auth.AuthHandler;
+import com.financeai.dashboard.DashboardHandler;
 import com.financeai.mentoria.MentorHandler;
 import com.financeai.transactions.TransactionsHandler;
 
