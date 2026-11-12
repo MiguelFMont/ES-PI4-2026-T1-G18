@@ -147,6 +147,9 @@ cp .env.example .env   # ajuste JWT_SECRET e MONGO_URI
 | `GENAI_API_KEY` | Chave da API de IA generativa (Mentor IA; ver "Mentor IA" acima). Sem ela, só o chat responde `503` |
 | `GENAI_BASE_URL`, `GENAI_MODEL` | Provedor e modelo da IA (padrão Groq, `https://api.groq.com/openai/v1` e `openai/gpt-oss-120b`) |
 | `GENAI_TIMEOUT_MS` | Tempo máximo de espera pela IA (20000) |
+| `PLUGGY_CLIENT_ID`, `PLUGGY_CLIENT_SECRET` | Credenciais da aplicação no Dashboard da Pluggy (contas conectadas e importação; ver "Pluggy" abaixo). Sem elas, o Backend sobe e só as rotas de contas conectadas respondem `503 PLUGGY_NOT_CONFIGURED` |
+| `PLUGGY_BASE_URL`, `PLUGGY_TIMEOUT_MS` | Endereço da API da Pluggy (padrão `https://api.pluggy.ai`) e tempo máximo de espera por chamada (20000) |
+| `PLUGGY_ESPERA_ITEM_MS`, `PLUGGY_INTERVALO_MS` | Quanto tempo esperar uma conexão terminar de sincronizar (60000) e de quanto em quanto tempo consultar (2000) |
 
 O `.env` está no `.gitignore` e nunca deve ser commitado.
 
@@ -162,6 +165,16 @@ O banco é um cluster do **MongoDB Atlas** compartilhado por todos. Não é prec
 Cuidados: a `MONGO_URI` contém a senha do banco e fica **só no seu `.env`** (que está no `.gitignore`); não a cole em issues, PRs, chats nem prints. Se a senha vazar, troque-a no Atlas (*Database Access* → *Edit*) e avise o grupo.
 
 Problemas comuns: `MongoServerSelectionError`/timeout (IP não liberado, ou a rede bloqueia a porta 27017, comum em Wi-Fi de faculdade); `Authentication failed` (usuário/senha errados ou senha não codificada); cluster gratuito pausado por inatividade (retome no painel do Atlas). Ao subir, o Backend mostra `[database] Conectado ao MongoDB`.
+
+## Pluggy (contas conectadas e importação)
+
+O usuário conecta uma conta do **sandbox da Pluggy** (instituições e dados fictícios) e o Backend importa as transações. Contrato das rotas, regras da importação e erros: `docs/contrato-api.md`, seção 2.8.
+
+- **Chave única do time:** todos usam a **mesma** aplicação da Pluggy. Peça o Client ID e o Client Secret a quem os tem, por mensagem privada ou gerenciador de senhas (**nunca** em commit, issue ou chat aberto), e coloque em `PLUGGY_CLIENT_ID` e `PLUGGY_CLIENT_SECRET` no seu `Backend/.env`. O Client Secret vale como senha.
+- **Só o Backend** chama a Pluggy. Os arquivos estão em `src/integrations/pluggy/` (cliente da API e conversão das transações) e `src/modules/connected-accounts/`.
+- **Para testar à mão:** `POST /v1/connected-accounts/sandbox` (com o token) cria uma conexão com o conector de teste "Pluggy Bank" (credenciais públicas `user-ok` / `password-ok`) e importa as transações. `DELETE /v1/connected-accounts/:id` desconecta.
+- **Dados de exemplo sem a Pluggy:** `npm run seed:contas`.
+- **Testes:** `npm test` roda tudo, inclusive `src/modules/connected-accounts/__tests__/`, que usam uma Pluggy simulada com as transações reais da fixture `test/fixtures/pluggy-sandbox.json` e **nunca chamam a Pluggy de verdade**. Os testes de rota usam o MongoDB em memória; se o download do binário na primeira execução estiver lento, defina `TESTE_MONGO_URI` com um MongoDB qualquer (ele cria um banco de nome único e o apaga no fim).
 
 ## Como rodar
 

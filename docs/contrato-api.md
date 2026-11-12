@@ -9,7 +9,7 @@ Documento vivo que descreve **o que o Backend aceita e devolve**. É a referênc
 | Módulo | Prefixo | Grupo | Estado |
 |---|---|---|---|
 | Sistema | `/v1/health`, `/v1/eco` | Todos | Documentado (seção 1.6) |
-| Transações | `/v1/transactions` | 2 | **Cadastro, listagem (com filtros e paginação), edição e exclusão em lote documentados** (seção 2); duplicação e importação planejadas |
+| Transações | `/v1/transactions` | 2 | **Cadastro, listagem (com filtros e paginação), edição e exclusão em lote documentados** (seção 2); contas conectadas e importação da Pluggy documentadas (2.8); duplicação planejada |
 | Autenticação e conta | `/v1/auth` | 1 | A documentar |
 | Painel e análise | `/v1/dashboard` | 3 | A documentar |
 | Mentor financeiro (IA) | `/v1/mentor-ia` | 4 | **Chat (enviar mensagem, histórico e mensagem proativa) e alertas (listar e marcar como lido) documentados** (seção 3) |
@@ -68,7 +68,7 @@ Todo erro tem o mesmo formato, e o Frontend decide o que fazer pelo `code`, nunc
 | 503 | `JAVA_SERVER_UNAVAILABLE` | O Servidor de cálculos está fora do ar (só afeta as rotas que dependem dele) |
 | 503 | `JAVA_SERVER_SHUTTING_DOWN` | O Servidor de cálculos está sendo desligado |
 
-Cada módulo acrescenta os seus códigos de negócio na própria seção (por exemplo, `EMAIL_IN_USE` e `INVALID_CREDENTIALS` na autenticação, `TRANSACTION_NOT_FOUND` nas transações).
+Cada módulo acrescenta os seus códigos de negócio na própria seção (por exemplo, `EMAIL_IN_USE` e `INVALID_CREDENTIALS` na autenticação, `TRANSACTION_NOT_FOUND` nas transações). Os da integração com a Pluggy (`PLUGGY_*` e `ACCOUNT_*`) estão na seção 2.8.
 
 ### 1.6 Rotas do sistema
 
@@ -95,7 +95,7 @@ Todas as rotas exigem token. Um usuário só vê e altera as próprias transaç�
 | `descricao` | texto | Descrição livre |
 | `formaPagamento` | texto | Uma das formas de pagamento (ver 2.2). Se não for enviada, vale `"outro"` |
 | `observacoes` | texto | Anotação livre de até 300 caracteres. **Só aparece quando foi informada** |
-| `origem` | `"manual"` ou `"pluggy"` | Como a transação entrou: digitada pelo usuário ou importada |
+| `origem` | `"manual"` ou `"pluggy"` | Como a transação entrou: digitada pelo usuário ou importada de uma conta conectada (ver 2.8) |
 
 ### 2.2 Formas de pagamento
 
@@ -369,12 +369,93 @@ A resposta tem o mesmo formato da edição (`afetadas` e `naoEncontradas`). Excl
 
 Erros: `400 VALIDATION_ERROR` (lista vazia, mais de 100 ids, ids repetidos ou mal formados) e `401 UNAUTHENTICATED`.
 
-### 2.8 Rotas planejadas (ainda não existem)
+### 2.8 Contas conectadas e importação (Pluggy) — `/v1/connected-accounts`
+
+O usuário conecta uma conta bancária do **sandbox da Pluggy** (instituições e dados fictícios) e o Backend importa as transações dela. Só o Backend fala com a Pluggy: a chave (`PLUGGY_CLIENT_ID` e `PLUGGY_CLIENT_SECRET`, em `Backend/.env`) é **uma só, compartilhada pelo time**, e nunca vai para o Frontend nem para o Git. Todas as rotas exigem token, e cada usuário só vê e altera as próprias contas.
+
+**Objeto `ConnectedAccount`**
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `id` | texto | Identificador da conexão |
+| `instituicao` | texto | Nome da instituição (por exemplo, `Pluggy Bank`) |
+| `status` | texto | Status do item na Pluggy: `UPDATED` (pronta), `UPDATING` (sincronizando), `LOGIN_ERROR`, `OUTDATED`... |
+| `contas` | lista | As contas da conexão: `{ id, tipo, nome, saldo?, moeda? }`. `tipo` é `BANK` (corrente) ou `CREDIT` (cartão) |
+| `ultimaSincronizacao` | texto (ISO 8601) | Quando as transações foram importadas pela última vez. **Só aparece depois da primeira importação** |
+| `criadaEm` | texto (ISO 8601) | Quando a conexão foi criada |
+
+**Rotas**
+
+| Método e rota | O que faz | Resposta |
+|---|---|---|
+| `GET /v1/connected-accounts` | Lista as contas conectadas do usuário | `200` com a lista de `ConnectedAccount` |
+| `POST /v1/connected-accounts/sandbox` | Conecta o conector de teste **Pluggy Bank** (credenciais públicas do sandbox), sem widget, e já importa | `201` com `{ conta, importacao }` |
+| `POST /v1/connected-accounts/connect-token` | Pede o token para o Frontend abrir o widget **Pluggy Connect** | `200` com `{ accessToken }` |
+| `POST /v1/connected-accounts` com `{ "itemId": "<uuid>" }` | Registra o item criado pelo widget e já importa | `201` com `{ conta, importacao }` |
+| `POST /v1/connected-accounts/:id/sync` | Importa de novo (traz só as transações novas) | `200` com o resultado da importação |
+| `DELETE /v1/connected-accounts/:id` | Desconecta: remove a conexão e o item na Pluggy. **As transações já importadas continuam**, só param de chegar novas | `204` |
+
+Se a importação falhar logo depois de conectar (por exemplo, a instituição ainda está sincronizando), a resposta de conectar é `201` com `"importacao": null` e `"avisoImportacao": { code, message }`: a conta fica conectada e dá para importar depois com `/sync`.
+
+**Resultado da importação**
+
+```json
+{
+  "lidas": 48,
+  "importadas": 47,
+  "ignoradas": { "duplicadas": 0, "pendentes": 0, "zeradas": 0, "faturaCartao": 1, "invalidas": 0 }
+}
+```
+
+`lidas` = `importadas` + a soma das `ignoradas`.
+
+**Como as transações são importadas**
+- **Receita ou despesa vem do sinal do valor** na Pluggy (negativo = despesa), não do tipo dela: no cartão, as compras vêm como `CREDIT` com valor negativo. O `valor` gravado é sempre positivo.
+- **O pagamento da fatura do cartão não é importado** (`faturaCartao`): ele aparece na conta corrente e as compras já estão no cartão, então contar os dois dobraria o gasto.
+- Transações **pendentes** (ainda não confirmadas pelo banco) e de valor zero também são ignoradas.
+- Cada transação importada entra com `origem: "pluggy"` e uma **categoria pedida ao Servidor** (`PedidoCategorizarTransacao`); se o Servidor estiver fora do ar, a categoria é `Outros` e a importação não falha.
+- A forma de pagamento vem do `paymentData` (boleto), do `operationType` (Pix) ou da conta (cartão = `credito`); senão `outro`.
+- **Não se repete:** o `id` da Pluggy fica guardado e a mesma transação nunca entra duas vezes para o mesmo usuário (um índice único garante isso até com duas sincronizações ao mesmo tempo).
+- O `paymentData` da Pluggy (nome e CPF de terceiros) **nunca é gravado**.
+
+**Segurança.** O item da Pluggy é criado com o `clientUserId` do usuário. Ao registrá-lo, o Backend confere que ele pertence a quem está pedindo: sem isso, qualquer usuário poderia "adotar" o item de outro. Cada usuário pode ter **até 5 contas conectadas**.
+
+**Erros**
+
+| Status | `code` | Quando |
+|---|---|---|
+| 400 | `VALIDATION_ERROR` | `itemId` que não é um UUID, ou `:id` mal formado |
+| 401 | `UNAUTHENTICATED` | Sem token ou token inválido |
+| 403 | `PLUGGY_ITEM_NOT_OWNED` | O item não é do usuário (ou não tem dono) |
+| 404 | `NOT_FOUND` | A conta conectada não existe ou é de outro usuário |
+| 404 | `PLUGGY_NOT_FOUND` | O item não existe na Pluggy |
+| 409 | `ACCOUNT_ALREADY_CONNECTED` | O item já está conectado |
+| 409 | `PLUGGY_SYNC_IN_PROGRESS` | A instituição ainda está sincronizando; tente de novo em instantes |
+| 422 | `ACCOUNT_LIMIT_REACHED` | O usuário já tem 5 contas conectadas |
+| 422 | `PLUGGY_ITEM_ERROR` | A conexão com a instituição precisa ser refeita (por exemplo, `LOGIN_ERROR`) |
+| 422 | `PLUGGY_REJECTED` | A Pluggy recusou o pedido |
+| 502 | `PLUGGY_ERROR` / `PLUGGY_AUTH_FAILED` | Erro na Pluggy, ou as credenciais do sistema foram recusadas |
+| 503 | `PLUGGY_UNAVAILABLE` | A Pluggy está fora do ar ou demorou demais |
+| 503 | `PLUGGY_NOT_CONFIGURED` | Faltam `PLUGGY_CLIENT_ID` e `PLUGGY_CLIENT_SECRET` no `.env` do Backend |
+
+**Coleção `connected_accounts` (MongoDB)**
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `userId` | texto | Dono da conexão |
+| `pluggyItemId` | texto | Id do item na Pluggy |
+| `connectorId` | número | Conector da Pluggy (`2` = Pluggy Bank, do sandbox) |
+| `instituicao`, `status` | texto | Nome da instituição e status do item |
+| `contas` | lista | `{ pluggyAccountId, tipo, nome, saldo?, moeda? }` da última sincronização |
+| `ultimaSincronizacao` | data | Última importação |
+
+Índices: `userId` e `pluggyItemId` **único** (um item pertence a um só usuário). Nas `transactions`, as importadas têm também `externalId` (o id da Pluggy) e `contaConectadaId`, com um índice **único parcial** `{ userId, externalId }`. Seed de exemplo: `npm run seed:contas`.
+
+### 2.9 Rotas planejadas (ainda não existem)
 
 | Método e rota | Para quê | Issue |
 |---|---|---|
 | `POST /v1/transactions/:id/duplicate` | Duplicar um lançamento | #49 |
-| `POST /v1/transactions/import` | Importar do sandbox da Pluggy | #46 |
 
 ---
 
@@ -624,6 +705,7 @@ Para desenvolver sem digitar tudo, o Backend tem um script que insere cerca de 3
 npm run seed:transacoes                        # para o usuário "usuario-demo"
 npm run seed:transacoes -- <userId>            # para um usuário específico
 npm run seed:transacoes -- <userId> --limpar   # apaga antes as transações desse usuário
+npm run seed:contas                            # contas conectadas de exemplo (usuario-demo); aceita <userId> e --limpar
 ```
 
 Sem `--limpar`, rodar de novo **acrescenta** mais transações. Use o `userId` que está dentro do seu token para ver os dados pela API.
