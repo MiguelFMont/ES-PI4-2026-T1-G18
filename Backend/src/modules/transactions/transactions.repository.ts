@@ -1,5 +1,5 @@
 // src/modules/transactions/transactions.repository.ts
-import { TransactionModel } from "./transactions.model";
+import { TransactionDocument, TransactionModel } from "./transactions.model";
 import { CreateTransactionDto, TransactionFiltersDto, UpdateTransactionDto } from "./transactions.dto";
 
 const UM_DIA_MS = 24 * 60 * 60 * 1000;
@@ -85,6 +85,26 @@ export const transactionsRepository = {
   },
 
   // Cada transação recebe as suas alterações; o filtro com o userId garante que só o dono altera.
+  // Dos ids da Pluggy pedidos, os que o usuário já importou.
+  async externalIdsExistentes(userId: string, ids: string[]) {
+    if (ids.length === 0) return new Set<string>();
+    const docs = await TransactionModel.find({ userId, externalId: { $in: ids } }).select("externalId").lean();
+    return new Set(docs.map((d) => d.externalId as string));
+  },
+
+  // Insere as importadas sem parar no primeiro duplicado (uma sincronização concorrente pode ter inserido antes).
+  async inserirImportadas(docs: TransactionDocument[]): Promise<number> {
+    if (docs.length === 0) return 0;
+    try {
+      const inseridas = await TransactionModel.insertMany(docs, { ordered: false });
+      return inseridas.length;
+    } catch (erro: any) {
+      const duplicadas = erro?.writeErrors?.every?.((e: any) => e?.err?.code === 11000 || e?.code === 11000);
+      if (!duplicadas) throw erro;
+      return erro.insertedDocs?.length ?? erro.result?.insertedCount ?? 0;
+    }
+  },
+
   async updateMany(userId: string, itens: { id: string; alteracoes: UpdateTransactionDto }[]) {
     if (itens.length === 0) return 0;
     const resultado = await TransactionModel.bulkWrite(
