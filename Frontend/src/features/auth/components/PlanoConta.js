@@ -34,16 +34,16 @@ function mostrarPlano(plano) {
     const beneficios = plano === "free"
         ? [
             //plano free
-            "Controle de receitas e despesas",
-            "Visualização das transações",
-            "Organização financeira básica"
+            "Conecte 1 banco",
+            "1 agente inteligente",
+            "Lembretes personalizados",
         ]
         : [
             //plano pro (definir ainda)
-            "***",
-            "**",
-            "**",
-            "**"
+            "Bancos ilimitados",
+            "Mensagens Ilimitadas",
+            "Até 5 agentes inteligentes",
+            "Relatórios personalizados"
         ];
 
     listaBeneficios.replaceChildren();
