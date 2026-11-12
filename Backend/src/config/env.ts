@@ -17,6 +17,8 @@ const envSchema = z.object({
   GENAI_BASE_URL: z.string().url().default("https://api.groq.com/openai/v1"),
   GENAI_MODEL: z.string().default("openai/gpt-oss-120b"),
   GENAI_TIMEOUT_MS: z.coerce.number().default(20000),
+  EMAIL_USER:z.email(),
+  EMAIL_PASSWORD: z.string().min(1),
 });
 
 const parsed = envSchema.safeParse(process.env);

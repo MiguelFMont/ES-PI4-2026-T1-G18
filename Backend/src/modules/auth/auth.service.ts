@@ -5,6 +5,7 @@ import { env } from "../../config/env";
 import { AppError } from "../../shared/errors/app-error";
 import { RegisterDto, LoginDto, ForgotPasswordDto, ResetPasswordDto } from "./auth.dto";
 import { randomBytes, createHash } from "node:crypto";
+import { emailService } from "../../shared/email/email.service";
 
 export const authService = {
     async register(dados: RegisterDto) {
@@ -104,6 +105,25 @@ export const authService = {
             mfaEnabled: usuario.mfaEnabled
         };
     },
+    
+    async atualizarPlano(id: string,  plano: "free" | "pro") {
+    const usuario = await authRepository.atualizarPlano(id, plano);
+
+    if (!usuario) {
+        throw new AppError(
+            "Usuário não encontrado",
+            404,
+            "USER_NOT_FOUND"
+        );
+    }
+
+    return {
+        id: usuario._id.toString(),
+        nome: usuario.nome,
+        email: usuario.email,
+        plano: usuario.plano
+    };
+},
 
     async forgotPassword(dados: ForgotPasswordDto) {
         const usuario = await authRepository.findByEmail(dados.email);
@@ -127,7 +147,7 @@ export const authService = {
         );
         //link para pagina de redefinir pelo link sem ser por email
         const link = `http://localhost:3001/src/features/auth/components/redefinirSenha.html?token=${token}`;
-        console.log("Link de recuperação de senha:", link);
+        await emailService.enviarRecuperacaoSenha(usuario.email, link);
     },
 
     async resetPassword(dados: ResetPasswordDto) {

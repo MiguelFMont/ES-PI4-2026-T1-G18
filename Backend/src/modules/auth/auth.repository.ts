@@ -9,6 +9,14 @@ export const authRepository = {
     async findById(id: string) {
         return UserModel.findById(id).lean();
     },
+    
+    async atualizarPlano(userId: string, plano: "free" | "pro") {
+        return UserModel.findByIdAndUpdate(
+            userId,
+            { plano},
+            { new: true }
+        ).lean();
+    },
     async create(dados: RegisterDto & { senhaHash: string }) {
         const usuario = await UserModel.create({
             nome: dados.nome,
