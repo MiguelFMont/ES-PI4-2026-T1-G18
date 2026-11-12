@@ -35,30 +35,45 @@ export const authController = {
             next(error);
         }
     },
+
     async forgotPassword(req: Request, res: Response, next: NextFunction) {
-    try {
-        const dados = forgotPasswordSchema.parse(req.body);
-        await authService.forgotPassword(dados);
+        try {
+            const dados = forgotPasswordSchema.parse(req.body);
+            await authService.forgotPassword(dados);
 
-        res.status(200).json({
-            message: "você receberá uma solicitação por email."
-        });
-    } catch (error) {
-        next(error);
-    }
-},
+            res.status(200).json({
+                message: "você receberá uma solicitação por email."
+            });
+        } catch (error) {
+            next(error);
+        }
+    },
+    // Adicionando o método resetPassword
+    async resetPassword(req: Request, res: Response, next: NextFunction) {
+        try {
+            const dados = resetPasswordSchema.parse(req.body);
+            await authService.resetPassword(dados);
 
-async resetPassword(req: Request, res: Response, next: NextFunction) {
-    try {
-        const dados = resetPasswordSchema.parse(req.body);
-        await authService.resetPassword(dados);
-
-        res.status(200).json({
+            res.status(200).json({
             message: "Senha redefinida com sucesso."
-        });
-    } catch (error) {
-        next(error);
-    }
-},
+            });
+        } catch (error) {
+            next(error);
+        }
+    },
+    // Adicionando o método atualizarPlano
+    async atualizarPlano(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+        try {
+            const plano = req.body?.plano;
+            if (plano !== "free" && plano !== "pro") {
+            res.status(400).json({ message: "Plano inválido." });
+            return;
+        }
+        const usuario = await authService.atualizarPlano(req.user!.id, plano);
+            res.status(200).json(usuario);
+        } catch (error) {
+            next(error);
+        }
+    },
 };
 

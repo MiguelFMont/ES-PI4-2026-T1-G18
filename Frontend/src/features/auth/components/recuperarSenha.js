@@ -32,3 +32,10 @@ recuperarForm.addEventListener("submit", async function (event) {
         console.error("Erro na recuperação:", error);
     }
 });
+const parametros = new URLSearchParams(window.location.search);
+const origem = parametros.get("origem");
+const botaoVoltar = document.querySelector("#btn-voltar");
+if (origem === "perfil" && botaoVoltar) {
+    botaoVoltar.textContent = "Voltar para o perfil";
+    botaoVoltar.href = "/#perfil";
+}
