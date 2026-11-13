@@ -10,7 +10,22 @@ import { dashboardRouter } from "../modules/dashboard/dashboard.routes";
 
 export const app = express();
 
-app.use(helmet());
+// A política padrão do helmet só aceita script, quadro e conexão da própria origem, o que bloqueia o widget Pluggy Connect
+// (script no CDN da Pluggy, janela em um iframe e chamadas à API deles). Libera só o domínio da Pluggy, sem afrouxar o resto.
+const PLUGGY = "https://*.pluggy.ai";
+export const opcoesHelmet = {
+  contentSecurityPolicy: {
+    directives: {
+      ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+      "script-src": ["'self'", PLUGGY],
+      "frame-src": ["'self'", PLUGGY],
+      "connect-src": ["'self'", PLUGGY],
+      "img-src": ["'self'", "data:", PLUGGY],
+    },
+  },
+};
+
+app.use(helmet(opcoesHelmet));
 app.use(cors());
 app.use(express.json());
 
