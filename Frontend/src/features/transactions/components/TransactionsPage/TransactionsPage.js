@@ -23,7 +23,7 @@ export function iniciarPaginaTransacoes(raiz, { signal } = {}) {
 
   const temFiltros = () => Object.keys(estado.parametros).length > 0;
 
-  ligarSeletores(raiz, signal); // listas de Tipo, Categoria e Pagamento (filtros e formulário) e de "Por página"
+  ligarSeletores(raiz, signal); // listas de Tipo, Categoria, Pagamento e Origem (filtros e formulário) e de "Por página"
 
   const resumo = iniciarResumo(raiz);
   const extrato = iniciarExtrato(raiz, {
