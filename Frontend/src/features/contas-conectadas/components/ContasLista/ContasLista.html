@@ -1,0 +1,50 @@
+<!-- Componente: lista das contas conectadas. Lógica em ContasLista.js. Mostra só um destes estados por vez (carregando, erro,
+     nenhuma conta ou a lista). Cada conexão é um cartão feito a partir do <template> no fim deste arquivo. -->
+<div id="contas-lista-area" class="contas-lista-area">
+  <p id="contas-carregando" class="contas-estado">Carregando contas...</p>
+
+  <div id="contas-erro" class="contas-estado" hidden>
+    <p id="contas-erro-texto" role="alert"></p>
+    <button type="button" id="contas-tentar-novamente" class="contas-botao">Tentar novamente</button>
+  </div>
+
+  <p id="contas-vazio" class="contas-estado" hidden>
+    Você ainda não conectou nenhuma conta. Use o cartão acima para conectar a primeira.
+  </p>
+
+  <div id="contas-conteudo" hidden>
+    <h2 id="contas-lista-titulo" class="contas-lista-titulo">Suas conexões</h2>
+    <ul id="contas-itens" class="contas-itens" aria-labelledby="contas-lista-titulo"></ul>
+  </div>
+</div>
+
+<!-- Modelo de uma conexão: o JS copia este bloco para cada conta e só preenche os textos. -->
+<template id="modelo-conta">
+  <li class="contas-item contas-cartao">
+    <div class="contas-item__topo">
+      <div>
+        <h3 class="contas-item__nome" data-campo="instituicao"></h3>
+        <p class="contas-texto-suave contas-item__detalhe" data-campo="detalhe"></p>
+      </div>
+      <span class="contas-status" data-campo="status"></span>
+    </div>
+
+    <ul class="contas-subcontas" data-campo="subcontas"></ul>
+
+    <p class="contas-andamento" data-campo="andamento" role="status" aria-live="polite" hidden></p>
+
+    <div class="contas-acoes">
+      <button type="button" class="contas-botao contas-botao--secundario" data-acao="sincronizar">Sincronizar</button>
+      <button type="button" class="contas-botao contas-botao--perigo" data-acao="desconectar">Desconectar</button>
+    </div>
+  </li>
+</template>
+
+<!-- Modelo de uma conta dentro da conexão (corrente ou cartão) -->
+<template id="modelo-subconta">
+  <li class="contas-subconta">
+    <span class="contas-subconta__nome" data-campo="nome"></span>
+    <span class="contas-texto-suave" data-campo="tipo"></span>
+    <span class="contas-subconta__saldo valor-financeiro" data-campo="saldo"></span>
+  </li>
+</template>

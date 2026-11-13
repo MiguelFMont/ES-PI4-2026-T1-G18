@@ -25,6 +25,16 @@ const TELAS = {
     ],
     modulo: () => import('../features/transactions/index.js'),
   },
+  'contas-conectadas': {
+    titulo: 'Contas conectadas',
+    html: '/src/features/contas-conectadas/views/contas-conectadas.html',
+    css: [
+      '/src/features/contas-conectadas/styles/contas-conectadas.css',
+      '/src/features/contas-conectadas/components/ContasConectar/ContasConectar.css',
+      '/src/features/contas-conectadas/components/ContasLista/ContasLista.css',
+    ],
+    modulo: () => import('../features/contas-conectadas/index.js'),
+  },
   perfil: {
 
     titulo: 'Minha conta',
