@@ -57,13 +57,15 @@ export function validarCampo(nome, texto) {
 /**
  * Confere os campos do formulário de cadastro.
  * Devolve `{ erros, dados }`: `erros` é um mapa campo -> mensagem; `dados` é o corpo pronto
- * para a API (ou null se houver algum erro). As observações são opcionais.
+ * para a API (ou null se houver algum erro). As observações e a categoria são opcionais: sem categoria
+ * ("Automática"), o campo nem vai para a API e o Servidor sugere a categoria pela descrição.
  */
 export function validarFormulario(valores) {
   const erros = {};
   const dados = {};
 
   for (const nome of ['tipo', 'descricao', 'valor', 'data', 'categoria', 'formaPagamento', 'observacoes']) {
+    if (nome === 'categoria' && !String(valores.categoria ?? '').trim()) continue; // Automática
     const { erro, valor } = validarCampo(nome, valores[nome]);
     if (erro) erros[nome] = erro;
     else dados[nome] = valor;
