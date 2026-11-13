@@ -3,6 +3,7 @@ import { transactionsRepository } from "./transactions.repository";
 import { TransactionDocument } from "./transactions.model";
 import {
   CreateTransactionDto,
+  DuplicateTransactionDto,
   PedidoCategorizarTransacao,
   RespostaCategorizarTransacao,
   TransactionFiltersDto,
@@ -82,6 +83,29 @@ export const transactionsService = {
       userId,
     });
     return paraDto(transacao);
+  },
+
+  // Duplica um lançamento manual: copia tudo menos a data (e o id) e grava como um lançamento novo e manual. O original
+  // não muda. Importadas da Pluggy não duplicam (a fonte delas é o extrato da instituição). Sem Servidor Java: a
+  // categoria é a do original.
+  async duplicate(userId: string, id: string, dados: DuplicateTransactionDto) {
+    const original = await transactionsRepository.findOneByUser(userId, id);
+    if (!original) throw new AppError("Transação não encontrada", 404, "NOT_FOUND");
+    if (original.origem !== "manual") {
+      throw new AppError("Só lançamentos manuais podem ser duplicados", 422, "DUPLICATE_NOT_ALLOWED");
+    }
+    const copia = await transactionsRepository.create({
+      tipo: original.tipo,
+      valor: original.valor,
+      categoria: original.categoria,
+      data: dados.data ?? new Date(),
+      descricao: original.descricao,
+      observacoes: original.observacoes,
+      formaPagamento: original.formaPagamento,
+      origem: "manual",
+      userId,
+    });
+    return paraDto(copia);
   },
 
   // Lote: não é tudo ou nada. Faz o que existe e devolve os ids que não foram encontrados.
