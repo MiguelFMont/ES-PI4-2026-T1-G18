@@ -234,6 +234,7 @@ body.com-sessao #main-header {
 
     .main-nav {
         flex-direction: row;
+        flex-wrap: wrap; /* com 5 itens o menu passa da largura do celular e alargaria a página toda */
     }
 
     .menu-lateral__rodape {

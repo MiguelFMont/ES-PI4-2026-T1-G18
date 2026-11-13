@@ -1,0 +1,104 @@
+/* Componente ContasLista: estados (carregando, erro, vazio) e os cartões das conexões. */
+
+.contas-estado {
+  display: grid;
+  justify-items: start;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  border-radius: 1rem;
+  color: var(--texto-suave);
+  background: var(--fundo-card);
+  box-shadow: var(--sombra);
+}
+
+.contas-lista-titulo {
+  margin-bottom: 0.75rem;
+  font-size: 1.1rem;
+}
+
+.contas-itens {
+  display: grid;
+  gap: 1rem;
+  list-style: none;
+}
+
+.contas-item__topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.contas-item__nome {
+  font-size: 1.05rem;
+}
+
+.contas-item__detalhe {
+  margin-top: 0.15rem;
+  font-size: 0.9rem;
+}
+
+/* etiqueta de status: o texto sempre aparece; a cor só reforça */
+.contas-status {
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--texto);
+  background: var(--fundo-campo);
+}
+
+.contas-status--ok {
+  color: var(--positivo);
+}
+
+.contas-status--andamento,
+.contas-status--atencao {
+  color: var(--texto);
+}
+
+.contas-status--erro {
+  color: var(--negativo);
+}
+
+.contas-subcontas {
+  display: grid;
+  gap: 0.5rem;
+  list-style: none;
+}
+
+.contas-subconta {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 0.25rem 1rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: 0.6rem;
+  background: var(--fundo-campo);
+}
+
+.contas-subconta__nome {
+  font-weight: 700;
+}
+
+.contas-subconta__saldo {
+  min-width: 7rem;
+  text-align: right;
+  font-weight: 700;
+}
+
+@media (max-width: 767px) {
+  .contas-subconta {
+    grid-template-columns: 1fr auto; /* nome e saldo na primeira linha, o tipo embaixo */
+  }
+
+  .contas-subconta__nome {
+    grid-column: 1;
+  }
+
+  .contas-subconta__saldo {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}

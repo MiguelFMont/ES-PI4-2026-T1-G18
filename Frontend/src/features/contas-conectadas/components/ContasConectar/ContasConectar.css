@@ -1,0 +1,6 @@
+/* Componente ContasConectar: cartão com os botões de conectar. A maior parte do visual (cartão, botões, aviso) é comum
+   à tela e está em styles/contas-conectadas.css; aqui fica só o que é deste componente. */
+
+.contas-conectar > p:first-of-type {
+  max-width: 40rem;
+}

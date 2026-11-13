@@ -1,0 +1,121 @@
+/* Página de Contas conectadas: layout e partes comuns aos componentes (cartão, botões, textos).
+   Cada componente tem o seu CSS na própria pasta (components/<Nome>/<Nome>.css).
+   Usa as variáveis de tema de core/styles/global.css. */
+
+.contas-page {
+  display: grid;
+  gap: 1.5rem;
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+
+.contas-page [hidden] {
+  display: none !important; /* os estados do HTML usam o atributo hidden, mesmo em elementos com display próprio */
+}
+
+.contas-cabecalho h1 {
+  font-size: 1.75rem;
+}
+
+.contas-subtitulo,
+.contas-texto-suave {
+  color: var(--texto-suave);
+}
+
+.contas-subtitulo {
+  margin-top: 0.25rem;
+}
+
+.contas-cartao {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem;
+  border: var(--borda-elemento, 0);
+  border-radius: 1rem;
+  background: var(--fundo-card);
+  box-shadow: var(--sombra);
+}
+
+.contas-cartao h2 {
+  font-size: 1.1rem;
+}
+
+.contas-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.contas-botao {
+  transition: scale 0.1s ease, box-shadow 0.1s ease, background-color var(--duracao-cor) ease, color var(--duracao-cor) ease;
+  min-height: 2.75rem;
+  padding: 0.5rem 1.25rem;
+  border: var(--borda-elemento, 0);
+  border-radius: 0.6rem;
+  color: var(--destaque-texto);
+  background: var(--destaque); /* botão primário: verde */
+  box-shadow: var(--sombra);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.contas-botao--secundario {
+  color: var(--texto-suave);
+  background: var(--fundo-campo); /* secundário: neutro, para não herdar o verde do primário */
+  font-weight: 600;
+}
+
+/* hover ou Tab: o botão secundário se preenche com a cor principal; desativado não muda */
+.contas-botao--secundario:hover:not(:disabled),
+.contas-botao--secundario:focus-visible:not(:disabled) {
+  color: var(--destaque-texto);
+  background: var(--destaque);
+}
+
+.contas-botao--perigo {
+  color: var(--white);
+  background: var(--negativo); /* ação destrutiva (desconectar): vermelho */
+}
+
+.contas-botao--perigo:hover:not(:disabled),
+.contas-botao--perigo:focus-visible:not(:disabled) {
+  background: color-mix(in srgb, var(--negativo) 82%, var(--black));
+}
+
+.contas-botao:hover:not(:disabled),
+.contas-botao:focus-visible:not(:disabled) {
+  scale: 1.01;
+}
+
+.contas-botao:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+/* foco do teclado visível: um contorno na cor de foco, além da sombra e do scale (o contorno é o que não falha) */
+.contas-botao:focus-visible {
+  outline: 2px solid var(--foco);
+  outline-offset: 2px;
+  box-shadow: var(--sombra-foco);
+}
+
+/* mensagem de andamento ("conectando...") e aviso (limite de contas) */
+.contas-andamento,
+.contas-aviso {
+  padding: 0.6rem 0.9rem;
+  border-radius: 0.6rem;
+  background: var(--fundo-campo);
+}
+
+.contas-aviso {
+  color: var(--texto);
+  border-left: 0.25rem solid var(--negativo);
+}
+
+@media (max-width: 767px) {
+  .contas-acoes .contas-botao {
+    flex: 1 1 100%; /* no celular os botões ocupam a linha toda, mais fáceis de tocar */
+  }
+}

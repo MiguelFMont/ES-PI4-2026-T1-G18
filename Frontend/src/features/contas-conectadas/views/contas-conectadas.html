@@ -1,0 +1,16 @@
+<!--
+  Tela de Contas conectadas (Open Finance), um fragmento: não é um documento completo. O index.html (menu, fontes e
+  estilos globais) fica sempre aberto e o roteador (app/main.js) coloca este conteúdo em #app-content, junto com os
+  CSS da tela. Toda a estrutura é HTML (este arquivo e os componentes); o JavaScript só junta os componentes e liga a
+  lógica pelos ids (chamar a API, mostrar e esconder estados, preencher textos).
+  Os caminhos começam em / (a raiz do Frontend).
+-->
+<section class="contas-page" aria-labelledby="contas-titulo">
+    <div class="contas-cabecalho">
+        <h1 id="contas-titulo">Contas conectadas</h1>
+        <p class="contas-subtitulo">Conecte suas contas pelo Open Finance e importe as transações sem digitar nada.</p>
+    </div>
+
+    <div data-incluir="/src/features/contas-conectadas/components/ContasConectar/ContasConectar.html"></div>
+    <div data-incluir="/src/features/contas-conectadas/components/ContasLista/ContasLista.html"></div>
+</section>

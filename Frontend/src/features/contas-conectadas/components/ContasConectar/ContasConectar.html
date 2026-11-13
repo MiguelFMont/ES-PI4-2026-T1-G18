@@ -1,0 +1,17 @@
+<!-- Componente: cartão "Conectar uma conta". Lógica em ContasConectar.js. Dois caminhos: o banco de teste (sem janela, o
+     Backend cuida de tudo) e o widget da Pluggy (o usuário escolhe a instituição). Conectar leva de 20 a 30 segundos,
+     então o texto de andamento fica em uma região aria-live. -->
+<div class="contas-cartao contas-conectar">
+  <h2>Conectar uma conta</h2>
+  <p class="contas-texto-suave">
+    O projeto usa o ambiente de testes da Pluggy: os bancos e os dados são fictícios.
+  </p>
+
+  <div class="contas-acoes">
+    <button type="button" id="contas-conectar-sandbox" class="contas-botao">Conectar banco de teste</button>
+    <button type="button" id="contas-conectar-widget" class="contas-botao contas-botao--secundario">Escolher outra instituição</button>
+  </div>
+
+  <p id="contas-conectar-status" class="contas-andamento" role="status" aria-live="polite" hidden></p>
+  <p id="contas-limite" class="contas-aviso" hidden></p>
+</div>

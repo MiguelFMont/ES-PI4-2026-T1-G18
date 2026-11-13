@@ -12,7 +12,7 @@ npm run dev
 
 Abra `http://localhost:3001`. O Backend precisa do `.env` preenchido (ver `Backend/README.md`) e serve:
 
-- `/` abre o `index.html`, a única página: ele tem o menu fixo e um roteador por `#` (`#dashboard`, `#transactions`, `#mentor-ia`) que troca só o conteúdo de `#app-content` (SPA);
+- `/` abre o `index.html`, a única página: ele tem o menu fixo e um roteador por `#` (`#dashboard`, `#transactions`, `#contas-conectadas`, `#mentor-ia`) que troca só o conteúdo de `#app-content` (SPA);
 - `/transactions`, `/mentor-ia` e `/dashboard` são atalhos que redirecionam para `/#transactions` etc.; `/login` leva à página de login (`features/auth/components/inicio.html`, independente do `index.html`). Ficam em `Backend/src/http/frontend.ts`: quem criar uma tela nova acrescenta uma linha lá e uma entrada em `TELAS` no `src/app/main.js`;
 - `/v1/...` é a API.
 
@@ -55,4 +55,4 @@ Componentes compartilhados em `src/shared/`: `Calendario.js` (calendário com at
 
 A comunicação com o Backend é REST/HTTP: os services chamam exclusivamente `apiFetch` de `src/core/http/api.js`, que centraliza a URL base (`/v1`, a mesma origem da página), o token JWT, a leitura de respostas e os erros HTTP. Para outro ambiente, defina `window.FINANCEAI_API_URL` antes do módulo principal.
 
-Consulte `src/core/core.md`, `src/features/featuresExemplo.md` e `src/features/auth/authExemplo.md` para os contratos arquiteturais e exemplos, e `docs/contrato-api.md` para os endpoints. A feature `transactions` é o exemplo completo de página com componentes.
+Consulte `src/core/core.md`, `src/features/featuresExemplo.md` e `src/features/auth/authExemplo.md` para os contratos arquiteturais e exemplos, e `docs/contrato-api.md` para os endpoints. A feature `transactions` é o exemplo completo de página com componentes; `contas-conectadas` (Open Finance, Pluggy) segue o mesmo modelo e é um exemplo menor, com um widget de terceiros carregado sob demanda (`utils/pluggyConnect.js`).
