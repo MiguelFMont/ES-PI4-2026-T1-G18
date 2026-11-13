@@ -41,6 +41,7 @@
       <div class="extrato-selecao__acoes">
         <button type="button" id="extrato-editar-varias" class="transactions-botao transactions-botao--secundario"
           aria-expanded="false" aria-controls="extrato-edicao-lote">Editar</button>
+        <button type="button" id="extrato-duplicar-varias" class="transactions-botao transactions-botao--secundario">Duplicar</button>
         <button type="button" id="extrato-excluir-varias" class="transactions-botao transactions-botao--perigo">Excluir</button>
         <button type="button" id="extrato-limpar-selecao" class="transactions-botao transactions-botao--secundario">Cancelar seleção</button>
       </div>
@@ -136,6 +137,7 @@
               <th scope="col">Categoria</th>
               <th scope="col">Pagamento</th>
               <th scope="col">Tipo</th>
+              <th scope="col">Origem</th>
               <th scope="col" class="transactions-valor">Valor</th>
             </tr>
           </thead>
@@ -169,6 +171,7 @@
     <td><button type="button" class="extrato-celula" data-campo="categoria"></button></td>
     <td><button type="button" class="extrato-celula" data-campo="formaPagamento"></button></td>
     <td><button type="button" class="extrato-celula" data-campo="tipo"></button></td>
+    <td><span class="extrato-origem" data-origem></span></td>
     <td class="transactions-valor"><button type="button" class="extrato-celula" data-campo="valor"></button></td>
   </tr>
 </template>
