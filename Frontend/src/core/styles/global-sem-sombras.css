@@ -118,7 +118,7 @@ body:not(.com-sessao) #main-header {
 /* com sessão: menu lateral + conteúdo (o main.js marca o body) */
 body.com-sessao {
     display: grid;
-    grid-template-columns: 15rem 1fr;
+    grid-template-columns: 12rem 1fr;
 }
 
 body.com-sessao #app-content {

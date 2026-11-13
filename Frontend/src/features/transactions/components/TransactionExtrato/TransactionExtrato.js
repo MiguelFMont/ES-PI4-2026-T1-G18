@@ -379,6 +379,12 @@ function preencherLinha(linha, transacao, alterados = new Set()) {
     botao.classList.toggle('extrato-celula--alterada', pendente);
   }
 
+  // Origem: só leitura (a origem nunca muda). "Manual" foi digitada; "Open Finance" veio de uma conta conectada (Pluggy).
+  const origem = linha.querySelector('[data-origem]');
+  const importada = transacao.origem === 'pluggy';
+  origem.textContent = importada ? 'Open Finance' : 'Manual';
+  origem.classList.toggle('extrato-origem--importada', importada);
+
   const valor = linha.querySelector('.transactions-valor');
   valor.classList.toggle('transactions-valor--receita', receita);
   valor.classList.toggle('transactions-valor--despesa', !receita);

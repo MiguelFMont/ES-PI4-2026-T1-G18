@@ -100,7 +100,7 @@
 
 .transactions-tabela {
   width: 100%;
-  min-width: 63rem; /* abaixo disso a área rola na horizontal, em vez de apertar os campos */
+  min-width: 71rem; /* abaixo disso a área rola na horizontal, em vez de apertar os campos */
   table-layout: fixed; /* a largura das colunas não depende do conteúdo: abrir um editor não move nada */
   border-collapse: separate;
   border-spacing: 0 0.4rem;
@@ -112,7 +112,8 @@
 .transactions-tabela th:nth-child(4) { width: 8.5rem; }
 .transactions-tabela th:nth-child(5) { width: 10rem; }
 .transactions-tabela th:nth-child(6) { width: 6.5rem; }
-.transactions-tabela th:nth-child(7) { width: 11rem; } /* cabe valores grandes, como + R$ 1.234.567,89 */
+.transactions-tabela th:nth-child(7) { width: 7.5rem; } /* Origem: cabe "Open Finance" */
+.transactions-tabela th:nth-child(8) { width: 11rem; } /* cabe valores grandes, como + R$ 1.234.567,89 */
 
 .transactions-tabela th,
 .transactions-tabela td {
@@ -325,6 +326,21 @@
 
 .extrato-editor--valor input {
   text-align: right;
+}
+
+/* Origem do lançamento: etiqueta só de leitura (não é um campo de edição) */
+.extrato-origem {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: var(--fundo-campo);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.extrato-origem--importada {
+  background: var(--destaque);
+  color: var(--destaque-texto);
 }
 
 .extrato-editor__erro {

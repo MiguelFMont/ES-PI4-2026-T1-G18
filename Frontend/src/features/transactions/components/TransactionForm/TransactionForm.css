@@ -85,7 +85,7 @@
 
 .transactions-painel {
   position: fixed;
-  inset: 0 0 0 15rem; /* a esquerda é a largura do menu lateral (core/styles/global.css): o painel cobre só o conteúdo */
+  inset: 0 0 0 12rem; /* a esquerda é a largura do menu lateral (core/styles/global.css): o painel cobre só o conteúdo */
   z-index: 50;
   display: flex; /* o cartão fica no meio do painel (na horizontal e na vertical) */
   overflow-y: auto;

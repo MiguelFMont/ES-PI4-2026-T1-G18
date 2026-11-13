@@ -61,7 +61,7 @@ export async function duplicarTransacoes(ids) {
       resultado.copias.push(await apiFetch(`/transactions/${encodeURIComponent(id)}/duplicate`, { method: 'POST' }));
       resultado.afetadas += 1;
     } catch (erro) {
-      if (erro?.status !== 404) throw erro;
+      if (erro?.code !== 'TRANSACTION_NOT_FOUND') throw erro; // outro 404 (rota inexistente, por exemplo) não é "já excluída"
       resultado.naoEncontradas.push(id);
     }
   }
