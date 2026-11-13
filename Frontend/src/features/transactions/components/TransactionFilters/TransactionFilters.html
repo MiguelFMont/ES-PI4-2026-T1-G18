@@ -56,6 +56,18 @@
       <p class="campo__erro" id="filtro-formaPagamento-erro" hidden></p>
     </div>
 
+    <div class="campo campo--seletor">
+      <label for="filtro-origem">Origem</label>
+      <select id="filtro-origem" name="origem" aria-controls="lista-filtro-origem" aria-expanded="false">
+        <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
+    <option value="">Todas</option>
+    <option value="manual">Manual</option>
+    <option value="pluggy">Open Finance</option>
+  </select>
+      <div class="seletor__lista" id="lista-filtro-origem" role="listbox" aria-label="Origem"></div>
+      <p class="campo__erro" id="filtro-origem-erro" hidden></p>
+    </div>
+
     <!-- Período: um quadro com borda e o título "Período" contornando as duas caixas ("Início" e "Final"). O calendário
          (com os atalhos 1 semana, 30 dias, 1 a 3 meses...) abre ao passar o mouse e tem exatamente a largura deste
          quadro. Também dá para digitar dd/mm/aaaa em cada caixa. Lógica em shared/components/Calendario.js. -->

@@ -4,7 +4,7 @@ import { notificar } from '../../../../shared/components/notificacao.js';
 import { mesAtual } from '../../../../shared/utils/dateRange.js';
 import { montarParametros } from '../../utils/filterParams.js';
 
-const NOMES = ['busca', 'tipo', 'categoria', 'formaPagamento', 'valorMin', 'valorMax'];
+const NOMES = ['busca', 'tipo', 'categoria', 'formaPagamento', 'origem', 'valorMin', 'valorMax'];
 
 /**
  * Liga a lógica ao cartão "Filtros" (HTML em TransactionFilters.html). Aplica sozinho quando um campo muda (ou ao

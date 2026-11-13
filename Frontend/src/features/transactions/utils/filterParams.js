@@ -13,7 +13,7 @@ export function montarParametros(valores) {
   const busca = String(valores.busca ?? '').trim();
   if (busca) parametros.busca = busca;
 
-  for (const campo of ['tipo', 'categoria', 'formaPagamento']) {
+  for (const campo of ['tipo', 'categoria', 'formaPagamento', 'origem']) {
     if (valores[campo]) parametros[campo] = valores[campo];
   }
 
