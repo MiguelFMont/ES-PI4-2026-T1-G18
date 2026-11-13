@@ -6,6 +6,7 @@
 import { Router } from "express";
 import sistemaRouter from "./sistema/sistema.routes";
 import transactionsRouter from "./transactions/transactions.routes";
+import connectedAccountsRouter from "./connected-accounts/connected-accounts.routes";
 import dashboardRouter from "./dashboard/dashboard.routes";
 import mentorIaRouter from "./mentor-ia/mentor-ia.routes";
 import { authRouter } from "./auth/auth.routes";
@@ -13,6 +14,7 @@ import { authRouter } from "./auth/auth.routes";
 const router = Router();
 
 router.use("/transactions", transactionsRouter);
+router.use("/connected-accounts", connectedAccountsRouter);
 router.use("/dashboard", dashboardRouter);
 router.use("/mentor-ia", mentorIaRouter);
 router.use(sistemaRouter);

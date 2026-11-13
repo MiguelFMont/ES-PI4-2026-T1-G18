@@ -9,7 +9,8 @@
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/http/server.js",
     "test": "node --import tsx --test \"src/**/*.test.ts\"",
-    "seed:transacoes": "tsx src/database/seeds/transactions.seed.ts"
+    "seed:transacoes": "tsx src/database/seeds/transactions.seed.ts",
+    "seed:contas": "tsx src/database/seeds/connected-accounts.seed.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
