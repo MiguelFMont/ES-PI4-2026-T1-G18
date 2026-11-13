@@ -5,6 +5,8 @@ import {
   bulkDeleteSchema,
   bulkUpdateSchema,
   createTransactionSchema,
+  duplicateTransactionSchema,
+  transactionIdSchema,
   transactionFiltersSchema,
 } from "./transactions.dto";
 import { AuthenticatedRequest } from "../../middlewares/auth.middleware";
@@ -23,6 +25,16 @@ export const transactionsController = {
     try {
       const dados = createTransactionSchema.parse(req.body);
       res.status(201).json(await transactionsService.create(req.user!.id, dados));
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async duplicate(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const id = transactionIdSchema.parse(req.params.id);
+      const dados = duplicateTransactionSchema.parse(req.body);
+      res.status(201).json(await transactionsService.duplicate(req.user!.id, id, dados));
     } catch (error) {
       next(error);
     }

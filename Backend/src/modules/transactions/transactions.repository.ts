@@ -78,6 +78,11 @@ export const transactionsRepository = {
     return transacao.toObject();
   },
 
+  // Uma transação do usuário (ou null se não existe ou é de outro usuário).
+  async findOneByUser(userId: string, id: string) {
+    return TransactionModel.findOne({ _id: id, userId }).lean();
+  },
+
   // Dos ids pedidos, os que existem e são do usuário (o resto é "não encontrada").
   async idsDoUsuario(userId: string, ids: string[]) {
     const docs = await TransactionModel.find({ _id: { $in: ids }, userId }).select("_id").lean();

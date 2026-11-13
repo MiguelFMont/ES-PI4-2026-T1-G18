@@ -57,6 +57,11 @@ export const updateTransactionSchema = z.object({
 
 const idSchema = z.string().regex(/^[a-f\d]{24}$/i, "Id inválido");
 
+export const transactionIdSchema = idSchema;
+
+// Duplicar: o corpo é opcional; `data` é a data do novo lançamento (sem ela, vale o momento da chamada).
+export const duplicateTransactionSchema = z.object({ data: z.coerce.date().optional() }).default({});
+
 // Máximo de itens por chamada em lote: o mesmo limite de itens por página da listagem.
 const LIMITE_LOTE = 100;
 const semRepetidos = (ids: string[]) => new Set(ids).size === ids.length;
@@ -76,6 +81,7 @@ export const bulkDeleteSchema = z.object({
 
 export type UpdateTransactionDto = z.infer<typeof updateTransactionSchema>;
 export type BulkUpdateDto = z.infer<typeof bulkUpdateSchema>;
+export type DuplicateTransactionDto = z.infer<typeof duplicateTransactionSchema>;
 export type CreateTransactionDto = z.infer<typeof createTransactionSchema>;
 
 // Mensagens trocadas com o Servidor Java (Servidor/src/main/java/com/financeai/transactions/): os nomes dos campos

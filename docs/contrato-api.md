@@ -9,7 +9,7 @@ Documento vivo que descreve **o que o Backend aceita e devolve**. É a referênc
 | Módulo | Prefixo | Grupo | Estado |
 |---|---|---|---|
 | Sistema | `/v1/health`, `/v1/eco` | Todos | Documentado (seção 1.6) |
-| Transações | `/v1/transactions` | 2 | **Cadastro, listagem (com filtros e paginação), edição e exclusão em lote documentados** (seção 2); contas conectadas e importação da Pluggy documentadas (2.8); duplicação planejada |
+| Transações | `/v1/transactions` | 2 | **Cadastro, listagem (com filtros e paginação), edição e exclusão em lote documentados** (seção 2); contas conectadas e importação da Pluggy documentadas (2.8); duplicação (2.9) |
 | Autenticação e conta | `/v1/auth` | 1 | A documentar |
 | Painel e análise | `/v1/dashboard` | 3 | A documentar |
 | Mentor financeiro (IA) | `/v1/mentor-ia` | 4 | **Chat (enviar mensagem, histórico e mensagem proativa) e alertas (listar e marcar como lido) documentados** (seção 3) |
@@ -451,11 +451,26 @@ Se a importação falhar logo depois de conectar (por exemplo, a instituição a
 
 Índices: `userId` e `pluggyItemId` **único** (um item pertence a um só usuário). Nas `transactions`, as importadas têm também `externalId` (o id da Pluggy) e `contaConectadaId`, com um índice **único parcial** `{ userId, externalId }`. Seed de exemplo: `npm run seed:contas`.
 
-### 2.9 Rotas planejadas (ainda não existem)
+### 2.9 Duplicar transação
 
-| Método e rota | Para quê | Issue |
+`POST /v1/transactions/:id/duplicate` → `201 Created`, com o objeto `Transaction` **novo**. Serve de ponto de partida para lançamentos parecidos ou recorrentes.
+
+O corpo é **opcional**:
+
+| Campo | Tipo | Obrigatório | Descrição |
+|---|---|---|---|
+| `data` | texto (data ou ISO 8601) | Não | Data do novo lançamento. Sem ela, vale o momento da chamada |
+
+A cópia leva `tipo`, `valor`, `categoria`, `descricao`, `observacoes` e `formaPagamento` do original, com `origem: "manual"` e um `id` novo. O original **não muda**. O Servidor Java não é chamado: a categoria é a do original.
+
+Só lançamentos **manuais** podem ser duplicados.
+
+| Status | `code` | Quando |
 |---|---|---|
-| `POST /v1/transactions/:id/duplicate` | Duplicar um lançamento | #49 |
+| 400 | `VALIDATION_ERROR` | `id` mal formado ou `data` inválida |
+| 401 | `UNAUTHENTICATED` | Sem token ou token inválido |
+| 404 | `TRANSACTION_NOT_FOUND` | A transação não existe ou é de outro usuário (os dois casos são tratados igual) |
+| 422 | `DUPLICATE_NOT_ALLOWED` | A transação foi importada da Pluggy (`origem: "pluggy"`) |
 
 ---
 
