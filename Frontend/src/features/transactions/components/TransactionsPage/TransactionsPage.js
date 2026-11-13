@@ -1,4 +1,4 @@
-import { atualizarTransacoesEmLote, excluirTransacoesEmLote, listarTransacoes } from '../../services/transactionsService.js';
+import { atualizarTransacoesEmLote, duplicarTransacoes, excluirTransacoesEmLote, listarTransacoes } from '../../services/transactionsService.js';
 import { notificar } from '../../../../shared/components/notificacao.js';
 import { ligarSeletores } from '../../../../shared/components/seletor.js';
 import { iniciarFormulario } from '../TransactionForm/TransactionForm.js';
@@ -45,6 +45,11 @@ export function iniciarPaginaTransacoes(raiz, { signal } = {}) {
         falha: 'Não foi possível alterar as transações.',
       }
     ),
+    duplicarVarias: (transacoes) => enviarLote(() => duplicarTransacoes(transacoes.map((t) => t.id)), {
+      sucesso: (n) => (n === 1 ? 'Transação duplicada com a data de hoje.' : `${n} transações duplicadas com a data de hoje.`),
+      falha: 'Não foi possível duplicar as transações.',
+      primeiraPagina: true, // as cópias têm a data mais recente: aparecem no início da lista
+    }),
     excluirVarias: (transacoes) => enviarLote(() => excluirTransacoesEmLote(transacoes.map((t) => t.id)), {
       sucesso: (n) => (n === 1 ? 'Transação excluída.' : `${n} transações excluídas.`),
       falha: 'Não foi possível excluir as transações.',
@@ -67,7 +72,7 @@ export function iniciarPaginaTransacoes(raiz, { signal } = {}) {
     else if (afetadas === 0) notificar(`${textos.falha} As transações não foram encontradas (talvez já tenham sido excluídas).`, 'erro');
     else notificar(`${afetadas} concluídas e ${naoEncontradas.length} não encontradas (talvez já tenham sido excluídas).`, 'erro');
 
-    await carregar(estado.pagina);
+    await carregar(textos.primeiraPagina ? 1 : estado.pagina);
     return resultado;
   }
 

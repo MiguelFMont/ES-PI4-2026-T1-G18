@@ -49,6 +49,25 @@ export function atualizarTransacoesEmLote(itens) {
   );
 }
 
+/**
+ * Duplica transações manuais (POST /transactions/:id/duplicate, uma chamada por id, em sequência). A cópia leva os mesmos
+ * dados, com a data de hoje. Devolve { afetadas, naoEncontradas: [ids], copias: [transações novas] } no mesmo formato do
+ * lote; qualquer outro erro (rede, 422...) interrompe e segue para quem chamou.
+ */
+export async function duplicarTransacoes(ids) {
+  const resultado = { afetadas: 0, naoEncontradas: [], copias: [] };
+  for (const id of ids) {
+    try {
+      resultado.copias.push(await apiFetch(`/transactions/${encodeURIComponent(id)}/duplicate`, { method: 'POST' }));
+      resultado.afetadas += 1;
+    } catch (erro) {
+      if (erro?.status !== 404) throw erro;
+      resultado.naoEncontradas.push(id);
+    }
+  }
+  return resultado;
+}
+
 /** Exclui transações (POST /transactions/bulk-delete); para uma só, mande um id. Devolve { afetadas, naoEncontradas: [ids] }. */
 export function excluirTransacoesEmLote(ids) {
   return emBlocos(ids, (bloco) =>

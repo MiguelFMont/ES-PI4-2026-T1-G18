@@ -25,10 +25,10 @@ const ROTULOS_CAMPO = {
  *   irParaPagina(numero), tentarNovamente() e mudarLimite(quantidade) são chamados pelos controles da área;
  *   Editar um campo da linha não chama o Backend: a alteração fica num rascunho (o campo ganha um anel) e a barra
  *   "Alterações pendentes" aparece. Ao confirmar, salvarAlteracoes(itens) envia tudo numa chamada em lote.
- *   salvarAlteracoes(itens), editarVarias(transacoes, mudancas) e excluirVarias(transacoes) devolvem uma Promise,
+ *   salvarAlteracoes(itens), editarVarias(transacoes, mudancas), duplicarVarias(transacoes) e excluirVarias(transacoes) devolvem uma Promise,
  *   avisam o resultado e atualizam a lista; se falharem, a área mantém o que o usuário estava fazendo.
  */
-export function iniciarExtrato(raiz, { irParaPagina, tentarNovamente, mudarLimite, salvarAlteracoes, editarVarias, excluirVarias, signal }) {
+export function iniciarExtrato(raiz, { irParaPagina, tentarNovamente, mudarLimite, salvarAlteracoes, editarVarias, duplicarVarias, excluirVarias, signal }) {
   const area = raiz.querySelector('#transactions-extrato');
   const carregando = raiz.querySelector('#extrato-carregando');
   const erro = raiz.querySelector('#extrato-erro');
@@ -228,6 +228,26 @@ export function iniciarExtrato(raiz, { irParaPagina, tentarNovamente, mudarLimit
     ocupado(true);
     try {
       await editarVarias(marcadas(), mudancas);
+    } finally {
+      ocupado(false);
+    }
+  });
+
+  // Duplicar: só lançamentos manuais (o Backend recusa os importados). A cópia nasce com a data de hoje; a lista volta à
+  // primeira página, onde ela aparece, e o usuário ajusta o que quiser pelo extrato.
+  raiz.querySelector('#extrato-duplicar-varias').addEventListener('click', async () => {
+    const manuais = marcadas().filter((t) => t.origem === 'manual');
+    if (manuais.length === 0) {
+      notificar('Só lançamentos manuais podem ser duplicados.', 'erro');
+      return;
+    }
+    const ignoradas = selecionadas.size - manuais.length;
+    if (ignoradas > 0) {
+      notificar(`${ignoradas} ${ignoradas === 1 ? 'importada não foi duplicada' : 'importadas não foram duplicadas'}: só lançamentos manuais podem ser duplicados.`, 'aviso');
+    }
+    ocupado(true);
+    try {
+      await duplicarVarias(manuais);
     } finally {
       ocupado(false);
     }
