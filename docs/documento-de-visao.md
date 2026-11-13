@@ -211,7 +211,7 @@ A coluna **Grupo** indica o grupo de features responsável (1 a 5, ou "todos"), 
 | **RF09** | O sistema deve permitir a importação de transações a partir do sandbox de Open Finance da Pluggy (instituições fictícias). | 2 | #12, #46 | Planejado |
 | **RF10** | O sistema deve categorizar automaticamente as transações importadas e as lançadas sem categoria, permitindo ao usuário corrigir a categoria e editar ou excluir qualquer transação, seja ela manual ou importada, individualmente ou em lote. | 2 | #34, #35, #91, #92 | Entregue |
 | **RF12** | O sistema deve permitir a listagem e a filtragem de transações por descrição, categoria, período, faixa de valor, forma de pagamento e origem. | 2 | #19, #21, #48, #93, #94 | Em andamento |
-| **RF33** | O sistema deve permitir duplicar um lançamento existente. | 2 | #49 | Planejado |
+| **RF33** | O sistema deve permitir duplicar um lançamento existente. | 2 | #49 | Backend pronto; falta a ação no Frontend |
 | **RF34** | O sistema deve permitir ao usuário listar, conectar e desconectar contas bancárias do sandbox da Pluggy. | 2 | #47, #74, #87 | Planejado |
 
 ### 7.3. Painel financeiro e análise
