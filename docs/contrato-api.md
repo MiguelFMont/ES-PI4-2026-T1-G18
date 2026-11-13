@@ -469,7 +469,7 @@ Só lançamentos **manuais** podem ser duplicados.
 |---|---|---|
 | 400 | `VALIDATION_ERROR` | `id` mal formado ou `data` inválida |
 | 401 | `UNAUTHENTICATED` | Sem token ou token inválido |
-| 404 | `NOT_FOUND` | A transação não existe ou é de outro usuário (os dois casos são tratados igual) |
+| 404 | `TRANSACTION_NOT_FOUND` | A transação não existe ou é de outro usuário (os dois casos são tratados igual) |
 | 422 | `DUPLICATE_NOT_ALLOWED` | A transação foi importada da Pluggy (`origem: "pluggy"`) |
 
 ---

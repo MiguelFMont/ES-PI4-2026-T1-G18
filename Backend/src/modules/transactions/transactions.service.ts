@@ -90,7 +90,7 @@ export const transactionsService = {
   // categoria é a do original.
   async duplicate(userId: string, id: string, dados: DuplicateTransactionDto) {
     const original = await transactionsRepository.findOneByUser(userId, id);
-    if (!original) throw new AppError("Transação não encontrada", 404, "NOT_FOUND");
+    if (!original) throw new AppError("Transação não encontrada", 404, "TRANSACTION_NOT_FOUND"); // código próprio: o Frontend separa "não existe" de "rota inexistente"
     if (original.origem !== "manual") {
       throw new AppError("Só lançamentos manuais podem ser duplicados", 422, "DUPLICATE_NOT_ALLOWED");
     }

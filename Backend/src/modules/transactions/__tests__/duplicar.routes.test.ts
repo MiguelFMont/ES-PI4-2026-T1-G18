@@ -109,6 +109,7 @@ describe("POST /v1/transactions/:id/duplicate", () => {
     const daAna = await criarManual(ANA);
     const outroUsuario = await chamar("POST", `/transactions/${daAna.id}/duplicate`, BETO);
     assert.equal(outroUsuario.status, 404);
+    assert.equal((await json(outroUsuario)).error.code, "TRANSACTION_NOT_FOUND");
     const inexistente = await chamar("POST", `/transactions/${"a".repeat(24)}/duplicate`, ANA);
     assert.equal(inexistente.status, 404);
     assert.equal(await TransactionModel.countDocuments(), 1);
