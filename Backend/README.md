@@ -195,7 +195,7 @@ curl -X POST localhost:3001/v1/eco -H "content-type: application/json" -d '{"oi"
 
 ## Testes
 
-Os testes usam o executor nativo do Node (`node:test`) com o `tsx`, sem framework extra. Ficam em `__tests__/` dentro do módulo (hoje só o `mentor-ia`) e seguem o padrão `*.test.ts`.
+Os testes usam o executor nativo do Node (`node:test`) com o `tsx`, sem framework extra. Ficam em `__tests__/` dentro do módulo (hoje `mentor-ia`, `connected-accounts` e `transactions`) e seguem o padrão `*.test.ts`.
 
 ```bash
 npm test                    # todos os *.test.ts de src/
@@ -223,6 +223,32 @@ O que está coberto no Mentor IA (Grupo 4):
 - **Mensagem proativa** (`mentor-ia.proativa.test.ts`): `POST /v1/mentor-ia/chat/proativa` de ponta a ponta e no service — sem alerta devolve `[]` sem chamar a IA nem o Java; com alerta novo salva uma única mensagem `proativa: true` com o texto do filtro e marca `explicadoEm`; erros da IA/filtro não salvam nada e o alerta é explicado na próxima chamada; duas chamadas simultâneas salvam uma só mensagem; histórico, `401` e isolamento entre usuários.
 
 A regra "nunca recomendar ativo" é testada nos dois lados: no Backend, que a resposta salva e devolvida é sempre a do filtro; no Servidor, o filtro em si (`mvn test`, ver `../Servidor/README.md`).
+
+### Transações (Grupo 2, issue #59)
+
+Os testes ficam em `src/modules/transactions/__tests__/`. Para rodar só eles:
+
+```bash
+node --import tsx --test "src/modules/transactions/__tests__/*.test.ts"
+```
+
+Usam o MongoDB em memória e o ambiente `transactions/__tests__/ambiente.ts`, que reaproveita as variáveis falsas de `connected-accounts` e aponta o **Servidor Java para uma porta fechada** (`127.0.0.1:1`, espera de 300 ms). Assim nenhum teste fala com o Atlas, com a Pluggy nem com o Servidor Java de verdade, mesmo que você o tenha rodando na porta 3000: quem precisa de categorização usa `simularCategorizacao()` (`connected-accounts/__tests__/apoio.ts`), e quem esquecer o dublê falha na hora em vez de ficar esperando.
+
+| Arquivo | O que cobre |
+|---|---|
+| `cadastrar.routes.test.ts` | `POST /v1/transactions`: cadastro completo e mínimo (forma `outro`, origem `manual`), categoria pelo Servidor Java (simulado) só quando falta, Servidor fora do ar ou desligando → `Outros` sem falhar, erro inesperado do Servidor **não** vira `Outros`, espaços e observação em branco, limites (300 caracteres), 14 casos de `400 VALIDATION_ERROR` com o campo em `details`, `401`, e o dono vem do token e não do corpo |
+| `listar.routes.test.ts` | `GET /v1/transactions`: lista vazia (`totalPaginas` 0), isolamento entre usuários, ordem (mais recente primeiro, desempate estável), paginação (padrão, última página, além da última, limite 100), cada filtro (tipo, categoria, forma, origem, busca literal sem regex, período com `dataFim` até o fim do dia, faixa de valor) e combinados, resumo de **todas** as páginas com arredondamento em 2 casas, 16 parâmetros inválidos |
+| `lote.routes.test.ts` | `PATCH /v1/transactions/bulk` e `POST /v1/transactions/bulk-delete`: o lote **não é tudo ou nada** (`afetadas` e `naoEncontradas`), `observacoes: ""` apaga o campo, a origem e o dono não mudam, transação de outro usuário conta como não encontrada, limite de 100, e um item inválido recusa o lote inteiro sem alterar nada |
+| `duplicar.routes.test.ts` | `POST /v1/transactions/:id/duplicate` (issue #49): copia tudo menos a data, só lançamentos manuais, 404 e 422 |
+| `transactions.unidade.test.ts` | Sem HTTP nem banco: os esquemas zod (valores padrão, `trim`, intervalos, ids, limites dos lotes, campos desconhecidos descartados) e `sugerirCategoria` |
+| `importadas.repository.test.ts` | Base da importação da Pluggy: índice único `{ userId, externalId }`, a inserção não para no primeiro duplicado, o mesmo `externalId` em usuários diferentes, manuais não colidem (índice parcial). O fluxo completo da importação está em `connected-accounts/__tests__/` |
+
+Como a edição em lote usa `bulkWrite`, que **não roda os validadores do schema do Mongoose**, quem garante os valores é o zod: por isso os casos de `400` do lote conferem também que nada foi alterado.
+
+Dois comportamentos ficam registrados nos testes de propósito, para quem mexer perceber:
+
+- O `POST /v1/transactions` aceita `origem: "pluggy"` no corpo, como diz o contrato (seção 2.4). Um usuário consegue, portanto, cadastrar à mão um lançamento que se diz importado, e ele deixa de poder ser duplicado.
+- `inserirImportadas` **pula** o documento que o schema recusa em vez de lançar erro (`insertMany` com `ordered: false`). Hoje o mapeador da Pluggy valida antes e conta em `ignoradas.invalidas`, então não acontece; se acontecesse, `lidas` deixaria de ser `importadas` mais as ignoradas.
 
 ### Integração com o Servidor Java
 
