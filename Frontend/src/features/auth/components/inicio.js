@@ -68,9 +68,44 @@ const cadastroCpf = document.querySelector("#cadastro-cpf");
 const cadastroSenha = document.querySelector("#cadastro-senha");
 const cadastroErro = document.querySelector("#cadastro-erro");
 
+// REQUISITOS DA SENHA
+
+const reqTamanho = document.querySelector("#req-tamanho");
+const reqComposicao = document.querySelector("#req-composicao");
+
+function validarSenha(senha) {
+    const requisitos = [
+        {
+            elemento: reqTamanho,
+            texto: "Pelo menos 8 caracteres",
+            valido: senha.length >= 8
+        },
+        {
+            elemento: reqComposicao,
+            texto: "Pelo menos 1 letra maiúscula, 1 número e 1 caractere especial",
+            valido: /[A-Z]/.test(senha) &&
+                    /[0-9]/.test(senha) &&
+                    /[^a-zA-Z0-9]/.test(senha)
+        }
+    ];
+
+    requisitos.forEach(function (requisito) {
+        requisito.elemento.classList.toggle("valido", requisito.valido);
+
+        requisito.elemento.textContent =
+            (requisito.valido ? "✓ " : "○ ") + requisito.texto;
+    });
+
+    return requisitos.every(requisito => requisito.valido);
+    }
+    cadastroSenha.addEventListener("input", function () {
+        validarSenha(cadastroSenha.value);
+});
+
 // Executa quando o usuário envia o cadastro
 cadastroForm.addEventListener("submit", async function (event) {
     event.preventDefault();
+    cadastroErro.style.color = "";
     cadastroErro.textContent = "";
     const dados = {
         nome: cadastroNome.value.trim(),
@@ -85,6 +120,10 @@ cadastroForm.addEventListener("submit", async function (event) {
     }
     if (dados.cpf.length !== 11) {
         cadastroErro.textContent = "O CPF deve conter 11 dígitos.";
+        return;
+    }
+    if (!validarSenha(dados.senha)) {
+        cadastroErro.textContent = "Sua senha não atende a todos os requisitos.";
         return;
     }
     try {
@@ -111,8 +150,10 @@ cadastroForm.addEventListener("submit", async function (event) {
             return;
         }
         cadastroForm.reset();
+        validarSenha("");
         // Exibe a tela de login após o cadastro
-        body.className = "sign-in-js";
+        cadastroErro.textContent = resultado.mensagem || "Enviamos um link de confirmação para seu e-mail. Verifique sua caixa de entrada.";
+        cadastroErro.style.color = "#4CAF50";
 
     } catch (error) {
         cadastroErro.textContent =

@@ -75,5 +75,20 @@ export const authController = {
             next(error);
         }
     },
+        async verifyEmail(req: Request, res: Response, next: NextFunction) {
+        try {
+            const { token } = req.body;
+
+            if (typeof token !== "string" || !token) {
+                res.status(400).json({ message: "Token obrigatório." });
+                return;
+            }
+
+            const resultado = await authService.verifyEmail(token);
+            res.status(200).json(resultado);
+        } catch (error) {
+            next(error);
+        }
+    },
 };
 

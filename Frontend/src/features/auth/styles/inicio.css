@@ -8,7 +8,7 @@
 .card {
     position: relative;
     width: min(960px, 92vw);
-    height: 28rem;
+    height: 30rem;
     background-color: var(--fundo-card);
     border: 1px solid var(--borda);
     border-radius: 15px;
@@ -171,4 +171,21 @@
 .sign-in-js .second-content {
     visibility: visible;
     z-index: 2;
+}
+.senha-requisitos {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 8px 0 12px;
+    text-align: left;
+}
+
+.senha-requisitos span {
+    font-size: 11px;
+    color: #a0a5b5;
+    transition: color 0.2s ease;
+}
+
+.senha-requisitos span.valido {
+    color: #22c55e;
 }

@@ -24,15 +24,24 @@ export const authService = {
             { senha: dados.senha }
         );
 
-        const usuario = await authRepository.create({
-            ...dados,
-            senhaHash: hash
+        const token = randomBytes(32).toString("hex");
+        const tokenHash = createHash("sha256").update(token).digest("hex");
+        const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
+
+        await authRepository.createPendingRegistration({
+            nome: dados.nome,
+            email: dados.email,
+            cpf: dados.cpf,
+            senhaHash: hash,
+            tokenHash,
+            expiresAt
         });
 
+        const link = `http://localhost:3001/src/features/auth/components/confirmarEmail.html?token=${token}`;
+        await emailService.enviarConfirmacaoEmail(dados.email, link);
+
         return {
-            id: usuario._id.toString(),
-            nome: usuario.nome,
-            email: usuario.email
+            mensagem: "Enviamos um link de confirmação para seu e-mail."
         };
     },
 
@@ -49,8 +58,7 @@ export const authService = {
 
         const { valido } = await javaServerClient.enviarPedido<
             { senha: string; hash: string },
-            { valido: boolean }
-        >(
+            { valido: boolean }>(
             "PedidoValidarSenha",
             "RespostaValidarSenha",
             {
@@ -66,9 +74,11 @@ export const authService = {
                 "INVALID_CREDENTIALS"
             );
         }
+        if (!usuario.emailVerificado) {
+            throw new AppError("Confirme seu e-mail antes de fazer login.", 403, "EMAIL_NOT_VERIFIED");
+        }
 
         const id = usuario._id.toString();
-
         const token = jwt.sign(
             { id, email: usuario.email },
             env.JWT_SECRET,
@@ -157,8 +167,7 @@ export const authService = {
 
         const { hash } = await javaServerClient.enviarPedido<
             { senha: string },
-            { hash: string }
-        >(
+            { hash: string }>(
             "PedidoHashSenha",
             "RespostaHashSenha",
             { senha: dados.senha }
@@ -176,6 +185,35 @@ export const authService = {
                 "INVALID_RESET_TOKEN"
             );
         }
+    },
+
+    async verifyEmail(token: string) {
+        const tokenHash = createHash("sha256").update(token).digest("hex");
+        const pendente = await authRepository.findPendingRegistration(tokenHash);
+
+        if (!pendente) {
+            throw new AppError(
+                "Link de confirmação inválido ou expirado",
+                400,
+                "INVALID_VERIFICATION_TOKEN"
+            );
+        }
+    const existente = await authRepository.findByEmail(pendente.email);
+
+    if (existente) {
+        throw new AppError("E-mail já cadastrado", 409, "EMAIL_IN_USE");
     }
+
+    await authRepository.create({
+        nome: pendente.nome,
+        email: pendente.email,
+        cpf: pendente.cpf,
+        senhaHash: pendente.senhaHash,
+    });
+
+    await authRepository.deletePendingRegistration(pendente._id.toString());
+
+    return { mensagem: "E-mail confirmado com sucesso!" };
+}
 };
 

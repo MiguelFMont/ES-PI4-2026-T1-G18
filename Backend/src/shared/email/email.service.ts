@@ -47,5 +47,22 @@ export const emailService = {
             subject: "Recuperação de senha - FinanceAI",
             html: htmlFinal
         });
+    },
+    async enviarConfirmacaoEmail(email: string, link: string) {
+        const pastaTemplates = path.resolve(process.cwd(), "src/shared/email/templates");
+
+        const html = await readFile(path.join(pastaTemplates, "validaremail.html"), "utf-8");
+        const css = await readFile(path.join(pastaTemplates, "validaremail.css"), "utf-8");
+        const htmlComLink = html.replace("{{LINK_CONFIRMACAO}}", link);
+
+        const { default: juice } = await import("juice");
+        const htmlFinal = juice.inlineContent(htmlComLink, css);
+
+        await transporter.sendMail({
+            from: `"FinanceAI" <${env.EMAIL_USER}>`,
+            to: email,
+            subject: "Confirme seu e-mail - FinanceAI",
+            html: htmlFinal
+        });
     }
 };

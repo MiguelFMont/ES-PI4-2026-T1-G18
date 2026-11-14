@@ -48,10 +48,6 @@ function preencherVisaoGeral(container) {
         nome.charAt(0).toUpperCase();
     container.querySelector('#usuario-plano').textContent =
         `Plano ${plano}`;
-
-    const botao = container.querySelector('#botao-assinatura');
-    botao.textContent =
-        plano === 'Pro' ? 'Gerenciar plano' : 'Assinar agora';
 }
 
 function preencherPerfil(container) {
