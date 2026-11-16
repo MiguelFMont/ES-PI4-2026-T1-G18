@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 import com.financeai.auth.AuthHandler;
 import com.financeai.dashboard.DashboardHandler;
+import com.financeai.goals.GoalsHandler;
+import com.financeai.investments.InvestmentsHandler;
 import com.financeai.mentoria.MentorHandler;
 import com.financeai.transactions.TransactionsHandler;
 
@@ -35,6 +37,8 @@ public class HandlerRegistry
         new MentorHandler().registrarEm (registry);
         new TransactionsHandler().registrarEm(registry);
         new DashboardHandler().registrarEm(registry);
+        new GoalsHandler().registrarEm(registry);
+        new InvestmentsHandler().registrarEm(registry);
 
         return registry;
     }
