@@ -13,8 +13,8 @@ Documento vivo que descreve **o que o Backend aceita e devolve**. É a referênc
 | Autenticação e conta | `/v1/auth` | 1 | A documentar |
 | Painel e análise | `/v1/dashboard` | 3 | A documentar |
 | Mentor financeiro (IA) | `/v1/mentor-ia` | 4 | **Chat (enviar mensagem, histórico e mensagem proativa) e alertas (listar e marcar como lido) documentados** (seção 3) |
-| Metas | `/v1/goals` | 5 | A documentar |
-| Investimentos | `/v1/investments` | 5 | A documentar |
+| Metas | `/v1/goals` | 5 | **CRUD das metas, com o progresso calculado a partir das transações vinculadas a cada meta, documentado** (seção 5; o vínculo é o `metaId` das transações, 2.4 e 2.6) |
+| Investimentos | `/v1/investments` | 5 | **Portfólio e patrimônio, cartão simulado (fatura e limite) e parcelamentos documentados** (seção 6) |
 
 ---
 
@@ -68,7 +68,7 @@ Todo erro tem o mesmo formato, e o Frontend decide o que fazer pelo `code`, nunc
 | 503 | `JAVA_SERVER_UNAVAILABLE` | O Servidor de cálculos está fora do ar (só afeta as rotas que dependem dele) |
 | 503 | `JAVA_SERVER_SHUTTING_DOWN` | O Servidor de cálculos está sendo desligado |
 
-Cada módulo acrescenta os seus códigos de negócio na própria seção (por exemplo, `EMAIL_IN_USE` e `INVALID_CREDENTIALS` na autenticação, `TRANSACTION_NOT_FOUND` nas transações). Os da integração com a Pluggy (`PLUGGY_*` e `ACCOUNT_*`) estão na seção 2.8.
+Cada módulo acrescenta os seus códigos de negócio na própria seção (por exemplo, `EMAIL_IN_USE` e `INVALID_CREDENTIALS` na autenticação, `TRANSACTION_NOT_FOUND` nas transações). Os da integração com a Pluggy (`PLUGGY_*` e `ACCOUNT_*`) estão na seção 2.8, os das metas (`GOAL_NOT_FOUND`) na 5.3 e os dos investimentos e do cartão (`INVESTMENT_NOT_FOUND`, `INSTALLMENT_NOT_FOUND`) na 6.4.
 
 ### 1.6 Rotas do sistema
 
@@ -96,6 +96,7 @@ Todas as rotas exigem token. Um usuário só vê e altera as próprias transaç�
 | `formaPagamento` | texto | Uma das formas de pagamento (ver 2.2). Se não for enviada, vale `"outro"` |
 | `observacoes` | texto | Anotação livre de até 300 caracteres. **Só aparece quando foi informada** |
 | `origem` | `"manual"` ou `"pluggy"` | Como a transação entrou: digitada pelo usuário ou importada de uma conta conectada (ver 2.8) |
+| `metaId` | texto | A meta a que a transação foi vinculada (seção 5): se for despesa, soma no progresso da meta; se for receita, subtrai. **Só aparece quando a transação foi vinculada** |
 
 ### 2.2 Formas de pagamento
 
@@ -119,6 +120,7 @@ O campo `categoria` é texto livre, mas o Frontend deve oferecer esta lista para
 | `formaPagamento` | texto | Não | Uma da lista 2.2. Se faltar, vale `"outro"` |
 | `observacoes` | texto | Não | Até 300 caracteres (espaços nas pontas são removidos). Texto vazio é o mesmo que não enviar |
 | `origem` | texto | Não | `manual` (padrão) ou `pluggy` |
+| `metaId` | texto | Não | Id de uma **meta do próprio usuário** (seção 5): a transação fica vinculada a ela: despesa soma no progresso da meta e receita subtrai. Uma meta que não existe, ou que é de outro usuário, responde `404 GOAL_NOT_FOUND` e **nada é salvo**. Id mal formado: `400 VALIDATION_ERROR` |
 
 Exemplo, requisição completa:
 
@@ -210,6 +212,7 @@ Parâmetros de consulta (todos opcionais, combinam entre si com "e"):
 | `formaPagamento` | texto | Só desta forma de pagamento (lista 2.2) |
 | `busca` | texto de 1 a 100 caracteres | Só transações cuja `descricao` **contém** o texto (sem diferenciar maiúsculas de minúsculas) |
 | `origem` | `manual` ou `pluggy` | Só desta origem |
+| `metaId` | id de uma meta ou `nenhuma` | Só as transações vinculadas a essa meta (seção 5), ou só as que não têm meta |
 | `dataInicio` | data | `data` maior ou igual a este valor |
 | `dataFim` | data | `data` menor ou igual a este valor. Se for meia-noite UTC (como `2026-10-31`), inclui o **dia inteiro** |
 | `valorMin` | número ≥ 0 | `valor` maior ou igual a este valor |
@@ -288,7 +291,7 @@ Erros:
 
 | Status | `code` | Quando |
 |---|---|---|
-| 400 | `VALIDATION_ERROR` | Parâmetro inválido: `tipo`, `formaPagamento` ou `origem` desconhecidos, `busca` vazia ou com mais de 100 caracteres, número ou data inválidos, `valorMin` maior que `valorMax`, `dataInicio` depois de `dataFim`, `pagina` menor que 1, `limite` fora de 1 a 100 ou não inteiro |
+| 400 | `VALIDATION_ERROR` | Parâmetro inválido: `tipo`, `formaPagamento` ou `origem` desconhecidos, `metaId` que não é um id nem `nenhuma`, `busca` vazia ou com mais de 100 caracteres, número ou data inválidos, `valorMin` maior que `valorMax`, `dataInicio` depois de `dataFim`, `pagina` menor que 1, `limite` fora de 1 a 100 ou não inteiro |
 | 401 | `UNAUTHENTICATED` | Sem token ou token inválido |
 
 Exemplo de `400` para `?limite=500&pagina=0`:
@@ -344,8 +347,9 @@ Cada transação leva as **suas próprias** alterações. A edição é **parcia
 | `descricao` | texto | Não vazio |
 | `formaPagamento` | texto | Uma das formas da seção 2.2. Aqui **não** há valor padrão: o que não for enviado não muda |
 | `observacoes` | texto | Até 300 caracteres. **`""` apaga a observação** |
+| `metaId` | texto ou `null` | Vincula a transação a uma meta do próprio usuário (seção 5); **`null` desvincula**. Uma meta que não existe ou é de outro usuário recusa o lote **inteiro** com `404 GOAL_NOT_FOUND`, antes de gravar qualquer item |
 
-`origem` e `id` dentro de `alteracoes` são ignorados: a origem nunca muda.
+`origem` e `id` dentro de `alteracoes` são ignorados: a origem nunca muda. Qualquer transação pode ser vinculada, inclusive as importadas da Pluggy.
 
 Resposta:
 
@@ -355,7 +359,7 @@ Resposta:
 
 `naoEncontradas` traz os ids que não existem ou são de outro usuário (os dois casos são tratados igual, sem revelar de quem é).
 
-Erros: `400 VALIDATION_ERROR` (lista vazia, mais de 100 itens, ids repetidos ou mal formados, `alteracoes` vazia ou com campo inválido: nesse caso **nada** do lote é aplicado) e `401 UNAUTHENTICATED`.
+Erros: `400 VALIDATION_ERROR` (lista vazia, mais de 100 itens, ids repetidos ou mal formados, `alteracoes` vazia ou com campo inválido, `metaId` mal formado: nesse caso **nada** do lote é aplicado), `401 UNAUTHENTICATED` e `404 GOAL_NOT_FOUND` (algum `metaId` não é de uma meta do usuário: também **nada** é aplicado).
 
 ### 2.7 Excluir transações
 
@@ -461,7 +465,7 @@ O corpo é **opcional**:
 |---|---|---|---|
 | `data` | texto (data ou ISO 8601) | Não | Data do novo lançamento. Sem ela, vale o momento da chamada |
 
-A cópia leva `tipo`, `valor`, `categoria`, `descricao`, `observacoes` e `formaPagamento` do original, com `origem: "manual"` e um `id` novo. O original **não muda**. O Servidor Java não é chamado: a categoria é a do original.
+A cópia leva `tipo`, `valor`, `categoria`, `descricao`, `observacoes`, `formaPagamento` e a **meta** (`metaId`, se houver) do original, com `origem: "manual"` e um `id` novo: duplicar um aporte gera outro aporte para a mesma meta. O original **não muda**. O Servidor Java não é chamado: a categoria é a do original.
 
 Só lançamentos **manuais** podem ser duplicados.
 
@@ -721,6 +725,178 @@ npm run seed:transacoes                        # para o usuário "usuario-demo"
 npm run seed:transacoes -- <userId>            # para um usuário específico
 npm run seed:transacoes -- <userId> --limpar   # apaga antes as transações desse usuário
 npm run seed:contas                            # contas conectadas de exemplo (usuario-demo); aceita <userId> e --limpar
+npm run seed:grupo5                            # metas, ativos, cartão e parcelamentos de exemplo (usuario-demo); aceita <userId> e --limpar
 ```
 
 Sem `--limpar`, rodar de novo **acrescenta** mais transações. Use o `userId` que está dentro do seu token para ver os dados pela API.
+
+---
+
+## 5. Metas financeiras — `/v1/goals` (Grupo 5)
+
+Todas as rotas exigem token, e cada usuário só vê e altera as próprias metas. O **progresso não é guardado**: é calculado a cada leitura, para refletir as edições e exclusões feitas no extrato.
+
+- `valorAtual` = `valorInicial` + a soma do valor das **transações que o usuário vinculou àquela meta** (os aportes). Qualquer transação pode ser vinculada, e o **tipo define o sentido**: uma **despesa** vinculada **soma** (o usuário guardou o dinheiro) e uma **receita** vinculada **subtrai** (retirou da meta). O total pode ficar negativo se saiu mais do que entrou; nesse caso o percentual é 0. Transações **sem vínculo não contam**, as com data no futuro ainda não contam, e as de outro usuário nunca contam. Cada meta tem o seu próprio total: o aporte de uma não aparece na outra.
+- O vínculo é feito ao cadastrar ou editar a transação (`metaId`, seções 2.4 e 2.6). Excluir a transação tira o aporte do progresso; excluir a **meta** desvincula as transações dela (elas continuam no extrato, sem `metaId`).
+- O percentual, o que falta, os dias e meses restantes e o aporte mensal são calculados pelo **Servidor de cálculos** (`PedidoProgressoMeta`). Se ele estiver fora do ar, a rota responde `503 JAVA_SERVER_UNAVAILABLE` e **nada é salvo** (o cálculo vem antes da gravação).
+
+### 5.1 Objeto `Goal`
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `id` | texto | Identificador da meta |
+| `titulo` | texto | Nome da meta (1 a 100 caracteres) |
+| `valorObjetivo` | número | Quanto quer juntar (maior que zero) |
+| `valorInicial` | número | Quanto já tinha guardado ao criar a meta (0 ou mais; padrão `0`) |
+| `prazo` | texto (ISO 8601) | Até quando (ao criar, ou ao mudar o prazo, não pode estar no passado) |
+| `valorAtual` | número | `valorInicial` + `valorAportado` |
+| `valorAportado` | número | Despesas vinculadas menos receitas vinculadas (pode ser negativo) |
+| `quantidadeAportes` | inteiro | Quantas transações estão vinculadas à meta |
+| `percentual` | número | De 0 a 100, com 2 casas |
+| `falta` | número | O que ainda falta para o objetivo (0 se atingido) |
+| `concluida` | booleano | `valorAtual` ≥ `valorObjetivo` |
+| `noPrazo` | booleano | Concluída, ou o prazo ainda não passou (o próprio dia do prazo conta como dentro) |
+| `diasRestantes` | inteiro | Dias até o prazo (0 se já venceu) |
+| `mesesRestantes` | inteiro | `ceil(diasRestantes / 30)`, no mínimo 1 |
+| `aporteMensalNecessario` | número | `falta / mesesRestantes` (0 se concluída) |
+| `criadaEm` | texto (ISO 8601) | Quando a meta foi criada |
+
+Exemplo (meta de R$ 10.000 com R$ 5.000 já guardados e prazo daqui a 181 dias):
+
+```json
+{
+  "id": "6ad3fd7c273f8f0946dd77e5",
+  "titulo": "Viagem",
+  "valorObjetivo": 10000,
+  "valorInicial": 5000,
+  "prazo": "2027-05-14T00:00:00.000Z",
+  "valorAtual": 5000,
+  "valorAportado": 0,
+  "quantidadeAportes": 0,
+  "percentual": 50,
+  "falta": 5000,
+  "concluida": false,
+  "noPrazo": true,
+  "diasRestantes": 181,
+  "mesesRestantes": 7,
+  "aporteMensalNecessario": 714.29,
+  "criadaEm": "2026-11-14T20:41:28.511Z"
+}
+```
+
+### 5.2 Rotas
+
+| Método e rota | O que faz | Resposta |
+|---|---|---|
+| `GET /v1/goals` | Lista as metas do usuário, com o prazo mais próximo primeiro, já com o progresso | `200` com a lista de `Goal` (vazia se não há metas) |
+| `POST /v1/goals` | Cria uma meta. Corpo: `titulo`, `valorObjetivo`, `prazo` (obrigatórios); `valorInicial` (opcional) | `201` com a `Goal` |
+| `GET /v1/goals/:id` | Uma meta | `200` com a `Goal` |
+| `PATCH /v1/goals/:id` | Edita só os campos enviados (`titulo`, `valorObjetivo`, `valorInicial`, `prazo`). Um prazo novo não pode estar no passado; editar outros campos de uma meta já vencida não exige mudar o prazo | `200` com a `Goal` recalculada |
+| `DELETE /v1/goals/:id` | Exclui a meta e **desvincula** as transações dela (`metaId` é removido; as transações **não** são apagadas) | `204` |
+
+### 5.3 Erros
+
+| Status | `code` | Quando |
+|---|---|---|
+| 400 | `VALIDATION_ERROR` | Campo inválido (título vazio ou com mais de 100 caracteres, valor objetivo zero ou negativo, valor inicial negativo, prazo ausente, inválido ou no passado, `PATCH` sem nenhum campo, `:id` mal formado). Os campos de formato errado vêm em `details` |
+| 401 | `UNAUTHENTICATED` | Sem token ou token inválido |
+| 404 | `GOAL_NOT_FOUND` | A meta não existe ou é de outro usuário (os dois casos são tratados igual) |
+| 503 | `JAVA_SERVER_UNAVAILABLE` | O Servidor de cálculos está fora do ar |
+
+### 5.4 Mensagem ao Servidor de cálculos
+
+`PedidoProgressoMeta` → `RespostaProgressoMeta`. O pedido leva `valorAtual`, `valorObjetivo` e `prazo` (ISO 8601); a resposta traz `percentual`, `falta`, `concluida`, `noPrazo`, `diasRestantes`, `mesesRestantes` e `aporteMensalNecessario` (os mesmos nomes do objeto `Goal`). O pedido aceita ainda um `hoje` opcional, só para os testes fixarem o dia.
+
+**Coleção `goals` (MongoDB):** `userId`, `titulo`, `valorObjetivo`, `valorInicial`, `prazo` e os carimbos de data. Índice `{ userId, prazo }`. O vínculo fica na coleção `transactions`, no campo `metaId` (índice `{ userId, metaId }`): é a soma dessas transações que dá o `valorAportado`.
+
+---
+
+## 6. Investimentos e cartão simulados — `/v1/investments` (Grupo 5)
+
+Módulo **complementar** e **simulado**: os ativos, o cartão e os parcelamentos são fictícios, para o usuário acompanhar e aprender. Todas as rotas exigem token, e cada usuário só vê e altera os próprios dados. Valor atual, rendimento, parcela, saldo devedor e fatura **não são guardados**: o Servidor de cálculos faz as contas a cada leitura (`PedidoRentabilidadeSimulada` e `PedidoCalcularParcelamentos`). Com ele fora do ar, as rotas respondem `503 JAVA_SERVER_UNAVAILABLE` e nada é salvo.
+
+### 6.1 Portfólio e patrimônio
+
+**Objeto `Investment`**
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `id` | texto | Identificador do ativo |
+| `nome` | texto | Nome (1 a 100 caracteres) |
+| `tipo` | texto | `renda_fixa`, `renda_variavel`, `fundo`, `cripto` ou `outro` (padrão) |
+| `valorInvestido` | número | Quanto foi aplicado (maior que zero) |
+| `taxaMensal` | número | Rentabilidade simulada em **% ao mês** (acima de −100 e até 100; padrão `0`). É também a "rentabilidade do último mês" |
+| `dataAplicacao` | texto (ISO 8601) | Quando foi aplicado (padrão: hoje) |
+| `mesesRendendo` | inteiro | Meses **completos** desde a aplicação (o dia 15 só completa o mês no dia 15 seguinte) |
+| `valorAtual` | número | `valorInvestido × (1 + taxaMensal/100) ^ mesesRendendo` (juros compostos) |
+| `rendimento` | número | `valorAtual − valorInvestido` |
+| `rentabilidade` | número | Rendimento em % sobre o valor investido, desde a aplicação |
+| `percentualCarteira` | número | Participação do ativo no patrimônio total, em % |
+
+| Método e rota | O que faz | Resposta |
+|---|---|---|
+| `GET /v1/investments` | Portfólio e patrimônio | `200` com `{ ativos, totalInvestido, patrimonio, rendimento, rentabilidade }` (zeros se não há ativos). O `patrimonio` é a soma dos `valorAtual` |
+| `POST /v1/investments` | Cadastra um ativo. Corpo: `nome`, `valorInvestido` (obrigatórios); `tipo`, `taxaMensal`, `dataAplicacao` (opcionais) | `201` com o `Investment` (o `percentualCarteira` já considera os ativos que existiam) |
+| `DELETE /v1/investments/:id` | Remove um ativo | `204` |
+
+### 6.2 Cartão de crédito simulado
+
+Cada usuário tem um cartão, criado com **limite de R$ 5.000 e vencimento no dia 10** na primeira leitura.
+
+| Método e rota | O que faz | Resposta |
+|---|---|---|
+| `GET /v1/investments/card` | Limite, limite disponível e a fatura do mês | `200` com o `CardSummary` (abaixo) |
+| `PATCH /v1/investments/card` | Altera o `limite` (maior que zero) e/ou o `diaVencimento` (inteiro de 1 a 28, para existir em todo mês) | `200` com o `CardSummary` |
+
+```json
+{
+  "limite": 8000,
+  "diaVencimento": 10,
+  "limiteDisponivel": 1833.78,
+  "fatura": {
+    "mes": "2026-11",
+    "valor": 1287.86,
+    "comprasNoCredito": 256.8,
+    "parcelasDoMes": 1031.06,
+    "vencimento": "2026-12-10",
+    "diasParaVencer": 26
+  }
+}
+```
+
+- `comprasNoCredito`: soma das **despesas reais** do usuário com `formaPagamento: "credito"` do mês corrente (UTC), até agora. Receitas, outras formas de pagamento e outros meses não entram.
+- `parcelasDoMes`: soma das parcelas dos parcelamentos **ainda ativos** (6.3).
+- `fatura.valor` = `comprasNoCredito` + `parcelasDoMes`.
+- `vencimento`: o próximo dia de vencimento (neste mês, ou no seguinte se o dia já passou; o próprio dia ainda vale).
+- `limiteDisponivel` = `limite` − `comprasNoCredito` − saldo devedor total dos parcelamentos. Pode ficar **negativo** se o limite estourar.
+
+### 6.3 Parcelamentos ativos
+
+**Objeto `Installment`:** `id`, `descricao`, `valorTotal`, `parcelas`, `parcelasPagas`, `taxaJurosMensal` (em % ao mês, 0 = sem juros) e os valores calculados `valorParcela`, `parcelasRestantes`, `saldoDevedor`, `jurosTotal` e `quitado`.
+
+- Parcela pela **tabela Price**: `valorTotal × i / (1 − (1+i)^−parcelas)`, com `i = taxaJurosMensal/100`; sem juros, `valorTotal / parcelas`.
+- `saldoDevedor`: o valor presente das parcelas que faltam (o que seria preciso pagar hoje para quitar); 0 se quitado.
+- `jurosTotal`: `valorParcela × parcelas − valorTotal`.
+
+| Método e rota | O que faz | Resposta |
+|---|---|---|
+| `GET /v1/investments/card/installments` | Lista os parcelamentos com os totais | `200` com `{ parcelamentos, totalParcelasDoMes, totalSaldoDevedor, totalJuros }` (os totais só somam os ainda ativos) |
+| `POST /v1/investments/card/installments` | Cadastra. Corpo: `descricao`, `valorTotal`, `parcelas` (de 1 a 120) obrigatórios; `parcelasPagas` (0 até `parcelas`) e `taxaJurosMensal` (0 a 100) opcionais | `201` com o `Installment` |
+| `PATCH /v1/investments/card/installments/:id` | Altera a `descricao` e/ou `parcelasPagas` (não pode passar do total). Pagar uma parcela é enviar `parcelasPagas + 1` | `200` com o `Installment` recalculado |
+| `DELETE /v1/investments/card/installments/:id` | Remove o parcelamento | `204` |
+
+### 6.4 Erros
+
+| Status | `code` | Quando |
+|---|---|---|
+| 400 | `VALIDATION_ERROR` | Campo inválido (nome, valor, taxa ou data inválidos; tipo desconhecido; dia fora de 1 a 28; parcelas fora de 1 a 120; parcelas pagas acima do total; corpo sem nenhum campo conhecido; `:id` mal formado). Os campos errados vêm em `details` |
+| 401 | `UNAUTHENTICATED` | Sem token ou token inválido |
+| 404 | `INVESTMENT_NOT_FOUND` | O ativo não existe ou é de outro usuário |
+| 404 | `INSTALLMENT_NOT_FOUND` | O parcelamento não existe ou é de outro usuário |
+| 503 | `JAVA_SERVER_UNAVAILABLE` | O Servidor de cálculos está fora do ar |
+
+### 6.5 Mensagens ao Servidor de cálculos e coleções
+
+- `PedidoRentabilidadeSimulada`: `ativos` (cada um com `id`, `nome`, `tipo`, `valor`, `taxaMensal` e `meses`) → `RespostaRentabilidadeSimulada`: os mesmos ativos com `valorAtual`, `rendimento`, `rentabilidade` e `percentualCarteira`, mais `totalInvestido`, `patrimonio`, `rendimento` e `rentabilidade`.
+- `PedidoCalcularParcelamentos`: `parcelamentos` (cada um com `id`, `descricao`, `valorTotal`, `parcelas`, `parcelasPagas` e `taxaJurosMensal`) → `RespostaCalcularParcelamentos`: os mesmos com `valorParcela`, `parcelasRestantes`, `saldoDevedor`, `jurosTotal` e `quitado`, mais `totalParcelasDoMes`, `totalSaldoDevedor` e `totalJuros`.
+- **Coleções (MongoDB):** `investments` (`userId`, `nome`, `tipo`, `valorInvestido`, `taxaMensal`, `dataAplicacao`), `cards` (`userId` **único**, `limite`, `diaVencimento`) e `card_installments` (`userId`, `descricao`, `valorTotal`, `parcelas`, `parcelasPagas`, `taxaJurosMensal`).
