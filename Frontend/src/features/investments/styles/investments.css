@@ -1,4 +1,4 @@
-/* Tela de Investimentos: layout, cartões, resumo, tabela do portfólio, cartão de crédito e parcelamentos (prefixo investments-).
+/* Tela do Cartão de crédito: layout, cartões, fatura, limite e parcelamentos (prefixo investments-).
    Os campos do formulário (.campo), as listas (.seletor__lista) e o calendário vêm de shared/styles.
    Usa as variáveis de tema de core/styles/global.css. */
 
@@ -163,83 +163,6 @@
 
 .investments-campo--larga {
   grid-column: 1 / -1;
-}
-
-/* ---------------------------------------------------------------- resumo do patrimônio */
-
-.investments-resumo {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr)); /* os 4 cartões cabem numa linha em janelas de ~1024 px */
-  gap: 0.75rem;
-}
-
-.investments-resumo__item {
-  padding: 0.9rem 1.1rem;
-  border: var(--borda-elemento, 0);
-  border-radius: 0.75rem;
-  background: var(--fundo-card);
-  box-shadow: var(--sombra);
-}
-
-.investments-resumo__item dt {
-  font-size: 0.85rem;
-  color: var(--texto-suave);
-}
-
-.investments-resumo__item dd {
-  font-size: 1.3rem;
-  font-weight: 700;
-}
-
-.investments-resumo__item--destaque dd {
-  font-size: 1.6rem;
-  color: var(--destaque);
-}
-
-/* ---------------------------------------------------------------- tabela do portfólio */
-
-.investments-tabela-rolavel {
-  overflow-x: auto;
-}
-
-.investments-tabela {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 42rem;
-}
-
-.investments-tabela th,
-.investments-tabela td {
-  padding: 0.7rem 0.75rem;
-  text-align: left;
-  vertical-align: middle;
-  border-bottom: 1px solid var(--borda);
-}
-
-.investments-tabela thead th {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--texto-suave);
-}
-
-.investments-tabela tbody th {
-  min-width: 11rem; /* o nome do ativo não se espreme em várias linhas */
-  font-weight: 700;
-}
-
-.investments-numero {
-  text-align: right !important;
-  white-space: nowrap;
-}
-
-.investments-ativo__nome,
-.investments-ativo__tipo {
-  display: block;
-}
-
-.investments-ativo__tipo {
-  font-size: 0.8rem;
-  font-weight: 500;
 }
 
 /* ---------------------------------------------------------------- cartão de crédito */

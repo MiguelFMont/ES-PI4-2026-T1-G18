@@ -1,16 +1,7 @@
 // Valores aceitos pela API (docs/contrato-api.md, seção 6) e os textos mostrados na tela.
 
-export const TIPOS_DE_ATIVO = {
-  renda_fixa: 'Renda fixa',
-  renda_variavel: 'Renda variável',
-  fundo: 'Fundo',
-  cripto: 'Cripto',
-  outro: 'Outro',
-};
-
 /** Erros da API com um texto para o usuário; os demais mostram a mensagem da própria API (já em português). */
 export const MENSAGENS_DE_ERRO = {
-  INVESTMENT_NOT_FOUND: 'Esse ativo não existe mais (talvez já tenha sido removido).',
   INSTALLMENT_NOT_FOUND: 'Esse parcelamento não existe mais (talvez já tenha sido removido).',
   JAVA_SERVER_UNAVAILABLE: 'O servidor de cálculos está fora do ar. Tente de novo em instantes.',
 };

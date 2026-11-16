@@ -1,27 +1,7 @@
 import { apiFetch } from '../../../core/http/api.js';
 
-// Chamadas ao Backend para os investimentos e o cartão SIMULADOS (docs/contrato-api.md, seção 6). Valor atual, rendimento,
+// Chamadas ao Backend para o cartão de crédito SIMULADO (o portfólio de investimentos tem rotas no Backend, mas ficou sem tela) (docs/contrato-api.md, seção 6). Valor atual, rendimento,
 // parcela, saldo devedor e fatura vêm calculados: o Servidor Java faz as contas e o Backend usa as transações reais do usuário.
-
-// ---------------------------------------------------------------- portfólio
-
-/** Portfólio e patrimônio (GET /investments): { ativos, totalInvestido, patrimonio, rendimento, rentabilidade }. */
-export function obterCarteira() {
-  return apiFetch('/investments');
-}
-
-/**
- * Cadastra um ativo simulado (POST /investments). `dados`: { nome, tipo, valorInvestido, taxaMensal?, dataAplicacao? }, com
- * `dataAplicacao` como "AAAA-MM-DD". Devolve o ativo criado, já com o valor atual.
- */
-export function criarAtivo(dados) {
-  return apiFetch('/investments', { method: 'POST', body: JSON.stringify(dados) });
-}
-
-/** Remove um ativo (DELETE /investments/:id). Resposta 204, sem corpo. */
-export function excluirAtivo(id) {
-  return apiFetch(`/investments/${encodeURIComponent(id)}`, { method: 'DELETE' });
-}
 
 // ---------------------------------------------------------------- cartão
 
