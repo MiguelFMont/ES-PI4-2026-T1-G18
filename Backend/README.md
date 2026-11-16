@@ -83,7 +83,7 @@ src/
     dashboard/       Grupo 3 — Painel Financeiro & Análise de Gastos
     mentor-ia/       Grupo 4 — Mentor Financeiro (IA Generativa)
     goals/           Grupo 5 — Metas Financeiras
-    investments/     Grupo 5 — Investimentos
+    investments/     Grupo 5 — Cartão e parcelamentos (com tela) e portfólio simulado (só API, sem tela)
 ```
 
 ## Camadas de cada módulo (`modules/<feature>/`)

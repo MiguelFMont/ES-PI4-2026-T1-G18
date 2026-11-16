@@ -14,7 +14,7 @@ Documento vivo que descreve **o que o Backend aceita e devolve**. É a referênc
 | Painel e análise | `/v1/dashboard` | 3 | A documentar |
 | Mentor financeiro (IA) | `/v1/mentor-ia` | 4 | **Chat (enviar mensagem, histórico e mensagem proativa) e alertas (listar e marcar como lido) documentados** (seção 3) |
 | Metas | `/v1/goals` | 5 | **CRUD das metas, com o progresso calculado a partir das transações vinculadas a cada meta, documentado** (seção 5; o vínculo é o `metaId` das transações, 2.4 e 2.6) |
-| Investimentos | `/v1/investments` | 5 | **Portfólio e patrimônio, cartão simulado (fatura e limite) e parcelamentos documentados** (seção 6) |
+| Investimentos | `/v1/investments` | 5 | **Cartão simulado (fatura e limite) e parcelamentos, com tela; portfólio e patrimônio documentados, sem tela (feature futura)** (seção 6) |
 | Suporte | `/v1/suporte` | 1 | Cadastro de relatos de problemas documentado (seção 7) |
 
 ---
@@ -816,7 +816,9 @@ Exemplo (meta de R$ 10.000 com R$ 5.000 já guardados e prazo daqui a 181 dias):
 
 Módulo **complementar** e **simulado**: os ativos, o cartão e os parcelamentos são fictícios, para o usuário acompanhar e aprender. Todas as rotas exigem token, e cada usuário só vê e altera os próprios dados. Valor atual, rendimento, parcela, saldo devedor e fatura **não são guardados**: o Servidor de cálculos faz as contas a cada leitura (`PedidoRentabilidadeSimulada` e `PedidoCalcularParcelamentos`). Com ele fora do ar, as rotas respondem `503 JAVA_SERVER_UNAVAILABLE` e nada é salvo.
 
-### 6.1 Portfólio e patrimônio
+### 6.1 Portfólio e patrimônio (feature futura: sem tela)
+
+> As rotas desta seção existem, funcionam e têm testes, mas o Frontend **não tem tela de portfólio**: a aba `#cartao` mostra só o cartão e os parcelamentos (6.2 e 6.3). O portfólio ficou como feature futura.
 
 **Objeto `Investment`**
 
