@@ -7,7 +7,7 @@ import { validarCampo } from '../../utils/formValidation.js';
 import { iniciarEdicao, valorParaEditar } from './EdicaoCelula.js';
 
 // Campos que a edição em lote pode mudar, na ordem do formulário (vazio ou "Manter" não muda).
-const CAMPOS_LOTE = ['data', 'descricao', 'observacoes', 'categoria', 'formaPagamento', 'tipo', 'valor'];
+const CAMPOS_LOTE = ['data', 'descricao', 'observacoes', 'categoria', 'formaPagamento', 'tipo', 'metaId', 'valor'];
 
 const ROTULOS_CAMPO = {
   data: 'data',
@@ -16,8 +16,15 @@ const ROTULOS_CAMPO = {
   categoria: 'categoria',
   formaPagamento: 'pagamento',
   tipo: 'tipo',
+  metaId: 'meta',
   valor: 'valor',
 };
+
+// Texto do campo quando ele está vazio (só observações e meta podem estar).
+const DICAS = { observacoes: 'Observações', metaId: 'Sem meta' };
+
+// Títulos das metas do usuário (id -> título), para a coluna Meta. Quem usa o extrato o atualiza com `definirMetas`.
+let titulosDasMetas = new Map();
 
 /**
  * Liga a lógica à área do extrato (HTML em TransactionExtrato.html). O HTML já tem a contagem, a lista e a
@@ -48,6 +55,9 @@ export function iniciarExtrato(raiz, { irParaPagina, tentarNovamente, mudarLimit
   const barraPendentes = raiz.querySelector('#extrato-pendentes');
   const botaoConfirmar = raiz.querySelector('#extrato-confirmar-alteracoes');
   const botaoDescartar = raiz.querySelector('#extrato-descartar-alteracoes');
+  const campoMetaLote = edicaoLote.elements.metaId;
+  let metas = []; // { id, titulo } das metas do usuário
+  titulosDasMetas = new Map();
   let paginaAtual = 1;
   let itens = []; // as transações que estão na tela
   const selecionadas = new Set(); // ids marcados
@@ -211,6 +221,10 @@ export function iniciarExtrato(raiz, { irParaPagina, tentarNovamente, mudarLimit
     for (const campo of CAMPOS_LOTE) {
       const bruto = edicaoLote.elements[campo].value.trim();
       if (!bruto) continue; // vazio ou "Manter": não muda
+      if (campo === 'metaId') {
+        mudancas.metaId = bruto === 'nenhuma' ? null : bruto; // "Nenhuma" desvincula
+        continue;
+      }
       // a data é digitada como dd/mm/aaaa: o calendário a converte (e devolve vazio se estiver inválida)
       const { erro, valor } = campo === 'data' ? validarCampo('data', dataLote.ler() || '') : validarCampo(campo, bruto);
       if (erro) erros[campo] = erro;
@@ -284,12 +298,31 @@ export function iniciarExtrato(raiz, { irParaPagina, tentarNovamente, mudarLimit
     iniciarEdicao({
       botao,
       campo,
+      opcoes: campo === 'metaId' ? opcoesDeMeta(efetiva(transacao).metaId) : undefined,
       atual: valorParaEditar(campo, efetiva(transacao)), // mostra a alteração pendente, se houver
       aoSalvar: async (valor) => registrarAlteracao(transacao, campo, valor), // só marca na tela; o envio é na confirmação
     });
   });
 
+  // Opções da lista da coluna Meta: "Nenhuma" (desvincula) e as metas do usuário. Uma meta que ainda não chegou à lista
+  // (ou não existe mais) aparece mesmo assim, para o campo não abrir em branco.
+  function opcoesDeMeta(atual) {
+    const opcoes = [{ valor: '', rotulo: 'Nenhuma' }, ...metas.map((m) => ({ valor: m.id, rotulo: m.titulo }))];
+    if (atual && !titulosDasMetas.has(atual)) opcoes.push({ valor: atual, rotulo: 'Meta' });
+    return opcoes;
+  }
+
   return {
+    /** Informa as metas do usuário: a coluna Meta mostra os títulos e as listas de escolha as oferecem. */
+    definirMetas(lista) {
+      metas = lista.map((m) => ({ id: m.id, titulo: m.titulo }));
+      titulosDasMetas = new Map(metas.map((m) => [m.id, m.titulo]));
+      // só as opções mudam: o <button> do select personalizável precisa continuar lá
+      for (const opcao of [...campoMetaLote.options].slice(2)) opcao.remove();
+      for (const m of metas) campoMetaLote.add(new Option(m.titulo, m.id));
+      for (const transacao of itens) redesenharLinha(transacao);
+    },
+
     /** Há alterações marcadas na tela que ainda não foram confirmadas? */
     temPendencias: () => rascunho.size > 0,
 
@@ -362,6 +395,7 @@ function preencherLinha(linha, transacao, alterados = new Set()) {
     categoria: rotuloDe(CATEGORIAS, transacao.categoria),
     formaPagamento: rotuloDe(FORMAS_PAGAMENTO, transacao.formaPagamento),
     tipo: rotuloDe(TIPOS, transacao.tipo),
+    metaId: transacao.metaId ? (titulosDasMetas.get(transacao.metaId) ?? 'Meta') : '',
     // o sinal e a coluna Tipo dizem se é receita ou despesa; a cor só reforça
     valor: `${receita ? '+' : '−'} ${formatarMoeda(transacao.valor)}`,
   };
@@ -369,7 +403,7 @@ function preencherLinha(linha, transacao, alterados = new Set()) {
   for (const botao of linha.querySelectorAll('button[data-campo]')) {
     const campo = botao.dataset.campo;
     const pendente = alterados.has(campo);
-    botao.textContent = textos[campo] || 'Observações'; // só as observações podem estar vazias (aparece como dica)
+    botao.textContent = textos[campo] || DICAS[campo]; // só observações e meta podem estar vazias (aparece como dica)
     botao.setAttribute(
       'aria-label',
       `Editar ${ROTULOS_CAMPO[campo]}${textos[campo] ? `: ${textos[campo]}` : ''}${pendente ? ' (alteração pendente)' : ''}`

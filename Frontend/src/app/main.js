@@ -22,6 +22,7 @@ const TELAS = {
       '/src/features/transactions/components/TransactionFilters/TransactionFilters.css',
       '/src/features/transactions/components/TransactionExtrato/TransactionExtrato.css',
       '/src/features/transactions/components/TransactionForm/TransactionForm.css',
+      '/src/features/goals/styles/goals.css', // o formulário "Nova meta" da janela de vincular a transação a uma meta
     ],
     modulo: () => import('../features/transactions/index.js'),
   },
@@ -34,6 +35,26 @@ const TELAS = {
       '/src/features/contas-conectadas/components/ContasLista/ContasLista.css',
     ],
     modulo: () => import('../features/contas-conectadas/index.js'),
+  },
+  metas: {
+    titulo: 'Metas',
+    html: '/src/features/goals/views/goals.html',
+    css: [
+      '/src/shared/styles/campos.css',
+      '/src/shared/styles/calendario.css',
+      '/src/features/goals/styles/goals.css',
+    ],
+    modulo: () => import('../features/goals/index.js'),
+  },
+  investimentos: {
+    titulo: 'Investimentos',
+    html: '/src/features/investments/views/investments.html',
+    css: [
+      '/src/shared/styles/campos.css',
+      '/src/shared/styles/calendario.css',
+      '/src/features/investments/styles/investments.css',
+    ],
+    modulo: () => import('../features/investments/index.js'),
   },
   perfil: {
 

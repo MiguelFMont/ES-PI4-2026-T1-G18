@@ -147,3 +147,114 @@ body.transactions-painel-aberto {
     transition: none;
   }
 }
+
+/* ---------------------------------------------------------------- vincular a transação a uma meta (MetaDoLancamento.js) */
+
+.transactions-meta {
+  display: grid;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+}
+
+.transactions-meta-opcao {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: fit-content;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.transactions-meta-opcao input {
+  width: 1.15rem;
+  height: 1.15rem;
+  accent-color: var(--destaque);
+  cursor: pointer;
+}
+
+.transactions-meta-opcao:has(input:focus-visible) {
+  outline: 2px solid var(--foco);
+  outline-offset: 3px;
+  border-radius: 0.3rem;
+}
+
+.transactions-meta-ajuda {
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+}
+
+.transactions-meta-lista {
+  display: grid;
+  gap: 0.5rem;
+}
+
+/* cada meta é uma opção (botão de opção) com o nome e o progresso; a escolhida ganha o anel verde, como o Tipo */
+.transactions-meta-item {
+  position: relative;
+  display: grid;
+  gap: 0.1rem;
+  padding: 0.55rem 0.8rem;
+  border: var(--borda-elemento, 0);
+  border-radius: 0.6rem;
+  background: var(--fundo-campo);
+  box-shadow: var(--sombra);
+  cursor: pointer;
+}
+
+.transactions-meta-item input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.transactions-meta-item:has(input:checked) {
+  box-shadow: 0 0 0 2px var(--destaque);
+}
+
+.transactions-meta-item:has(input:focus-visible) {
+  outline: 2px solid var(--foco);
+  outline-offset: 2px;
+}
+
+.transactions-meta-item__titulo {
+  font-weight: 700;
+}
+
+.transactions-meta-item__resumo {
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+}
+
+.transactions-meta-nova {
+  justify-self: start;
+  min-height: 2.25rem;
+  padding: 0.25rem 0.9rem;
+  font-size: 0.85rem;
+}
+
+/* A janela "Nova meta": por cima do painel (z-index 50) e do fundo escuro, cobrindo só o conteúdo (a esquerda é o menu). */
+.transactions-meta-modal {
+  position: fixed;
+  inset: 0 0 0 12rem;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  padding: 1rem;
+  background: rgb(0 0 0 / 0.6);
+}
+
+.transactions-meta-modal .goals-cartao {
+  width: 100%;
+  max-width: 40rem;
+  box-shadow: var(--sombra-flutuante);
+}
+
+@media (max-width: 767px) {
+  .transactions-meta-modal {
+    inset-inline-start: 0;
+  }
+}

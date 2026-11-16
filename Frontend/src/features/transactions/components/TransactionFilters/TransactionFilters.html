@@ -68,6 +68,17 @@
       <p class="campo__erro" id="filtro-origem-erro" hidden></p>
     </div>
 
+    <div class="campo campo--seletor">
+      <label for="filtro-metaId">Meta</label>
+      <select id="filtro-metaId" name="metaId" aria-controls="lista-filtro-metaId" aria-expanded="false">
+        <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
+        <option value="">Todas</option>
+        <option value="nenhuma">Sem meta</option>
+      </select>
+      <div class="seletor__lista" id="lista-filtro-metaId" role="listbox" aria-label="Meta"></div>
+      <p class="campo__erro" id="filtro-metaId-erro" hidden></p>
+    </div>
+
     <!-- Período: um quadro com borda e o título "Período" contornando as duas caixas ("Início" e "Final"). O calendário
          (com os atalhos 1 semana, 30 dias, 1 a 3 meses...) abre ao passar o mouse e tem exatamente a largura deste
          quadro. Também dá para digitar dd/mm/aaaa em cada caixa. Lógica em shared/components/Calendario.js. -->

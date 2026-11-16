@@ -4,7 +4,7 @@ import { notificar } from '../../../../shared/components/notificacao.js';
 import { mesAtual } from '../../../../shared/utils/dateRange.js';
 import { montarParametros } from '../../utils/filterParams.js';
 
-const NOMES = ['busca', 'tipo', 'categoria', 'formaPagamento', 'origem', 'valorMin', 'valorMax'];
+const NOMES = ['busca', 'tipo', 'categoria', 'formaPagamento', 'origem', 'metaId', 'valorMin', 'valorMax'];
 
 /**
  * Liga a lógica ao cartão "Filtros" (HTML em TransactionFilters.html). Aplica sozinho quando um campo muda (ou ao
@@ -64,4 +64,15 @@ export function iniciarFiltros(raiz, { aoMudar, signal }) {
 
   voltarAoMesAtual();
   aplicar();
+
+  return {
+    /** Põe as metas do usuário na lista do filtro "Meta" (depois de "Todas" e "Sem meta"), mantendo a escolha atual. */
+    definirMetas(metas) {
+      const select = campos.metaId.controle;
+      const escolhida = select.value;
+      for (const opcao of [...select.options].slice(2)) opcao.remove(); // o <button> do select personalizável fica
+      for (const meta of metas) select.add(new Option(meta.titulo, meta.id));
+      select.value = [...select.options].some((o) => o.value === escolhida) ? escolhida : '';
+    },
+  };
 }

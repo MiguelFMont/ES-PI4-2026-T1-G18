@@ -81,6 +81,21 @@
         <p class="campo__erro" id="campo-formaPagamento-erro" hidden></p>
       </div>
 
+      <!-- Meta (Grupo 5): vincula a transação a uma meta; a despesa soma no progresso da meta (guardou) e a receita subtrai (retirou). Lógica em
+           MetaDoLancamento.js: sem metas, abre a janela "Nova meta" (no fim deste arquivo); com metas, mostra a lista. -->
+      <fieldset class="transactions-meta transactions-campo--larga">
+        <legend class="so-leitor">Meta</legend>
+        <label class="transactions-meta-opcao">
+          <input type="checkbox" id="campo-vincular-meta" aria-describedby="campo-meta-ajuda">
+          <span>Vincular a uma meta</span>
+        </label>
+        <p class="transactions-meta-ajuda" id="campo-meta-ajuda">Separou esse dinheiro para um objetivo? Vincule: uma despesa guarda o valor na meta e uma receita retira da meta.</p>
+        <p id="campo-meta-carregando" class="transactions-meta-ajuda" role="status" hidden>Carregando suas metas...</p>
+        <div id="campo-meta-lista" class="transactions-meta-lista" role="radiogroup" aria-label="Meta da transação" hidden></div>
+        <button type="button" id="campo-meta-nova" class="transactions-botao transactions-botao--secundario transactions-meta-nova" hidden>Criar outra meta</button>
+        <p class="campo__erro" id="campo-meta-erro" hidden></p>
+      </fieldset>
+
       <div class="campo transactions-campo--larga">
         <label for="campo-observacoes">Observações</label>
         <textarea id="campo-observacoes" name="observacoes" rows="2" maxlength="300" placeholder="Informações adicionais (opcional)"></textarea>
@@ -94,3 +109,19 @@
     </form>
   </section>
 </div>
+
+<!-- Janela "Nova meta": abre por cima do painel quando o usuário quer vincular a transação a uma meta e ainda não tem nenhuma
+     (ou escolhe "Criar outra meta"). É o mesmo formulário da tela de Metas (features/goals). Fica fora do painel porque o
+     painel tem `transform`, que prenderia uma janela `fixed` dentro dele. -->
+<div id="transactions-meta-modal" class="transactions-meta-modal" role="dialog" aria-modal="true" aria-label="Nova meta" hidden>
+  <div data-incluir="/src/features/goals/components/GoalForm/GoalForm.html"></div>
+</div>
+
+<!-- Modelo de uma meta na lista de escolha: o JS copia este bloco para cada meta e só preenche os textos. -->
+<template id="modelo-meta-opcao">
+  <label class="transactions-meta-item">
+    <input type="radio" name="metaId">
+    <span class="transactions-meta-item__titulo" data-campo="titulo"></span>
+    <span class="transactions-meta-item__resumo" data-campo="resumo"></span>
+  </label>
+</template>

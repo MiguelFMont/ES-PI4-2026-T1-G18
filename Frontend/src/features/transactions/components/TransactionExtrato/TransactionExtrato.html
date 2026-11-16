@@ -106,6 +106,15 @@
           </select>
           <div class="seletor__lista" id="lista-lote-tipo" role="listbox" aria-label="Tipo"></div>
         </div>
+        <div class="campo campo--seletor">
+          <label for="lote-metaId">Meta</label>
+          <select id="lote-metaId" name="metaId" aria-controls="lista-lote-metaId" aria-expanded="false">
+            <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
+            <option value="">Manter</option>
+            <option value="nenhuma">Nenhuma (desvincular)</option>
+          </select>
+          <div class="seletor__lista" id="lista-lote-metaId" role="listbox" aria-label="Meta"></div>
+        </div>
         <div class="campo">
           <label for="lote-valor">Valor (R$)</label>
           <input type="text" id="lote-valor" name="valor" inputmode="decimal" placeholder="Manter" autocomplete="off">
@@ -137,6 +146,7 @@
               <th scope="col">Categoria</th>
               <th scope="col">Pagamento</th>
               <th scope="col">Tipo</th>
+              <th scope="col">Meta</th>
               <th scope="col">Origem</th>
               <th scope="col" class="transactions-valor">Valor</th>
             </tr>
@@ -171,6 +181,7 @@
     <td><button type="button" class="extrato-celula" data-campo="categoria"></button></td>
     <td><button type="button" class="extrato-celula" data-campo="formaPagamento"></button></td>
     <td><button type="button" class="extrato-celula" data-campo="tipo"></button></td>
+    <td><button type="button" class="extrato-celula" data-campo="metaId"></button></td>
     <td><span class="extrato-origem" data-origem></span></td>
     <td class="transactions-valor"><button type="button" class="extrato-celula" data-campo="valor"></button></td>
   </tr>

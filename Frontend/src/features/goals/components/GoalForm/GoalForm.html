@@ -1,0 +1,43 @@
+<!-- Componente: formulário de meta (criar e editar). Lógica em GoalForm.js. Fica escondido até clicar em "Nova meta" ou
+     "Editar" em uma meta. O prazo usa o calendário compartilhado (abre ao passar o mouse; também dá para digitar
+     dd/mm/aaaa). Também é usado na janela "Nova meta" do formulário de transação (features/transactions). -->
+<section id="goals-form-area" class="goals-cartao" aria-labelledby="goals-form-titulo" hidden>
+  <h2 id="goals-form-titulo">Nova meta</h2>
+
+  <form id="goals-form" class="goals-form" novalidate>
+    <div class="campo goals-campo--larga">
+      <label for="goals-campo-titulo">Nome da meta *</label>
+      <input type="text" id="goals-campo-titulo" name="titulo" maxlength="100" placeholder="Ex: Reserva de emergência, Viagem" autocomplete="off">
+      <p class="campo__erro" id="goals-campo-titulo-erro" hidden></p>
+    </div>
+
+    <div class="campo">
+      <label for="goals-campo-objetivo">Valor da meta (R$) *</label>
+      <input type="text" id="goals-campo-objetivo" name="valorObjetivo" inputmode="decimal" placeholder="0,00" autocomplete="off">
+      <p class="campo__erro" id="goals-campo-objetivo-erro" hidden></p>
+    </div>
+
+    <div class="campo">
+      <label for="goals-campo-inicial">Já tenho guardado (R$)</label>
+      <input type="text" id="goals-campo-inicial" name="valorInicial" inputmode="decimal" placeholder="0,00" autocomplete="off">
+      <p class="campo__erro" id="goals-campo-inicial-erro" hidden></p>
+    </div>
+
+    <div class="campo" data-calendario="unico">
+      <label for="goals-campo-prazo">Prazo *</label>
+      <input type="text" id="goals-campo-prazo" name="prazo" class="calendario__caixa" placeholder="dd/mm/aaaa"
+        inputmode="numeric" maxlength="10" autocomplete="off" aria-haspopup="dialog" aria-expanded="false">
+      <div data-incluir="/src/shared/components/calendario/Calendario.html"></div>
+      <p class="campo__erro" id="goals-campo-prazo-erro" hidden></p>
+    </div>
+
+    <p class="goals-ajuda goals-campo--larga">
+      O progresso é o que você já tem guardado mais as transações que você vincular a esta meta (ao cadastrar uma transação, escolha "Vincular a uma meta").
+    </p>
+
+    <div class="goals-acoes goals-campo--larga">
+      <button type="submit" id="goals-salvar" class="goals-botao">Salvar meta</button>
+      <button type="button" id="goals-cancelar" class="goals-botao goals-botao--secundario">Cancelar</button>
+    </div>
+  </form>
+</section>
