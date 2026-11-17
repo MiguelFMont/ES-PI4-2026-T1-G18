@@ -84,7 +84,7 @@ export const authController = {
                 return;
             }
 
-            const resultado = await authService.verifyEmail(token);
+            const resultado = await authService.verifyEmail(token); 
             res.status(200).json(resultado);
         } catch (error) {
             next(error);

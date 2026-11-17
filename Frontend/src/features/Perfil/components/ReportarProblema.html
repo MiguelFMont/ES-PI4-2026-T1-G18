@@ -1,0 +1,34 @@
+<section class="reportar-problema">
+    <div class="reportar-problema__cabecalho">
+        <h1>Reportar problema</h1>
+        <p>Encontrou algum problema no FinanceAI?</p>
+    </div>
+    <form id="form-reportar-problema" class="reportar-problema__form">
+        <div class="campo">
+            <label for="assunto">Assunto</label>
+            <input type="text" id="assunto" name="assunto" placeholder="Digite o assunto do problema" maxlength="100" required>
+        </div>
+        <div class="campo">
+            <label for="categoria">Categoria</label>
+            <select id="categoria" name="categoria" required>
+                <option value="" disabled selected>
+                    Selecione uma categoria
+                </option>
+                <option value="erro-tecnico">Erro técnico</option>
+                <option value="conta-acesso">Conta e acesso</option>
+                <option value="plano">Plano e assinatura</option>
+                <option value="outros">Outros</option>
+            </select>
+        </div>
+        <div class="campo">
+            <label for="descricao">Descrição do problema</label>
+            <textarea id="descricao" name="descricao" rows="6" placeholder="Descreva o problema com o máximo de detalhes possível..."minlength="10" required></textarea>
+        </div>
+        <div class="reportar-problema__acoes">
+            <button type="submit" class="botao-enviar">
+                Enviar relatório
+            </button>
+        </div>
+        <p id="mensagem-reporte" role="status" aria-live="polite"></p>
+    </form>
+</section>

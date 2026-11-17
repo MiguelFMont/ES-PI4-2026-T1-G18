@@ -15,6 +15,7 @@ Documento vivo que descreve **o que o Backend aceita e devolve**. É a referênc
 | Mentor financeiro (IA) | `/v1/mentor-ia` | 4 | **Chat (enviar mensagem, histórico e mensagem proativa) e alertas (listar e marcar como lido) documentados** (seção 3) |
 | Metas | `/v1/goals` | 5 | A documentar |
 | Investimentos | `/v1/investments` | 5 | A documentar |
+| Suporte | `/v1/suporte` | 1 | Cadastro de relatos de problemas documentado (seção 5) |
 
 ---
 
@@ -724,3 +725,97 @@ npm run seed:contas                            # contas conectadas de exemplo (u
 ```
 
 Sem `--limpar`, rodar de novo **acrescenta** mais transações. Use o `userId` que está dentro do seu token para ver os dados pela API.
+
+## 5. Suporte — `/v1/suporte` (Grupo 1)
+
+O módulo de suporte permite que usuários autenticados reportem problemas encontrados durante a utilização do FinanceAI.
+
+Todas as requisições exigem token JWT. O Backend identifica o usuário pelo token, sem receber seu identificador no corpo da requisição.
+
+### 5.1 Reportar problema
+
+`POST /v1/suporte` → `201 Created`
+
+O endpoint recebe os dados preenchidos no formulário de suporte, valida as informações e registra o relatório no MongoDB.
+
+| Campo | Tipo | Obrigatório | Regra |
+|-------|------|-------------|-------|
+| `assunto` | texto | Sim | De 1 a 100 caracteres, após remover espaços nas pontas |
+| `categoria` | texto | Sim | Uma das categorias disponíveis |
+| `descricao` | texto | Sim | Pelo menos 10 caracteres, após remover espaços nas pontas |
+
+**Categorias disponíveis:**
+
+- `erro-tecnico`
+- `conta-acesso`
+- `plano`
+- `outros`
+
+**Exemplo de requisição:**
+
+```json
+{
+  "assunto": "Problema com o plano",
+  "categoria": "plano",
+  "descricao": "Não consigo pagar o plano Pro."
+}
+```
+
+**Resposta `201`:**
+
+```json
+{
+  "mensagem": "Problema reportado com sucesso!",
+  "relatorio": {
+    "id": "6ad3fd7c273f8f0946dd77e5",
+    "assunto": "Problema com o plano",
+    "categoria": "plano",
+    "descricao": "Não consigo pagar o plano Pro.",
+    "status": "aberto",
+    "createdAt": "2026-11-17T15:00:00.000Z"
+  }
+}
+```
+
+*O identificador e a data apresentados são ilustrativos.*
+
+O campo `status` é inicialmente definido como `aberto`. O usuário recebe a confirmação de envio após o registro do relatório.
+
+**Erros:**
+
+| Status | `code` | Quando |
+|--------|--------|--------|
+| 400 | `VALIDATION_ERROR` | Assunto ausente ou com mais de 100 caracteres, categoria inválida ou descrição com menos de 10 caracteres |
+| 401 | `UNAUTHENTICATED` | Token ausente, inválido ou expirado |
+| 500 | `INTERNAL_ERROR` | Falha inesperada no servidor |
+
+Os códigos acima seguem as convenções gerais do contrato. Seu retorno efetivo depende do tratamento global de erros do Backend.
+
+### 5.2 Armazenamento no MongoDB
+
+Os relatórios são registrados na coleção `suportes`.
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `usuarioId` | identificador | Usuário responsável pelo relatório, obtido pelo token JWT |
+| `assunto` | texto | Assunto informado pelo usuário |
+| `categoria` | texto | Categoria selecionada |
+| `descricao` | texto | Descrição detalhada do problema |
+| `status` | texto | Situação do relatório, inicialmente `aberto` |
+| `createdAt` | data | Data de criação do relatório |
+| `updatedAt` | data | Data da última atualização |
+
+O usuário autenticado é identificado automaticamente pelo Backend, garantindo a associação do relatório à conta responsável pelo envio.
+
+### 5.3 Integração com o Frontend
+
+O formulário está disponível em **Minha conta → Visão geral → Reportar problema**.
+
+Ao enviar o formulário:
+O Frontend envia `assunto`, `categoria` e `descricao` para `POST /v1/suporte`.
+O Backend valida os campos e identifica o usuário autenticado.
+O relatório é armazenado na coleção `suportes`.
+A API retorna `201 Created` com os dados do relatório.
+O Frontend apresenta a mensagem **"Problema reportado com sucesso!"** e mantém o usuário na página.
+
+Em caso de falha, o Frontend informa que não foi possível enviar o relatório.

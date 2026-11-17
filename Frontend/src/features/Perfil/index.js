@@ -1,13 +1,15 @@
 
 import { incluirFragmentos } from '../../core/views/includes.js';
-
+import { iniciarReportarProblema } from './components/ReportarProblema.js';
 const CAMINHO = '/src/features/perfil/components';
 
 const FRAGMENTOS = {
     'visao-geral': 'VisaoGeral.html',
     'perfil': 'perfil.html',
     'preferencias': 'preferencias.html',
-    'seguranca': 'seguranca.html'
+    'seguranca': 'seguranca.html',
+    'reportar-problema': 'ReportarProblema.html'
+    
 };
 
 let controlador = null;
@@ -109,6 +111,8 @@ async function carregarAba(container, aba, signal) {
             preencherPerfil(container);
         } else if (aba === 'preferencias') {
             iniciarPreferencias(container);
+        }else if (aba === 'reportar-problema') {
+            iniciarReportarProblema();
         }
 
     } catch (erro) {
