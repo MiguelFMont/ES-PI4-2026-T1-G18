@@ -10,6 +10,7 @@ import connectedAccountsRouter from "./connected-accounts/connected-accounts.rou
 import dashboardRouter from "./dashboard/dashboard.routes";
 import mentorIaRouter from "./mentor-ia/mentor-ia.routes";
 import { authRouter } from "./auth/auth.routes";
+import suporteRouter from "./suporte/suporte.routes";
 
 const router = Router();
 
@@ -19,5 +20,6 @@ router.use("/dashboard", dashboardRouter);
 router.use("/mentor-ia", mentorIaRouter);
 router.use(sistemaRouter);
 router.use("/auth", authRouter);
+ router.use("/suporte", suporteRouter);
 
 export default router;

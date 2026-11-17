@@ -1,0 +1,147 @@
+.minha-conta .reportar-problema {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    color: var(--conta-texto, var(--texto));
+    font-family: inherit;
+}
+.reportar-problema__cabecalho {
+    margin-bottom: 24px;
+}
+
+.reportar-problema__cabecalho h1 {
+    margin: 0 0 8px;
+    color: var(--conta-texto, var(--texto));
+    font-size: 21px;
+    font-weight: 800;
+}
+
+.reportar-problema__cabecalho p {
+    margin: 0;
+    color: var(--conta-suave, var(--texto-suave));
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.minha-conta .reportar-problema__form {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    width: 100%;
+    padding: 25px;
+    background: var(--conta-card, var(--fundo-card));
+    border: 1px solid var(--conta-borda, var(--borda));
+    border-radius: 13px;
+}
+
+.reportar-problema .campo {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.reportar-problema .campo label {
+    color: var(--conta-texto, var(--texto));
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.reportar-problema .campo input,
+.reportar-problema .campo select,
+.reportar-problema .campo textarea {
+    width: 100%;
+    padding: 13px;
+    border: 1px solid var(--conta-borda, var(--borda));
+    border-radius: 8px;
+    background: var(--conta-campo, var(--fundo-campo));
+    color: var(--conta-texto, var(--texto));
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.reportar-problema .campo input::placeholder,
+.reportar-problema .campo textarea::placeholder {
+    color: var(--conta-suave, var(--texto-suave));
+    opacity: 0.8;
+}
+
+.reportar-problema .campo input:focus,
+.reportar-problema .campo select:focus,
+.reportar-problema .campo textarea:focus {
+    border-color: var(--conta-destaque, var(--destaque));
+}
+
+.reportar-problema .campo textarea {
+    min-height: 140px;
+    resize: vertical;
+    line-height: 1.6;
+}
+
+.reportar-problema .campo select {
+    cursor: pointer;
+}
+
+
+.reportar-problema__acoes {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 4px;
+}
+
+.minha-conta .botao-enviar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 11px 22px;
+    border: none;
+    border-radius: 7px;
+    background: var(--destaque);
+    color: var(--destaque-texto);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: filter 0.2s ease;
+}
+
+.minha-conta .botao-enviar:hover {
+    filter: brightness(0.92);
+}
+
+.minha-conta .botao-enviar:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* MENSAGEM DE RETORNO */
+
+.reportar-problema #mensagem-reporte {
+    margin: 0;
+    color: var(--conta-texto, var(--texto));
+    font-size: 13px;
+}
+
+.reportar-problema #mensagem-reporte:empty {
+    display: none;
+}
+
+
+@media (max-width: 600px) {
+    .minha-conta .reportar-problema__form {
+        padding: 18px;
+        gap: 18px;
+    }
+
+    .reportar-problema__acoes {
+        justify-content: stretch;
+    }
+
+    .minha-conta .botao-enviar {
+        width: 100%;
+    }
+}
