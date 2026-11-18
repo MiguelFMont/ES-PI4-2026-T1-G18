@@ -454,3 +454,34 @@
         flex-direction: column;
     }
 }
+
+/* Salvar alterações — tema claro e escuro */
+#formulario-perfil #salvar-perfil {
+    display: block;
+    width: 100%;
+    padding: 14px 20px;
+    margin-top: 12px;
+
+    background: #C5FA28;
+    color: #111111;
+
+    border: none;
+    border-radius: 10px;
+
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+#formulario-perfil #salvar-perfil:hover {
+    background: #B2E522;
+}
+
+#formulario-perfil #salvar-perfil:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+

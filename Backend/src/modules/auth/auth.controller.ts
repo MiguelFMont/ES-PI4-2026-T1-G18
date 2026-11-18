@@ -71,10 +71,25 @@ export const authController = {
         }
         const usuario = await authService.atualizarPlano(req.user!.id, plano);
             res.status(200).json(usuario);
-        } catch (error) {
-            next(error);
-        }
-    },
+            } catch (error) {
+                next(error);
+            }
+        },
+        async atualizarPerfil(
+            req: AuthenticatedRequest,
+            res: Response,
+            next: NextFunction) {
+        try {
+            const usuario = await authService.atualizarPerfil(
+                req.user!.id,
+                req.body
+            );
+
+            res.status(200).json(usuario);
+            } catch (error) {
+                next(error);
+            }
+        },
         async verifyEmail(req: Request, res: Response, next: NextFunction) {
         try {
             const { token } = req.body;

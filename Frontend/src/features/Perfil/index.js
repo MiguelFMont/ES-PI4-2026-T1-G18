@@ -63,6 +63,61 @@ function preencherPerfil(container) {
         usuarioAtual.plano === 'pro' ? 'Pro' : 'Free';
 }
 
+function iniciarEdicaoPerfil(container, signal) {
+    const formulario = container.querySelector('#formulario-perfil');
+    const nomeInput = container.querySelector('#perfil-nome');
+    const mensagem = container.querySelector('#perfil-mensagem');
+    const botao = container.querySelector('#salvar-perfil');
+
+    formulario.addEventListener('submit', async (evento) => {
+        evento.preventDefault();
+
+        const nome = nomeInput.value.trim();
+
+        if (!nome) {
+            mensagem.textContent = 'Informe um nome válido.';
+            return;
+        }
+
+        botao.disabled = true;
+        mensagem.textContent = 'Salvando...';
+
+        try {
+            const token = localStorage.getItem('@FinanceAI:token');
+
+            const resposta = await fetch('/v1/auth/me', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ nome }),
+                signal
+            });
+
+            if (!resposta.ok) {
+                throw new Error('Não foi possível atualizar o nome.');
+            }
+
+            const usuarioAtualizado = await resposta.json();
+
+            usuarioAtual = {
+                ...usuarioAtual,
+                ...usuarioAtualizado,
+                nome
+            };
+
+            mensagem.textContent = 'Nome atualizado com sucesso!';
+
+        } catch (erro) {
+            if (erro.name === 'AbortError') return;
+            mensagem.textContent = erro.message;
+        } finally {
+            botao.disabled = false;
+        }
+    }, { signal });
+}
+
 function iniciarPreferencias(container) {
     const tema = container.querySelector('#preferencia-tema');
     const ocultar = container.querySelector('#preferencia-ocultar-valores');
@@ -109,6 +164,7 @@ async function carregarAba(container, aba, signal) {
             preencherVisaoGeral(container);
         } else if (aba === 'perfil') {
             preencherPerfil(container);
+            iniciarEdicaoPerfil(container, signal);
         } else if (aba === 'preferencias') {
             iniciarPreferencias(container);
         }else if (aba === 'reportar-problema') {

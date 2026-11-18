@@ -60,3 +60,23 @@ export type RegisterDto = z.infer<typeof registerSchema>;
 export type LoginDto = z.infer<typeof loginSchema>;
 export type ForgotPasswordDto = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordDto = z.infer<typeof resetPasswordSchema>;
+
+export const atualizarPerfilSchema = z.object({
+    nome: z.string()
+        .trim()
+        .min(1, "O nome não pode estar vazio")
+        .optional(),
+
+    preferencias: z.object({
+        tema: z.enum(["claro", "escuro"]).optional(),
+        ocultarValores: z.boolean().optional()
+    }).strict().optional()
+}).strict().refine(
+    dados => dados.nome !== undefined &&
+        dados.nome !== "" ||
+        dados.preferencias !== undefined &&
+        Object.keys(dados.preferencias).length > 0,
+    { message: "Informe pelo menos um campo para atualizar" }
+);
+
+export type AtualizarPerfilDto = z.infer<typeof atualizarPerfilSchema>;

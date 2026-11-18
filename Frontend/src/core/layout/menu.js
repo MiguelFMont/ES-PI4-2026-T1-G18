@@ -2,6 +2,8 @@
 import { clearSession } from '../session/storage.js';
 import { irParaLogin } from '../session/login.js';
 import { alternarTema, temaAtual } from '../theme/theme.js';
+import { salvarPreferencias } from '../preferencias.js';
+
 
 function rotuloTema() {
   return temaAtual() === 'claro' ? 'Tema escuro' : 'Tema claro';
@@ -12,6 +14,11 @@ export function ligarMenu(raiz = document) {
   if (botaoTema) {
     botaoTema.textContent = rotuloTema();
     botaoTema.addEventListener('click', (evento) => {
+      const novoTema = temaAtual() === 'claro' ? 'escuro' : 'claro';
+      salvarPreferencias({ tema: novoTema }).catch((erro) => {
+        console.error('Erro ao salvar tema no MongoDB:', erro);
+      });
+      
       // Se o navegador não suportar View Transitions, troca direto
       if (!document.startViewTransition) {
         alternarTema();

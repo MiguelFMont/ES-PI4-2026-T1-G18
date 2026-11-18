@@ -1,3 +1,4 @@
+import { salvarPreferencias } from '../preferencias.js';
 const CHAVE = '@FinanceAI:ocultarValores';
 let ocultos = localStorage.getItem(CHAVE) === 'true';
 
@@ -40,6 +41,10 @@ export function iniciarOcultacaoValores() {
         ocultos = !ocultos;
         localStorage.setItem(CHAVE, String(ocultos));
         atualizar();
+
+        salvarPreferencias({ ocultarValores: ocultos }).catch((erro) => {
+            console.error('Erro ao salvar ocultação de valores no MongoDB:', erro);
+        });
     });
 
     // Identifica valores adicionados ao carregar outras telas.

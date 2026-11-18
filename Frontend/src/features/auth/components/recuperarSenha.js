@@ -35,7 +35,12 @@ recuperarForm.addEventListener("submit", async function (event) {
 const parametros = new URLSearchParams(window.location.search);
 const origem = parametros.get("origem");
 const botaoVoltar = document.querySelector("#btn-voltar");
-if (origem === "perfil" && botaoVoltar) {
-    botaoVoltar.textContent = "Voltar para o perfil";
-    botaoVoltar.href = "/#perfil";
+if (botaoVoltar) {
+    if (origem === "perfil") {
+        botaoVoltar.textContent = "Voltar para o perfil";
+        botaoVoltar.href = "/#perfil";
+    } else {
+        botaoVoltar.textContent = "Voltar ao login";
+        botaoVoltar.href = "/src/features/auth/components/inicio.html";
+    }
 }

@@ -1,5 +1,5 @@
 import { UserModel } from "./auth.model";
-import { RegisterDto } from "./auth.dto";
+import type { RegisterDto, AtualizarPerfilDto } from "./auth.dto";
 import { PendingRegistrationModel } from "./pending-registration.model";
 
 export const authRepository = {
@@ -28,6 +28,27 @@ export const authRepository = {
         });
 
         return usuario.toObject();
+    },
+    async atualizarPerfil(userId: string, dados: AtualizarPerfilDto) {
+        const atualizacoes: Record<string, unknown> = {};
+
+        if (dados.nome !== undefined) {
+            atualizacoes.nome = dados.nome;
+        }
+
+        if (dados.preferencias?.tema !== undefined) {
+            atualizacoes["preferencias.tema"] = dados.preferencias.tema;
+        }
+
+        if (dados.preferencias?.ocultarValores !== undefined) {
+            atualizacoes["preferencias.ocultarValores"] =
+                dados.preferencias.ocultarValores;
+        }
+        return UserModel.findByIdAndUpdate(
+            userId,
+            { $set: atualizacoes },
+            { new: true, runValidators: true }
+        ).lean();
     },
 
     async setMfaSecret(userId: string, mfaSecret: string) {

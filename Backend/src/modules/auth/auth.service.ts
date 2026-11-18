@@ -3,7 +3,7 @@ import { authRepository } from "./auth.repository";
 import { javaServerClient } from "../../java-client/java-server.client";
 import { env } from "../../config/env";
 import { AppError } from "../../shared/errors/app-error";
-import { RegisterDto, LoginDto, ForgotPasswordDto, ResetPasswordDto } from "./auth.dto";
+import { atualizarPerfilSchema, type AtualizarPerfilDto, RegisterDto, LoginDto, ForgotPasswordDto, ResetPasswordDto } from "./auth.dto";
 import { randomBytes, createHash } from "node:crypto";
 import { emailService } from "../../shared/email/email.service";
 
@@ -112,28 +112,53 @@ export const authService = {
             nome: usuario.nome,
             email: usuario.email,
             plano: usuario.plano,
+            preferencias: usuario.preferencias,
             mfaEnabled: usuario.mfaEnabled
         };
     },
     
     async atualizarPlano(id: string,  plano: "free" | "pro") {
-    const usuario = await authRepository.atualizarPlano(id, plano);
+        const usuario = await authRepository.atualizarPlano(id, plano);
 
-    if (!usuario) {
-        throw new AppError(
-            "Usuário não encontrado",
-            404,
-            "USER_NOT_FOUND"
+        if (!usuario) {
+            throw new AppError(
+                "Usuário não encontrado",
+                404,
+                "USER_NOT_FOUND"
+            );
+        }
+
+        return {
+            id: usuario._id.toString(),
+            nome: usuario.nome,
+            email: usuario.email,
+            plano: usuario.plano
+        };
+    },
+    async atualizarPerfil(id: string, dados: AtualizarPerfilDto) {
+        const dadosValidados = atualizarPerfilSchema.parse(dados);
+
+        const usuario = await authRepository.atualizarPerfil(
+            id,
+            dadosValidados
         );
-    }
 
-    return {
-        id: usuario._id.toString(),
-        nome: usuario.nome,
-        email: usuario.email,
-        plano: usuario.plano
-    };
-},
+        if (!usuario) {
+            throw new AppError(
+                "Usuário não encontrado",
+                404,
+                "USER_NOT_FOUND"
+            );
+        }
+
+        return {
+            id: usuario._id.toString(),
+            nome: usuario.nome,
+            email: usuario.email,
+            plano: usuario.plano,
+            preferencias: usuario.preferencias
+        };
+    },
 
     async forgotPassword(dados: ForgotPasswordDto) {
         const usuario = await authRepository.findByEmail(dados.email);
