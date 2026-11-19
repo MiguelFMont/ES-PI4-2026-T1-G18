@@ -17,6 +17,12 @@ function criarControle(campo, atual, opcoes) {
   const lista = opcoes ?? OPCOES[campo];
   if (lista) {
     const select = document.createElement('select');
+    // texto exibido (select personalizável): o botão com <selectedcontent> permite truncar rótulos longos com reticências
+    const botaoTexto = document.createElement('button');
+    botaoTexto.type = 'button';
+    botaoTexto.tabIndex = -1;
+    botaoTexto.append(document.createElement('selectedcontent'));
+    select.append(botaoTexto);
     for (const { valor, rotulo } of lista) select.add(new Option(rotulo, valor));
     select.value = atual;
     return select;
@@ -58,6 +64,7 @@ export function iniciarEdicao({ botao, campo, atual, aoSalvar, opcoes }) {
   let encerrado = false;
   let salvando = false;
   const controladorFora = new AbortController();
+  let ouvirMovimento = () => {};
 
   function encerrar({ devolverFoco = true } = {}) {
     encerrado = true;
@@ -116,6 +123,17 @@ export function iniciarEdicao({ botao, campo, atual, aoSalvar, opcoes }) {
     document.addEventListener('pointerdown', (evento) => {
       if (!evento.composedPath().includes(editor) && !salvando) encerrar({ devolverFoco: false });
     }, { capture: true, signal: controladorFora.signal });
+    // A lista nativa se encolhe para caber no espaço que sobra e não volta ao tamanho normal: rolar ou redimensionar a fecha.
+    // Rolar dentro da própria lista (descendente do select) não conta, nem o scroll que o navegador faz ao abrir.
+    const fecharAoMover = (evento) => {
+      if (salvando) return;
+      if (evento.target instanceof Node && editor.contains(evento.target)) return;
+      encerrar({ devolverFoco: false });
+    };
+    ouvirMovimento = () => {
+      window.addEventListener('scroll', fecharAoMover, { capture: true, passive: true, signal: controladorFora.signal });
+      window.addEventListener('resize', fecharAoMover, { signal: controladorFora.signal });
+    };
   } else {
     controle.addEventListener('blur', () => setTimeout(confirmar, 0)); // espera: um Esc ou um clique em outro botão passa antes
   }
@@ -127,6 +145,11 @@ export function iniciarEdicao({ botao, campo, atual, aoSalvar, opcoes }) {
 
   botao.hidden = true;
   botao.after(editor);
+  if (eLista) controle.value = atual; // já no documento: garante o texto atual no botão do select personalizável
   controle.focus();
-  if (eLista) controle.showPicker?.();
+  if (eLista) {
+    controle.showPicker?.();
+    // só depois dos scrolls que o próprio navegador faz ao abrir a lista (dois quadros)
+    requestAnimationFrame(() => requestAnimationFrame(() => { if (!encerrado) ouvirMovimento(); }));
+  }
 }
