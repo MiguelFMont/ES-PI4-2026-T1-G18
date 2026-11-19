@@ -98,6 +98,9 @@ Todas as rotas exigem token. Um usuário só vê e altera as próprias transaç�
 | `observacoes` | texto | Anotação livre de até 300 caracteres. **Só aparece quando foi informada** |
 | `origem` | `"manual"` ou `"pluggy"` | Como a transação entrou: digitada pelo usuário ou importada de uma conta conectada (ver 2.8) |
 | `metaId` | texto | A meta a que a transação foi vinculada (seção 5): se for despesa, soma no progresso da meta; se for receita, subtrai. **Só aparece quando a transação foi vinculada** |
+| `cartaoId` | texto | O cartão de crédito (6.2) em que a compra foi feita. **Só aparece em transações no crédito que têm cartão** |
+| `parcelas` | inteiro | Em quantas vezes a compra foi feita (1 = à vista). **Só aparece em transações no crédito** |
+| `parcelamentoId` | texto | O parcelamento criado no cartão para uma compra em mais de 1 parcela (6.3). **Só aparece em compras parceladas** |
 
 ### 2.2 Formas de pagamento
 
@@ -122,6 +125,10 @@ O campo `categoria` é texto livre, mas o Frontend deve oferecer esta lista para
 | `observacoes` | texto | Não | Até 300 caracteres (espaços nas pontas são removidos). Texto vazio é o mesmo que não enviar |
 | `origem` | texto | Não | `manual` (padrão) ou `pluggy` |
 | `metaId` | texto | Não | Id de uma **meta do próprio usuário** (seção 5): a transação fica vinculada a ela: despesa soma no progresso da meta e receita subtrai. Uma meta que não existe, ou que é de outro usuário, responde `404 GOAL_NOT_FOUND` e **nada é salvo**. Id mal formado: `400 VALIDATION_ERROR` |
+| `cartaoId` | texto | Não | Id de um **cartão do próprio usuário** (6.2). Só vale com `formaPagamento: "credito"` (com outra forma, 400). Sem `cartaoId`, a compra no crédito conta para o cartão mais antigo |
+| `parcelas` | inteiro | Não | De 1 a 24 (padrão 1, à vista). Só vale no crédito e só em **despesa manual**. Com mais de 1 parcela, o Backend cria o parcelamento correspondente no cartão (sem juros, nenhuma parcela paga) e liga a transação a ele (`parcelamentoId`) |
+
+**Compra parcelada:** o valor da transação é o **total** da compra. A fatura do cartão conta as parcelas do parcelamento no lugar da compra (a mesma compra nunca entra duas vezes). Um `cartaoId` inexistente ou de outro usuário devolve `404 CARD_NOT_FOUND` e nada é salvo.
 
 Exemplo, requisição completa:
 
@@ -362,6 +369,13 @@ Resposta:
 
 Erros: `400 VALIDATION_ERROR` (lista vazia, mais de 100 itens, ids repetidos ou mal formados, `alteracoes` vazia ou com campo inválido, `metaId` mal formado: nesse caso **nada** do lote é aplicado), `401 UNAUTHENTICATED` e `404 GOAL_NOT_FOUND` (algum `metaId` não é de uma meta do usuário: também **nada** é aplicado).
 
+**Cartão e parcelas na edição.** `cartaoId` (`null` desvincula) e `parcelas` também podem ser alterados, com estas regras:
+
+- Só valem se a forma de pagamento **final** for crédito (senão `400 VALIDATION_ERROR`, e nada é gravado). Mudar a forma para outra que não seja crédito apaga cartão, parcelas e o parcelamento.
+- À vista para parcelada cria o parcelamento; parcelada para à vista (`parcelas: 1`) o remove; mudar valor, parcelas, cartão ou descrição de uma parcelada atualiza o **mesmo** parcelamento.
+- Se o parcelamento já tem **parcelas pagas**, o valor, o número de parcelas e a remoção são recusados (`409 INSTALLMENT_IN_PROGRESS`); só o cartão e a descrição podem mudar.
+- `cartaoId` de cartão inexistente ou de outro usuário: `404 CARD_NOT_FOUND` e o lote inteiro é recusado.
+
 ### 2.7 Excluir transações
 
 `POST /v1/transactions/bulk-delete` → `200 OK` (é `POST` porque um `DELETE` com corpo não é confiável em todos os clientes). Também vale um lote de um id só.
@@ -370,7 +384,7 @@ Erros: `400 VALIDATION_ERROR` (lista vazia, mais de 100 itens, ids repetidos ou 
 { "ids": ["6ae4a14014fb37bcbb2d7fac", "6ae4a14014fb37bcbb2d7fad"] }
 ```
 
-A resposta tem o mesmo formato da edição (`afetadas` e `naoEncontradas`). Excluir um id que já foi excluído o devolve em `naoEncontradas`.
+A resposta tem o mesmo formato da edição (`afetadas` e `naoEncontradas`). Excluir uma compra parcelada exclui também o parcelamento ligado a ela. Excluir um id que já foi excluído o devolve em `naoEncontradas`.
 
 Erros: `400 VALIDATION_ERROR` (lista vazia, mais de 100 ids, ids repetidos ou mal formados) e `401 UNAUTHENTICATED`.
 
@@ -466,7 +480,7 @@ O corpo é **opcional**:
 |---|---|---|---|
 | `data` | texto (data ou ISO 8601) | Não | Data do novo lançamento. Sem ela, vale o momento da chamada |
 
-A cópia leva `tipo`, `valor`, `categoria`, `descricao`, `observacoes`, `formaPagamento` e a **meta** (`metaId`, se houver) do original, com `origem: "manual"` e um `id` novo: duplicar um aporte gera outro aporte para a mesma meta. O original **não muda**. O Servidor Java não é chamado: a categoria é a do original.
+A cópia leva `tipo`, `valor`, `categoria`, `descricao`, `observacoes`, `formaPagamento` e a **meta** (`metaId`, se houver) do original, com `origem: "manual"` e um `id` novo: duplicar um aporte gera outro aporte para a mesma meta. O original **não muda**. O cartão e as parcelas também são copiados; uma compra parcelada ganha o **próprio** parcelamento novo (o do original continua dele). O Servidor Java não é chamado: a categoria é a do original.
 
 Só lançamentos **manuais** podem ser duplicados.
 
@@ -842,20 +856,29 @@ Módulo **complementar** e **simulado**: os ativos, o cartão e os parcelamentos
 | `POST /v1/investments` | Cadastra um ativo. Corpo: `nome`, `valorInvestido` (obrigatórios); `tipo`, `taxaMensal`, `dataAplicacao` (opcionais) | `201` com o `Investment` (o `percentualCarteira` já considera os ativos que existiam) |
 | `DELETE /v1/investments/:id` | Remove um ativo | `204` |
 
-### 6.2 Cartão de crédito simulado
+### 6.2 Cartões de crédito simulados
 
-Cada usuário tem um cartão, criado com **limite de R$ 5.000 e vencimento no dia 10** na primeira leitura.
+Cada usuário pode ter **até 5 cartões**, cada um com `nome` (1 a 40 caracteres, único por usuário sem diferenciar maiúsculas), `limite` e `diaVencimento`. Quem ainda não tem cartão recebe um chamado **Cartão** (limite de R$ 5.000, vencimento no dia 10) na primeira leitura. O cartão **mais antigo** é o **padrão**: recebe as compras no crédito sem `cartaoId` e os parcelamentos sem `cartaoId`.
 
 | Método e rota | O que faz | Resposta |
 |---|---|---|
-| `GET /v1/investments/card` | Limite, limite disponível e a fatura do mês | `200` com o `CardSummary` (abaixo) |
-| `PATCH /v1/investments/card` | Altera o `limite` (maior que zero) e/ou o `diaVencimento` (inteiro de 1 a 28, para existir em todo mês) | `200` com o `CardSummary` |
+| `GET /v1/investments/cards` | Lista os cartões, cada um com a sua fatura e o seu limite | `200` com `{ cartoes: [Card] }` (o mais antigo primeiro) |
+| `POST /v1/investments/cards` | Cria um cartão. Corpo: `nome` obrigatório; `limite` (maior que zero, padrão 5000) e `diaVencimento` (inteiro de 1 a 28, padrão 10) opcionais | `201` com o `Card` |
+| `GET /v1/investments/cards/:id` | Um cartão | `200` com o `Card` |
+| `PATCH /v1/investments/cards/:id` | Altera `nome`, `limite` e/ou `diaVencimento` | `200` com o `Card` |
+| `DELETE /v1/investments/cards/:id` | Exclui o cartão. As transações dele ficam, sem o vínculo. **Recusa se houver parcelamento em andamento** (`409 CARD_HAS_INSTALLMENTS`) | `204` |
+| `GET /v1/investments/card` e `PATCH /v1/investments/card` | Rotas antigas: valem para o **cartão padrão** | `200` com o `Card` |
 
 ```json
 {
+  "id": "6ae4a14014fb37bcbb2d7fac",
+  "nome": "Nubank",
+  "padrao": true,
   "limite": 8000,
   "diaVencimento": 10,
   "limiteDisponivel": 1833.78,
+  "saldoDevedor": 4878.36,
+  "parcelamentosAtivos": 2,
   "fatura": {
     "mes": "2026-11",
     "valor": 1287.86,
@@ -867,15 +890,16 @@ Cada usuário tem um cartão, criado com **limite de R$ 5.000 e vencimento no di
 }
 ```
 
-- `comprasNoCredito`: soma das **despesas reais** do usuário com `formaPagamento: "credito"` do mês corrente (UTC), até agora. Receitas, outras formas de pagamento e outros meses não entram.
-- `parcelasDoMes`: soma das parcelas dos parcelamentos **ainda ativos** (6.3).
-- `fatura.valor` = `comprasNoCredito` + `parcelasDoMes`.
+- `comprasNoCredito`: soma das **despesas reais à vista** do usuário, no crédito **neste cartão**, no mês corrente (UTC), até agora. Receitas, outras formas de pagamento e outros meses não entram, e as compras **parceladas** também não (elas entram pelas parcelas).
+- `parcelasDoMes`: soma das parcelas dos parcelamentos **ainda ativos deste cartão** (6.3).
+- `fatura.valor` = `comprasNoCredito` + `parcelasDoMes`: uma compra nunca é contada duas vezes.
 - `vencimento`: o próximo dia de vencimento (neste mês, ou no seguinte se o dia já passou; o próprio dia ainda vale).
-- `limiteDisponivel` = `limite` − `comprasNoCredito` − saldo devedor total dos parcelamentos. Pode ficar **negativo** se o limite estourar.
+- `limiteDisponivel` = `limite` − `comprasNoCredito` − `saldoDevedor` (dos parcelamentos do cartão). Pode ficar **negativo** se o limite estourar.
+- **Migração:** quem tinha um cartão único (versão anterior) continua com ele, que passa a se chamar **Cartão**; os parcelamentos antigos ficam nele. O Backend faz isso ao subir, de forma idempotente.
 
 ### 6.3 Parcelamentos ativos
 
-**Objeto `Installment`:** `id`, `descricao`, `valorTotal`, `parcelas`, `parcelasPagas`, `taxaJurosMensal` (em % ao mês, 0 = sem juros) e os valores calculados `valorParcela`, `parcelasRestantes`, `saldoDevedor`, `jurosTotal` e `quitado`.
+**Objeto `Installment`:** `id`, `cartaoId` (o cartão a que pertence), `transacaoId` (só nos criados a partir de uma compra parcelada, 2.4), `descricao`, `valorTotal`, `parcelas`, `parcelasPagas`, `taxaJurosMensal` (em % ao mês, 0 = sem juros) e os valores calculados `valorParcela`, `parcelasRestantes`, `saldoDevedor`, `jurosTotal` e `quitado`.
 
 - Parcela pela **tabela Price**: `valorTotal × i / (1 − (1+i)^−parcelas)`, com `i = taxaJurosMensal/100`; sem juros, `valorTotal / parcelas`.
 - `saldoDevedor`: o valor presente das parcelas que faltam (o que seria preciso pagar hoje para quitar); 0 se quitado.
@@ -883,10 +907,10 @@ Cada usuário tem um cartão, criado com **limite de R$ 5.000 e vencimento no di
 
 | Método e rota | O que faz | Resposta |
 |---|---|---|
-| `GET /v1/investments/card/installments` | Lista os parcelamentos com os totais | `200` com `{ parcelamentos, totalParcelasDoMes, totalSaldoDevedor, totalJuros }` (os totais só somam os ainda ativos) |
-| `POST /v1/investments/card/installments` | Cadastra. Corpo: `descricao`, `valorTotal`, `parcelas` (de 1 a 120) obrigatórios; `parcelasPagas` (0 até `parcelas`) e `taxaJurosMensal` (0 a 100) opcionais | `201` com o `Installment` |
+| `GET /v1/investments/card/installments` | Lista os parcelamentos com os totais; `?cartaoId=` mostra só os de um cartão | `200` com `{ parcelamentos, totalParcelasDoMes, totalSaldoDevedor, totalJuros }` (os totais só somam os ainda ativos) |
+| `POST /v1/investments/card/installments` | Cadastra. Corpo: `descricao`, `valorTotal`, `parcelas` (de 1 a 120) obrigatórios; `cartaoId` opcional (sem ele, vai para o cartão padrão); `parcelasPagas` (0 até `parcelas`) e `taxaJurosMensal` (0 a 100) opcionais | `201` com o `Installment` |
 | `PATCH /v1/investments/card/installments/:id` | Altera a `descricao` e/ou `parcelasPagas` (não pode passar do total). Pagar uma parcela é enviar `parcelasPagas + 1` | `200` com o `Installment` recalculado |
-| `DELETE /v1/investments/card/installments/:id` | Remove o parcelamento | `204` |
+| `DELETE /v1/investments/card/installments/:id` | Remove o parcelamento. Os criados por uma compra parcelada só saem excluindo a transação (`409 INSTALLMENT_FROM_TRANSACTION`) | `204` |
 
 ### 6.4 Erros
 
@@ -896,13 +920,18 @@ Cada usuário tem um cartão, criado com **limite de R$ 5.000 e vencimento no di
 | 401 | `UNAUTHENTICATED` | Sem token ou token inválido |
 | 404 | `INVESTMENT_NOT_FOUND` | O ativo não existe ou é de outro usuário |
 | 404 | `INSTALLMENT_NOT_FOUND` | O parcelamento não existe ou é de outro usuário |
+| 404 | `CARD_NOT_FOUND` | O cartão não existe ou é de outro usuário |
+| 409 | `CARD_LIMIT_REACHED` | O usuário já tem 5 cartões |
+| 409 | `CARD_NAME_TAKEN` | Já existe um cartão com esse nome |
+| 409 | `CARD_HAS_INSTALLMENTS` | O cartão tem parcelamentos em andamento: quite ou exclua antes |
+| 409 | `INSTALLMENT_FROM_TRANSACTION` | O parcelamento veio de uma compra: exclua a transação |
 | 503 | `JAVA_SERVER_UNAVAILABLE` | O Servidor de cálculos está fora do ar |
 
 ### 6.5 Mensagens ao Servidor de cálculos e coleções
 
 - `PedidoRentabilidadeSimulada`: `ativos` (cada um com `id`, `nome`, `tipo`, `valor`, `taxaMensal` e `meses`) → `RespostaRentabilidadeSimulada`: os mesmos ativos com `valorAtual`, `rendimento`, `rentabilidade` e `percentualCarteira`, mais `totalInvestido`, `patrimonio`, `rendimento` e `rentabilidade`.
 - `PedidoCalcularParcelamentos`: `parcelamentos` (cada um com `id`, `descricao`, `valorTotal`, `parcelas`, `parcelasPagas` e `taxaJurosMensal`) → `RespostaCalcularParcelamentos`: os mesmos com `valorParcela`, `parcelasRestantes`, `saldoDevedor`, `jurosTotal` e `quitado`, mais `totalParcelasDoMes`, `totalSaldoDevedor` e `totalJuros`.
-- **Coleções (MongoDB):** `investments` (`userId`, `nome`, `tipo`, `valorInvestido`, `taxaMensal`, `dataAplicacao`), `cards` (`userId` **único**, `limite`, `diaVencimento`) e `card_installments` (`userId`, `descricao`, `valorTotal`, `parcelas`, `parcelasPagas`, `taxaJurosMensal`).
+- **Coleções (MongoDB):** `investments` (`userId`, `nome`, `tipo`, `valorInvestido`, `taxaMensal`, `dataAplicacao`), `cards` (`userId`, `nome` **único por usuário**, `limite`, `diaVencimento`) e `card_installments` (`userId`, `cartaoId`, `transacaoId`, `descricao`, `valorTotal`, `parcelas`, `parcelasPagas`, `taxaJurosMensal`).
 
 ---
 
