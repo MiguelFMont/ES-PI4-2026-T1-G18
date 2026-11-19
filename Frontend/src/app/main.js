@@ -46,8 +46,8 @@ const TELAS = {
     ],
     modulo: () => import('../features/goals/index.js'),
   },
-  investimentos: {
-    titulo: 'Investimentos',
+  cartao: {
+    titulo: 'Cartão de crédito',
     html: '/src/features/investments/views/investments.html',
     css: [
       '/src/shared/styles/campos.css',

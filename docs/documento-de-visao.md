@@ -12,6 +12,7 @@ Campinas — 2026
 |---|---|---|
 | 1.0 | 26/09/2026 | Versão inicial (anexada à issue #1) |
 | 1.1 | 09/11/2026 | Revisão para refletir a arquitetura e o plano de sprints atuais (ver a seção 1.3) |
+| 1.2 | 16/11/2026 | O portfólio de investimentos simulado (RF25 e RF26) passa a **feature futura**: o Backend e o Servidor estão prontos, mas a interface mostra só o cartão de crédito (RF27 e RF36). Ver a seção 5.8 |
 
 ---
 
@@ -76,7 +77,7 @@ O FinanceAI é uma plataforma de gestão financeira pessoal que centraliza conta
 - Analisar seus gastos por categoria, com comparação entre períodos;
 - Definir e acompanhar metas financeiras;
 - Conversar com um assistente de IA (Mentor Financeiro) sobre sua própria situação financeira;
-- Acompanhar, em módulo complementar, seu portfólio de investimentos e a fatura do cartão de crédito.
+- Acompanhar, em módulo complementar, a fatura, o limite e os parcelamentos do cartão de crédito (o portfólio de investimentos simulado é uma feature futura).
 
 A interface terá características de um painel financeiro pessoal (estilo dashboard), combinado com um assistente conversacional lateral, proporcionando um ambiente informativo, didático e de fácil leitura mesmo para usuários iniciantes.
 
@@ -127,9 +128,11 @@ O sistema deverá disponibilizar um assistente conversacional, baseado em IA gen
 
 O usuário poderá criar metas financeiras, definindo um nome, um valor desejado e um prazo. O sistema deverá exibir o progresso do usuário em relação a cada meta cadastrada, permitindo o acompanhamento ao longo do tempo.
 
-### 5.8. Investimentos (módulo complementar)
+### 5.8. Cartão de crédito e investimentos (módulo complementar)
 
-Em caráter complementar, o sistema poderá apresentar um painel de investimentos simulados, consolidando patrimônio total, portfólio de ativos (valor investido, percentual da carteira e rentabilidade recente), fatura e limite disponível de cartão de crédito e os parcelamentos ativos do cartão (parcela, juros e saldo devedor). Este módulo terá caráter exclusivamente informativo e educacional, sem qualquer recomendação de compra ou venda de ativos.
+Em caráter complementar, o sistema apresenta a tela **Cartão de crédito**, com a fatura do mês (calculada a partir das despesas reais no crédito e das parcelas), o limite disponível e os parcelamentos ativos (parcela, juros e saldo devedor). Este módulo tem caráter exclusivamente informativo e educacional, sem qualquer recomendação de compra ou venda de ativos.
+
+O **portfólio de investimentos simulado** (patrimônio total, ativos, percentual da carteira e rentabilidade) é uma **feature futura**: as rotas do Backend (`/v1/investments`) e o cálculo de rentabilidade no Servidor (`PedidoRentabilidadeSimulada`) já existem e têm testes, mas ele ficou sem tela, para concentrar a entrega nos dados reais de transações e no cartão.
 
 ### 5.9. Personalização e segurança de acesso
 
@@ -246,8 +249,8 @@ A coluna **Grupo** indica o grupo de features responsável (1 a 5, ou "todos"), 
 
 | RF | Requisito | Grupo | Issues | Situação |
 |---|---|---|---|---|
-| **RF25** | O sistema deve exibir um painel com o patrimônio total simulado do usuário. | 5 | #54, #75, #76 | Planejado |
-| **RF26** | O sistema deve listar os ativos do portfólio simulado do usuário, com valor investido, percentual da carteira e rentabilidade recente. | 5 | #54, #64, #75 | Planejado |
+| **RF25** | O sistema deve exibir um painel com o patrimônio total simulado do usuário. | 5 | #54, #75, #76 | Feature futura (Backend pronto, sem tela) |
+| **RF26** | O sistema deve listar os ativos do portfólio simulado do usuário, com valor investido, percentual da carteira e rentabilidade recente. | 5 | #54, #64, #75 | Feature futura (Backend e Servidor prontos, sem tela) |
 | **RF27** | O sistema deve exibir a fatura atual e o limite disponível de um cartão de crédito simulado. | 5 | #65, #77 | Planejado |
 | **RF36** | O sistema deve exibir os parcelamentos ativos do cartão de crédito simulado (valor da parcela, juros e saldo devedor). | 5 | #55, #77, #90 | Planejado |
 
