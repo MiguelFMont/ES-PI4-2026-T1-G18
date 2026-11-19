@@ -16,8 +16,14 @@ import mongoose from "mongoose";
 import { connectDatabase } from "../mongo.connection";
 import { env } from "../../config/env";
 import { GoalModel } from "../../modules/goals/goals.model";
-import { CardInstallmentModel, CardModel, InvestmentModel } from "../../modules/investments/investments.model";
-import { CARTAO_PADRAO } from "../../modules/investments/investments.repository";
+import {
+  CARTAO_PADRAO,
+  CardInstallmentModel,
+  CardModel,
+  InvestmentModel,
+  NOME_CARTAO_PADRAO,
+  chaveDoNome,
+} from "../../modules/investments/investments.model";
 import { TransactionModel } from "../../modules/transactions/transactions.model";
 
 const hoje = () => {
@@ -89,11 +95,19 @@ async function main() {
     { userId, nome: "Carteira cripto (simulada)", tipo: "cripto", valorInvestido: 800, taxaMensal: -2.5, dataAplicacao: mesesAtras(3) },
   ]);
 
-  await CardModel.updateOne({ userId }, { $set: { ...CARTAO_PADRAO, limite: 8000 } }, { upsert: true });
+  // o cartão padrão do usuário (o mais antigo)
+  const chavePadrao = chaveDoNome(NOME_CARTAO_PADRAO);
+  await CardModel.updateOne(
+    { userId, nomeChave: chavePadrao },
+    { $set: { ...CARTAO_PADRAO, limite: 8000 }, $setOnInsert: { nome: NOME_CARTAO_PADRAO } },
+    { upsert: true }
+  );
+  const cartao = await CardModel.findOne({ userId, nomeChave: chavePadrao }).lean();
+  const cartaoId = String(cartao?._id);
   await CardInstallmentModel.insertMany([
-    { userId, descricao: "Notebook (12x)", valorTotal: 4500, parcelas: 12, parcelasPagas: 4, taxaJurosMensal: 0 },
-    { userId, descricao: "Geladeira (10x com juros)", valorTotal: 3200, parcelas: 10, parcelasPagas: 2, taxaJurosMensal: 1.99 },
-    { userId, descricao: "Curso de inglês (6x)", valorTotal: 1800, parcelas: 6, parcelasPagas: 5, taxaJurosMensal: 0 },
+    { userId, cartaoId, descricao: "Notebook (12x)", valorTotal: 4500, parcelas: 12, parcelasPagas: 4, taxaJurosMensal: 0 },
+    { userId, cartaoId, descricao: "Geladeira (10x com juros)", valorTotal: 3200, parcelas: 10, parcelasPagas: 2, taxaJurosMensal: 1.99 },
+    { userId, cartaoId, descricao: "Curso de inglês (6x)", valorTotal: 1800, parcelas: 6, parcelasPagas: 5, taxaJurosMensal: 0 },
   ]);
 
   console.log(`[seed] metas, ativos, cartão e parcelamentos inseridos para "${userId}" no banco "${env.MONGO_DB}"`);

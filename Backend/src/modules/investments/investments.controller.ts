@@ -2,9 +2,11 @@
 import { Response, NextFunction } from "express";
 import { investmentsService } from "./investments.service";
 import {
+  createCardSchema,
   createInstallmentSchema,
   createInvestmentSchema,
   idSchema,
+  listInstallmentsQuerySchema,
   updateCardSchema,
   updateInstallmentSchema,
 } from "./investments.dto";
@@ -39,7 +41,32 @@ export const investmentsController = {
     res.status(204).send();
   }),
 
-  // ------------------------------------------------------------------------------------------ cartão
+  // ------------------------------------------------------------------------------------------ cartões
+  listCards: tratar(async (req, res) => {
+    res.status(200).json(await investmentsService.listCards(req.user!.id));
+  }),
+
+  getCardById: tratar(async (req, res) => {
+    res.status(200).json(await investmentsService.getCardById(req.user!.id, idSchema.parse(req.params.id)));
+  }),
+
+  createCard: tratar(async (req, res) => {
+    const dados = createCardSchema.parse(req.body);
+    res.status(201).json(await investmentsService.createCard(req.user!.id, dados));
+  }),
+
+  updateCardById: tratar(async (req, res) => {
+    const id = idSchema.parse(req.params.id);
+    const alteracoes = updateCardSchema.parse(req.body);
+    res.status(200).json(await investmentsService.updateCardById(req.user!.id, id, alteracoes));
+  }),
+
+  removeCardById: tratar(async (req, res) => {
+    await investmentsService.removeCardById(req.user!.id, idSchema.parse(req.params.id));
+    res.status(204).send();
+  }),
+
+  // Rotas antigas: o cartão padrão (o mais antigo)
   getCard: tratar(async (req, res) => {
     res.status(200).json(await investmentsService.getCard(req.user!.id));
   }),
@@ -51,7 +78,8 @@ export const investmentsController = {
 
   // ------------------------------------------------------------------------------------------ parcelamentos
   listInstallments: tratar(async (req, res) => {
-    res.status(200).json(await investmentsService.listInstallments(req.user!.id));
+    const { cartaoId } = listInstallmentsQuerySchema.parse(req.query);
+    res.status(200).json(await investmentsService.listInstallments(req.user!.id, cartaoId));
   }),
 
   createInstallment: tratar(async (req, res) => {

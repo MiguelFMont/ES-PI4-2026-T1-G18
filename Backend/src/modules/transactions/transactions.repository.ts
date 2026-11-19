@@ -4,12 +4,25 @@ import { CreateTransactionDto, TransactionFiltersDto, UpdateTransactionDto } fro
 
 const UM_DIA_MS = 24 * 60 * 60 * 1000;
 
-// Converte as alterações de uma transação (edição em lote) em operadores do Mongo. `observacoes: ""` e `metaId: null` apagam o
-// campo ($unset); sem isso o Mongoose ignoraria o valor vazio e o antigo ficaria.
-function montarAtualizacao(dados: UpdateTransactionDto) {
-  const { observacoes, metaId, ...resto } = dados;
+// O que o service entrega ao repository na edição em lote: as alterações do usuário mais os campos do cartão que o próprio
+// service calcula (`null` apaga o campo; `parcelamentoId` nunca vem do usuário).
+export type AtualizacaoDeTransacao = Omit<UpdateTransactionDto, "parcelas"> & {
+  parcelas?: number | null;
+  parcelamentoId?: string | null;
+};
+
+// Converte as alterações de uma transação (edição em lote) em operadores do Mongo. `observacoes: ""` e `null` (metaId,
+// cartaoId, parcelas, parcelamentoId) apagam o campo ($unset); sem isso o Mongoose ignoraria o valor vazio e o antigo ficaria.
+function montarAtualizacao(dados: AtualizacaoDeTransacao) {
+  const { observacoes, metaId, cartaoId, parcelas, parcelamentoId, ...resto } = dados;
   const set: Record<string, unknown> = { ...resto };
   const unset: Record<string, ""> = {};
+  const anulaveis = { cartaoId, parcelas, parcelamentoId };
+  for (const [campo, valor] of Object.entries(anulaveis)) {
+    if (valor === undefined) continue;
+    if (valor === null) unset[campo] = "";
+    else set[campo] = valor;
+  }
   if (observacoes !== undefined) {
     if (observacoes === "") unset.observacoes = "";
     else set.observacoes = observacoes;
@@ -80,7 +93,7 @@ export const transactionsRepository = {
     return { docs, total, totais: { receitas: soma("receita"), despesas: soma("despesa") } };
   },
 
-  async create(dados: CreateTransactionDto & { userId: string; categoria: string }) {
+  async create(dados: Omit<CreateTransactionDto, "parcelas"> & { userId: string; categoria: string; parcelas?: number; parcelamentoId?: string }) {
     const transacao = await TransactionModel.create(dados);
     return transacao.toObject();
   },
@@ -88,6 +101,12 @@ export const transactionsRepository = {
   // Uma transação do usuário (ou null se não existe ou é de outro usuário).
   async findOneByUser(userId: string, id: string) {
     return TransactionModel.findOne({ _id: id, userId }).lean();
+  },
+
+  // As transações do usuário com os ids pedidos (as que não existem, ou são de outro usuário, não vêm).
+  async findManyByUser(userId: string, ids: string[]) {
+    if (ids.length === 0) return [];
+    return TransactionModel.find({ _id: { $in: ids }, userId }).lean();
   },
 
   // Dos ids pedidos, os que existem e são do usuário (o resto é "não encontrada").
@@ -117,7 +136,7 @@ export const transactionsRepository = {
     }
   },
 
-  async updateMany(userId: string, itens: { id: string; alteracoes: UpdateTransactionDto }[]) {
+  async updateMany(userId: string, itens: { id: string; alteracoes: AtualizacaoDeTransacao }[]) {
     if (itens.length === 0) return 0;
     const resultado = await TransactionModel.bulkWrite(
       itens.map(({ id, alteracoes }) => ({

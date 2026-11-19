@@ -1,9 +1,11 @@
 // src/modules/investments/investments.service.ts
 import { investmentsRepository } from "./investments.repository";
-import { CardDocument, InstallmentDocument, InvestmentDocument } from "./investments.model";
+import { CardDocument, InstallmentDocument, InvestmentDocument, MAX_CARTOES } from "./investments.model";
 import {
   AtivoParaCalculo,
   CardResponseDto,
+  CardsResponseDto,
+  CreateCardDto,
   CreateInstallmentDto,
   CreateInvestmentDto,
   InstallmentResponseDto,
@@ -99,7 +101,25 @@ async function calcularCarteira(itens: Item<InvestmentDocument>[], agora: Date):
 
 // ---------------------------------------------------------------------------------------------------- parcelamentos
 
-async function calcularParcelamentos(itens: Item<InstallmentDocument>[]): Promise<InstallmentsResponseDto> {
+// O que a resposta precisa além do que o Servidor Java calcula: o cartão padrão (dono dos parcelamentos antigos, sem
+// cartaoId) e, dos parcelamentos que nasceram de uma compra, o id da transação.
+interface ContextoParcelamentos {
+  padraoId: string;
+  transacoes: Map<string, string>;
+}
+
+async function contextoDeParcelamentos(userId: string, ids: string[]): Promise<ContextoParcelamentos> {
+  const [padrao, transacoes] = await Promise.all([
+    investmentsRepository.findOldestCard(userId),
+    investmentsRepository.transacoesDosParcelamentos(userId, ids),
+  ]);
+  return { padraoId: comId<CardDocument>(padrao)._id.toString(), transacoes };
+}
+
+async function calcularParcelamentos(
+  itens: Item<InstallmentDocument>[],
+  contexto: ContextoParcelamentos
+): Promise<InstallmentsResponseDto> {
   const parcelamentos: ParcelamentoParaCalculo[] = itens.map(({ id, doc }) => ({
     id,
     descricao: doc.descricao,
@@ -116,55 +136,91 @@ async function calcularParcelamentos(itens: Item<InstallmentDocument>[]): Promis
   );
 
   return {
-    parcelamentos: resposta.parcelamentos.map((p): InstallmentResponseDto => ({
-      id: p.id,
-      descricao: p.descricao,
-      valorTotal: p.valorTotal,
-      parcelas: p.parcelas,
-      parcelasPagas: p.parcelasPagas,
-      parcelasRestantes: p.parcelasRestantes,
-      taxaJurosMensal: p.taxaJurosMensal,
-      valorParcela: p.valorParcela,
-      saldoDevedor: p.saldoDevedor,
-      jurosTotal: p.jurosTotal,
-      quitado: p.quitado,
-    })),
+    parcelamentos: resposta.parcelamentos.map((p, i): InstallmentResponseDto => {
+      const transacaoId = contexto.transacoes.get(p.id);
+      return {
+        id: p.id,
+        cartaoId: itens[i].doc.cartaoId ?? contexto.padraoId,
+        ...(transacaoId ? { transacaoId } : {}),
+        descricao: p.descricao,
+        valorTotal: p.valorTotal,
+        parcelas: p.parcelas,
+        parcelasPagas: p.parcelasPagas,
+        parcelasRestantes: p.parcelasRestantes,
+        taxaJurosMensal: p.taxaJurosMensal,
+        valorParcela: p.valorParcela,
+        saldoDevedor: p.saldoDevedor,
+        jurosTotal: p.jurosTotal,
+        quitado: p.quitado,
+      };
+    }),
     totalParcelasDoMes: resposta.totalParcelasDoMes,
     totalSaldoDevedor: resposta.totalSaldoDevedor,
     totalJuros: resposta.totalJuros,
   };
 }
 
-// ---------------------------------------------------------------------------------------------------- cartão
+// ---------------------------------------------------------------------------------------------------- cartões
 
-async function montarCartao(userId: string, cartao: CardDocument): Promise<CardResponseDto> {
+const cartaoNaoEncontrado = () => new AppError("Cartão não encontrado", 404, "CARD_NOT_FOUND");
+const parcelamentoNaoEncontrado = () => new AppError("Parcelamento não encontrado", 404, "INSTALLMENT_NOT_FOUND");
+const nomeEmUso = () => new AppError("Você já tem um cartão com esse nome", 409, "CARD_NAME_TAKEN");
+
+// Os cartões do usuário, do mais antigo (o padrão, primeiro da lista) para o mais novo. Quem não tem nenhum recebe o padrão.
+async function carregarCartoes(userId: string): Promise<Item<CardDocument>[]> {
+  await investmentsRepository.ensureDefaultCard(userId);
+  return (await investmentsRepository.findCards(userId)).map((c) => comoItem<CardDocument>(c));
+}
+
+// A fatura e o limite de cada cartão (ou só do `apenasId`) são calculados só com as compras e os parcelamentos dele.
+// Compras no crédito sem cartão indicado, e parcelamentos antigos, contam para o cartão mais antigo.
+async function montarCartoes(userId: string, apenasId?: string): Promise<CardResponseDto[]> {
+  const cartoes = await carregarCartoes(userId);
+  const alvo = apenasId ? cartoes.filter((c) => c.id === apenasId) : cartoes;
+  if (apenasId && alvo.length === 0) throw cartaoNaoEncontrado();
+
+  const padraoId = cartoes[0].id;
   const agora = new Date();
-  const [comprasNoCredito, parcelamentos] = await Promise.all([
+  const [compras, parcelamentos] = await Promise.all([
     investmentsRepository.somarComprasNoCredito(userId, inicioDoMes(agora), agora),
-    investmentsService.listInstallments(userId),
+    investmentsRepository.findInstallments(userId),
   ]);
+  const itens = parcelamentos.map((p) => comoItem<InstallmentDocument>(p));
+  const semContexto: ContextoParcelamentos = { padraoId, transacoes: new Map() };
 
-  const vencimento = proximoVencimento(cartao.diaVencimento, agora);
-  const compras = emReais(comprasNoCredito);
+  return Promise.all(
+    alvo.map(async ({ id, doc }): Promise<CardResponseDto> => {
+      const ehPadrao = id === padraoId;
+      const doCartao = itens.filter((p) => (p.doc.cartaoId ?? padraoId) === id);
+      const parc = await calcularParcelamentos(doCartao, semContexto);
+      const comprasNoCredito = emReais(
+        compras.filter((c) => c.cartaoId === id || (c.cartaoId === null && ehPadrao)).reduce((soma, c) => soma + c.total, 0)
+      );
+      const vencimento = proximoVencimento(doc.diaVencimento, agora);
 
-  return {
-    limite: cartao.limite,
-    diaVencimento: cartao.diaVencimento,
-    limiteDisponivel: emReais(cartao.limite - compras - parcelamentos.totalSaldoDevedor),
-    fatura: {
-      mes: inicioDoMes(agora).toISOString().slice(0, 7),
-      valor: emReais(compras + parcelamentos.totalParcelasDoMes),
-      comprasNoCredito: compras,
-      parcelasDoMes: parcelamentos.totalParcelasDoMes,
-      vencimento: vencimento.toISOString().slice(0, 10),
-      diasParaVencer: Math.round((vencimento.getTime() - inicioDoDia(agora).getTime()) / UM_DIA_MS),
-    },
-  };
+      return {
+        id,
+        nome: doc.nome,
+        padrao: ehPadrao,
+        limite: doc.limite,
+        diaVencimento: doc.diaVencimento,
+        limiteDisponivel: emReais(doc.limite - comprasNoCredito - parc.totalSaldoDevedor),
+        saldoDevedor: parc.totalSaldoDevedor,
+        parcelamentosAtivos: parc.parcelamentos.filter((p) => !p.quitado).length,
+        fatura: {
+          mes: inicioDoMes(agora).toISOString().slice(0, 7),
+          valor: emReais(comprasNoCredito + parc.totalParcelasDoMes),
+          comprasNoCredito,
+          parcelasDoMes: parc.totalParcelasDoMes,
+          vencimento: vencimento.toISOString().slice(0, 10),
+          diasParaVencer: Math.round((vencimento.getTime() - inicioDoDia(agora).getTime()) / UM_DIA_MS),
+        },
+      };
+    })
+  );
 }
 
-function parcelamentoNaoEncontrado() {
-  return new AppError("Parcelamento não encontrado", 404, "INSTALLMENT_NOT_FOUND");
-}
+const ehViolacaoDeUnico = (erro: unknown) => (erro as { code?: number } | null)?.code === 11000;
 
 export const investmentsService = {
   // ------------------------------------------------------------------------------------------ portfólio
@@ -198,25 +254,114 @@ export const investmentsService = {
     }
   },
 
-  // ------------------------------------------------------------------------------------------ cartão
+  // ------------------------------------------------------------------------------------------ cartões
+  async listCards(userId: string): Promise<CardsResponseDto> {
+    const cartoes = await montarCartoes(userId);
+    return {
+      cartoes,
+      maximo: MAX_CARTOES,
+      totais: {
+        limite: emReais(cartoes.reduce((s, c) => s + c.limite, 0)),
+        limiteDisponivel: emReais(cartoes.reduce((s, c) => s + c.limiteDisponivel, 0)),
+        saldoDevedor: emReais(cartoes.reduce((s, c) => s + c.saldoDevedor, 0)),
+        faturaDoMes: emReais(cartoes.reduce((s, c) => s + c.fatura.valor, 0)),
+      },
+    };
+  },
+
+  async getCardById(userId: string, id: string): Promise<CardResponseDto> {
+    return (await montarCartoes(userId, id))[0];
+  },
+
+  // Até MAX_CARTOES por usuário e nome único (sem diferenciar maiúsculas). O nome é conferido antes e o índice único
+  // do banco pega a corrida entre duas criações juntas.
+  async createCard(userId: string, dados: CreateCardDto): Promise<CardResponseDto> {
+    if ((await investmentsRepository.countCards(userId)) >= MAX_CARTOES) {
+      throw new AppError(`Você já tem o máximo de ${MAX_CARTOES} cartões`, 409, "CARD_LIMIT_REACHED");
+    }
+    if (await investmentsRepository.findCardByName(userId, dados.nome)) throw nomeEmUso();
+
+    let criado;
+    try {
+      criado = await investmentsRepository.createCard({ userId, ...dados });
+    } catch (erro) {
+      throw ehViolacaoDeUnico(erro) ? nomeEmUso() : erro;
+    }
+    const id = comId<CardDocument>(criado)._id.toString();
+
+    // duas criações juntas podem passar da conferência acima: a que ficou além do máximo é desfeita
+    if ((await investmentsRepository.countCards(userId)) > MAX_CARTOES) {
+      await investmentsRepository.removeCard(userId, id, false);
+      throw new AppError(`Você já tem o máximo de ${MAX_CARTOES} cartões`, 409, "CARD_LIMIT_REACHED");
+    }
+    return (await montarCartoes(userId, id))[0];
+  },
+
+  async updateCardById(userId: string, id: string, alteracoes: UpdateCardDto): Promise<CardResponseDto> {
+    if (!(await investmentsRepository.findCard(userId, id))) throw cartaoNaoEncontrado();
+    if (alteracoes.nome !== undefined && (await investmentsRepository.findCardByName(userId, alteracoes.nome, id))) {
+      throw nomeEmUso();
+    }
+    try {
+      if (!(await investmentsRepository.updateCard(userId, id, alteracoes))) throw cartaoNaoEncontrado();
+    } catch (erro) {
+      throw ehViolacaoDeUnico(erro) ? nomeEmUso() : erro;
+    }
+    return (await montarCartoes(userId, id))[0];
+  },
+
+  // Com parcelamento ainda ativo: 409 CARD_HAS_INSTALLMENTS e nada muda. Sem ele, o cartão e os parcelamentos quitados
+  // saem e as transações dele são desvinculadas (ver o repository).
+  async removeCardById(userId: string, id: string): Promise<void> {
+    const cartoes = await carregarCartoes(userId);
+    if (!cartoes.some((c) => c.id === id)) throw cartaoNaoEncontrado();
+
+    const ehPadrao = cartoes[0].id === id;
+    if ((await investmentsRepository.countActiveInstallments(userId, id, ehPadrao)) > 0) {
+      throw new AppError(
+        "Este cartão tem parcelamentos em andamento: quite ou exclua os parcelamentos antes de excluir o cartão",
+        409,
+        "CARD_HAS_INSTALLMENTS"
+      );
+    }
+    if (!(await investmentsRepository.removeCard(userId, id, ehPadrao))) throw cartaoNaoEncontrado();
+  },
+
+  // Rotas antigas (/card): o "cartão padrão" é o mais antigo do usuário.
   async getCard(userId: string): Promise<CardResponseDto> {
-    return montarCartao(userId, (await investmentsRepository.findOrCreateCard(userId)) as CardDocument);
+    return (await montarCartoes(userId))[0];
   },
 
   async updateCard(userId: string, alteracoes: UpdateCardDto): Promise<CardResponseDto> {
-    return montarCartao(userId, (await investmentsRepository.updateCard(userId, alteracoes)) as CardDocument);
+    const [padrao] = await carregarCartoes(userId);
+    return investmentsService.updateCardById(userId, padrao.id, alteracoes);
   },
 
   // ------------------------------------------------------------------------------------------ parcelamentos
-  async listInstallments(userId: string): Promise<InstallmentsResponseDto> {
-    const itens = (await investmentsRepository.findInstallments(userId)).map((p) => comoItem<InstallmentDocument>(p));
-    return calcularParcelamentos(itens);
+  // Todos os do usuário, ou só os de um cartão (`cartaoId`).
+  async listInstallments(userId: string, cartaoId?: string): Promise<InstallmentsResponseDto> {
+    let itens = (await investmentsRepository.findInstallments(userId)).map((p) => comoItem<InstallmentDocument>(p));
+    const contexto = await contextoDeParcelamentos(userId, itens.map((p) => p.id));
+    if (cartaoId) {
+      if (!(await investmentsRepository.findCard(userId, cartaoId))) throw cartaoNaoEncontrado();
+      itens = itens.filter((p) => (p.doc.cartaoId ?? contexto.padraoId) === cartaoId);
+    }
+    return calcularParcelamentos(itens, contexto);
   },
 
-  // Como no portfólio, a conta (e a validação do Servidor) vem antes de gravar.
+  // Como no portfólio, a conta (e a validação do Servidor) vem antes de gravar. Sem cartaoId, vai para o cartão mais antigo.
   async createInstallment(userId: string, dados: CreateInstallmentDto): Promise<InstallmentResponseDto> {
-    const novo: InstallmentDocument = { userId, ...dados };
-    const { parcelamentos } = await calcularParcelamentos([{ id: "novo", doc: novo }]);
+    const { cartaoId: cartaoPedido, ...contrato } = dados;
+    let cartaoId: string;
+    if (cartaoPedido) {
+      if (!(await investmentsRepository.findCard(userId, cartaoPedido))) throw cartaoNaoEncontrado();
+      cartaoId = cartaoPedido;
+    } else {
+      cartaoId = comId<CardDocument>(await investmentsRepository.findOldestCard(userId))._id.toString();
+    }
+
+    const novo: InstallmentDocument = { userId, cartaoId, ...contrato };
+    const { parcelamentos } = await calcularParcelamentos([{ id: "novo", doc: novo }], { padraoId: cartaoId, transacoes: new Map() });
 
     const criado = comId<InstallmentDocument>(await investmentsRepository.createInstallment(novo));
     return { ...parcelamentos[0], id: criado._id.toString() };
@@ -230,15 +375,26 @@ export const investmentsService = {
     if (parcelasPagas > atual.parcelas) {
       throw new AppError("Parcelas pagas não pode passar do total de parcelas", 400, "VALIDATION_ERROR");
     }
-    const { parcelamentos } = await calcularParcelamentos([
-      { id, doc: { ...atual, ...alteracoes, parcelasPagas } as InstallmentDocument },
-    ]);
+    const contexto = await contextoDeParcelamentos(userId, [id]);
+    const { parcelamentos } = await calcularParcelamentos(
+      [{ id, doc: { ...atual, ...alteracoes, parcelasPagas } as InstallmentDocument }],
+      contexto
+    );
 
     if (!(await investmentsRepository.updateInstallment(userId, id, alteracoes))) throw parcelamentoNaoEncontrado();
     return parcelamentos[0];
   },
 
+  // Um parcelamento que nasceu de uma compra no crédito só sai junto com a transação: 409 INSTALLMENT_FROM_TRANSACTION.
   async removeInstallment(userId: string, id: string): Promise<void> {
+    if (!(await investmentsRepository.findInstallment(userId, id))) throw parcelamentoNaoEncontrado();
+    if ((await investmentsRepository.transacoesDosParcelamentos(userId, [id])).size > 0) {
+      throw new AppError(
+        "Este parcelamento vem de uma compra no crédito: exclua a transação para removê-lo",
+        409,
+        "INSTALLMENT_FROM_TRANSACTION"
+      );
+    }
     if (!(await investmentsRepository.removeInstallment(userId, id))) throw parcelamentoNaoEncontrado();
   },
 };

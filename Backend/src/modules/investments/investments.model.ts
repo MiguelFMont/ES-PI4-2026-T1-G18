@@ -1,7 +1,7 @@
 // src/modules/investments/investments.model.ts
-// Investimentos e cartão SIMULADOS do Grupo 5. Três coleções: o portfólio (investments), o cartão do usuário (cards) e
-// os parcelamentos ativos dele (card_installments). Valores derivados (valor atual, parcela, saldo devedor, fatura) não
-// são guardados: são calculados pelo Servidor Java a cada leitura.
+// Investimentos e cartão SIMULADOS do Grupo 5. Três coleções: o portfólio (investments), os cartões do usuário (cards, até
+// MAX_CARTOES por usuário) e os parcelamentos dele (card_installments, cada um ligado a um cartão). Valores derivados
+// (valor atual, parcela, saldo devedor, fatura) não são guardados: são calculados pelo Servidor Java a cada leitura.
 import { Schema, model } from "mongoose";
 
 export const TIPOS_DE_ATIVO = ["renda_fixa", "renda_variavel", "fundo", "cripto", "outro"] as const;
@@ -31,9 +31,24 @@ const InvestmentSchema = new Schema<InvestmentDocument>(
 );
 InvestmentSchema.index({ userId: 1, createdAt: 1 });
 
-// O cartão de crédito simulado do usuário (um por usuário, criado com valores padrão na primeira leitura).
+// Quantos cartões cada usuário pode ter.
+export const MAX_CARTOES = 5;
+// Nome do cartão criado sozinho quando o usuário ainda não tem nenhum.
+export const NOME_CARTAO_PADRAO = "Cartão";
+
+// Valores iniciais do cartão criado sozinho (e do cartão novo sem limite ou vencimento informados).
+export const CARTAO_PADRAO = { limite: 5000, diaVencimento: 10 } as const;
+
+// Chave de comparação do nome: sem espaços nas pontas e sem diferenciar maiúsculas de minúsculas.
+export const chaveDoNome = (nome: string) => nome.trim().toLocaleLowerCase("pt-BR");
+
+// Um cartão de crédito simulado do usuário. O mais antigo (createdAt) é o "cartão padrão": recebe as compras no crédito
+// que não indicam cartão.
 export interface CardDocument {
   userId: string;
+  nome: string;
+  // nome em minúsculas: sustenta o índice único (nome único por usuário sem diferenciar maiúsculas)
+  nomeChave: string;
   limite: number;
   // dia do mês do vencimento da fatura (1 a 28, para existir em todos os meses)
   diaVencimento: number;
@@ -41,15 +56,21 @@ export interface CardDocument {
 
 const CardSchema = new Schema<CardDocument>(
   {
-    userId: { type: String, required: true, unique: true },
+    userId: { type: String, required: true },
+    nome: { type: String, required: true, trim: true, minlength: 1, maxlength: 40 },
+    nomeChave: { type: String, required: true },
     limite: { type: Number, required: true, min: 0 },
     diaVencimento: { type: Number, required: true, min: 1, max: 28 },
   },
   { timestamps: true }
 );
+// Antes havia um índice único só por userId (um cartão por usuário): migrarCartoes() o remove nos bancos antigos.
+CardSchema.index({ userId: 1, nomeChave: 1 }, { unique: true });
 
 export interface InstallmentDocument {
   userId: string;
+  // o cartão a que o parcelamento pertence; sem ele (dado antigo) vale o cartão mais antigo do usuário
+  cartaoId?: string;
   descricao: string;
   valorTotal: number;
   parcelas: number;
@@ -61,6 +82,7 @@ export interface InstallmentDocument {
 const InstallmentSchema = new Schema<InstallmentDocument>(
   {
     userId: { type: String, required: true },
+    cartaoId: { type: String },
     descricao: { type: String, required: true, trim: true, maxlength: 100 },
     valorTotal: { type: Number, required: true, min: 0 },
     parcelas: { type: Number, required: true, min: 1 },
