@@ -263,6 +263,7 @@ body.com-sessao #main-header {
     place-items: center;
     width: 2rem;
     height: 2rem;
+    border: 0; /* sem a borda padrão do navegador */
     border-radius: 0.6rem;
     color: var(--texto-suave);
     background: transparent;
@@ -342,7 +343,7 @@ body.com-sessao #main-header {
 
 .menu-lateral__rodape button {
     width: 100%;
-    border: var(--borda-elemento, 0);
+    border: 0; /* itens do menu nunca têm borda, nem no estilo "bordas" */
     color: var(--texto-suave);
     background: transparent;
     font: inherit;
