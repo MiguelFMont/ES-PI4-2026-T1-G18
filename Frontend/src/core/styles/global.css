@@ -330,6 +330,72 @@ body.menu-recolhido .main-nav__grupo + .main-nav__grupo {
     border-top: 1px solid var(--borda);
 }
 
+/* ---- dica do menu recolhido (core/layout/dicaMenu.js): um rótulo que nasce do ícone e se expande para a direita.
+   position: fixed porque o #main-header corta o que passa da sua borda. Abaixo das notificações (z-index 100). */
+.dica-menu {
+    position: fixed;
+    z-index: 90;
+    display: flex;
+    align-items: center;
+    padding-inline: 0.9rem;
+    border-radius: 0.75rem;
+    color: var(--texto);
+    background: var(--fundo-card);
+    box-shadow: var(--sombra-flutuante);
+    font-size: 0.875rem;
+    font-weight: 600;
+    white-space: nowrap;
+    pointer-events: none;
+    transform-origin: left center;
+    /* escondida: do tamanho e da posição do ícone, transparente */
+    transform: translateX(calc(-1 * var(--dica-recuo, 0px))) scaleX(var(--dica-escala, 1));
+    opacity: 0;
+    visibility: hidden;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.6, 1), opacity 0.15s ease, visibility 0s linear 0.2s;
+}
+
+.dica-menu__texto {
+    opacity: 0;
+    transition: opacity 0.1s ease;
+}
+
+.dica-menu--visivel {
+    transform: none;
+    opacity: 1;
+    visibility: visible;
+    transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.18s ease, visibility 0s;
+}
+
+.dica-menu--visivel .dica-menu__texto {
+    opacity: 1;
+    transition: opacity 0.16s ease 0.1s; /* o texto aparece quando a caixa já quase abriu, sem ficar esticado */
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dica-menu,
+    .dica-menu--visivel {
+        transform: none;
+        transition: opacity 0.15s ease, visibility 0s linear 0.15s;
+    }
+
+    .dica-menu--visivel {
+        transition: opacity 0.15s ease, visibility 0s;
+    }
+
+    .dica-menu__texto,
+    .dica-menu--visivel .dica-menu__texto {
+        opacity: 1;
+        transition: none;
+    }
+}
+
+/* celular: o menu nunca fica recolhido, então não há dica */
+@media (max-width: 767px) {
+    .dica-menu {
+        display: none;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     body.com-sessao,
     .menu-lateral__recolher .menu-icone {

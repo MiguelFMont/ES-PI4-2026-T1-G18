@@ -11,12 +11,11 @@ function rotuloTema() {
   return temaAtual() === 'claro' ? 'Tema escuro' : 'Tema claro';
 }
 
-/** Troca o texto de um botão do menu (o <span class="menu-texto">, que o botão recolhido esconde) e a dica do mouse. */
+/** Troca o texto de um botão do menu (o <span class="menu-texto">, que o botão recolhido esconde) A dica do menu recolhido (dicaMenu.js) lê esse texto. */
 function definirRotulo(botao, texto) {
   const rotulo = botao.querySelector('.menu-texto');
   if (rotulo) rotulo.textContent = texto;
   else botao.textContent = texto;
-  botao.title = texto;
 }
 
 function lerMenuRecolhido() {
@@ -37,7 +36,6 @@ function ligarRecolher(raiz) {
     botao.setAttribute('aria-expanded', String(!recolhido));
     const rotulo = recolhido ? 'Expandir menu' : 'Recolher menu';
     botao.setAttribute('aria-label', rotulo);
-    botao.title = rotulo;
   }
 
   aplicar(lerMenuRecolhido());
