@@ -253,3 +253,59 @@
     transition: none;
   }
 }
+
+/* Caixa de seleção (checkbox) do projeto: fundo cinza e cantos bem arredondados; marcada, fica na cor de destaque com o
+   "visto". Usada no extrato (selecionar várias transações) e no formulário de transação (Vincular a uma meta). Use
+   <input type="checkbox" class="caixa-selecao">. */
+.caixa-selecao {
+  appearance: none;
+  display: inline-grid;
+  flex: none;
+  place-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  margin: 0;
+  border: 0;
+  border-radius: 0.55rem;
+  background: color-mix(in srgb, var(--texto) 16%, var(--fundo-card));
+  cursor: pointer;
+  transition: background-color var(--duracao-cor) ease, box-shadow 0.1s ease, scale 0.1s ease;
+}
+
+.caixa-selecao::after {
+  content: '';
+  width: 0.85rem;
+  height: 0.85rem;
+  background: var(--destaque-texto);
+  clip-path: polygon(14% 52%, 0 66%, 38% 100%, 100% 22%, 86% 8%, 38% 72%); /* o visto */
+  scale: 0;
+  transition: scale 0.1s ease;
+}
+
+.caixa-selecao:hover {
+  background: color-mix(in srgb, var(--texto) 26%, var(--fundo-card));
+}
+
+.caixa-selecao:checked,
+.caixa-selecao:indeterminate {
+  background: var(--destaque);
+}
+
+.caixa-selecao:checked::after {
+  scale: 1;
+}
+
+/* "algumas selecionadas" no cabeçalho do extrato: um traço no lugar do visto */
+.caixa-selecao:indeterminate::after {
+  clip-path: none;
+  width: 0.8rem;
+  height: 0.19rem;
+  border-radius: 0.1rem;
+  scale: 1;
+}
+
+.caixa-selecao:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--destaque); /* anel de foco do teclado */
+  scale: var(--escala-foco, 1.03);
+}
