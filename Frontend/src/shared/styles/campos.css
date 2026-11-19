@@ -107,7 +107,7 @@
 
   /* a lista nativa nunca fica mais estreita que o campo nem que a maior opção */
   .campo select::picker(select) {
-    min-inline-size: max(anchor-size(inline), max-content);
+    min-inline-size: anchor-size(inline);
     max-inline-size: calc(100vw - 1rem);
   }
 
@@ -217,6 +217,7 @@
 .seletor__lista--acima {
   top: auto;
   bottom: calc(100% + 0.25rem);
+  transform: translateY(0.6rem); /* aberta para cima, a lista entra subindo em direção ao campo */
 }
 
 .seletor__lista--aberta {
