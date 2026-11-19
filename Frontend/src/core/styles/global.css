@@ -121,6 +121,72 @@ body.menu-recolhido {
     --largura-menu: 4.5rem;
 }
 
+/* Espaçamento padrão das telas: o #app-content dá o mesmo recuo (ao menu, ao topo, à direita e à base, também com o menu
+   recolhido) e a mesma largura máxima a todas. As telas (features/*) não definem recuo nem largura próprios. */
+:root {
+    --espaco-pagina: 1.5rem;
+    --largura-maxima-conteudo: 90rem;
+}
+
+body.com-sessao #app-content {
+    padding: var(--espaco-pagina);
+}
+
+body.com-sessao #app-content > * {
+    width: 100%;
+    max-width: var(--largura-maxima-conteudo);
+    margin-inline: auto;
+}
+
+@media (max-width: 767px) {
+    :root {
+        --espaco-pagina: 1rem;
+    }
+}
+
+/* Barras de rolagem de todo o projeto: finas e cinzas (nos dois temas, pois a cor sai do --texto) */
+:root {
+    --rolagem-polegar: color-mix(in srgb, var(--texto) 28%, transparent);
+    --rolagem-polegar-hover: color-mix(in srgb, var(--texto) 45%, transparent);
+}
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--rolagem-polegar) transparent;
+}
+
+*::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+    background: transparent;
+}
+
+*::-webkit-scrollbar-track,
+*::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: var(--rolagem-polegar);
+    border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: var(--rolagem-polegar-hover);
+}
+
+*::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+/* Alguns navegadores recentes (Chromium) põem botões circulares de seta nas áreas que rolam na horizontal (a tabela do
+   extrato). O projeto não usa esse recurso, então ele é desligado (regra à parte: navegador sem suporte a ignora). */
+::scroll-button(*) {
+    content: none;
+}
+
 /* com sessão: menu lateral + conteúdo (o main.js marca o body) */
 body.com-sessao {
     display: grid;

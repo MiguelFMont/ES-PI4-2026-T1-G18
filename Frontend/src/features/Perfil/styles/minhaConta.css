@@ -28,9 +28,6 @@
 
 .minha-conta {
     width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 28px;
     color: var(--conta-texto);
     font-family: inherit;
 }
@@ -430,10 +427,6 @@
 ======================================== */
 
 @media (max-width: 750px) {
-    .minha-conta {
-        padding: 18px;
-    }
-
     .visao-geral {
         grid-template-columns: 1fr;
     }

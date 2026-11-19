@@ -238,7 +238,7 @@ body.transactions-painel-aberto {
 /* A janela "Nova meta": por cima do painel (z-index 50) e do fundo escuro, cobrindo só o conteúdo (a esquerda é o menu). */
 .transactions-meta-modal {
   position: fixed;
-  inset: 0 0 0 12rem;
+  inset: 0 0 0 var(--largura-menu, 14rem);
   z-index: 60;
   display: grid;
   place-items: center;
