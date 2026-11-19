@@ -5,9 +5,6 @@
 .investments-page {
   display: grid;
   gap: 1.5rem;
-  max-width: 72rem;
-  margin: 0 auto;
-  padding: 1.5rem 1rem 3rem;
 }
 
 .investments-page [hidden] {

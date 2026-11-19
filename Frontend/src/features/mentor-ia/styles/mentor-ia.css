@@ -7,10 +7,7 @@
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   gap: 1.25rem;
-  height: 100dvh;
-  max-width: 60rem;
-  margin: 0 auto;
-  padding: 1.5rem 1rem;
+  height: calc(100dvh - 2 * var(--espaco-pagina)); /* a janela menos o recuo que o #app-content já dá em cima e embaixo */
 }
 
 .mentor-ia-page [hidden] {
@@ -75,7 +72,6 @@
   .mentor-ia-page {
     height: auto;
     grid-template-rows: auto auto;
-    padding: 1.25rem 1rem;
   }
 
   .mentor-ia-cabecalho h1 {
