@@ -393,7 +393,8 @@ function preencherLinha(linha, transacao, alterados = new Set()) {
     descricao: transacao.descricao,
     observacoes: transacao.observacoes ?? '',
     categoria: rotuloDe(CATEGORIAS, transacao.categoria),
-    formaPagamento: rotuloDe(FORMAS_PAGAMENTO, transacao.formaPagamento),
+    // compra parcelada: mostra em quantas vezes (o cartão e o parcelamento ficam na aba Cartão)
+    formaPagamento: rotuloDe(FORMAS_PAGAMENTO, transacao.formaPagamento) + (transacao.parcelas > 1 ? ` · ${transacao.parcelas}x` : ''),
     tipo: rotuloDe(TIPOS, transacao.tipo),
     metaId: transacao.metaId ? (titulosDasMetas.get(transacao.metaId) ?? 'Meta') : '',
     // o sinal e a coluna Tipo dizem se é receita ou despesa; a cor só reforça

@@ -140,6 +140,10 @@ export function iniciarParcelamentos(raiz, { signal, criar, pagar, excluir }) {
     botaoPagar.disabled = p.quitado;
     botaoPagar.setAttribute('aria-label', `Pagar uma parcela de ${p.descricao}`);
     cartao.querySelector('[data-acao="excluir"]').setAttribute('aria-label', `Excluir ${p.descricao}`);
+    // um parcelamento criado por uma compra parcelada só sai excluindo a transação (o Backend recusa a exclusão direta)
+    const deCompra = Boolean(p.transacaoId);
+    cartao.querySelector('[data-acao="excluir"]').hidden = deCompra;
+    campo(cartao, 'deCompra').hidden = !deCompra;
     return cartao;
   }
 
