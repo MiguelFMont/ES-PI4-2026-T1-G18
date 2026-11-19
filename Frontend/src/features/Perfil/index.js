@@ -1,6 +1,8 @@
 
 import { incluirFragmentos } from '../../core/views/includes.js';
 import { iniciarReportarProblema } from './components/ReportarProblema.js';
+import { alternarEstilo, estiloAtual } from '../../core/theme/theme.js';
+import { salvarPreferencias } from '../../core/preferencias.js';
 const CAMINHO = '/src/features/perfil/components';
 
 const FRAGMENTOS = {
@@ -118,17 +120,33 @@ function iniciarEdicaoPerfil(container, signal) {
     }, { signal });
 }
 
-function iniciarPreferencias(container) {
-    const tema = container.querySelector('#preferencia-tema');
-    const ocultar = container.querySelector('#preferencia-ocultar-valores');
+function iniciarPreferencias(container, signal) {
+    const interruptor = container.querySelector('#preferencia-estilo');
+    const estado = container.querySelector('#preferencia-estilo-estado');
     const mensagem = container.querySelector('#preferencias-mensagem');
 
-    // Aguardando integração com o theme.js e o Backend.
-    tema.disabled = true;
-    ocultar.disabled = true;
+    // Ligado = com sombras (o padrão); desligado = com bordas finas.
+    function mostrarEstilo() {
+        const comSombras = estiloAtual() === 'sombras';
+        interruptor.setAttribute('aria-checked', String(comSombras));
+        estado.textContent = comSombras ? 'Com sombras' : 'Com bordas';
+    }
 
-    mensagem.textContent =
-        'Configurações disponíveis após integração com o Backend.';
+    mostrarEstilo();
+
+    interruptor.addEventListener('click', () => {
+        const novo = alternarEstilo();
+        mostrarEstilo();
+        mensagem.textContent = '';
+
+        // O estilo já vale neste navegador; o salvamento na conta é um extra e a falha não desfaz a troca.
+        salvarPreferencias({ estilo: novo }).catch((erro) => {
+            console.error('Erro ao salvar o estilo da interface:', erro);
+            if (!signal.aborted) {
+                mensagem.textContent = 'O estilo foi aplicado, mas não foi possível salvá-lo na sua conta.';
+            }
+        });
+    }, { signal });
 }
 
 async function carregarAba(container, aba, signal) {
@@ -166,7 +184,7 @@ async function carregarAba(container, aba, signal) {
             preencherPerfil(container);
             iniciarEdicaoPerfil(container, signal);
         } else if (aba === 'preferencias') {
-            iniciarPreferencias(container);
+            iniciarPreferencias(container, signal);
         }else if (aba === 'reportar-problema') {
             iniciarReportarProblema();
         }

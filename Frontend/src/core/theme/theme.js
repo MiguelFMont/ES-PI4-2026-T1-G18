@@ -1,5 +1,9 @@
 // Tema claro/escuro. O escolhido fica em localStorage; sem escolha, vale o tema escuro (padrão do protótipo).
 const CHAVE = '@FinanceAI:tema';
+// Estilo da interface: 'sombras' (padrão, cartões e campos destacados por sombras) ou 'bordas' (linhas finas no lugar
+// das sombras). Fica em localStorage e vira o atributo data-estilo no <html>; as variáveis do estilo 'bordas' estão
+// em core/styles/global.css (bloco :root[data-estilo='bordas']).
+const CHAVE_ESTILO = '@FinanceAI:estilo';
 
 function lerSalvo() {
   try {
@@ -22,8 +26,32 @@ export function aplicarTema(tema) {
   }
 }
 
+function lerEstiloSalvo() {
+  try {
+    return localStorage.getItem(CHAVE_ESTILO);
+  } catch {
+    return null; // armazenamento bloqueado: segue sem persistir
+  }
+}
+
+export function estiloAtual() {
+  return document.documentElement.dataset.estilo === 'bordas' ? 'bordas' : 'sombras';
+}
+
+export function aplicarEstilo(estilo) {
+  const valido = estilo === 'bordas' ? 'bordas' : 'sombras';
+  document.documentElement.dataset.estilo = valido;
+  try {
+    localStorage.setItem(CHAVE_ESTILO, valido);
+  } catch {
+    // sem persistência, o estilo vale só nesta sessão da página
+  }
+}
+
+// Aplica o tema e o estilo guardados. Roda antes de a tela ser montada, então não há piscada de outro visual.
 export function iniciarTema() {
   document.documentElement.dataset.tema = lerSalvo() === 'claro' ? 'claro' : 'escuro';
+  document.documentElement.dataset.estilo = lerEstiloSalvo() === 'bordas' ? 'bordas' : 'sombras';
 }
 
 // Troca de tema com animação. Nos navegadores com a View Transitions API, o tema novo cresce em um círculo a
@@ -55,6 +83,17 @@ export function alternarTema({ origem, aoAplicar } = {}) {
   } else {
     trocarComFade(trocar);
   }
+  return novo;
+}
+
+/**
+ * Alterna o estilo da interface entre 'sombras' e 'bordas' e devolve o novo. As sombras e bordas passam
+ * suavemente de um estilo ao outro (o mesmo fade do tema); com "reduzir movimento" ativado, a troca é instantânea.
+ */
+export function alternarEstilo() {
+  const novo = estiloAtual() === 'bordas' ? 'sombras' : 'bordas';
+  if (reduzirMovimento()) aplicarEstilo(novo);
+  else trocarComFade(() => aplicarEstilo(novo));
   return novo;
 }
 

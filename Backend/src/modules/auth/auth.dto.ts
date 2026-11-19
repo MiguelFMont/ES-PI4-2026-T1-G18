@@ -69,6 +69,7 @@ export const atualizarPerfilSchema = z.object({
 
     preferencias: z.object({
         tema: z.enum(["claro", "escuro"]).optional(),
+        estilo: z.enum(["sombras", "bordas"]).optional(),
         ocultarValores: z.boolean().optional()
     }).strict().optional()
 }).strict().refine(
