@@ -115,10 +115,21 @@ body:not(.com-sessao) #main-header {
     display: none;
 }
 
+/* Largura do menu lateral: 14rem aberto e 4.5rem recolhido (só os ícones). O painel do formulário de transação usa a
+   mesma variável para cobrir só o conteúdo. */
+:root {
+    --largura-menu: 14rem;
+}
+
+body.menu-recolhido {
+    --largura-menu: 4.5rem;
+}
+
 /* com sessão: menu lateral + conteúdo (o main.js marca o body) */
 body.com-sessao {
     display: grid;
-    grid-template-columns: 12rem 1fr;
+    grid-template-columns: var(--largura-menu) 1fr;
+    transition: grid-template-columns 0.25s ease;
 }
 
 body.com-sessao #app-content {
@@ -129,42 +140,120 @@ body.com-sessao #main-header {
     position: sticky;
     top: 0;
     height: 100vh;
-    padding: 1.5rem 1rem;
+    padding: 1.25rem 0.75rem;
     background: var(--fundo-card);
     border-right: 1px solid var(--borda);
+    overflow: hidden; /* o texto some sem quebrar linha enquanto a largura encolhe */
 }
 
 .menu-lateral {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1.25rem;
     height: 100%;
 }
 
+/* topo: marca e botão de recolher */
+.menu-lateral__topo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    min-height: 2.5rem;
+    padding-inline: 0.25rem;
+}
+
 .menu-lateral__marca {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--destaque);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--texto);
+    white-space: nowrap;
+}
+
+.menu-lateral__logo {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.6rem;
+    background: var(--destaque);
+    color: var(--destaque-texto);
+    font-weight: 800;
+}
+
+.menu-lateral__recolher {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.6rem;
+    color: var(--texto-suave);
+    background: transparent;
+    cursor: pointer;
+}
+
+.menu-lateral__recolher .menu-icone {
+    transition: rotate 0.25s ease;
+}
+
+/* ícones (SVG de traço, na cor do texto do item) */
+.menu-icone {
+    flex: none;
+    width: 1.25rem;
+    height: 1.25rem;
 }
 
 .main-nav {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 1rem;
+    min-height: 0;
+    overflow-y: auto; /* se a janela for baixa, só a lista rola; o rodapé continua visível */
 }
 
-.main-nav a {
+.main-nav__grupo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.main-nav__titulo {
+    padding: 0 0.75rem 0.3rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--texto-suave);
+    white-space: nowrap;
+}
+
+.menu-lateral a,
+.menu-lateral__rodape button {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 2.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.75rem;
+    white-space: nowrap;
+}
+
+.menu-lateral a {
     color: var(--texto-suave);
     text-decoration: none;
-    padding: 0.6rem 0.75rem;
-    border-radius: 0.6rem;
 }
 
-.main-nav a:hover {
+.menu-lateral a:hover {
     color: var(--texto);
+    background: color-mix(in srgb, var(--texto) 7%, transparent);
 }
 
-.main-nav a[aria-current='page'] {
+.menu-lateral a[aria-current='page'] {
     color: var(--destaque-texto);
     background: var(--destaque);
     font-weight: 700;
@@ -173,42 +262,93 @@ body.com-sessao #main-header {
 .menu-lateral__rodape {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.3rem;
     margin-top: auto;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--borda);
 }
 
 .menu-lateral__rodape button {
-    min-height: 2.5rem;
-    padding: 0.5rem 0.75rem;
+    width: 100%;
     border: var(--borda-elemento, 0);
-    border-radius: 0.6rem;
-    color: var(--texto);
-    background: var(--fundo-campo);
-    box-shadow: var(--sombra);
+    color: var(--texto-suave);
+    background: transparent;
     font: inherit;
     cursor: pointer;
 }
 
-.main-nav a,
-.menu-lateral__rodape button {
+.menu-lateral a,
+.menu-lateral__rodape button,
+.menu-lateral__recolher {
     transition: scale 0.1s ease, box-shadow 0.1s ease, background-color var(--duracao-cor) ease, color var(--duracao-cor) ease;
 }
 
-/* hover ou Tab: o botão se preenche com a cor principal */
+/* hover ou Tab nos botões: o fundo se preenche com a cor principal */
 .menu-lateral__rodape button:hover,
-.menu-lateral__rodape button:focus-visible {
+.menu-lateral__rodape button:focus-visible,
+.menu-lateral__recolher:hover,
+.menu-lateral__recolher:focus-visible {
     color: var(--destaque-texto);
     background: var(--destaque);
 }
 
 /* navegando com Tab: sem contorno, o item cresce um pouco (como o hover dos botões) e ganha uma sombra pequena */
-.main-nav a:focus-visible,
-.menu-lateral__rodape button:focus-visible {
+.menu-lateral a:focus-visible,
+.menu-lateral__rodape button:focus-visible,
+.menu-lateral__recolher:focus-visible {
     outline: none;
     scale: 1.01;
     box-shadow: var(--sombra-foco);
 }
 
+/* ---- menu recolhido: só os ícones. O texto continua para leitores de tela (mesma técnica do .so-leitor) */
+body.menu-recolhido .menu-texto {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+body.menu-recolhido .menu-lateral__topo {
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.75rem;
+    padding-inline: 0;
+}
+
+body.menu-recolhido .menu-lateral__recolher .menu-icone {
+    rotate: 180deg;
+}
+
+body.menu-recolhido .menu-lateral a,
+body.menu-recolhido .menu-lateral__rodape button {
+    justify-content: center;
+    padding-inline: 0;
+}
+
+/* sem os títulos dos grupos, um traço separa um do outro */
+body.menu-recolhido .main-nav__grupo + .main-nav__grupo {
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--borda);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.com-sessao,
+    .menu-lateral__recolher .menu-icone {
+        transition: none;
+    }
+}
+
+/* Animação circular de troca de tema (View Transitions API) */
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+}
+
+/* Celular (fora do escopo da entrega; o app móvel será feito à parte): o menu vira uma faixa no topo, sempre aberto */
 @media (max-width: 767px) {
     body.com-sessao {
         grid-template-columns: 1fr;
@@ -220,6 +360,7 @@ body.com-sessao #main-header {
         border-right: 0;
         border-bottom: 1px solid var(--borda);
         padding: 0.75rem 1rem;
+        overflow: visible;
     }
 
     .menu-lateral {
@@ -229,13 +370,38 @@ body.com-sessao #main-header {
         gap: 0.75rem;
     }
 
+    .menu-lateral__recolher,
+    .main-nav__titulo {
+        display: none;
+    }
+
     .main-nav {
         flex-direction: row;
+        flex-wrap: wrap; /* com 7 itens o menu passa da largura do celular e alargaria a página toda */
+        overflow: visible;
+    }
+
+    .main-nav__grupo {
+        display: contents;
     }
 
     .menu-lateral__rodape {
         flex-direction: row;
         margin-top: 0;
         margin-left: auto;
+        padding-top: 0;
+        border-top: 0;
+    }
+
+    .menu-lateral__rodape button {
+        width: auto;
+    }
+
+    /* no celular o menu nunca fica recolhido: o texto sempre aparece */
+    body.menu-recolhido .menu-texto {
+        position: static;
+        width: auto;
+        height: auto;
+        clip: auto;
     }
 }
