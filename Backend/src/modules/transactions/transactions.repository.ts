@@ -4,16 +4,22 @@ import { CreateTransactionDto, TransactionFiltersDto, UpdateTransactionDto } fro
 
 const UM_DIA_MS = 24 * 60 * 60 * 1000;
 
-// Converte as alterações de uma transação (edição em lote) em operadores do Mongo. `observacoes: ""` apaga o campo ($unset); sem isso o
-// Mongoose ignoraria o undefined e a observação antiga ficaria.
+// Converte as alterações de uma transação (edição em lote) em operadores do Mongo. `observacoes: ""` e `metaId: null` apagam o
+// campo ($unset); sem isso o Mongoose ignoraria o valor vazio e o antigo ficaria.
 function montarAtualizacao(dados: UpdateTransactionDto) {
-  const { observacoes, ...resto } = dados;
+  const { observacoes, metaId, ...resto } = dados;
   const set: Record<string, unknown> = { ...resto };
-  const atualizacao: Record<string, unknown> = {};
+  const unset: Record<string, ""> = {};
   if (observacoes !== undefined) {
-    if (observacoes === "") atualizacao.$unset = { observacoes: "" };
+    if (observacoes === "") unset.observacoes = "";
     else set.observacoes = observacoes;
   }
+  if (metaId !== undefined) {
+    if (metaId === null) unset.metaId = "";
+    else set.metaId = metaId;
+  }
+  const atualizacao: Record<string, unknown> = {};
+  if (Object.keys(unset).length > 0) atualizacao.$unset = unset;
   if (Object.keys(set).length > 0) atualizacao.$set = set;
   return atualizacao;
 }
@@ -32,6 +38,7 @@ export const transactionsRepository = {
     if (filtros.categoria) query.categoria = filtros.categoria;
     if (filtros.formaPagamento) query.formaPagamento = filtros.formaPagamento;
     if (filtros.origem) query.origem = filtros.origem;
+    if (filtros.metaId) query.metaId = filtros.metaId === "nenhuma" ? { $exists: false } : filtros.metaId;
     if (filtros.busca) query.descricao = { $regex: escaparRegex(filtros.busca), $options: "i" };
 
     if (filtros.dataInicio || filtros.dataFim) {

@@ -14,6 +14,7 @@ import {
 } from "./transactions.dto";
 import { javaServerClient } from "../../java-client/java-server.client";
 import { AppError } from "../../shared/errors/app-error";
+import { goalsRepository } from "../goals/goals.repository";
 
 // Se a categoria não vier, o Servidor Java a sugere pela descrição (PedidoCategorizarTransacao, issue #34).
 // "Outros" é a categoria quando o Servidor não acha nenhuma palavra-chave e também quando ele está fora do ar.
@@ -36,7 +37,16 @@ function paraDto(t: TransactionDocument & { _id: { toString(): string } }): Tran
     ...(t.observacoes ? { observacoes: t.observacoes } : {}),
     formaPagamento: t.formaPagamento,
     origem: t.origem,
+    ...(t.metaId ? { metaId: t.metaId } : {}),
   };
+}
+
+// Só dá para vincular uma transação a uma meta do PRÓPRIO usuário. Uma meta que não existe, ou que é de outro usuário, é
+// "não encontrada" (404 GOAL_NOT_FOUND) e nada é gravado.
+async function garantirMetasDoUsuario(userId: string, metaIds: string[]) {
+  const ids = [...new Set(metaIds)];
+  const encontradas = await Promise.all(ids.map((id) => goalsRepository.findOneByUser(userId, id)));
+  if (encontradas.some((meta) => !meta)) throw new AppError("Meta não encontrada", 404, "GOAL_NOT_FOUND");
 }
 
 export const transactionsService = {
@@ -77,6 +87,7 @@ export const transactionsService = {
   },
 
   async create(userId: string, dados: CreateTransactionDto) {
+    if (dados.metaId) await garantirMetasDoUsuario(userId, [dados.metaId]);
     const transacao = await transactionsRepository.create({
       ...dados,
       categoria: dados.categoria ?? (await transactionsService.sugerirCategoria(dados.descricao, dados.valor)),
@@ -85,8 +96,8 @@ export const transactionsService = {
     return paraDto(transacao);
   },
 
-  // Duplica um lançamento manual: copia tudo menos a data (e o id) e grava como um lançamento novo e manual. O original
-  // não muda. Importadas da Pluggy não duplicam (a fonte delas é o extrato da instituição). Sem Servidor Java: a
+  // Duplica um lançamento manual: copia tudo menos a data (e o id), inclusive a meta a que ele está vinculado (um aporte
+  // parecido, como o do mês seguinte), e grava como um lançamento novo e manual. O original não muda. Importadas da Pluggy não duplicam (a fonte delas é o extrato da instituição). Sem Servidor Java: a
   // categoria é a do original.
   async duplicate(userId: string, id: string, dados: DuplicateTransactionDto) {
     const original = await transactionsRepository.findOneByUser(userId, id);
@@ -103,6 +114,7 @@ export const transactionsService = {
       observacoes: original.observacoes,
       formaPagamento: original.formaPagamento,
       origem: "manual",
+      metaId: original.metaId,
       userId,
     });
     return paraDto(copia);
@@ -110,6 +122,8 @@ export const transactionsService = {
 
   // Lote: não é tudo ou nada. Faz o que existe e devolve os ids que não foram encontrados.
   async updateMany(userId: string, itens: { id: string; alteracoes: UpdateTransactionDto }[]): Promise<BulkResultDto> {
+    // vincular a uma meta que não é do usuário recusa o lote inteiro, antes de gravar qualquer item
+    await garantirMetasDoUsuario(userId, itens.flatMap((i) => (i.alteracoes.metaId ? [i.alteracoes.metaId] : [])));
     const existentes = await transactionsRepository.idsDoUsuario(userId, itens.map((i) => i.id));
     const afetadas = await transactionsRepository.updateMany(userId, itens.filter((i) => existentes.has(i.id)));
     return { afetadas, naoEncontradas: itens.map((i) => i.id).filter((id) => !existentes.has(id)) };

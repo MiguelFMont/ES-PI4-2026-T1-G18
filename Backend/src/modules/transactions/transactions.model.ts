@@ -18,6 +18,8 @@ export interface TransactionDocument {
   // Só para origem "pluggy": o id da transação na Pluggy (evita importar duas vezes) e a conta conectada de onde veio.
   externalId?: string;
   contaConectadaId?: string;
+  // A meta (Grupo 5) a que esta transação foi vinculada: o valor dela conta como aporte no progresso da meta. Opcional.
+  metaId?: string;
 }
 
 const TransactionSchema = new Schema<TransactionDocument>(
@@ -33,12 +35,15 @@ const TransactionSchema = new Schema<TransactionDocument>(
     origem: { type: String, enum: ["manual", "pluggy"], default: "manual" },
     externalId: { type: String },
     contaConectadaId: { type: String, index: true },
+    metaId: { type: String },
   },
   { timestamps: true }
 );
 
 // ajuda a listagem (mais recentes primeiro) e o painel
 TransactionSchema.index({ userId: 1, data: -1 });
+// o progresso de cada meta soma as transações vinculadas a ela
+TransactionSchema.index({ userId: 1, metaId: 1 });
 
 // A mesma transação da Pluggy não entra duas vezes para o mesmo usuário. Parcial: as manuais não têm externalId.
 TransactionSchema.index(

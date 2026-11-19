@@ -17,6 +17,8 @@ export const createTransactionSchema = z.object({
     .transform((texto) => texto || undefined),
   formaPagamento: z.enum(FORMAS_PAGAMENTO).default("outro"),
   origem: z.enum(["manual", "pluggy"]).default("manual"),
+  // vincula a transação a uma meta do próprio usuário (o valor dela conta como aporte no progresso da meta)
+  metaId: z.string().regex(/^[a-f\d]{24}$/i, "Id inválido").optional(),
 });
 
 export const transactionFiltersSchema = z
@@ -25,6 +27,8 @@ export const transactionFiltersSchema = z
     categoria: z.string().optional(),
     formaPagamento: z.enum(FORMAS_PAGAMENTO).optional(),
     origem: z.enum(["manual", "pluggy"]).optional(),
+    // id de uma meta (só as vinculadas a ela) ou "nenhuma" (só as sem meta)
+    metaId: z.union([z.string().regex(/^[a-f\d]{24}$/i, "Id inválido"), z.literal("nenhuma")]).optional(),
     busca: z.string().trim().min(1).max(100).optional(),
     dataInicio: z.coerce.date().optional(),
     dataFim: z.coerce.date().optional(),
@@ -51,6 +55,7 @@ export const updateTransactionSchema = z.object({
   descricao: z.string().trim().min(1),
   observacoes: z.string().trim().max(300), // "" = apagar; sem transform
   formaPagamento: z.enum(FORMAS_PAGAMENTO), // sem default
+  metaId: z.string().regex(/^[a-f\d]{24}$/i, "Id inválido").nullable(), // null = desvincular da meta
 })
   .partial()
   .refine((d) => Object.keys(d).length > 0, { message: "Informe ao menos um campo para alterar" });
@@ -106,6 +111,7 @@ export interface TransactionResponseDto {
   observacoes?: string; // só aparece quando foi informada
   formaPagamento: FormaPagamento;
   origem: "manual" | "pluggy";
+  metaId?: string; // só aparece quando a transação foi vinculada a uma meta
 }
 
 // Resposta das operações em lote: quantas foram feitas e quais ids não existem (ou não são do usuário).

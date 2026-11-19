@@ -250,6 +250,33 @@ Dois comportamentos ficam registrados nos testes de propósito, para quem mexer 
 - O `POST /v1/transactions` aceita `origem: "pluggy"` no corpo, como diz o contrato (seção 2.4). Um usuário consegue, portanto, cadastrar à mão um lançamento que se diz importado, e ele deixa de poder ser duplicado.
 - `inserirImportadas` **pula** o documento que o schema recusa em vez de lançar erro (`insertMany` com `ordered: false`). Hoje o mapeador da Pluggy valida antes e conta em `ignoradas.invalidas`, então não acontece; se acontecesse, `lidas` deixaria de ser `importadas` mais as ignoradas.
 
+### Metas, investimentos e cartão (Grupo 5)
+
+Os testes ficam em `src/modules/goals/__tests__/` (metas e integração) e `src/modules/investments/__tests__/`. Para rodar só eles:
+
+```bash
+node --import tsx --test "src/modules/goals/__tests__/*.test.ts" "src/modules/investments/__tests__/*.test.ts"
+```
+
+Reaproveitam o ambiente e o ajudante dos testes de transações (MongoDB em memória, Servidor Java **inalcançável de propósito**, dois usuários) e acrescentam `simularServidorGrupo5()` (`goals/__tests__/apoio.ts`), um Servidor Java simulado para os três pedidos do grupo que também guarda o que o Backend enviou. As contas de verdade do Servidor têm os próprios testes (`mvn test`, ver `../Servidor/README.md`).
+
+| Arquivo | O que cobre |
+|---|---|
+| `goals.routes.test.ts` | CRUD de `/v1/goals`: o progresso soma só as transações **vinculadas a cada meta** (cada meta tem o seu total; sem vínculo, de outro usuário ou com data futura não contam), meta atingida e prazo vencido, ordem pelo prazo, recálculo a cada leitura, prazo no passado recusado (e meta vencida editável sem mudar o prazo), edição parcial, exclusão que **desvincula** as transações sem apagá-las, isolamento entre usuários, 9 casos de validação, Servidor Java fora do ar (503 e nada salvo), `401` |
+| `vinculo.routes.test.ts` | Vincular a transação à meta pela API de transações: `POST /v1/transactions` com `metaId` (despesa soma e receita subtrai do progresso, meta de outro usuário ou inexistente = `404 GOAL_NOT_FOUND` sem salvar, id mal formado = `400`), duplicar copia o vínculo, `PATCH /bulk` vincula, troca de meta e desvincula com `null` (o lote inteiro é recusado se alguma meta não for do usuário), excluir a meta ou a transação |
+| `investments.routes.test.ts` | `/v1/investments`: portfólio e patrimônio (meses completos, juros compostos, percentual da carteira real no ativo novo), cartão (cartão padrão criado uma vez, fatura só com despesas reais no **crédito** do mês, parcelas do mês, limite disponível e estourado, vencimento), parcelamentos (tabela Price, totais só dos ativos, pagar parcela, quitar, limite de parcelas), isolamento, validação, `503` e `401` |
+| `investments.unidade.test.ts` | Sem HTTP nem banco: `mesesCompletos` (o mês só fecha no mesmo dia, virada de ano, dia 31) e `proximoVencimento` (hoje, mês seguinte, virada de ano, dia 28) |
+| `grupo5.integracao.test.ts` | Backend + Servidor Java **de verdade**: prova que os nomes e tipos dos campos dos três pedidos batem dos dois lados, com os mesmos números do `mvn test` |
+
+O teste de integração fica **pulado** no `npm test` comum. Para rodar, suba o Servidor (`mvn exec:java -Dexec.mainClass=com.financeai.Main`, com a porta como argumento se quiser outra) e defina `JAVA_SERVER_INTEGRACAO=1` (o endereço vem de `JAVA_SERVER_HOST` e `JAVA_SERVER_PORT`):
+
+```bash
+JAVA_SERVER_INTEGRACAO=1 JAVA_SERVER_PORT=3000 npm test                       # bash
+$env:JAVA_SERVER_INTEGRACAO="1"; $env:JAVA_SERVER_PORT="3000"; npm test       # PowerShell
+```
+
+Dados de exemplo para as telas: `npm run seed:grupo5` (metas com os aportes vinculados, ativos, cartão e parcelamentos do `usuario-demo`; aceita `<userId>` e `--limpar`, que apaga também as transações vinculadas às metas). Os aportes das metas são transações que o próprio seed cria; a fatura do cartão soma as despesas no crédito do mês, então rode também o `npm run seed:transacoes` com o mesmo usuário para ela ter compras.
+
 ### Integração com o Servidor Java
 
 `__tests__/servidor-java.integracao.test.ts` manda `PedidoFiltrarResposta` e `PedidoMontarContextoIA` para o Servidor de verdade (e roda o `sendMessage` com o filtro real). Fica **pulado** no `npm test` comum; para rodar, suba o Servidor (`../Servidor`) e defina `JAVA_SERVER_INTEGRACAO=1` (a porta vem de `JAVA_SERVER_PORT`, padrão 3000):

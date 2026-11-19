@@ -24,6 +24,14 @@ const ID2 = "6ad3fd7c273f8f0946dd77e6";
 const valida = { tipo: "despesa", valor: 10, data: "2026-10-05", descricao: "Teste" };
 
 describe("createTransactionSchema", () => {
+  test("metaId é opcional e só aceita um id bem formado (24 caracteres hexadecimais)", () => {
+    assert.equal(createTransactionSchema.parse(valida).metaId, undefined);
+    assert.equal(createTransactionSchema.parse({ ...valida, metaId: ID }).metaId, ID);
+    for (const ruim of ["abc", "", 5, null, ID + "0"]) {
+      assert.equal(createTransactionSchema.safeParse({ ...valida, metaId: ruim }).success, false, String(ruim));
+    }
+  });
+
   test("campos opcionais ganham valores padrão: forma 'outro' e origem 'manual'", () => {
     const dados = createTransactionSchema.parse(valida);
     assert.equal(dados.formaPagamento, "outro");
@@ -112,6 +120,14 @@ describe("updateTransactionSchema e lotes", () => {
 
   test("campos desconhecidos (origem, userId) são descartados", () => {
     assert.deepEqual(updateTransactionSchema.parse({ valor: 5, origem: "pluggy", userId: "beto" }), { valor: 5 });
+  });
+
+  test("metaId: um id vincula, null desvincula (e é uma alteração válida sozinha), qualquer outra coisa é recusada", () => {
+    assert.deepEqual(updateTransactionSchema.parse({ metaId: ID }), { metaId: ID });
+    assert.deepEqual(updateTransactionSchema.parse({ metaId: null }), { metaId: null });
+    for (const ruim of ["abc", "", 5, ID + "0"]) {
+      assert.equal(updateTransactionSchema.safeParse({ metaId: ruim }).success, false, String(ruim));
+    }
   });
 
   test("sem nenhum campo conhecido é recusado", () => {
