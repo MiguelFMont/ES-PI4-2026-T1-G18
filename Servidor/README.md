@@ -90,6 +90,23 @@ A API de IA é chamada pelo Backend **entre** os dois pedidos: contexto → IA �
 - **O filtro** (`FiltroDeAtivos`) analisa frase a frase. Uma frase é removida quando tem **um ativo específico** (código da B3, como `PETR4` ou `MXRF11`, ou um nome de uma lista de criptomoedas e empresas) **e** linguagem de recomendação (compre, venda, aporte, invista, recomendo, mantenha...). Recusas explícitas ("não posso recomendar PETR4") passam; "não posso recomendar, mas compre ITUB4" não passa, porque cada trecho depois de "mas/porém/contudo" é julgado separado. Se alguma frase sai, o aviso `FiltroDeAtivos.AVISO` é acrescentado no fim; se quase nada sobra, a resposta vira só o aviso.
 - `diaDoMes` fora de 1 a 31, `valor` negativo ou `tipo` diferente de `receita`/`despesa` respondem `Erro` `VALIDATION`.
 
+### Grupo 5 — Metas (`goals/`) e Investimentos (`investments/`), implementados
+
+Operações puras, como as dos outros grupos: tudo chega no pedido e nada é gravado. O CRUD, as coleções e a leitura das transações do usuário são do Backend; aqui ficam só as contas. Erro de regra: `Erro` `VALIDATION`.
+
+| Mensagem | `dados` |
+|---|---|
+| `PedidoProgressoMeta` | `{ "valorAtual": 5000, "valorObjetivo": 10000, "prazo": "2027-05-14T00:00:00.000Z" }`: o prazo aceita o instante ISO ou só a data (`2027-05-14`). Opcional: `hoje`, o dia de referência (só os testes usam; sem ele vale o relógio do Servidor, em UTC) |
+| `RespostaProgressoMeta` | `{ "percentual": 50, "falta": 5000, "concluida": false, "noPrazo": true, "diasRestantes": 181, "mesesRestantes": 7, "aporteMensalNecessario": 714.29 }` |
+| `PedidoRentabilidadeSimulada` | `{ "meses": 1, "ativos": [{ "id": "a1", "nome": "CDB", "valor": 1000, "taxaMensal": 1, "meses": 12 }] }`: `valor` obrigatório (maior que zero), `taxaMensal` em % (padrão 0), `meses` por ativo (senão vale o do pedido, padrão 1). Os outros campos do ativo voltam iguais |
+| `RespostaRentabilidadeSimulada` | `{ "ativos": [{ ..., "valorAtual": 1126.83, "rendimento": 126.83, "rentabilidade": 12.68, "percentualCarteira": 100 }], "totalInvestido": 1000, "patrimonio": 1126.83, "rendimento": 126.83, "rentabilidade": 12.68 }` |
+| `PedidoCalcularParcelamentos` | `{ "parcelamentos": [{ "id": "p1", "valorTotal": 1000, "parcelas": 10, "parcelasPagas": 4, "taxaJurosMensal": 2 }] }` |
+| `RespostaCalcularParcelamentos` | `{ "parcelamentos": [{ ..., "valorParcela": 111.33, "parcelasRestantes": 6, "saldoDevedor": 623.59, "jurosTotal": 113.27, "quitado": false }], "totalParcelasDoMes": 111.33, "totalSaldoDevedor": 623.59, "totalJuros": 113.27 }` |
+
+- **Progresso** (`GoalsHandler`): percentual = acumulado ÷ objetivo, de 0 a 100, com 2 casas (um acumulado negativo conta como 0); `concluida` quando o acumulado alcança o objetivo; `noPrazo` quando concluída ou o prazo não é anterior a hoje; `mesesRestantes` = `ceil(dias ÷ 30)`, no mínimo 1; aporte mensal = falta ÷ meses. Objetivo zero ou negativo e prazo ausente ou inválido respondem `VALIDATION`.
+- **Rentabilidade** (`InvestmentsHandler`): juros compostos, `valorAtual = valor × (1 + taxa/100)^meses`; o `percentualCarteira` de cada ativo é o valor atual dele sobre o patrimônio. Carteira vazia devolve zeros, sem erro.
+- **Parcelamentos** (`InvestmentsHandler`): tabela Price, `parcela = total × i ÷ (1 − (1+i)^−n)` (sem juros, `total ÷ n`); `saldoDevedor` é o valor presente das parcelas que faltam; os totais só somam os parcelamentos ainda ativos.
+
 ## `exemplo/`: documentação de cada arquivo
 
 `src/main/java/com/financeai/` tem as pastas de cada pacote. Em cada pasta há uma subpasta `exemplo/` com um `.md` para cada arquivo `.java` planejado, explicando o que ele deve ter e trazendo um exemplo de implementação. Ao implementar, crie o `.java` no pacote correspondente; o `.md` fica como referência (e pode ser apagado quando o projeto estiver andando). Os exemplos foram compilados juntos com o `core` e as operações foram testadas (hash e conferência de senha, TOTP com o vetor da RFC 6238, categorização, indicadores, comparação de períodos, progresso de meta, rentabilidade com juros compostos, parcelamentos, contexto e filtro da IA).
@@ -109,7 +126,7 @@ src/main/java/com/financeai/
 
 ## Estado atual (Sprint 0)
 
-Já implementados como código: o `Main` e o `core/` (`Comunicado`, `Parceiro`, `Aceitadora`, `Supervisora`, `Handler`, `HandlerRegistry`, `ErroDeNegocio`, `Teclado`), mais o `EcoHandler`, um handler de teste: `PedidoEco` devolve `RespostaEco` com os mesmos `dados`; com `{"falhar":"negocio"}` responde `Erro` `TESTE_NEGOCIO` e com `{"falhar":"interno"}` responde `Erro` `INTERNAL_ERROR`. Também já são código o `AuthHandler` (hash e conferência de senha), o `TransactionsHandler` (categorização de transações, ver "Grupo 2" acima) e o `MentorHandler` (contexto e filtro do Mentor IA, ver "Grupo 4" acima). Os outros handlers dos grupos ainda são `.md` de exemplo.
+Já implementados como código: o `Main` e o `core/` (`Comunicado`, `Parceiro`, `Aceitadora`, `Supervisora`, `Handler`, `HandlerRegistry`, `ErroDeNegocio`, `Teclado`), mais o `EcoHandler`, um handler de teste: `PedidoEco` devolve `RespostaEco` com os mesmos `dados`; com `{"falhar":"negocio"}` responde `Erro` `TESTE_NEGOCIO` e com `{"falhar":"interno"}` responde `Erro` `INTERNAL_ERROR`. Também já são código o `AuthHandler` (hash e conferência de senha), o `TransactionsHandler` (categorização de transações, ver "Grupo 2" acima) o `MentorHandler` (contexto e filtro do Mentor IA, ver "Grupo 4" acima), o `GoalsHandler` e o `InvestmentsHandler` (metas, investimentos e cartão simulados, ver "Grupo 5" acima). Os outros handlers dos grupos ainda são `.md` de exemplo.
 
 ## Build com Maven
 
@@ -153,6 +170,11 @@ Cobertura atual (Grupo 4, `mentoria/`):
 - **`FiltroDeAtivosTest`**: remove frases que recomendam ativo (código da B3 como `PETR4`/`MXRF11` ou nomes como "bitcoin") e acrescenta o `AVISO`; deixa passar recusas explícitas ("Não posso recomendar PETR4"); "não posso recomendar, mas compre ITUB4" é removida; texto sem ativo volta igual; resposta vazia ou quase toda removida vira só o aviso; linhas e listas do markdown são preservadas. Também testa `recomendaAtivo` frase a frase.
 - **`FiltroDeEscopoTest`**: o marcador `FORA_DO_ESCOPO` (puro, em negrito, entre colchetes) e respostas com código (Python, JavaScript, Java, C, imports) viram a recusa; respostas de finanças com listas, parênteses, "função da reserva", "Classe de ativos", "Importante:" e "print (captura da tela)" passam iguais.
 - **`MentorHandlerTest`**: `PedidoMontarContextoIA` pelo `HandlerRegistry` (totais em pt-BR como `R$ 1.400,00`, percentuais por categoria, média diária, maiores despesas, "demais categorias", mês sem transações) e os erros `VALIDATION` (`diaDoMes` fora de 1 a 31, `tipo` inválido, valor negativo); `PedidoFiltrarResposta` usando os filtros de ativos e de assunto.
+
+Cobertura do Grupo 5 (`goals/` e `investments/`): o resultado esperado de cada caso foi calculado por fora do código (os números não repetem a fórmula do handler).
+
+- **`GoalsHandlerTest`**: progresso pela metade com dias, meses e aporte mensal; 2 casas decimais; meta atingida (100%, sem falta nem aporte); concluída conta como no prazo mesmo com o prazo vencido; prazo vencido sem concluir; prazo no próprio dia; os meses sobem depois de 30 dias; acumulado negativo conta como zero; objetivo zero ou negativo e prazo ausente ou inválido viram `VALIDATION`; sem `hoje` vale o relógio.
+- **`InvestmentsHandlerTest`**: juros compostos por ativo com `meses` próprio e o percentual da carteira; `meses` do pedido e o padrão de 1 mês; taxa zero e negativa; carteira vazia ou ausente; ativo inválido (valor, taxa, meses, tipos); parcelamento pela tabela Price com saldo devedor e juros; sem juros; quitado fora dos totais; sem parcelamentos; parcelamento inválido.
 
 O caminho Backend → Servidor (socket) é testado pelo teste de integração do Backend, com este Servidor no ar (ver "Testes" em `../Backend/README.md`). Ainda não há CI configurado.
 
