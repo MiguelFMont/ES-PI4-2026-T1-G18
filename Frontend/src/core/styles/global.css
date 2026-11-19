@@ -410,3 +410,71 @@ body.menu-recolhido .main-nav__grupo + .main-nav__grupo {
     font-size: 16px;
     color: var(--texto, #ffffff) !important;
 }
+
+/* Esqueleto de carregamento: blocos cinza com um brilho que passa, no lugar do conteúdo que ainda está chegando da API.
+   Cada componente põe o seu esqueleto no HTML (dentro de um .esqueleto-grupo) e o JS só liga e desliga o grupo, como
+   qualquer outro estado da tela. Use role="status" no grupo e um texto .so-leitor para quem usa leitor de tela. */
+:root {
+    --esqueleto-base: color-mix(in srgb, var(--texto) 9%, var(--fundo-card));
+    --esqueleto-brilho: color-mix(in srgb, var(--texto) 17%, var(--fundo-card));
+}
+
+.esqueleto-grupo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.esqueleto-grupo[hidden] {
+    display: none;
+}
+
+.esqueleto {
+    display: block;
+    min-height: 1rem;
+    border-radius: 0.75rem;
+    background: linear-gradient(100deg, var(--esqueleto-base) 30%, var(--esqueleto-brilho) 50%, var(--esqueleto-base) 70%) 100% 0 / 250% 100%;
+    animation: esqueleto-brilho 1.4s ease-in-out infinite;
+}
+
+.esqueleto--titulo {
+    width: 40%;
+    height: 1.4rem;
+}
+
+.esqueleto--linha {
+    height: 1rem;
+}
+
+.esqueleto--curto {
+    width: 55%;
+}
+
+.esqueleto--bloco {
+    height: 6.5rem;
+}
+
+.esqueleto--alto {
+    height: 9rem;
+}
+
+.esqueleto--linha-extrato {
+    height: 3.2rem;
+}
+
+@keyframes esqueleto-brilho {
+    to { background-position: 0 0; }
+}
+
+/* sem animação: só os blocos cinza, parados */
+@media (prefers-reduced-motion: reduce) {
+    .esqueleto {
+        animation: none;
+        background: var(--esqueleto-base);
+    }
+}
+
+/* Troca de tela: o roteador esconde o conteúdo (sem mostrar nada no lugar) até a tela nova estar montada (app/main.js) */
+#app-content.tela-trocando {
+    visibility: hidden;
+}
