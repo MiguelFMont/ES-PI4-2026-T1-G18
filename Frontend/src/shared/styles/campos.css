@@ -105,8 +105,15 @@
     }
   }
 
+  /* a lista nativa nunca fica mais estreita que o campo nem que a maior opção */
+  .campo select::picker(select) {
+    min-inline-size: max(anchor-size(inline), max-content);
+    max-inline-size: calc(100vw - 1rem);
+  }
+
   .campo select option {
     padding: 0.5rem 0.7rem;
+    white-space: nowrap;
     border-radius: 0.5rem;
     color: var(--texto);
     background: transparent;
@@ -170,6 +177,20 @@
   right: 0.7rem;
 }
 
+/* Rótulo longo (ex.: "Cartão de crédito"): fica numa linha só, com reticências, e nunca sai do campo */
+.campo select > button {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.campo select > button selectedcontent {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 .seletor__lista {
   position: absolute;
   top: calc(100% + 0.25rem);
@@ -181,12 +202,21 @@
   border-radius: 0.75rem;
   background: var(--fundo-card);
   box-shadow: var(--sombra-flutuante);
+  max-height: var(--altura-lista, 18rem); /* recalculada em seletor.js conforme o espaço livre da janela */
+  overflow-y: auto;
+  overscroll-behavior: contain;
 
   /* fechada: invisível e fora do Tab; aberta: desce suavemente (a mesma animação do calendário) */
   opacity: 0;
   visibility: hidden;
   transform: translateY(-0.6rem);
   transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s 0.2s;
+}
+
+/* sem espaço embaixo do campo, a lista abre para cima (decidido em seletor.js) */
+.seletor__lista--acima {
+  top: auto;
+  bottom: calc(100% + 0.25rem);
 }
 
 .seletor__lista--aberta {

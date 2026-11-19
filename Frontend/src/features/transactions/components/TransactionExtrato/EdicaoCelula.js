@@ -17,6 +17,12 @@ function criarControle(campo, atual, opcoes) {
   const lista = opcoes ?? OPCOES[campo];
   if (lista) {
     const select = document.createElement('select');
+    // texto exibido (select personalizável): o botão com <selectedcontent> permite truncar rótulos longos com reticências
+    const botaoTexto = document.createElement('button');
+    botaoTexto.type = 'button';
+    botaoTexto.tabIndex = -1;
+    botaoTexto.append(document.createElement('selectedcontent'));
+    select.append(botaoTexto);
     for (const { valor, rotulo } of lista) select.add(new Option(rotulo, valor));
     select.value = atual;
     return select;
@@ -116,6 +122,10 @@ export function iniciarEdicao({ botao, campo, atual, aoSalvar, opcoes }) {
     document.addEventListener('pointerdown', (evento) => {
       if (!evento.composedPath().includes(editor) && !salvando) encerrar({ devolverFoco: false });
     }, { capture: true, signal: controladorFora.signal });
+    // A lista nativa se encolhe para caber no espaço que sobra e não volta ao tamanho normal: rolar ou redimensionar a fecha.
+    const fecharAoMover = () => { if (!salvando) encerrar({ devolverFoco: false }); };
+    window.addEventListener('scroll', fecharAoMover, { capture: true, passive: true, signal: controladorFora.signal });
+    window.addEventListener('resize', fecharAoMover, { signal: controladorFora.signal });
   } else {
     controle.addEventListener('blur', () => setTimeout(confirmar, 0)); // espera: um Esc ou um clique em outro botão passa antes
   }

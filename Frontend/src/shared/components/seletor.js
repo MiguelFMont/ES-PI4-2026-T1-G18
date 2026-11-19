@@ -2,6 +2,8 @@ import { entradaPorTeclado } from '../utils/entrada.js';
 
 const ESPERA_PARA_ABRIR_MS = 120; // evita a lista piscar quando o mouse só passa pelo campo
 const ESPERA_PARA_FECHAR_MS = 250; // tolera o vão entre o campo e a lista
+const MARGEM_PX = 12; // folga entre a lista e a borda da janela
+const ALTURA_MINIMA_PX = 120; // a lista nunca fica menor que isso
 
 /**
  * Liga as listas dos selects dos campos com a classe `campo--seletor` dentro de `raiz` (o HTML de cada campo está em
@@ -20,7 +22,7 @@ export function ligarSeletores(raiz, signal) {
   const modelo = raiz.querySelector('#modelo-opcao-seletor');
   const cadaCampo = raiz.querySelectorAll('.campo--seletor');
 
-  for (const campo of cadaCampo) ligarSeletor(campo, modelo);
+  for (const campo of cadaCampo) ligarSeletor(campo, modelo, signal);
 
   // clicar fora de qualquer campo fecha as listas (o caminho do evento evita erro se a opção clicada foi recriada)
   document.addEventListener('click', (evento) => {
@@ -30,7 +32,7 @@ export function ligarSeletores(raiz, signal) {
   }, { signal }); // `signal` tira este ouvinte do document quando a tela é desmontada
 }
 
-function ligarSeletor(campo, modelo) {
+function ligarSeletor(campo, modelo, signal) {
   const select = campo.querySelector('select');
   const lista = campo.querySelector('.seletor__lista');
   let temporizador;
@@ -56,11 +58,29 @@ function ligarSeletor(campo, modelo) {
     desenhar();
     lista.classList.add('seletor__lista--aberta');
     select.setAttribute('aria-expanded', 'true');
+    posicionar();
+  }
+
+  // Cabe no espaço livre: embaixo do campo, ou em cima se faltar espaço embaixo e sobrar em cima. Sempre recalcula do
+  // zero (altura padrão primeiro), então volta ao tamanho normal quando a página rola para uma região com espaço.
+  function posicionar() {
+    lista.style.removeProperty('--altura-lista');
+    lista.classList.remove('seletor__lista--acima');
+    const caixa = campo.getBoundingClientRect();
+    const natural = lista.scrollHeight; // altura que a lista teria sem limite
+    const abaixo = window.innerHeight - caixa.bottom - MARGEM_PX;
+    const acima = caixa.top - MARGEM_PX;
+    const subir = natural > abaixo && acima > abaixo;
+    const espaco = Math.max(subir ? acima : abaixo, ALTURA_MINIMA_PX);
+    lista.classList.toggle('seletor__lista--acima', subir);
+    if (natural > espaco) lista.style.setProperty('--altura-lista', `${Math.floor(espaco)}px`);
   }
 
   function fechar() {
     clearTimeout(temporizador);
     if (!aberta()) return;
+    lista.style.removeProperty('--altura-lista');
+    lista.classList.remove('seletor__lista--acima');
     lista.classList.remove('seletor__lista--aberta');
     select.setAttribute('aria-expanded', 'false');
   }
@@ -124,4 +144,9 @@ function ligarSeletor(campo, modelo) {
   });
 
   campo.addEventListener('seletor:fechar', fechar);
+
+  // Rolar a página ou mudar a janela muda o espaço livre: recalcula posição e altura (inclusive voltando ao normal).
+  const reposicionar = () => { if (aberta()) posicionar(); };
+  window.addEventListener('scroll', reposicionar, { capture: true, passive: true, signal });
+  window.addEventListener('resize', reposicionar, { signal });
 }

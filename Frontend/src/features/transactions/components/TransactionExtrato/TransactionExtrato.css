@@ -325,6 +325,32 @@
   box-shadow: 0 0 0 2px var(--negativo) !important;
 }
 
+/* texto do campo de lista: uma linha só, com reticências, sem empurrar as colunas */
+.extrato-editor select {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.extrato-editor select > button {
+  flex: 1;
+  min-width: 0;
+  padding: 0 1.3rem 0 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  cursor: inherit;
+}
+
+.extrato-editor select::picker-icon {
+  position: absolute;
+  right: 0.5rem;
+}
+
 .extrato-editor--valor input {
   text-align: right;
 }
