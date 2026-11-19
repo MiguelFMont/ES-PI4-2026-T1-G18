@@ -51,7 +51,7 @@ src/
 
 Regra: **a estrutura é HTML; o JavaScript só cuida de comportamento** (chamar a API, validar, preencher dados). Textos vindos da API entram sempre por `textContent`.
 
-Componentes compartilhados em `src/shared/`: `Calendario.js` (calendário com atalhos de período), `seletor.js` (lista dos selects que abre ao passar o mouse), `notificacao.js` (`notificar(mensagem, 'sucesso' | 'erro' | 'info')`) e `campos.js` (ligar campos e `aceitarSomenteNumeros`). Para comparar o visual sem sombras, troque o `global.css` do `index.html` por `global-sem-sombras.css`.
+Componentes compartilhados em `src/shared/`: `Calendario.js` (calendário com atalhos de período), `seletor.js` (lista dos selects que abre ao passar o mouse), `notificacao.js` (`notificar(mensagem, 'sucesso' | 'erro' | 'info')`) e `campos.js` (ligar campos e `aceitarSomenteNumeros`). O visual com sombras (padrão) ou com bordas finas se escolhe em Minha conta > Preferências.
 
 A comunicação com o Backend é REST/HTTP: os services chamam exclusivamente `apiFetch` de `src/core/http/api.js`, que centraliza a URL base (`/v1`, a mesma origem da página), o token JWT, a leitura de respostas e os erros HTTP. Para outro ambiente, defina `window.FINANCEAI_API_URL` antes do módulo principal.
 

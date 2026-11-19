@@ -30,8 +30,8 @@
     --backgroundBarra:rgba(211, 211, 211, 0.071);
     /* sombra de quem flutua por cima da tela (calendário, listas, painel, notificações) */
     --sombra-flutuante: 0 12px 28px rgb(0 0 0 / 0.4);
-    /* contorno de cartões, campos e botões: nenhum neste estilo (a sombra os destaca). O global-sem-sombras.css troca
-       isto por uma borda fina. */
+    /* contorno de cartões, campos e botões: nenhum no estilo com sombras (a sombra os destaca). O estilo "bordas"
+       (bloco :root[data-estilo='bordas'], mais abaixo) troca isto por uma borda fina. */
     --borda-elemento: 0;
     /* fundo levemente mais cinza das linhas do extrato */
     --fundo-linha: color-mix(in srgb, var(--texto) 5%, var(--fundo-card));
@@ -59,6 +59,16 @@
         de acordo com o tema da pagina (claro/escuro)
         -Miguel Fernandes Monteiro */
     --backgroundBarra:rgba(211, 211, 211, 0.156); 
+}
+
+/* Estilo da interface "bordas" (Minha conta > Preferências; theme.js põe data-estilo="bordas" no <html>): no lugar
+   das sombras, linhas finas. Vale nos dois temas porque só usa as cores do tema (--borda, --destaque). Este bloco vem
+   depois do tema claro de propósito: tem a mesma especificidade e precisa vencer. */
+:root[data-estilo='bordas'] {
+    --sombra: 0 0 0 0 transparent; /* sem sombra (valor válido dentro de listas de box-shadow) */
+    --sombra-foco: 0 0 0 2px var(--destaque); /* o foco do teclado vira um anel */
+    --sombra-flutuante: 0 0 0 1px var(--borda); /* calendário, listas, painel: só uma linha fina */
+    --borda-elemento: 1px solid var(--borda);
 }
 
 body {
