@@ -1,3 +1,4 @@
+import { notificar } from "../../../shared/components/notificacao.js";
 
 const btnFree = document.querySelector("#btn-free");
 const btnPro = document.querySelector("#btn-pro");
@@ -10,7 +11,6 @@ const cardDescription = document.querySelector("#card-description");
 const valor = document.querySelector("#valor");
 const periodo = document.querySelector("#periodo");
 const listaBeneficios = document.querySelector("#lista-beneficios");
-const planoErro = document.querySelector("#plano-erro");
 
 const token = localStorage.getItem("@FinanceAI:token");
 let planoAtual = null;
@@ -75,7 +75,7 @@ btnPro.addEventListener("click", function () {
 
 async function carregarPlano() {
     if (!token) {
-        planoErro.textContent = "Não foi possível identificar o usuário.";
+        notificar("Não foi possível identificar o usuário.", "erro");
         btnUpgrade.disabled = true;
         return;
     }
@@ -91,7 +91,7 @@ async function carregarPlano() {
 
         const usuario = await resposta.json();
         if (!resposta.ok) {
-            planoErro.textContent = "Não foi possível carregar seu plano.";
+            notificar("Não foi possível carregar seu plano.", "erro");
             btnUpgrade.disabled = true;
             return;
         }
@@ -99,7 +99,7 @@ async function carregarPlano() {
         mostrarPlano(planoAtual);
     } catch (error) {
         //se ocorrer algum erro na requisição, exibe a mensagem de erro e desabilita o botão de upgrade
-        planoErro.textContent = "Não foi possível conectar ao servidor.";
+        notificar("Não foi possível conectar ao servidor.", "erro");
         btnUpgrade.disabled = true;
         console.error("Erro ao carregar plano:", error);
     }
@@ -109,7 +109,6 @@ btnUpgrade.addEventListener("click", async function () {
     if (planoSelecionado === planoAtual || btnUpgrade.disabled) {
         return;
     }
-    planoErro.textContent = "";
     btnUpgrade.disabled = true;
     try {
         const resposta = await fetch("/v1/auth/me/plano", {
@@ -127,15 +126,16 @@ btnUpgrade.addEventListener("click", async function () {
         console.log("Resposta do backend:", usuario);
         if (!resposta.ok) {
             //se a requisição falhar, exibe a mensagem de erro e habilita o botão de upgrade novamente
-            planoErro.textContent = "Não foi possível atualizar o plano.";
+            notificar("Não foi possível atualizar o plano.", "erro");
             btnUpgrade.disabled = false;
             return;
         }
         planoAtual = usuario.plano;
         mostrarPlano(planoAtual);
+        notificar(`Plano alterado para ${planoAtual === "pro" ? "Pro" : "Free"}.`, "sucesso");
     } catch (error) {
         //se ocorrer algum erro na requisição, exibe a mensagem de erro e habilita o botão de upgrade novamente
-        planoErro.textContent = "Não foi possível conectar ao servidor.";
+        notificar("Não foi possível conectar ao servidor.", "erro");
         btnUpgrade.disabled = false;
         console.error("Erro ao atualizar plano:", error);
     }

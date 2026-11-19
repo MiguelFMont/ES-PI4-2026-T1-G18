@@ -1,3 +1,10 @@
+import { notificar } from "../../../shared/components/notificacao.js";
+
+// Tempo (ms) entre "login concluído" e a ida para o painel: é também a duração da linha de carregamento da notificação.
+const ESPERA_REDIRECIONAMENTO_MS = 3000;
+// Duração da notificação de cadastro, que tem um texto mais longo (precisa de tempo para ser lido).
+const DURACAO_CADASTRO_MS = 8000;
+
 var btnSignin = document.querySelector("#signin");
 var btnSignup = document.querySelector("#signup");
 var body = document.querySelector("body");
@@ -15,13 +22,16 @@ btnSignup.addEventListener("click", function () {
 const loginForm = document.querySelector("#login-form");
 const loginEmail = document.querySelector("#login-email");
 const loginSenha = document.querySelector("#login-senha");
-const loginErro = document.querySelector("#login-erro");
+const loginBotao = loginForm.querySelector('button[type="submit"]');
+let redirecionando = false;
 
 // Executa quando o usuário envia o formulário
 loginForm.addEventListener("submit", async function (event) {
 
     event.preventDefault();
-    loginErro.textContent = "";
+    // Evita envio duplo (durante a requisição e durante a espera do redirecionamento)
+    if (redirecionando || loginBotao.disabled) return;
+    loginBotao.disabled = true;
     // Obtém os dados digitados
     const dados = {
     email: loginEmail.value.trim(),
@@ -39,24 +49,34 @@ loginForm.addEventListener("submit", async function (event) {
         const resultado = await resposta.json();
         if (!resposta.ok) {
             if (resposta.status === 401) {
-                loginErro.textContent = "E-mail ou senha incorretos.";
+                notificar("E-mail ou senha incorretos.", "erro");
             } else {
-                 loginErro.textContent = "Não foi possível realizar o login. Tente novamente.";
-            }    
+                notificar("Não foi possível realizar o login. Tente novamente.", "erro");
+            }
             return;
         }
         if (!resultado.token) {
-            loginErro.textContent = "O servidor não retornou um token.";
+            notificar("O servidor não retornou um token.", "erro");
             return;
         }
+        // O token é salvo antes da espera: se a pessoa fechar a aba ou recarregar, o login já vale.
         localStorage.setItem("@FinanceAI:token", resultado.token);
+        redirecionando = true;
+        notificar("Login concluído! Estamos levando você para o painel...", "sucesso", {
+            duracao: ESPERA_REDIRECIONAMENTO_MS,
+            pausavel: false
+        });
         //qual rota recebe apos o login(exemplo trocar para a ofical)
-        window.location.href = "/#dashboard";
+        setTimeout(function () {
+            window.location.href = "/#dashboard";
+        }, ESPERA_REDIRECIONAMENTO_MS);
 
     } catch (error) {
-        loginErro.textContent =
-            "Não foi possível conectar ao servidor.";
+        notificar("Não foi possível conectar ao servidor.", "erro");
         console.error("Erro no login:", error);
+    } finally {
+        // Durante o redirecionamento o botão continua desabilitado
+        if (!redirecionando) loginBotao.disabled = false;
     }
 });
 // Seleciona o formulário de cadastro
@@ -66,7 +86,7 @@ const cadastroNome = document.querySelector("#cadastro-nome");
 const cadastroEmail = document.querySelector("#cadastro-email");
 const cadastroCpf = document.querySelector("#cadastro-cpf");
 const cadastroSenha = document.querySelector("#cadastro-senha");
-const cadastroErro = document.querySelector("#cadastro-erro");
+const cadastroBotao = cadastroForm.querySelector("button");
 
 // REQUISITOS DA SENHA
 
@@ -105,8 +125,7 @@ function validarSenha(senha) {
 // Executa quando o usuário envia o cadastro
 cadastroForm.addEventListener("submit", async function (event) {
     event.preventDefault();
-    cadastroErro.style.color = "";
-    cadastroErro.textContent = "";
+    if (cadastroBotao.disabled) return;
     const dados = {
         nome: cadastroNome.value.trim(),
         email: cadastroEmail.value.trim(),
@@ -115,17 +134,18 @@ cadastroForm.addEventListener("submit", async function (event) {
     };
 
     if (!dados.nome || !dados.email || !dados.cpf || !dados.senha) {
-        cadastroErro.textContent = "Preencha todos os campos.";
+        notificar("Preencha todos os campos.", "aviso");
         return;
     }
     if (dados.cpf.length !== 11) {
-        cadastroErro.textContent = "O CPF deve conter 11 dígitos.";
+        notificar("O CPF deve conter 11 dígitos.", "aviso");
         return;
     }
     if (!validarSenha(dados.senha)) {
-        cadastroErro.textContent = "Sua senha não atende a todos os requisitos.";
+        notificar("Sua senha não atende a todos os requisitos.", "aviso");
         return;
     }
+    cadastroBotao.disabled = true;
     try {
         const resposta = await fetch("/v1/auth/register", {
             method: "POST",
@@ -141,24 +161,30 @@ cadastroForm.addEventListener("submit", async function (event) {
             const mensagem = resultado.error?.details?.cpf?.[0]
             ||  resultado.error?.details?.senha?.[0] || resultado.message
             || resultado.error?.message;
-            cadastroErro.textContent =
+            notificar(
                 typeof mensagem === "string"
                     ? mensagem
                     : resposta.status === 409
                         ? "Este e-mail ou CPF já está cadastrado."
-                        : "Não foi possível realizar o cadastro.";
+                        : "Não foi possível realizar o cadastro.",
+                "erro"
+            );
             return;
         }
         cadastroForm.reset();
         validarSenha("");
         // Exibe a tela de login após o cadastro
-        cadastroErro.textContent = resultado.mensagem || "Enviamos um link de confirmação para seu e-mail. Verifique sua caixa de entrada.";
-        cadastroErro.style.color = "#4CAF50";
+        notificar(
+            resultado.mensagem || "Cadastro realizado! Enviamos um link de confirmação para seu e-mail. Verifique sua caixa de entrada.",
+            "sucesso",
+            { duracao: DURACAO_CADASTRO_MS }
+        );
 
     } catch (error) {
-        cadastroErro.textContent =
-            "Não foi possível conectar ao servidor.";
+        notificar("Não foi possível conectar ao servidor.", "erro");
 
         console.error("Erro no cadastro:", error);
+    } finally {
+        cadastroBotao.disabled = false;
     }
 });

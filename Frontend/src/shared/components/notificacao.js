@@ -1,11 +1,15 @@
 /**
  * Notificações e confirmação, baseadas no alert.js do projeto PI_NotaDez (Miguel Fernandes Monteiro).
  *
- *   notificar('Transação salva.', 'sucesso')   faixa colorida que desliza pela direita e some em 5 segundos
+ *   notificar('Transação salva.', 'sucesso')   faixa colorida que desliza pela direita e some em 5 segundos, com uma
+ *                                              linha na base que se esvazia mostrando o tempo que falta
+ *   notificar('Aguarde...', 'sucesso', { duracao: 3000, pausavel: false })   duração própria; devolve { fechar }
  *   await confirmar('Excluir?', 'erro')        janela com Cancelar e Confirmar; devolve true ou false
  *
  * `tipo` aceita 'sucesso', 'aviso' ou 'erro' (e os sinônimos 'success', 'warning', 'error', 'info' e 'notificacao').
- * O estilo está em shared/styles/notificacao.css (carregado pelo index.html).
+ * Passar o mouse ou focar uma notificação pausa a linha e o temporizador; ao sair, ambos continuam de onde pararam.
+ * Opções de notificar: `duracao` em ms (0 = fica até ser fechada, sem linha de tempo) e `pausavel` (padrão true).
+ * O estilo está em shared/styles/notificacao.css (carregado pelo index.html e pelas páginas de features/auth).
  * Diferenças do original: várias notificações podem aparecer juntas (uma embaixo da outra) em vez de uma substituir
  * a outra, a mensagem entra sempre como texto, e a confirmação devolve uma Promise em vez de receber um callback.
  */
@@ -34,8 +38,9 @@ function regiao() {
   return area;
 }
 
-export function notificar(mensagem, tipo = 'sucesso') {
+export function notificar(mensagem, tipo = 'sucesso', { duracao = DURACAO_MS, pausavel = true } = {}) {
   const { classe, icone } = tipoDe(tipo);
+  const persistente = !(duracao > 0);
 
   const alerta = document.createElement('div');
   alerta.className = `alerta alerta--${classe}`;
@@ -55,6 +60,9 @@ export function notificar(mensagem, tipo = 'sucesso') {
   alerta.append(fechar, texto);
 
   let temporizador;
+  let restante = duracao;
+  let iniciadoEm = null; // null = temporizador parado (pausado)
+
   const encerrar = () => {
     clearTimeout(temporizador);
     if (alerta.classList.contains('alerta--saindo')) return;
@@ -62,9 +70,50 @@ export function notificar(mensagem, tipo = 'sucesso') {
     setTimeout(() => alerta.remove(), DURACAO_ANIMACAO_MS);
   };
   fechar.addEventListener('click', encerrar);
-  temporizador = setTimeout(encerrar, DURACAO_MS);
+
+  if (!persistente) {
+    // Linha de tempo: esvazia da direita para a esquerda durante a mesma duração do temporizador.
+    const tempo = document.createElement('div');
+    tempo.className = 'alerta__tempo';
+    tempo.setAttribute('aria-hidden', 'true');
+    const barra = document.createElement('div');
+    barra.className = 'alerta__tempo-barra';
+    barra.style.animationDuration = `${duracao}ms`;
+    tempo.append(barra);
+    alerta.append(tempo);
+
+    const iniciar = () => {
+      iniciadoEm = Date.now();
+      temporizador = setTimeout(encerrar, restante);
+    };
+    iniciar();
+
+    if (pausavel) {
+      const pausar = () => {
+        if (iniciadoEm === null || alerta.classList.contains('alerta--saindo')) return;
+        clearTimeout(temporizador);
+        restante = Math.max(0, restante - (Date.now() - iniciadoEm));
+        iniciadoEm = null;
+        alerta.classList.add('alerta--pausado');
+      };
+      const retomar = () => {
+        if (iniciadoEm !== null || alerta.classList.contains('alerta--saindo')) return;
+        alerta.classList.remove('alerta--pausado');
+        iniciar();
+      };
+      alerta.addEventListener('mouseenter', pausar);
+      alerta.addEventListener('mouseleave', () => {
+        if (!alerta.contains(document.activeElement)) retomar();
+      });
+      alerta.addEventListener('focusin', pausar);
+      alerta.addEventListener('focusout', () => {
+        if (!alerta.matches(':hover')) retomar();
+      });
+    }
+  }
 
   regiao().append(alerta);
+  return { fechar: encerrar };
 }
 
 /**
