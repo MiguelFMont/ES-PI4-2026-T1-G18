@@ -5,8 +5,9 @@ import { notificar } from '../../../../shared/components/notificacao.js';
 import { dataDeHoje } from '../../utils/format.js';
 import { CATEGORIAS, rotuloDe } from '../../utils/constants.js';
 import { LIMITE_OBSERVACOES, MENSAGENS_CAMPO, validarFormulario } from '../../utils/formValidation.js';
+import { ligarMeta } from './MetaDoLancamento.js';
 
-const ORDEM_DOS_CAMPOS = ['tipo', 'descricao', 'valor', 'data', 'categoria', 'formaPagamento', 'observacoes'];
+const ORDEM_DOS_CAMPOS = ['tipo', 'descricao', 'valor', 'data', 'categoria', 'formaPagamento', 'meta', 'observacoes'];
 const TEXTO_BOTAO = 'Adicionar transação →';
 
 /**
@@ -16,6 +17,7 @@ const TEXTO_BOTAO = 'Adicionar transação →';
  * Erros de preenchimento mostram uma mensagem curta no campo e uma notificação geral. Só atualiza a tela depois
  * que o Backend confirma a gravação. Depois de salvar, o painel fecha e `aoSalvar()` é chamado (e aguardado); o tipo
  * e a data escolhidos ficam para o próximo lançamento.
+ * A opção "Vincular a uma meta" (MetaDoLancamento.js) liga a transação a uma meta: o valor conta no progresso dela.
  */
 export function iniciarFormulario(raiz, { aoSalvar, signal }) {
   const formulario = raiz.querySelector('#form-transacao');
@@ -32,6 +34,7 @@ export function iniciarFormulario(raiz, { aoSalvar, signal }) {
     data: ligarCalendario(formulario.querySelector('[data-calendario]'), { signal }),
     categoria: ligarCampo(raiz, 'campo-categoria'),
     formaPagamento: ligarCampo(raiz, 'campo-formaPagamento'),
+    meta: ligarMeta(raiz, { signal }),
     observacoes: ligarCampo(raiz, 'campo-observacoes'),
   };
 
@@ -72,7 +75,7 @@ export function iniciarFormulario(raiz, { aoSalvar, signal }) {
   // O Tab circula só dentro do painel enquanto ele está aberto.
   painel.addEventListener('keydown', (evento) => {
     if (evento.key !== 'Tab') return;
-    const focaveis = [...painel.querySelectorAll('input, select, textarea, button')].filter((el) => !el.disabled);
+    const focaveis = [...painel.querySelectorAll('input, select, textarea, button')].filter((el) => !el.disabled && el.offsetParent !== null);
     const primeiro = focaveis[0];
     const ultimo = focaveis[focaveis.length - 1];
     if (evento.shiftKey && document.activeElement === primeiro) {
@@ -97,6 +100,7 @@ export function iniciarFormulario(raiz, { aoSalvar, signal }) {
 
   function limparParaProximo() {
     for (const nome of ['descricao', 'valor', 'categoria', 'formaPagamento', 'observacoes']) campos[nome].definir('');
+    campos.meta.reiniciar(); // a meta não se repete de uma transação para a próxima
     contador.textContent = `0/${LIMITE_OBSERVACOES}`;
     campos.descricao.focar();
   }
@@ -107,10 +111,15 @@ export function iniciarFormulario(raiz, { aoSalvar, signal }) {
 
     const valores = Object.fromEntries(ORDEM_DOS_CAMPOS.map((nome) => [nome, campos[nome].ler()]));
     const { erros, dados } = validarFormulario(valores);
-    if (!dados) {
+    const erroDaMeta = campos.meta.validar(); // marcou "Vincular a uma meta" e não escolheu qual
+    if (erroDaMeta) erros.meta = erroDaMeta;
+    if (!dados || erroDaMeta) {
       mostrarErros(erros);
       return;
     }
+
+    const meta = campos.meta.lerMeta();
+    if (meta) dados.metaId = meta.id;
 
     botaoSalvar.disabled = true;
     botaoSalvar.textContent = 'Salvando...';
@@ -121,11 +130,19 @@ export function iniciarFormulario(raiz, { aoSalvar, signal }) {
       botaoSalvar.disabled = false;
       botaoSalvar.textContent = TEXTO_BOTAO;
 
+      if (erro?.code === 'GOAL_NOT_FOUND') {
+        // a meta foi excluída (em outra aba, por exemplo) depois de escolhida: busca as metas de novo
+        notificar('Essa meta não existe mais. Escolha outra.', 'erro');
+        await campos.meta.recarregar();
+        return;
+      }
+
       if (erro?.code === 'VALIDATION_ERROR' && erro.details) {
         // o Backend recusou campos: mostra a mensagem em português junto de cada um
         const errosApi = {};
         for (const nome of Object.keys(erro.details)) {
-          if (campos[nome]) errosApi[nome] = MENSAGENS_CAMPO[nome];
+          const campo = nome === 'metaId' ? 'meta' : nome; // o campo da API tem outro nome que o do formulário
+          if (campos[campo]) errosApi[campo] = MENSAGENS_CAMPO[campo];
         }
         if (Object.keys(errosApi).length > 0) {
           mostrarErros(errosApi);
@@ -143,8 +160,9 @@ export function iniciarFormulario(raiz, { aoSalvar, signal }) {
     fecharPainel();
     // sem categoria escolhida, o Servidor sugeriu uma: o usuário fica sabendo qual foi
     const sugerida = dados.categoria === undefined && criada?.categoria;
+    const vinculada = meta ? ` Vinculada à meta "${meta.titulo}".` : '';
     notificar(
-      sugerida ? `Transação cadastrada. Categoria sugerida: ${rotuloDe(CATEGORIAS, criada.categoria)}.` : 'Transação cadastrada.',
+      (sugerida ? `Transação cadastrada. Categoria sugerida: ${rotuloDe(CATEGORIAS, criada.categoria)}.` : 'Transação cadastrada.') + vinculada,
       'sucesso'
     );
     await aoSalvar();

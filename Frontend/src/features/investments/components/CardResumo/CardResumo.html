@@ -1,0 +1,54 @@
+<!-- Componente: cartão de crédito simulado (fatura do mês, vencimento e limite). Lógica em CardResumo.js. A fatura soma as
+     compras REAIS no crédito do mês (das Transações) e as parcelas do mês dos parcelamentos. -->
+<section class="investments-cartao" aria-labelledby="invest-cartao-titulo">
+  <div class="investments-secao-topo">
+    <h2 id="invest-cartao-titulo">Cartão de crédito simulado</h2>
+    <button type="button" id="invest-cartao-editar" class="investments-botao investments-botao--secundario" aria-expanded="false" aria-controls="invest-cartao-form">Editar cartão</button>
+  </div>
+
+  <div class="investments-fatura">
+    <div>
+      <p class="investments-texto-suave">Fatura de <span id="invest-fatura-mes"></span></p>
+      <p id="invest-fatura-valor" class="investments-fatura__valor valor-financeiro"></p>
+      <p id="invest-fatura-vencimento" class="investments-texto-suave"></p>
+    </div>
+    <dl class="investments-detalhes">
+      <div>
+        <dt>Compras no crédito</dt>
+        <dd id="invest-fatura-compras" class="valor-financeiro"></dd>
+      </div>
+      <div>
+        <dt>Parcelas do mês</dt>
+        <dd id="invest-fatura-parcelas" class="valor-financeiro"></dd>
+      </div>
+    </dl>
+  </div>
+
+  <div class="investments-limite">
+    <p>
+      Limite disponível: <strong id="invest-limite-disponivel" class="valor-financeiro"></strong>
+      <span class="investments-texto-suave">de <span id="invest-limite-total" class="valor-financeiro"></span></span>
+    </p>
+    <div id="invest-limite-barra" class="investments-barra" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-label="Uso do limite do cartão">
+      <div class="investments-barra__preenchida"></div>
+    </div>
+    <p id="invest-limite-aviso" class="investments-aviso" role="status" hidden></p>
+  </div>
+
+  <form id="invest-cartao-form" class="investments-form" novalidate hidden>
+    <div class="campo">
+      <label for="invest-cartao-limite">Limite (R$) *</label>
+      <input type="text" id="invest-cartao-limite" name="limite" inputmode="decimal" placeholder="0,00" autocomplete="off">
+      <p class="campo__erro" id="invest-cartao-limite-erro" hidden></p>
+    </div>
+    <div class="campo">
+      <label for="invest-cartao-dia">Dia do vencimento (1 a 28) *</label>
+      <input type="text" id="invest-cartao-dia" name="diaVencimento" inputmode="numeric" maxlength="2" placeholder="10" autocomplete="off">
+      <p class="campo__erro" id="invest-cartao-dia-erro" hidden></p>
+    </div>
+    <div class="investments-acoes investments-campo--larga">
+      <button type="submit" id="invest-cartao-salvar" class="investments-botao">Salvar cartão</button>
+      <button type="button" id="invest-cartao-cancelar" class="investments-botao investments-botao--secundario">Cancelar</button>
+    </div>
+  </form>
+</section>
