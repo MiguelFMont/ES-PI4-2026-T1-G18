@@ -3,6 +3,7 @@ import { incluirFragmentos } from '../../core/views/includes.js';
 import { iniciarReportarProblema } from './components/ReportarProblema.js';
 import { alternarEstilo, estiloAtual } from '../../core/theme/theme.js';
 import { salvarPreferencias } from '../../core/preferencias.js';
+import { notificar } from '../../shared/components/notificacao.js';
 const CAMINHO = '/src/features/perfil/components';
 
 const FRAGMENTOS = {
@@ -76,13 +77,16 @@ function iniciarEdicaoPerfil(container, signal) {
 
         const nome = nomeInput.value.trim();
 
+        // Validação do campo Nome: fica como texto curto da própria tela.
+        mensagem.textContent = '';
+
         if (!nome) {
             mensagem.textContent = 'Informe um nome válido.';
             return;
         }
 
         botao.disabled = true;
-        mensagem.textContent = 'Salvando...';
+        botao.textContent = 'Salvando...';
 
         try {
             const token = localStorage.getItem('@FinanceAI:token');
@@ -109,13 +113,14 @@ function iniciarEdicaoPerfil(container, signal) {
                 nome
             };
 
-            mensagem.textContent = 'Nome atualizado com sucesso!';
+            notificar('Nome atualizado com sucesso!', 'sucesso');
 
         } catch (erro) {
             if (erro.name === 'AbortError') return;
-            mensagem.textContent = erro.message;
+            notificar(erro.message, 'erro');
         } finally {
             botao.disabled = false;
+            botao.textContent = 'Salvar alterações';
         }
     }, { signal });
 }
