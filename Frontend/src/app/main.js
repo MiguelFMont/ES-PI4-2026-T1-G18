@@ -6,6 +6,16 @@ import { iniciarOcultacaoValores } from '../core/privacy/valores.js';
 import { confirmar } from '../shared/components/notificacao.js';
 
 const appContent = document.querySelector('#app-content');
+// Troca de tela: o conteúdo antigo fica escondido (sem mostrar nada no lugar) do começo da troca até a tela nova estar
+// montada (HTML, CSS e componentes). Sem isso, o HTML da tela antiga aparecia sem estilo (os CSS dela são removidos na
+// hora) e o da nova ia surgindo em pedaços. Depois disso, cada componente mostra o próprio esqueleto cinza enquanto
+// espera os dados da API (classe .esqueleto em core/styles/global.css). Se a montagem demorar mais que o limite abaixo,
+// o conteúdo aparece mesmo assim.
+const TEMPO_MAXIMO_ESCONDIDO_MS = 1500;
+
+function esconderConteudo(esconder) {
+  appContent.classList.toggle('tela-trocando', esconder);
+}
 
 // Telas feitas em arquivos (modelo SPA): o roteador busca o HTML, carrega os CSS e o módulo da tela, escreve o HTML
 // em #app-content e chama montar(container); ao sair, chama desmontar() e tira os CSS. Quem criar uma tela
@@ -161,6 +171,10 @@ async function renderRoute() {
   }
 
   const minha = ++sequencia;
+  esconderConteudo(true); // antes de tirar os CSS da tela antiga: os dois acontecem no mesmo quadro, sem pintar entre eles
+  setTimeout(() => {
+    if (minha === sequencia) esconderConteudo(false); // montagem lenta: mostra o que já tem
+  }, TEMPO_MAXIMO_ESCONDIDO_MS);
   desmontarTela();
   for (const link of document.querySelectorAll('link[data-tela]')) link.remove(); // sobras de uma montagem interrompida
 
@@ -183,7 +197,10 @@ async function renderRoute() {
     } catch (erro) {
       if (minha === sequencia) appContent.textContent = erro.message;
     }
-    if (minha === sequencia) renderMenu(route);
+    if (minha === sequencia) {
+      renderMenu(route);
+      esconderConteudo(false);
+    }
     return;
   }
 
@@ -204,7 +221,11 @@ async function renderRoute() {
   }
 
   renderMenu(route);
+  esconderConteudo(false);
 }
+
+// Com sessão, o menu e a camada de carregamento já valem na primeira tela (sem token, o roteador vai para o login).
+document.body.classList.toggle('com-sessao', hasToken());
 
 window.addEventListener('hashchange', renderRoute);
 renderRoute();

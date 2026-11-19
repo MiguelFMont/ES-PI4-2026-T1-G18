@@ -2,7 +2,16 @@
      e EdicaoCelula.js. Editar um campo só marca a alteração na tela; ela é enviada quando o usuário confirma. Um cartão cobre todo o extrato; cada transação é um bloco dentro dele e cada campo, um bloco ainda mais escuro, que se edita ao clicar. -->
 <!-- Extrato: mostra só um destes estados por vez (carregando, erro ou conteúdo) -->
 <div id="transactions-extrato" class="transactions-extrato">
-  <p id="extrato-carregando" class="transactions-estado">Carregando transações...</p>
+  <div id="extrato-carregando" class="esqueleto-grupo" role="status">
+    <span class="esqueleto esqueleto--titulo"></span>
+    <span class="esqueleto esqueleto--linha-extrato"></span>
+    <span class="esqueleto esqueleto--linha-extrato"></span>
+    <span class="esqueleto esqueleto--linha-extrato"></span>
+    <span class="esqueleto esqueleto--linha-extrato"></span>
+    <span class="esqueleto esqueleto--linha-extrato"></span>
+    <span class="esqueleto esqueleto--linha-extrato"></span>
+    <span class="so-leitor">Carregando transações...</span>
+  </div>
 
   <div id="extrato-erro" class="transactions-estado" hidden>
     <p id="extrato-erro-texto" role="alert"></p>
