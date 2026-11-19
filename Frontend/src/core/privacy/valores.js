@@ -27,7 +27,6 @@ export function iniciarOcultacaoValores() {
         const rotulo = botao.querySelector('.menu-texto');
         if (rotulo) rotulo.textContent = texto;
         else botao.textContent = texto;
-        botao.title = texto;
 
         botao.setAttribute('aria-pressed', String(ocultos));
 
