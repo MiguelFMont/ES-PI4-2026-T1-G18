@@ -1,18 +1,10 @@
-import { formatarData, formatarMoeda, formatarPercentual } from '../../../../shared/utils/moeda.js';
+import { formatarMoeda, formatarPercentual } from '../../../../shared/utils/moeda.js';
 
 /** Etiqueta do estado da meta. O texto sempre aparece; a cor só reforça. */
 function statusDa(meta) {
   if (meta.concluida) return { rotulo: 'Concluída', situacao: 'ok' };
   if (!meta.noPrazo) return { rotulo: 'Prazo vencido', situacao: 'erro' };
   return { rotulo: 'No prazo', situacao: 'andamento' };
-}
-
-function textoDoPrazo(meta) {
-  const data = formatarData(meta.prazo);
-  if (meta.concluida) return data;
-  if (!meta.noPrazo) return `${data} (vencido)`;
-  if (meta.diasRestantes === 0) return `${data} (vence hoje)`;
-  return `${data} (${meta.diasRestantes} ${meta.diasRestantes === 1 ? 'dia' : 'dias'})`;
 }
 
 /** De onde vem o valor da meta: o que já havia mais as transações vinculadas (os aportes). */
@@ -69,7 +61,6 @@ export function iniciarLista(raiz, { signal, aoEditar, aoExcluir, tentarNovament
     campo(cartao, 'objetivo').textContent = formatarMoeda(meta.valorObjetivo);
     campo(cartao, 'percentual').textContent = formatarPercentual(meta.percentual);
     campo(cartao, 'falta').textContent = meta.concluida ? 'Nada: meta atingida!' : formatarMoeda(meta.falta);
-    campo(cartao, 'prazo').textContent = textoDoPrazo(meta);
     campo(cartao, 'aporte').textContent = meta.concluida ? '-' : formatarMoeda(meta.aporteMensalNecessario);
 
     const status = statusDa(meta);
