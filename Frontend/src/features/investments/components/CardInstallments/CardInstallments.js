@@ -16,7 +16,8 @@ const CAMPO_DA_API = { descricao: 'descricao', valorTotal: 'valor', parcelas: 'p
 /**
  * Liga os parcelamentos do cartão (HTML em CardInstallments.html): os totais, a lista e o formulário de novo parcelamento.
  * A tela decide o que fazer em cada ação (`criar(dados)` devolve uma Promise, `pagar(parcelamento)` e `excluir(parcelamento)`).
- * Todo texto entra com textContent (vem da API). Devolve { mostrar(resposta) }, com a resposta de GET .../installments.
+ * Todo texto entra com textContent (vem da API). Devolve { mostrar(resposta), definirCartoes(cartoes) }: `mostrar` recebe a resposta de GET .../installments e `definirCartoes`, a
+ * lista de cartões (para escolher o cartão do parcelamento novo e mostrar o nome do cartão em cada parcelamento).
  */
 export function iniciarParcelamentos(raiz, { signal, criar, pagar, excluir }) {
   const formulario = raiz.querySelector('#invest-parcelamento-form');
@@ -26,6 +27,9 @@ export function iniciarParcelamentos(raiz, { signal, criar, pagar, excluir }) {
   const conteudo = raiz.querySelector('#invest-parcelas-conteudo');
   const itens = raiz.querySelector('#invest-parcelas-itens');
   const modelo = raiz.querySelector('#modelo-parcelamento');
+
+  const selectCartao = raiz.querySelector('#invest-parc-cartao');
+  const cartoesPorId = new Map();
 
   const campos = {
     descricao: ligarCampo(formulario, 'invest-parc-descricao'),
@@ -77,7 +81,8 @@ export function iniciarParcelamentos(raiz, { signal, criar, pagar, excluir }) {
     if (Number.isNaN(juros) || juros < 0 || juros > 100) erros.juros = MENSAGENS.juros;
 
     if (Object.keys(erros).length > 0) return { erros, dados: null };
-    return { erros, dados: { descricao, valorTotal: valor, parcelas, parcelasPagas: pagas, taxaJurosMensal: juros } };
+    const cartaoId = selectCartao.value || undefined; // sem cartão escolhido, o Backend usa o cartão padrão
+    return { erros, dados: { cartaoId, descricao, valorTotal: valor, parcelas, parcelasPagas: pagas, taxaJurosMensal: juros } };
   }
 
   botaoNovo.addEventListener('click', () => (formulario.hidden ? abrir() : fechar()), { signal });
@@ -140,6 +145,9 @@ export function iniciarParcelamentos(raiz, { signal, criar, pagar, excluir }) {
     botaoPagar.disabled = p.quitado;
     botaoPagar.setAttribute('aria-label', `Pagar uma parcela de ${p.descricao}`);
     cartao.querySelector('[data-acao="excluir"]').setAttribute('aria-label', `Excluir ${p.descricao}`);
+    const nomeDoCartao = cartoesPorId.get(p.cartaoId)?.nome ?? '';
+    campo(cartao, 'cartao').textContent = nomeDoCartao;
+    campo(cartao, 'cartao').hidden = !nomeDoCartao;
     // um parcelamento criado por uma compra parcelada só sai excluindo a transação (o Backend recusa a exclusão direta)
     const deCompra = Boolean(p.transacaoId);
     cartao.querySelector('[data-acao="excluir"]').hidden = deCompra;
@@ -148,6 +156,20 @@ export function iniciarParcelamentos(raiz, { signal, criar, pagar, excluir }) {
   }
 
   return {
+    /** Atualiza os cartões: as opções do formulário (o escolhido continua, se ainda existir) e os nomes nos parcelamentos. */
+    definirCartoes(cartoes) {
+      cartoesPorId.clear();
+      for (const c of cartoes) cartoesPorId.set(c.id, c);
+      const escolhido = selectCartao.value;
+      selectCartao.replaceChildren(...cartoes.map((c) => {
+        const opcao = document.createElement('option');
+        opcao.value = c.id;
+        opcao.textContent = c.nome;
+        return opcao;
+      }));
+      if (cartoes.length > 0) selectCartao.value = cartoes.some((c) => c.id === escolhido) ? escolhido : cartoes[0].id;
+    },
+
     mostrar(resposta) {
       parcelamentosPorId.clear();
       for (const p of resposta.parcelamentos) parcelamentosPorId.set(p.id, p);

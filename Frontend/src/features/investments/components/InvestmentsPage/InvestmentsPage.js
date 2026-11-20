@@ -9,18 +9,20 @@ import {
   listarParcelamentos,
 } from '../../services/investmentsService.js';
 import { notificar, confirmar } from '../../../../shared/components/notificacao.js';
+import { ligarSeletores } from '../../../../shared/components/seletor.js';
 import { mensagemDeErro } from '../../utils/constants.js';
-import { iniciarCartoes } from '../CartoesSeletor/CartoesSeletor.js';
-import { iniciarCartao } from '../CardResumo/CardResumo.js';
+import { iniciarCartoes } from '../CartoesLista/CartoesLista.js';
+import { iniciarCartaoForm } from '../CartaoForm/CartaoForm.js';
 import { iniciarParcelamentos } from '../CardInstallments/CardInstallments.js';
 
 /**
- * Liga a página do Cartão de crédito ao HTML de views/investments.html (já dentro do container): o seletor dos cartões do
- * usuário, o cartão escolhido (fatura e limite) e os parcelamentos dele. A estrutura da tela está toda no HTML; aqui ficam só as partes que mudam com os
- * dados. `signal` (de um AbortController) avisa que a tela foi desmontada.
+ * Liga a página do Cartão de crédito ao HTML de views/investments.html (já dentro do container): um card para cada cartão
+ * do usuário (fatura, limite e totais), o formulário de cartão e os parcelamentos de todos os cartões. A estrutura da tela
+ * está toda no HTML; aqui ficam só as partes que mudam com os dados. `signal` (de um AbortController) avisa que a tela foi
+ * desmontada.
  */
 export function iniciarPaginaCartao(raiz, { signal } = {}) {
-  const estado = { sequencia: 0, cartaoId: null, cartoes: [] }; // cartaoId: o cartão escolhido (null = o primeiro)
+  const estado = { sequencia: 0 };
 
   // Ao desmontar a tela, uma resposta que ainda esteja a caminho deixa de valer.
   signal?.addEventListener('abort', () => { estado.sequencia += 1; });
@@ -30,24 +32,26 @@ export function iniciarPaginaCartao(raiz, { signal } = {}) {
   const erroTexto = raiz.querySelector('#investments-erro-texto');
   const conteudo = raiz.querySelector('#investments-conteudo');
 
-  const seletor = iniciarCartoes(raiz, {
+  ligarSeletores(raiz, signal); // a lista do cartão no formulário de parcelamento
+
+  const formulario = iniciarCartaoForm(raiz, {
     signal,
-    selecionar: (id) => escolher(id),
-    novo: () => cartao.abrirNovo(),
+    salvar: (dados, modo, atual) => (modo === 'novo'
+      ? agir(() => criarCartao(dados), 'Cartão criado.', 'Não foi possível criar o cartão.')
+      : agir(() => atualizarCartao(atual.id, dados), 'Cartão atualizado.', 'Não foi possível atualizar o cartão.')),
   });
-  const cartao = iniciarCartao(raiz, {
+  const cartoes = iniciarCartoes(raiz, {
     signal,
-    salvar: (dados, modo) => (modo === 'novo'
-      ? agir(() => criarCartao(dados), 'Cartão criado.', 'Não foi possível criar o cartão.', (criado) => { estado.cartaoId = criado.id; })
-      : agir(() => atualizarCartao(estado.cartaoId, dados), 'Cartão atualizado.', 'Não foi possível atualizar o cartão.')),
-    excluir: async (atual) => {
-      if (!(await confirmar(`Excluir o cartão "${atual.nome}"? As compras dele continuam em Transações, sem o vínculo com o cartão.`, 'aviso'))) return;
-      await agir(() => excluirCartao(atual.id), 'Cartão excluído.', 'Não foi possível excluir o cartão.', () => { estado.cartaoId = null; }).catch(() => {});
+    novo: () => formulario.abrirNovo(),
+    editar: (cartao) => formulario.abrirEditar(cartao),
+    excluir: async (cartao) => {
+      if (!(await confirmar(`Excluir o cartão "${cartao.nome}"? As compras dele continuam em Transações, sem o vínculo com o cartão.`, 'aviso'))) return;
+      await agir(() => excluirCartao(cartao.id), 'Cartão excluído.', 'Não foi possível excluir o cartão.').catch(() => {});
     },
   });
   const parcelamentos = iniciarParcelamentos(raiz, {
     signal,
-    criar: (dados) => agir(() => criarParcelamento({ ...dados, cartaoId: estado.cartaoId }), 'Parcelamento adicionado.', 'Não foi possível adicionar o parcelamento.'),
+    criar: (dados) => agir(() => criarParcelamento(dados), 'Parcelamento adicionado.', 'Não foi possível adicionar o parcelamento.'),
     pagar: (p) =>
       agir(() => atualizarParcelamento(p.id, { parcelasPagas: p.parcelasPagas + 1 }), 'Parcela paga.', 'Não foi possível registrar o pagamento.')
         .catch(() => {}),
@@ -69,15 +73,11 @@ export function iniciarPaginaCartao(raiz, { signal } = {}) {
     }
 
     try {
-      const { cartoes } = await listarCartoes();
-      if (minha !== estado.sequencia) return;
-      estado.cartoes = cartoes;
-      if (!cartoes.some((c) => c.id === estado.cartaoId)) estado.cartaoId = cartoes[0].id; // o escolhido sumiu: volta ao padrão
-
-      const dadosDosParcelamentos = await listarParcelamentos(estado.cartaoId);
+      const [{ cartoes: lista }, dadosDosParcelamentos] = await Promise.all([listarCartoes(), listarParcelamentos()]);
       if (minha !== estado.sequencia) return;
 
-      mostrarCartao();
+      cartoes.mostrar(lista);
+      parcelamentos.definirCartoes(lista);
       parcelamentos.mostrar(dadosDosParcelamentos);
 
       carregando.hidden = true;
@@ -85,7 +85,7 @@ export function iniciarPaginaCartao(raiz, { signal } = {}) {
       conteudo.hidden = false;
     } catch (falha) {
       if (minha !== estado.sequencia) return;
-      const mensagem = mensagemDeErro(falha, 'Não foi possível carregar o cartão.');
+      const mensagem = mensagemDeErro(falha, 'Não foi possível carregar os cartões.');
       if (silencioso && !conteudo.hidden) {
         notificar(mensagem, 'erro'); // a tela já tem dados: só avisa, sem apagá-la
         return;
@@ -97,38 +97,15 @@ export function iniciarPaginaCartao(raiz, { signal } = {}) {
     }
   }
 
-  /** Mostra o cartão escolhido (e marca o botão dele) com o que já foi carregado. */
-  function mostrarCartao() {
-    const escolhido = estado.cartoes.find((c) => c.id === estado.cartaoId);
-    seletor.mostrar(estado.cartoes, estado.cartaoId);
-    cartao.atualizar(escolhido);
-  }
-
-  /** Troca o cartão escolhido: mostra o cartão na hora e busca os parcelamentos dele. */
-  async function escolher(id) {
-    if (id === estado.cartaoId || !estado.cartoes.some((c) => c.id === id)) return;
-    estado.cartaoId = id;
-    mostrarCartao();
-    const minha = ++estado.sequencia; // uma resposta de outro cartão que ainda esteja a caminho deixa de valer
-    try {
-      const resposta = await listarParcelamentos(id);
-      if (minha === estado.sequencia) parcelamentos.mostrar(resposta);
-    } catch (falha) {
-      if (minha === estado.sequencia) notificar(mensagemDeErro(falha, 'Não foi possível carregar os parcelamentos.'), 'erro');
-    }
-  }
-
   // Faz uma chamada, avisa o resultado e atualiza a tela. Se a chamada falhar, avisa e devolve o erro (o formulário
   // continua aberto e mostra os erros de campo).
-  async function agir(chamada, sucesso, falha, aoConcluir) {
-    let resultado;
+  async function agir(chamada, sucesso, falha) {
     try {
-      resultado = await chamada();
+      await chamada();
     } catch (falhou) {
       notificar(mensagemDeErro(falhou, falha), 'erro');
       throw falhou;
     }
-    aoConcluir?.(resultado); // por exemplo, passar a mostrar o cartão que acabou de ser criado
     notificar(sucesso, 'sucesso');
     await carregar({ silencioso: true });
   }

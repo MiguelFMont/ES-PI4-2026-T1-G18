@@ -2,7 +2,7 @@
      Lógica em CardInstallments.js. As contas (tabela Price) são feitas pelo Servidor Java. -->
 <section class="investments-cartao" aria-labelledby="invest-parcelas-titulo">
   <div class="investments-secao-topo">
-    <h2 id="invest-parcelas-titulo">Parcelamentos do cartão</h2>
+    <h2 id="invest-parcelas-titulo">Parcelamentos</h2>
     <button type="button" id="invest-novo-parcelamento" class="investments-botao" aria-expanded="false" aria-controls="invest-parcelamento-form">Novo parcelamento</button>
   </div>
 
@@ -11,6 +11,13 @@
       <label for="invest-parc-descricao">Descrição *</label>
       <input type="text" id="invest-parc-descricao" name="descricao" maxlength="100" placeholder="Ex: Notebook, Geladeira" autocomplete="off">
       <p class="campo__erro" id="invest-parc-descricao-erro" hidden></p>
+    </div>
+    <div class="campo campo--seletor">
+      <label for="invest-parc-cartao">Cartão *</label>
+      <select id="invest-parc-cartao" name="cartaoId" aria-controls="lista-invest-parc-cartao" aria-expanded="false">
+        <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
+      </select>
+      <div class="seletor__lista" id="lista-invest-parc-cartao" role="listbox" aria-label="Cartão"></div>
     </div>
     <div class="campo">
       <label for="invest-parc-valor">Valor total (R$) *</label>
@@ -61,11 +68,19 @@
   </div>
 </section>
 
+<!-- Modelo de uma opção da lista de Cartão: o JS copia este bloco para cada <option>. -->
+<template id="modelo-opcao-seletor">
+  <div class="seletor__opcao" role="option"></div>
+</template>
+
 <!-- Modelo de um parcelamento: o JS copia este bloco para cada um e só preenche os textos. -->
 <template id="modelo-parcelamento">
   <li class="investments-parcelamento">
     <div class="investments-parcelamento__topo">
-      <h3 data-campo="descricao"></h3>
+      <div class="investments-cartao-card__nome">
+        <h3 data-campo="descricao"></h3>
+        <span class="investments-etiqueta" data-campo="cartao" hidden></span>
+      </div>
       <span class="investments-status" data-campo="status"></span>
     </div>
     <p class="investments-texto-suave" data-campo="resumo"></p>
