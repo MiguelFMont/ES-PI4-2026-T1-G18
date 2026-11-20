@@ -900,6 +900,8 @@ Cada usuário pode ter **até 5 cartões**, cada um com `nome` (1 a 40 caractere
 
 ### 6.3 Parcelamentos ativos
 
+**Parcelas pelo calendário:** `parcelasPagas` avança sozinho, uma por mês (contado a partir da data da compra, ou de quando o parcelamento foi criado): vale o maior entre o valor gravado e os meses já passados, até o total (a parcela do mês corrente é a atual e entra na fatura). Um parcelamento que o tempo quitou deixa de impedir a exclusão do cartão.
+
 **Objeto `Installment`:** `id`, `cartaoId` (o cartão a que pertence), `transacaoId` (só nos criados a partir de uma compra parcelada, 2.4), `descricao`, `valorTotal`, `parcelas`, `parcelasPagas`, `taxaJurosMensal` (em % ao mês, 0 = sem juros) e os valores calculados `valorParcela`, `parcelasRestantes`, `saldoDevedor`, `jurosTotal` e `quitado`.
 
 - Parcela pela **tabela Price**: `valorTotal × i / (1 − (1+i)^−parcelas)`, com `i = taxaJurosMensal/100`; sem juros, `valorTotal / parcelas`.

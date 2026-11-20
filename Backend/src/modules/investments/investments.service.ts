@@ -106,27 +106,41 @@ async function calcularCarteira(itens: Item<InvestmentDocument>[], agora: Date):
 interface ContextoParcelamentos {
   padraoId: string;
   transacoes: Map<string, string>;
+  // a data da compra de cada parcelamento que nasceu de uma transação (os outros contam a partir de quando foram criados)
+  datas: Map<string, Date>;
+}
+
+// As parcelas avançam sozinhas com o calendário: a cada virada de mês, uma parcela a mais está paga (a do mês corrente
+// ainda é a "atual", que entra na fatura). Vale o maior entre o que foi gravado e o que o tempo já pagou, limitado ao total.
+const mesesEntre = (de: Date, ate: Date) => (ate.getUTCFullYear() - de.getUTCFullYear()) * 12 + (ate.getUTCMonth() - de.getUTCMonth());
+
+function parcelasPagasPelaData({ id, doc }: Item<InstallmentDocument>, datas: Map<string, Date>, agora: Date): number {
+  const inicio = datas.get(id) ?? (doc as { createdAt?: Date }).createdAt;
+  if (!inicio) return doc.parcelasPagas;
+  return Math.min(doc.parcelas, Math.max(doc.parcelasPagas, mesesEntre(new Date(inicio), agora)));
 }
 
 async function contextoDeParcelamentos(userId: string, ids: string[]): Promise<ContextoParcelamentos> {
-  const [padrao, transacoes] = await Promise.all([
+  const [padrao, transacoes, datas] = await Promise.all([
     investmentsRepository.findOldestCard(userId),
     investmentsRepository.transacoesDosParcelamentos(userId, ids),
+    investmentsRepository.datasDasCompras(userId, ids),
   ]);
-  return { padraoId: comId<CardDocument>(padrao)._id.toString(), transacoes };
+  return { padraoId: comId<CardDocument>(padrao)._id.toString(), transacoes, datas };
 }
 
 async function calcularParcelamentos(
   itens: Item<InstallmentDocument>[],
   contexto: ContextoParcelamentos
 ): Promise<InstallmentsResponseDto> {
-  const parcelamentos: ParcelamentoParaCalculo[] = itens.map(({ id, doc }) => ({
-    id,
-    descricao: doc.descricao,
-    valorTotal: doc.valorTotal,
-    parcelas: doc.parcelas,
-    parcelasPagas: doc.parcelasPagas,
-    taxaJurosMensal: doc.taxaJurosMensal,
+  const agora = new Date();
+  const parcelamentos: ParcelamentoParaCalculo[] = itens.map((item) => ({
+    id: item.id,
+    descricao: item.doc.descricao,
+    valorTotal: item.doc.valorTotal,
+    parcelas: item.doc.parcelas,
+    parcelasPagas: parcelasPagasPelaData(item, contexto.datas, agora),
+    taxaJurosMensal: item.doc.taxaJurosMensal,
   }));
 
   const resposta = await javaServerClient.enviarPedido<PedidoCalcularParcelamentos, RespostaCalcularParcelamentos>(
@@ -186,7 +200,11 @@ async function montarCartoes(userId: string, apenasId?: string): Promise<CardRes
     investmentsRepository.findInstallments(userId),
   ]);
   const itens = parcelamentos.map((p) => comoItem<InstallmentDocument>(p));
-  const semContexto: ContextoParcelamentos = { padraoId, transacoes: new Map() };
+  const semContexto: ContextoParcelamentos = {
+    padraoId,
+    transacoes: new Map(),
+    datas: await investmentsRepository.datasDasCompras(userId, itens.map((p) => p.id)),
+  };
 
   return Promise.all(
     alvo.map(async ({ id, doc }): Promise<CardResponseDto> => {
@@ -317,7 +335,11 @@ export const investmentsService = {
     if (!cartoes.some((c) => c.id === id)) throw cartaoNaoEncontrado();
 
     const ehPadrao = cartoes[0].id === id;
-    if ((await investmentsRepository.countActiveInstallments(userId, id, ehPadrao)) > 0) {
+    const agora = new Date();
+    const itens = (await investmentsRepository.findInstallments(userId)).map((p) => comoItem<InstallmentDocument>(p));
+    const doCartao = itens.filter((p) => (p.doc.cartaoId ?? cartoes[0].id) === id);
+    const datas = await investmentsRepository.datasDasCompras(userId, doCartao.map((p) => p.id));
+    if (doCartao.some((p) => parcelasPagasPelaData(p, datas, agora) < p.doc.parcelas)) {
       throw new AppError(
         "Este cartão tem parcelamentos em andamento: quite ou exclua os parcelamentos antes de excluir o cartão",
         409,
@@ -361,7 +383,7 @@ export const investmentsService = {
     }
 
     const novo: InstallmentDocument = { userId, cartaoId, ...contrato };
-    const { parcelamentos } = await calcularParcelamentos([{ id: "novo", doc: novo }], { padraoId: cartaoId, transacoes: new Map() });
+    const { parcelamentos } = await calcularParcelamentos([{ id: "novo", doc: novo }], { padraoId: cartaoId, transacoes: new Map(), datas: new Map() });
 
     const criado = comId<InstallmentDocument>(await investmentsRepository.createInstallment(novo));
     return { ...parcelamentos[0], id: criado._id.toString() };

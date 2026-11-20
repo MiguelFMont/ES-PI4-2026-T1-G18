@@ -172,6 +172,13 @@ export const investmentsRepository = {
     return new Map(docs.map((d) => [d.parcelamentoId as string, d._id.toString()]));
   },
 
+  // De cada parcelamento (dos ids pedidos) que nasceu de uma compra: a data da compra (de onde as parcelas começam a correr).
+  async datasDasCompras(userId: string, ids: string[]): Promise<Map<string, Date>> {
+    if (ids.length === 0) return new Map();
+    const docs = await TransactionModel.find({ userId, parcelamentoId: { $in: ids } }).select("parcelamentoId data").lean();
+    return new Map(docs.map((d) => [d.parcelamentoId as string, d.data as Date]));
+  },
+
   // ---------------------------------------------------------------- migração
   // Idempotente; roda quando o Backend sobe (server.ts). Traz os dados do tempo de "um cartão por usuário":
   //  1. remove o índice único antigo por userId (impediria o segundo cartão);

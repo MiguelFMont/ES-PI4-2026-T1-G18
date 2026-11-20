@@ -5,6 +5,7 @@
 import { ANA, BETO, ID_INEXISTENTE, inserir, json, prepararApi, simularServidorGrupo5, textoDe } from "../../goals/__tests__/apoio";
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
+import { Types } from "mongoose";
 import { CardInstallmentModel, CardModel, MAX_CARTOES } from "../investments.model";
 import { investmentsRepository } from "../investments.repository";
 import { TransactionModel } from "../../transactions/transactions.model";
@@ -495,5 +496,68 @@ describe("autenticação", () => {
       assert.equal((await json(resposta)).error.code, "UNAUTHENTICATED");
     }
     assert.equal(await CardModel.countDocuments(), 0);
+  });
+});
+
+// ------------------------------------------------------------------------------------------------ parcelas avançam pela data
+
+describe("as parcelas avançam sozinhas, mês a mês", () => {
+  const mesesAtras = (n: number) => {
+    const agora = new Date();
+    return new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth() - n, 15));
+  };
+  const recuarCriacao = async (id: string, data: Date) => {
+    // createdAt é imutável no Mongoose: grava direto na coleção
+    await CardInstallmentModel.collection.updateOne({ _id: new Types.ObjectId(id) }, { $set: { createdAt: data } });
+  };
+  const doParcelamento = async (id: string) => (await json(await api("GET", "/card/installments"))).parcelamentos.find((p: any) => p.id === id);
+
+  test("3 meses depois da criação, 3 parcelas estão pagas (a do mês corrente é a atual)", async () => {
+    simularServidorGrupo5();
+    const criado = await criarParcelamento({ descricao: "Sofá", valorTotal: 1200, parcelas: 12 });
+    await recuarCriacao(criado.id, mesesAtras(3));
+    const p = await doParcelamento(criado.id);
+    assert.equal(p.parcelasPagas, 3);
+    assert.equal(p.parcelasRestantes, 9);
+  });
+
+  test("nunca passa do total: o parcelamento que o tempo quitou fica quitado", async () => {
+    simularServidorGrupo5();
+    const criado = await criarParcelamento({ descricao: "Fone", valorTotal: 300, parcelas: 3 });
+    await recuarCriacao(criado.id, mesesAtras(10));
+    const p = await doParcelamento(criado.id);
+    assert.equal(p.parcelasPagas, 3);
+    assert.equal(p.quitado, true);
+  });
+
+  test("o que foi gravado como pago vale se for maior do que o tempo já pagou", async () => {
+    simularServidorGrupo5();
+    const criado = await criarParcelamento({ descricao: "TV", valorTotal: 2000, parcelas: 10, parcelasPagas: 6 });
+    await recuarCriacao(criado.id, mesesAtras(2));
+    assert.equal((await doParcelamento(criado.id)).parcelasPagas, 6);
+  });
+
+  test("a compra parcelada conta a partir da data da compra, não de quando foi lançada", async () => {
+    simularServidorGrupo5();
+    const cartao = await criarCartao({ nome: "Roxinho" });
+    const compra = await json(
+      await chamar("POST", "/transactions", ANA, {
+        tipo: "despesa", valor: 600, descricao: "Cadeira", categoria: "outros", formaPagamento: "credito",
+        data: mesesAtras(2).toISOString(), cartaoId: cartao.id, parcelas: 6,
+      })
+    );
+    assert.ok(compra.parcelamentoId ?? compra.id);
+    const lista = (await json(await api("GET", `/card/installments?cartaoId=${cartao.id}`))).parcelamentos;
+    assert.equal(lista[0].parcelasPagas, 2);
+  });
+
+  test("cartão cujo parcelamento o tempo quitou pode ser excluído", async () => {
+    simularServidorGrupo5();
+    await criarCartao({ nome: "Primeiro" });
+    const b = await criarCartao({ nome: "B" });
+    const p = await criarParcelamento({ cartaoId: b.id, descricao: "Curso", valorTotal: 600, parcelas: 3 });
+    assert.equal((await api("DELETE", `/cards/${b.id}`)).status, 409);
+    await recuarCriacao(p.id, mesesAtras(5));
+    assert.equal((await api("DELETE", `/cards/${b.id}`)).status, 204);
   });
 });
