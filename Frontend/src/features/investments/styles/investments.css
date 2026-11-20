@@ -282,11 +282,21 @@
 
 /* ---------------------------------------------------------------- cards dos cartões */
 
+/* Os cartões ficam em uma fila horizontal, com barra de rolagem para ver todos; cada um para na borda ao rolar. O respiro
+   em volta evita cortar o anel do cartão escolhido e a sombra. */
 .investments-cartoes {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(22rem, 1fr));
+  display: flex;
   gap: 1.25rem;
+  padding: 0.25rem 0.25rem 1rem;
+  margin: -0.25rem;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
   list-style: none;
+}
+
+.investments-cartoes > * {
+  flex: 0 0 min(22rem, 85%);
+  scroll-snap-align: start;
 }
 
 .investments-cartao-card {
@@ -348,6 +358,10 @@
 }
 
 /* o card que adiciona um cartão: ocupa o lugar de mais um card, com a mesma altura dos outros */
+.investments-cartoes > .investments-cartao-novo {
+  flex-basis: 12rem; /* mais estreito que um cartão */
+}
+
 .investments-cartao-novo {
   display: grid;
   min-height: 12rem;
