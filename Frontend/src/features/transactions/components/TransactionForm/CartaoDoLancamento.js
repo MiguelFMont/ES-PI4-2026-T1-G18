@@ -44,12 +44,9 @@ export function ligarCartao(raiz, { signal, formaPagamento, tipo, valor }) {
   }
 
   function preencherCartoes() {
-    selectCartao.replaceChildren(...cartoes.map((cartao) => {
-      const opcao = document.createElement('option');
-      opcao.value = cartao.id;
-      opcao.textContent = cartao.nome;
-      return opcao;
-    }));
+    // troca só as <option>: o <select> tem dentro o <button><selectedcontent> que mostra o texto escolhido (replaceChildren o apagaria)
+    for (const antiga of selectCartao.querySelectorAll('option')) antiga.remove();
+    for (const cartao of cartoes) selectCartao.add(new Option(cartao.nome, cartao.id));
     if (cartoes.length > 0) selectCartao.value = cartoes[0].id; // o mais antigo (o padrão) vem primeiro
   }
 

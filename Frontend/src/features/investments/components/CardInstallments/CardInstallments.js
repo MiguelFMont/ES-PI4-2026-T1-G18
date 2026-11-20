@@ -161,12 +161,9 @@ export function iniciarParcelamentos(raiz, { signal, criar, pagar, excluir }) {
       cartoesPorId.clear();
       for (const c of cartoes) cartoesPorId.set(c.id, c);
       const escolhido = selectCartao.value;
-      selectCartao.replaceChildren(...cartoes.map((c) => {
-        const opcao = document.createElement('option');
-        opcao.value = c.id;
-        opcao.textContent = c.nome;
-        return opcao;
-      }));
+      // troca só as <option>: o <select> tem dentro o <button><selectedcontent> que mostra o texto escolhido (replaceChildren o apagaria)
+      for (const antiga of selectCartao.querySelectorAll('option')) antiga.remove();
+      for (const c of cartoes) selectCartao.add(new Option(c.nome, c.id));
       if (cartoes.length > 0) selectCartao.value = cartoes.some((c) => c.id === escolhido) ? escolhido : cartoes[0].id;
     },
 
