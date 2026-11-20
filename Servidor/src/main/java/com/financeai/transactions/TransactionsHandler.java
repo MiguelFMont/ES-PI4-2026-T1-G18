@@ -7,6 +7,7 @@ import java.util.Set;
 import com.financeai.core.Comunicado;
 import com.financeai.core.ErroDeNegocio;
 import com.financeai.core.HandlerRegistry;
+import com.google.gson.JsonParseException;
 
 // Sugere a categoria de uma transacao pela descricao (PedidoCategorizarTransacao).
 // Operacao pura: so usa os dados do pedido (o Servidor nao acessa o banco).
@@ -70,7 +71,16 @@ public class TransactionsHandler
 
     private Comunicado categorizar (Comunicado pedido) throws Exception
     {
-        PedidoCategorizarTransacao p = pedido.dadosComo (PedidoCategorizarTransacao.class);
+        PedidoCategorizarTransacao p;
+        try
+        {
+            p = pedido.dadosComo (PedidoCategorizarTransacao.class);
+        }
+        catch (JsonParseException erro)   // "dados" fora do formato (ex.: um texto no lugar de um objeto)
+        {
+            throw new ErroDeNegocio ("VALIDATION", "dados invalidos");
+        }
+
 
         if (p == null || p.getDescricao() == null || p.getDescricao().isBlank())
             throw new ErroDeNegocio ("VALIDATION", "descricao e obrigatoria");
