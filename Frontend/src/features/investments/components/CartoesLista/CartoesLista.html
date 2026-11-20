@@ -2,7 +2,11 @@
      para adicionar outro. Clicar em um card (ou no botão Ver compras) o seleciona e mostra as compras feitas nele. Lógica em CartoesLista.js. Cada card é feito a partir dos <template> no fim deste arquivo. -->
 <section aria-labelledby="invest-cartoes-titulo">
   <h2 id="invest-cartoes-titulo" class="so-leitor">Seus cartões</h2>
-  <ul id="invest-cartoes-lista" class="investments-cartoes"></ul>
+  <div id="invest-cartoes-faixa" class="investments-cartoes-faixa">
+    <!-- só esta lista rola (3 cartões à vista); o card de novo cartão fica fixo ao lado -->
+    <ul id="invest-cartoes-lista" class="investments-cartoes"></ul>
+    <div id="invest-cartao-novo-area" class="investments-cartao-novo-area"></div>
+  </div>
 </section>
 
 <!-- Modelo de um cartão: o JS copia este bloco para cada cartão e só preenche os textos. -->
@@ -56,10 +60,10 @@
 
 <!-- Modelo do card que adiciona um cartão novo -->
 <template id="modelo-cartao-novo">
-  <li class="investments-cartao-novo">
+  <div class="investments-cartao-novo">
     <button type="button" id="invest-cartao-novo" class="investments-cartao-novo__botao" aria-controls="invest-cartao-form-area">
       <span class="investments-cartao-novo__mais" aria-hidden="true">+</span>
       <span>Novo cartão</span>
     </button>
-  </li>
+  </div>
 </template>

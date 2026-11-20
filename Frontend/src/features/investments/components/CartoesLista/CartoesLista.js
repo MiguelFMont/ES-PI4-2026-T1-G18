@@ -12,13 +12,15 @@ const MES_EM_TEXTO = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'nu
  */
 export function iniciarCartoes(raiz, { signal, selecionar, editar, excluir, novo }) {
   const lista = raiz.querySelector('#invest-cartoes-lista');
+  const faixa = raiz.querySelector('#invest-cartoes-faixa');
+  const areaNovo = raiz.querySelector('#invest-cartao-novo-area');
   const modelo = raiz.querySelector('#modelo-cartao');
   const modeloNovo = raiz.querySelector('#modelo-cartao-novo');
 
   const cartoesPorId = new Map();
 
   // Um só ouvinte para os botões de todos os cards (delegação): eles são recriados a cada carga.
-  lista.addEventListener('click', (evento) => {
+  faixa.addEventListener('click', (evento) => {
     const botao = evento.target.closest('button');
     if (botao?.disabled) return;
     if (botao?.id === 'invest-cartao-novo') {
@@ -88,7 +90,8 @@ export function iniciarCartoes(raiz, { signal, selecionar, editar, excluir, novo
       botaoNovo.disabled = cheio;
       if (cheio) botaoNovo.title = `Você chegou ao limite de ${MAX_CARTOES} cartões.`;
 
-      lista.replaceChildren(...cartoes.map((c) => criarCard(c, idSelecionado)), cardNovo);
+      lista.replaceChildren(...cartoes.map((c) => criarCard(c, idSelecionado)));
+      areaNovo.replaceChildren(cardNovo);
     },
   };
 }

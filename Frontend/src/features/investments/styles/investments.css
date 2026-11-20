@@ -284,19 +284,35 @@
 
 /* Os cartões ficam em uma fila horizontal, com barra de rolagem para ver todos; cada um para na borda ao rolar. O respiro
    em volta evita cortar o anel do cartão escolhido e a sombra. */
+.investments-cartoes-faixa {
+  display: flex;
+  align-items: stretch;
+  gap: 1.25rem;
+}
+
 .investments-cartoes {
   display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  contain: inline-size; /* a largura vem do espaço livre, não do conteúdo (senão os cartões alargam a página) */
   gap: 1.25rem;
-  padding: 0.25rem 0.25rem 1rem;
-  margin: -0.25rem;
+  padding: 0.5rem 0.5rem 1rem;
   overflow-x: auto;
   scroll-snap-type: x proximity;
+  scroll-padding-inline: 0.5rem;
   list-style: none;
 }
 
+/* três cartões à vista, mesmo que haja mais (o resto se vê rolando) */
 .investments-cartoes > * {
-  flex: 0 0 min(22rem, 85%);
+  flex: 0 0 max(15rem, calc((100% - 2.5rem) / 3));
   scroll-snap-align: start;
+}
+
+.investments-cartao-novo-area {
+  display: grid;
+  flex: 0 0 11rem;
+  padding: 0.5rem 0 1rem;
 }
 
 .investments-cartao-card {
@@ -358,10 +374,6 @@
 }
 
 /* o card que adiciona um cartão: ocupa o lugar de mais um card, com a mesma altura dos outros */
-.investments-cartoes > .investments-cartao-novo {
-  flex-basis: 12rem; /* mais estreito que um cartão */
-}
-
 .investments-cartao-novo {
   display: grid;
   min-height: 12rem;
