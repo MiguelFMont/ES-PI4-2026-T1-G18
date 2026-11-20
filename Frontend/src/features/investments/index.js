@@ -7,8 +7,9 @@
 //   index.js                                         este arquivo: montar() liga a tela e desmontar() desliga
 //   components/<Nome>/<Nome>.html + <Nome>.js        um componente = uma pasta, com a estrutura (HTML) e o comportamento (JS):
 //     InvestmentsPage/    (só JS)                    coordena a tela: chama a API e conecta os componentes
-//     CardResumo/                                    fatura do mês, vencimento e limite do cartão (e editar)
-//     CardInstallments/                              parcelamentos ativos (parcela, juros, saldo devedor) e novo parcelamento
+//     CartoesLista/                                  um card por cartão: fatura, vencimento, limite e totais (editar, excluir, novo)
+//     CartaoForm/                                    formulário para criar um cartão ou editar nome, limite e vencimento
+//     CartaoCompras/                                 as compras feitas no cartão escolhido (despesas no crédito, inclusive as parceladas)
 //   services/investmentsService.js                   chamadas ao Backend (/investments/card e .../installments)
 //   utils/constants.js                               mensagens de erro e leitura de inteiros
 //   (o calendário, a máscara de moeda e as notificações são compartilhados: src/shared/;

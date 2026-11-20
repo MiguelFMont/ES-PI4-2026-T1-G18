@@ -90,12 +90,13 @@
     /* descida suave ao abrir (a mesma do calendário) */
     opacity: 1;
     translate: 0 0;
-    transition: opacity 0.2s ease, translate 0.2s ease, overlay 0.2s allow-discrete, display 0.2s allow-discrete;
+    transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1), translate 0.18s cubic-bezier(0.16, 1, 0.3, 1), overlay 0.18s allow-discrete, display 0.18s allow-discrete;
   }
 
   .campo select::picker(select):not(:popover-open) {
     opacity: 0;
     translate: 0 -0.6rem;
+    transition: opacity 0.1s cubic-bezier(0.7, 0, 0.84, 0), translate 0.1s cubic-bezier(0.7, 0, 0.84, 0), overlay 0.1s allow-discrete, display 0.1s allow-discrete;
   }
 
   @starting-style {
@@ -105,8 +106,15 @@
     }
   }
 
+  /* a lista nativa nunca fica mais estreita que o campo nem que a maior opção */
+  .campo select::picker(select) {
+    min-inline-size: anchor-size(inline);
+    max-inline-size: calc(100vw - 1rem);
+  }
+
   .campo select option {
     padding: 0.5rem 0.7rem;
+    white-space: nowrap;
     border-radius: 0.5rem;
     color: var(--texto);
     background: transparent;
@@ -170,6 +178,20 @@
   right: 0.7rem;
 }
 
+/* Rótulo longo (ex.: "Cartão de crédito"): fica numa linha só, com reticências, e nunca sai do campo */
+.campo select > button {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.campo select > button selectedcontent {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 .seletor__lista {
   position: absolute;
   top: calc(100% + 0.25rem);
@@ -181,19 +203,29 @@
   border-radius: 0.75rem;
   background: var(--fundo-card);
   box-shadow: var(--sombra-flutuante);
+  max-height: var(--altura-lista, 18rem); /* recalculada em seletor.js conforme o espaço livre da janela */
+  overflow-y: auto;
+  overscroll-behavior: contain;
 
   /* fechada: invisível e fora do Tab; aberta: desce suavemente (a mesma animação do calendário) */
   opacity: 0;
   visibility: hidden;
   transform: translateY(-0.6rem);
-  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s 0.2s;
+  transition: opacity 0.1s cubic-bezier(0.7, 0, 0.84, 0), transform 0.1s cubic-bezier(0.7, 0, 0.84, 0), visibility 0s 0.1s;
+}
+
+/* sem espaço embaixo do campo, a lista abre para cima (decidido em seletor.js) */
+.seletor__lista--acima {
+  top: auto;
+  bottom: calc(100% + 0.25rem);
+  transform: translateY(0.6rem); /* aberta para cima, a lista entra subindo em direção ao campo */
 }
 
 .seletor__lista--aberta {
   opacity: 1;
   visibility: visible;
   transform: translateY(0);
-  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s;
+  transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1), transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s;
 }
 
 .seletor__opcao {
@@ -221,4 +253,60 @@
   .seletor__lista--aberta {
     transition: none;
   }
+}
+
+/* Caixa de seleção (checkbox) do projeto: fundo cinza e cantos bem arredondados; marcada, fica na cor de destaque com o
+   "visto". Usada no extrato (selecionar várias transações) e no formulário de transação (Vincular a uma meta). Use
+   <input type="checkbox" class="caixa-selecao">. */
+.caixa-selecao {
+  appearance: none;
+  display: inline-grid;
+  flex: none;
+  place-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  margin: 0;
+  border: 0;
+  border-radius: 0.55rem;
+  background: color-mix(in srgb, var(--texto) 16%, var(--fundo-card));
+  cursor: pointer;
+  transition: background-color var(--duracao-cor) ease, box-shadow 0.1s ease, scale 0.1s ease;
+}
+
+.caixa-selecao::after {
+  content: '';
+  width: 0.85rem;
+  height: 0.85rem;
+  background: var(--destaque-texto);
+  clip-path: polygon(14% 52%, 0 66%, 38% 100%, 100% 22%, 86% 8%, 38% 72%); /* o visto */
+  scale: 0;
+  transition: scale 0.1s ease;
+}
+
+.caixa-selecao:hover {
+  background: color-mix(in srgb, var(--texto) 26%, var(--fundo-card));
+}
+
+.caixa-selecao:checked,
+.caixa-selecao:indeterminate {
+  background: var(--destaque);
+}
+
+.caixa-selecao:checked::after {
+  scale: 1;
+}
+
+/* "algumas selecionadas" no cabeçalho do extrato: um traço no lugar do visto */
+.caixa-selecao:indeterminate::after {
+  clip-path: none;
+  width: 0.8rem;
+  height: 0.19rem;
+  border-radius: 0.1rem;
+  scale: 1;
+}
+
+.caixa-selecao:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--destaque); /* anel de foco do teclado */
+  scale: var(--escala-foco, 1.03);
 }

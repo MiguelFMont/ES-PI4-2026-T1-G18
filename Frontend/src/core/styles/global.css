@@ -30,8 +30,8 @@
     --backgroundBarra:rgba(211, 211, 211, 0.071);
     /* sombra de quem flutua por cima da tela (calendário, listas, painel, notificações) */
     --sombra-flutuante: 0 12px 28px rgb(0 0 0 / 0.4);
-    /* contorno de cartões, campos e botões: nenhum neste estilo (a sombra os destaca). O global-sem-sombras.css troca
-       isto por uma borda fina. */
+    /* contorno de cartões, campos e botões: nenhum no estilo com sombras (a sombra os destaca). O estilo "bordas"
+       (bloco :root[data-estilo='bordas'], mais abaixo) troca isto por uma borda fina. */
     --borda-elemento: 0;
     /* fundo levemente mais cinza das linhas do extrato */
     --fundo-linha: color-mix(in srgb, var(--texto) 5%, var(--fundo-card));
@@ -59,6 +59,16 @@
         de acordo com o tema da pagina (claro/escuro)
         -Miguel Fernandes Monteiro */
     --backgroundBarra:rgba(211, 211, 211, 0.156); 
+}
+
+/* Estilo da interface "bordas" (Minha conta > Preferências; theme.js põe data-estilo="bordas" no <html>): no lugar
+   das sombras, linhas finas. Vale nos dois temas porque só usa as cores do tema (--borda, --destaque). Este bloco vem
+   depois do tema claro de propósito: tem a mesma especificidade e precisa vencer. */
+:root[data-estilo='bordas'] {
+    --sombra: 0 0 0 0 transparent; /* sem sombra (valor válido dentro de listas de box-shadow) */
+    --sombra-foco: 0 0 0 2px var(--destaque); /* o foco do teclado vira um anel */
+    --sombra-flutuante: 0 0 0 1px var(--borda); /* calendário, listas, painel: só uma linha fina */
+    --borda-elemento: 1px solid var(--borda);
 }
 
 body {
@@ -119,6 +129,72 @@ body:not(.com-sessao) #main-header {
 
 body.menu-recolhido {
     --largura-menu: 4.5rem;
+}
+
+/* Espaçamento padrão das telas: o #app-content dá o mesmo recuo (ao menu, ao topo, à direita e à base, também com o menu
+   recolhido) e a mesma largura máxima a todas. As telas (features/*) não definem recuo nem largura próprios. */
+:root {
+    --espaco-pagina: 1.5rem;
+    --largura-maxima-conteudo: 90rem;
+}
+
+body.com-sessao #app-content {
+    padding: var(--espaco-pagina);
+}
+
+body.com-sessao #app-content > * {
+    width: 100%;
+    max-width: var(--largura-maxima-conteudo);
+    margin-inline: auto;
+}
+
+@media (max-width: 767px) {
+    :root {
+        --espaco-pagina: 1rem;
+    }
+}
+
+/* Barras de rolagem de todo o projeto: finas e cinzas (nos dois temas, pois a cor sai do --texto) */
+:root {
+    --rolagem-polegar: color-mix(in srgb, var(--texto) 28%, transparent);
+    --rolagem-polegar-hover: color-mix(in srgb, var(--texto) 45%, transparent);
+}
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--rolagem-polegar) transparent;
+}
+
+*::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+    background: transparent;
+}
+
+*::-webkit-scrollbar-track,
+*::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: var(--rolagem-polegar);
+    border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: var(--rolagem-polegar-hover);
+}
+
+*::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+/* Alguns navegadores recentes (Chromium) põem botões circulares de seta nas áreas que rolam na horizontal (a tabela do
+   extrato). O projeto não usa esse recurso, então ele é desligado (regra à parte: navegador sem suporte a ignora). */
+::scroll-button(*) {
+    content: none;
 }
 
 /* com sessão: menu lateral + conteúdo (o main.js marca o body) */
@@ -187,6 +263,7 @@ body.com-sessao #main-header {
     place-items: center;
     width: 2rem;
     height: 2rem;
+    border: 0; /* sem a borda padrão do navegador */
     border-radius: 0.6rem;
     color: var(--texto-suave);
     background: transparent;
@@ -266,7 +343,7 @@ body.com-sessao #main-header {
 
 .menu-lateral__rodape button {
     width: 100%;
-    border: var(--borda-elemento, 0);
+    border: 0; /* itens do menu nunca têm borda, nem no estilo "bordas" */
     color: var(--texto-suave);
     background: transparent;
     font: inherit;
@@ -328,6 +405,72 @@ body.menu-recolhido .menu-lateral__rodape button {
 body.menu-recolhido .main-nav__grupo + .main-nav__grupo {
     padding-top: 0.75rem;
     border-top: 1px solid var(--borda);
+}
+
+/* ---- dica do menu recolhido (core/layout/dicaMenu.js): um rótulo que nasce do ícone e se expande para a direita.
+   position: fixed porque o #main-header corta o que passa da sua borda. Abaixo das notificações (z-index 100). */
+.dica-menu {
+    position: fixed;
+    z-index: 90;
+    display: flex;
+    align-items: center;
+    padding-inline: 0.9rem;
+    border-radius: 0.75rem;
+    color: var(--texto);
+    background: var(--fundo-card);
+    box-shadow: var(--sombra-flutuante);
+    font-size: 0.875rem;
+    font-weight: 600;
+    white-space: nowrap;
+    pointer-events: none;
+    transform-origin: left center;
+    /* escondida: do tamanho e da posição do ícone, transparente */
+    transform: translateX(calc(-1 * var(--dica-recuo, 0px))) scaleX(var(--dica-escala, 1));
+    opacity: 0;
+    visibility: hidden;
+    transition: transform 0.12s cubic-bezier(0.7, 0, 0.84, 0), opacity 0.1s ease, visibility 0s linear 0.12s; /* some mais rápido do que aparece */
+}
+
+.dica-menu__texto {
+    opacity: 0;
+    transition: opacity 0.1s ease;
+}
+
+.dica-menu--visivel {
+    transform: none;
+    opacity: 1;
+    visibility: visible;
+    transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.18s ease, visibility 0s;
+}
+
+.dica-menu--visivel .dica-menu__texto {
+    opacity: 1;
+    transition: opacity 0.16s ease 0.1s; /* o texto aparece quando a caixa já quase abriu, sem ficar esticado */
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dica-menu,
+    .dica-menu--visivel {
+        transform: none;
+        transition: opacity 0.15s ease, visibility 0s linear 0.15s;
+    }
+
+    .dica-menu--visivel {
+        transition: opacity 0.15s ease, visibility 0s;
+    }
+
+    .dica-menu__texto,
+    .dica-menu--visivel .dica-menu__texto {
+        opacity: 1;
+        transition: none;
+    }
+}
+
+/* celular: o menu nunca fica recolhido, então não há dica */
+@media (max-width: 767px) {
+    .dica-menu {
+        display: none;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -458,6 +601,10 @@ body.menu-recolhido .main-nav__grupo + .main-nav__grupo {
     height: 9rem;
 }
 
+.esqueleto--card {
+    height: 17rem;
+}
+
 .esqueleto--linha-extrato {
     height: 3.2rem;
 }
@@ -477,4 +624,16 @@ body.menu-recolhido .main-nav__grupo + .main-nav__grupo {
 /* Troca de tela: o roteador esconde o conteúdo (sem mostrar nada no lugar) até a tela nova estar montada (app/main.js) */
 #app-content.tela-trocando {
     visibility: hidden;
+}
+
+/* Movimento reduzido: quem pede menos movimento ao sistema não vê as transições nem as animações do projeto (hover, painéis, listas, menu). As animações que precisam existir mesmo assim têm regra própria (barra de tempo das notificações). */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        transition-delay: 0s !important;
+    }
 }

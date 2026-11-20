@@ -1,6 +1,7 @@
 import { hasToken } from '../core/session/storage.js';
 import { iniciarTema } from '../core/theme/theme.js';
 import { ligarMenu } from '../core/layout/menu.js';
+import { ligarDicaMenu } from '../core/layout/dicaMenu.js';
 import { URL_LOGIN } from '../core/session/login.js';
 import { iniciarOcultacaoValores } from '../core/privacy/valores.js';
 import { confirmar } from '../shared/components/notificacao.js';
@@ -95,6 +96,7 @@ let sequencia = 0; // descarta uma montagem que ficou para trás se o usuário j
 
 iniciarTema();
 ligarMenu();
+ligarDicaMenu();
 iniciarOcultacaoValores();
 
 // O menu está escrito no index.html; aqui só se mostra (com sessão) e se marca o item da rota atual.

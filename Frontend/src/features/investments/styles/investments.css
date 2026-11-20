@@ -5,9 +5,6 @@
 .investments-page {
   display: grid;
   gap: 1.5rem;
-  max-width: 72rem;
-  margin: 0 auto;
-  padding: 1.5rem 1rem 3rem;
 }
 
 .investments-page [hidden] {
@@ -163,6 +160,7 @@
 
 .investments-campo--larga {
   grid-column: 1 / -1;
+  --escala-foco: 1.01; /* o campo ocupa a linha toda: crescer 3% (o padrão de campos.css) o faria passar da borda do cartão */
 }
 
 /* ---------------------------------------------------------------- cartão de crédito */
@@ -280,4 +278,172 @@
 
 .investments-status--ok {
   color: var(--positivo);
+}
+
+/* ---------------------------------------------------------------- cards dos cartões */
+
+/* Os cartões ficam em uma fila horizontal, com barra de rolagem para ver todos; cada um para na borda ao rolar. O respiro
+   em volta evita cortar o anel do cartão escolhido e a sombra. */
+.investments-cartoes-faixa {
+  display: flex;
+  align-items: stretch;
+  gap: 1.25rem;
+}
+
+.investments-cartoes {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  contain: inline-size; /* a largura vem do espaço livre, não do conteúdo (senão os cartões alargam a página) */
+  gap: 1.25rem;
+  padding: 0.5rem 0.5rem 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: 0.5rem;
+  list-style: none;
+}
+
+/* três cartões à vista, mesmo que haja mais (o resto se vê rolando) */
+.investments-cartoes > * {
+  flex: 0 0 max(15rem, calc((100% - 2.5rem) / 3));
+  scroll-snap-align: start;
+}
+
+.investments-cartao-novo-area {
+  display: grid;
+  flex: 0 0 11rem;
+  padding: 0.5rem 0 1rem;
+}
+
+.investments-cartao-card {
+  display: grid;
+  gap: 1.25rem;
+  align-content: start;
+  padding: 1.5rem;
+  border: var(--borda-elemento, 0);
+  border-radius: 1.1rem;
+  background: var(--fundo-card);
+  box-shadow: var(--sombra);
+  cursor: pointer; /* o card inteiro seleciona o cartão (o botão Ver compras é o caminho do teclado) */
+  transition: box-shadow 0.15s ease;
+}
+
+/* o cartão escolhido: um anel na cor principal (o botão Ver compras também fica marcado, então a cor não é a única pista) */
+.investments-cartao-card--selecionado {
+  box-shadow: 0 0 0 2px var(--destaque), var(--sombra);
+}
+
+.investments-cartao-card:focus {
+  outline: none;
+}
+
+.investments-cartao-card__topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.investments-cartao-card__nome {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.investments-cartao-card h3 {
+  font-size: 1.25rem;
+  overflow-wrap: anywhere;
+}
+
+/* etiqueta pequena: o texto sempre aparece, a cor só reforça */
+.investments-etiqueta {
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: var(--fundo-campo);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--texto-suave);
+}
+
+/* os totais dentro do card: três colunas que se ajustam à largura */
+.investments-cartao-card .investments-detalhes {
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+}
+
+/* o card que adiciona um cartão: ocupa o lugar de mais um card, com a mesma altura dos outros */
+.investments-cartao-novo {
+  display: grid;
+  min-height: 12rem;
+}
+
+.investments-cartao-novo__botao {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  border: 0;
+  border-radius: 1.1rem;
+  background: transparent;
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--texto) 18%, transparent);
+  color: var(--texto-suave);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: scale 0.1s ease, box-shadow 0.1s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.investments-cartao-novo__mais {
+  font-size: 2.2rem;
+  line-height: 1;
+}
+
+.investments-cartao-novo__botao:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--texto) 7%, transparent);
+  color: var(--texto);
+}
+
+.investments-cartao-novo__botao:focus-visible {
+  outline: none;
+  scale: 1.01;
+  box-shadow: inset 0 0 0 2px var(--destaque);
+}
+
+.investments-cartao-novo__botao:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* ---------------------------------------------------------------- compras do cartão */
+
+.investments-tabela-rolavel {
+  overflow-x: auto;
+}
+
+.investments-compras {
+  width: 100%;
+  min-width: 36rem;
+  border-collapse: collapse;
+}
+
+.investments-compras th,
+.investments-compras td {
+  padding: 0.65rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--borda);
+}
+
+.investments-compras thead th {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+}
+
+.investments-compras .investments-compras__valor {
+  text-align: right;
+  white-space: nowrap;
+  font-weight: 700;
 }

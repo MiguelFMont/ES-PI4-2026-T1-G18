@@ -252,6 +252,8 @@ Dois comportamentos ficam registrados nos testes de propósito, para quem mexer 
 
 ### Metas, investimentos e cartão (Grupo 5)
 
+Cada usuário pode ter até **5 cartões** (`/v1/investments/cards`); uma compra no crédito escolhe o cartão (`cartaoId`) e as parcelas (`parcelas`), e uma compra parcelada cria o parcelamento dela no cartão. Os testes ficam em `investments/__tests__/cartoes.routes.test.ts` e `transactions/__tests__/cartao.routes.test.ts` (o Servidor Java é simulado). Ao subir, o Backend migra os dados do tempo de "um cartão por usuário" (`investmentsRepository.migrarCartoes`).
+
 Os testes ficam em `src/modules/goals/__tests__/` (metas e integração) e `src/modules/investments/__tests__/`. Para rodar só eles:
 
 ```bash

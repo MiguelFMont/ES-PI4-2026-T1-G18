@@ -4,6 +4,7 @@ import { env } from "../config/env";
 import { connectDatabase, disconnectDatabase } from "../database/mongo.connection";
 import { javaServerClient } from "../java-client/java-server.client";
 import { sistemaService } from "../modules/sistema/sistema.service";
+import { investmentsRepository } from "../modules/investments/investments.repository";
 
 // Só avisa no console se o Servidor Java responde; o Backend sobe de qualquer jeito (as rotas que
 // dependem dele respondem 503 enquanto ele estiver fora do ar, e o pool reconecta sozinho).
@@ -21,6 +22,8 @@ async function iniciar() {
   try {
     if (await connectDatabase()) {
       console.log("[database] Conectado ao MongoDB");
+      // traz os dados do tempo de "um cartão por usuário" (idempotente)
+      await investmentsRepository.migrarCartoes();
     } else {
       console.warn("[database] MONGO_URI não definida: Backend sem banco (só /v1/health e /v1/eco)");
     }

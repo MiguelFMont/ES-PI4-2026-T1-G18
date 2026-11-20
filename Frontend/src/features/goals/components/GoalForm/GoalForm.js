@@ -59,15 +59,18 @@ export function iniciarFormulario(raiz, { signal, enviar, aoFechar }) {
     const inicial = textoInicial === '' ? 0 : lerValor(textoInicial);
     if (Number.isNaN(inicial)) erros.inicial = MENSAGENS.inicial;
 
-    const prazo = campos.prazo.ler(); // "AAAA-MM-DD", ou "" se estiver em branco ou inválido
-    if (!prazo) erros.prazo = MENSAGENS.prazo;
+    // o prazo é opcional: em branco = meta sem prazo (null); preenchido, tem de ser uma data válida
+    const digitado = formulario.querySelector('#goals-campo-prazo').value.trim() !== '';
+    const lido = campos.prazo.ler(); // "AAAA-MM-DD", ou "" se estiver em branco ou inválido
+    const prazo = digitado ? lido : null;
+    if (digitado && !lido) erros.prazo = MENSAGENS.prazo;
     // o prazo novo não pode estar no passado (o prazo que a meta já tinha, ao editar, não é conferido)
-    else if (prazo !== prazoOriginal && prazo < isoDeData(new Date())) erros.prazo = 'O prazo não pode ser no passado.';
+    else if (prazo && prazo !== prazoOriginal && prazo < isoDeData(new Date())) erros.prazo = 'O prazo não pode ser no passado.';
 
     if (Object.keys(erros).length > 0) return { erros, dados: null };
     return {
       erros,
-      // ao editar sem mudar o prazo, ele nem vai para a API
+      // sem mudar o prazo ele nem vai para a API; null (campo esvaziado ao editar) tira o prazo da meta
       dados: { titulo: nome, valorObjetivo: objetivo, valorInicial: inicial, ...(prazo !== prazoOriginal && { prazo }) },
     };
   }
@@ -134,12 +137,12 @@ export function iniciarFormulario(raiz, { signal, enviar, aoFechar }) {
     /** Abre o formulário com os dados de uma meta (Goal da API) para editar. */
     abrirEdicao(meta) {
       idEmEdicao = meta.id;
-      prazoOriginal = meta.prazo.slice(0, 10);
+      prazoOriginal = meta.prazo ? meta.prazo.slice(0, 10) : null;
       formulario.reset();
       campos.titulo.definir(meta.titulo);
       campos.objetivo.definir(valorParaCampo(meta.valorObjetivo));
       campos.inicial.definir(meta.valorInicial > 0 ? valorParaCampo(meta.valorInicial) : '');
-      campos.prazo.definir(prazoOriginal);
+      campos.prazo.definir(prazoOriginal ?? '');
       abrir('Editar meta');
     },
   };

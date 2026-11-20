@@ -2,12 +2,17 @@ import { criarTransacao } from '../../services/transactionsService.js';
 import { aplicarMascaraMoeda, ligarCampo } from '../../../../shared/components/campos.js';
 import { ligarCalendario } from '../../../../shared/components/Calendario.js';
 import { notificar } from '../../../../shared/components/notificacao.js';
+import { liberarRolagem, travarRolagem } from '../../../../shared/utils/rolagem.js';
 import { dataDeHoje } from '../../utils/format.js';
 import { CATEGORIAS, rotuloDe } from '../../utils/constants.js';
-import { LIMITE_OBSERVACOES, MENSAGENS_CAMPO, validarFormulario } from '../../utils/formValidation.js';
+import { LIMITE_OBSERVACOES, MENSAGENS_CAMPO, lerValor, validarFormulario } from '../../utils/formValidation.js';
 import { ligarMeta } from './MetaDoLancamento.js';
+import { ligarCartao } from './CartaoDoLancamento.js';
 
-const ORDEM_DOS_CAMPOS = ['tipo', 'descricao', 'valor', 'data', 'categoria', 'formaPagamento', 'meta', 'observacoes'];
+const ORDEM_DOS_CAMPOS = ['tipo', 'descricao', 'valor', 'data', 'categoria', 'formaPagamento', 'cartao', 'meta', 'observacoes'];
+
+// Campo da API -> campo do formulário, quando os nomes são diferentes (cartaoId e parcelas aparecem juntos, no campo Cartão)
+const CAMPO_DA_API = { metaId: 'meta', cartaoId: 'cartao', parcelas: 'cartao' };
 const TEXTO_BOTAO = 'Adicionar transação →';
 
 /**
@@ -17,7 +22,8 @@ const TEXTO_BOTAO = 'Adicionar transação →';
  * Erros de preenchimento mostram uma mensagem curta no campo e uma notificação geral. Só atualiza a tela depois
  * que o Backend confirma a gravação. Depois de salvar, o painel fecha e `aoSalvar()` é chamado (e aguardado); o tipo
  * e a data escolhidos ficam para o próximo lançamento.
- * A opção "Vincular a uma meta" (MetaDoLancamento.js) liga a transação a uma meta: o valor conta no progresso dela.
+ * A opção "Vincular a uma meta" (MetaDoLancamento.js) liga a transação a uma meta: o valor conta no progresso dela. No crédito,
+ * o usuário escolhe o cartão e as parcelas (CartaoDoLancamento.js).
  */
 export function iniciarFormulario(raiz, { aoSalvar, signal }) {
   const formulario = raiz.querySelector('#form-transacao');
@@ -37,6 +43,12 @@ export function iniciarFormulario(raiz, { aoSalvar, signal }) {
     meta: ligarMeta(raiz, { signal }),
     observacoes: ligarCampo(raiz, 'campo-observacoes'),
   };
+  campos.cartao = ligarCartao(raiz, {
+    signal,
+    formaPagamento: campos.formaPagamento,
+    tipo: campos.tipo,
+    valor: () => lerValor(campos.valor.ler()),
+  });
 
   campos.data.definir(dataDeHoje());
   aplicarMascaraMoeda(campos.valor.controle); // o valor já aparece formatado (1 -> 0,01; 11 -> 0,11)
@@ -46,11 +58,14 @@ export function iniciarFormulario(raiz, { aoSalvar, signal }) {
   });
 
   const painelAberto = () => painel.classList.contains('transactions-painel--aberto');
+  let rolagemTravada = false;
+  const travar = () => { if (!rolagemTravada) { travarRolagem(); rolagemTravada = true; } };
+  const liberar = () => { if (rolagemTravada) { liberarRolagem(); rolagemTravada = false; } };
 
   function abrirPainel() {
     painel.classList.add('transactions-painel--aberto');
     fundo.classList.add('transactions-fundo--aberto');
-    document.body.classList.add('transactions-painel-aberto'); // trava a rolagem da página de trás
+    travar(); // trava a rolagem da página de trás, sem a barra sumir e deslocar os campos
     botaoAbrir.setAttribute('aria-expanded', 'true');
     campos.descricao.focar();
   }
@@ -58,7 +73,7 @@ export function iniciarFormulario(raiz, { aoSalvar, signal }) {
   function fecharPainel() {
     painel.classList.remove('transactions-painel--aberto');
     fundo.classList.remove('transactions-fundo--aberto');
-    document.body.classList.remove('transactions-painel-aberto');
+    liberar();
     botaoAbrir.setAttribute('aria-expanded', 'false');
     botaoAbrir.focus(); // devolve o foco a quem abriu
   }
@@ -70,7 +85,7 @@ export function iniciarFormulario(raiz, { aoSalvar, signal }) {
     if (evento.key === 'Escape' && painelAberto()) fecharPainel();
   }, { signal }); // `signal` tira este ouvinte do document quando a tela é desmontada
   // ao sair da tela com o painel aberto, destrava a rolagem da página (a classe fica no <body>, que não é desmontado)
-  signal?.addEventListener('abort', () => document.body.classList.remove('transactions-painel-aberto'));
+  signal?.addEventListener('abort', liberar);
 
   // O Tab circula só dentro do painel enquanto ele está aberto.
   painel.addEventListener('keydown', (evento) => {
@@ -100,6 +115,7 @@ export function iniciarFormulario(raiz, { aoSalvar, signal }) {
 
   function limparParaProximo() {
     for (const nome of ['descricao', 'valor', 'categoria', 'formaPagamento', 'observacoes']) campos[nome].definir('');
+    campos.cartao.reiniciar(); // sem pagamento escolhido, as áreas de cartão e parcelas somem
     campos.meta.reiniciar(); // a meta não se repete de uma transação para a próxima
     contador.textContent = `0/${LIMITE_OBSERVACOES}`;
     campos.descricao.focar();
@@ -113,13 +129,18 @@ export function iniciarFormulario(raiz, { aoSalvar, signal }) {
     const { erros, dados } = validarFormulario(valores);
     const erroDaMeta = campos.meta.validar(); // marcou "Vincular a uma meta" e não escolheu qual
     if (erroDaMeta) erros.meta = erroDaMeta;
-    if (!dados || erroDaMeta) {
+    const erroDoCartao = campos.cartao.validar(); // crédito sem cartão escolhido
+    if (erroDoCartao) erros.cartao = erroDoCartao;
+    if (!dados || erroDaMeta || erroDoCartao) {
       mostrarErros(erros);
       return;
     }
 
     const meta = campos.meta.lerMeta();
     if (meta) dados.metaId = meta.id;
+    const cartao = campos.cartao.ler(); // só no crédito
+    if (cartao?.cartaoId) dados.cartaoId = cartao.cartaoId;
+    if (cartao && cartao.parcelas > 1) dados.parcelas = cartao.parcelas;
 
     botaoSalvar.disabled = true;
     botaoSalvar.textContent = 'Salvando...';
@@ -137,11 +158,18 @@ export function iniciarFormulario(raiz, { aoSalvar, signal }) {
         return;
       }
 
+      if (erro?.code === 'CARD_NOT_FOUND') {
+        // o cartão foi excluído (em outra aba, por exemplo) depois de escolhido: busca os cartões de novo
+        notificar('Esse cartão não existe mais. Escolha outro.', 'erro');
+        await campos.cartao.recarregar();
+        return;
+      }
+
       if (erro?.code === 'VALIDATION_ERROR' && erro.details) {
         // o Backend recusou campos: mostra a mensagem em português junto de cada um
         const errosApi = {};
         for (const nome of Object.keys(erro.details)) {
-          const campo = nome === 'metaId' ? 'meta' : nome; // o campo da API tem outro nome que o do formulário
+          const campo = CAMPO_DA_API[nome] ?? nome; // o campo da API pode ter outro nome que o do formulário
           if (campos[campo]) errosApi[campo] = MENSAGENS_CAMPO[campo];
         }
         if (Object.keys(errosApi).length > 0) {
@@ -161,8 +189,9 @@ export function iniciarFormulario(raiz, { aoSalvar, signal }) {
     // sem categoria escolhida, o Servidor sugeriu uma: o usuário fica sabendo qual foi
     const sugerida = dados.categoria === undefined && criada?.categoria;
     const vinculada = meta ? ` Vinculada à meta "${meta.titulo}".` : '';
+    const parcelada = dados.parcelas > 1 ? ` Parcelada em ${dados.parcelas}x (veja na aba Cartão).` : '';
     notificar(
-      (sugerida ? `Transação cadastrada. Categoria sugerida: ${rotuloDe(CATEGORIAS, criada.categoria)}.` : 'Transação cadastrada.') + vinculada,
+      (sugerida ? `Transação cadastrada. Categoria sugerida: ${rotuloDe(CATEGORIAS, criada.categoria)}.` : 'Transação cadastrada.') + vinculada + parcelada,
       'sucesso'
     );
     await aoSalvar();

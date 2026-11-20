@@ -1,38 +1,26 @@
 import { apiFetch } from '../../../core/http/api.js';
 
-// Chamadas ao Backend para o cartão de crédito SIMULADO (o portfólio de investimentos tem rotas no Backend, mas ficou sem tela) (docs/contrato-api.md, seção 6). Valor atual, rendimento,
+// Chamadas ao Backend para os cartões de crédito SIMULADOS (o portfólio e os parcelamentos manuais têm rotas no Backend, mas ficaram sem tela; as compras parceladas se fazem em Transações) (docs/contrato-api.md, seção 6). Valor atual, rendimento,
 // parcela, saldo devedor e fatura vêm calculados: o Servidor Java faz as contas e o Backend usa as transações reais do usuário.
 
 // ---------------------------------------------------------------- cartão
 
-/** Cartão simulado (GET /investments/card): limite, limite disponível e a fatura do mês com o vencimento. */
-export function obterCartao() {
-  return apiFetch('/investments/card');
+/** Cartões do usuário (GET /investments/cards): { cartoes: [Card] }, o mais antigo (o padrão) primeiro, cada um com a sua fatura. */
+export function listarCartoes() {
+  return apiFetch('/investments/cards');
 }
 
-/** Altera o limite e/ou o dia de vencimento (PATCH /investments/card). Devolve o cartão recalculado. */
-export function atualizarCartao(alteracoes) {
-  return apiFetch('/investments/card', { method: 'PATCH', body: JSON.stringify(alteracoes) });
+/** Cria um cartão (POST /investments/cards). `dados`: { nome, limite?, diaVencimento? }. Devolve o cartão criado. */
+export function criarCartao(dados) {
+  return apiFetch('/investments/cards', { method: 'POST', body: JSON.stringify(dados) });
 }
 
-// ---------------------------------------------------------------- parcelamentos
-
-/** Parcelamentos ativos e os totais (GET /investments/card/installments). */
-export function listarParcelamentos() {
-  return apiFetch('/investments/card/installments');
+/** Altera o nome, o limite e/ou o dia de vencimento de um cartão (PATCH /investments/cards/:id). Devolve o cartão recalculado. */
+export function atualizarCartao(id, alteracoes) {
+  return apiFetch(`/investments/cards/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(alteracoes) });
 }
 
-/** Cadastra um parcelamento (POST ...). `dados`: { descricao, valorTotal, parcelas, parcelasPagas?, taxaJurosMensal? }. */
-export function criarParcelamento(dados) {
-  return apiFetch('/investments/card/installments', { method: 'POST', body: JSON.stringify(dados) });
-}
-
-/** Edita a descrição ou quantas parcelas já foram pagas (PATCH .../:id). Devolve o parcelamento recalculado. */
-export function atualizarParcelamento(id, alteracoes) {
-  return apiFetch(`/investments/card/installments/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(alteracoes) });
-}
-
-/** Remove um parcelamento (DELETE .../:id). Resposta 204, sem corpo. */
-export function excluirParcelamento(id) {
-  return apiFetch(`/investments/card/installments/${encodeURIComponent(id)}`, { method: 'DELETE' });
+/** Exclui um cartão (DELETE /investments/cards/:id). As transações dele ficam, sem o vínculo. Resposta 204, sem corpo. */
+export function excluirCartao(id) {
+  return apiFetch(`/investments/cards/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }

@@ -44,7 +44,7 @@ Roteiro para testar o FinanceAI de ponta a ponta na branch de integração, ante
 - [ ] A transação nova aparece no topo do extrato e o resumo (entradas, saídas, saldo) atualiza.
 
 **Listagem e filtros** (cadastre uma dezena de transações variadas antes)
-- [ ] O extrato abre filtrado pelo **mês atual**; "Limpar filtros" volta ao mês atual.
+- [ ] O extrato abre **sem nenhum filtro** (todas as transações); "Limpar filtros" apaga todos os campos, inclusive o período. Os filtros ficam no alto do extrato, na ordem das colunas.
 - [ ] Cada filtro funciona sozinho e combinado: descrição, tipo, categoria, pagamento, **origem** (Manual / Open Finance), **meta**, período e faixa de valor (com máscara de moeda).
 - [ ] Valor mínimo maior que o máximo e data final antes da inicial mostram erro e não consultam.
 - [ ] Paginação (Anterior/Próxima) e "Por página" (20, 50, 100) funcionam; o resumo reflete todos os filtros, não só a página.

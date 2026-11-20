@@ -9,7 +9,7 @@ export const createGoalSchema = z.object({
   titulo,
   valorObjetivo,
   valorInicial: valorInicial.default(0),
-  prazo: z.coerce.date(),
+  prazo: z.coerce.date().optional(), // opcional: sem ele a meta não tem prazo
 });
 
 // Edição: parcial, só o que muda (sem valores padrão, para um campo ausente não voltar ao padrão).
@@ -18,7 +18,7 @@ export const updateGoalSchema = z
     titulo: titulo.optional(),
     valorObjetivo: valorObjetivo.optional(),
     valorInicial: valorInicial.optional(),
-    prazo: z.coerce.date().optional(),
+    prazo: z.union([z.null(), z.coerce.date()]).optional(), // null tira o prazo da meta
   })
   .refine((d) => Object.keys(d).length > 0, { message: "Informe ao menos um campo para alterar" });
 
@@ -45,12 +45,16 @@ export interface RespostaProgressoMeta {
 }
 
 // O que o Frontend recebe: `id` no lugar de `_id`, sem `userId`, com o progresso calculado.
-export interface GoalResponseDto extends RespostaProgressoMeta {
+// Sem prazo: `prazo`, `diasRestantes`, `mesesRestantes` e `aporteMensalNecessario` não vêm e `noPrazo` é sempre true.
+export interface GoalResponseDto extends Omit<RespostaProgressoMeta, "diasRestantes" | "mesesRestantes" | "aporteMensalNecessario"> {
   id: string;
   titulo: string;
   valorObjetivo: number;
   valorInicial: number;
-  prazo: string; // ISO 8601
+  prazo?: string; // ISO 8601
+  diasRestantes?: number;
+  mesesRestantes?: number;
+  aporteMensalNecessario?: number;
   // valorInicial + a soma das transações vinculadas à meta
   valorAtual: number;
   // a soma e a quantidade das transações vinculadas à meta (os aportes)

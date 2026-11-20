@@ -1,6 +1,6 @@
 // src/modules/investments/investments.dto.ts
 import { z } from "zod";
-import { TIPOS_DE_ATIVO, TipoDeAtivo } from "./investments.model";
+import { CARTAO_PADRAO, TIPOS_DE_ATIVO, TipoDeAtivo } from "./investments.model";
 
 export const idSchema = z.string().regex(/^[a-f\d]{24}$/i, "Id inválido");
 
@@ -14,15 +14,30 @@ export const createInvestmentSchema = z.object({
   dataAplicacao: z.coerce.date().optional(),
 });
 
+const nomeDoCartao = z.string().trim().min(1).max(40);
+
+// Cartão novo: só o nome é obrigatório; limite e vencimento assumem os valores padrão.
+export const createCardSchema = z.object({
+  nome: nomeDoCartao,
+  limite: z.number().positive().default(CARTAO_PADRAO.limite),
+  diaVencimento: z.number().int().min(1).max(28).default(CARTAO_PADRAO.diaVencimento),
+});
+
 export const updateCardSchema = z
   .object({
+    nome: nomeDoCartao.optional(),
     limite: z.number().positive().optional(),
     diaVencimento: z.number().int().min(1).max(28).optional(),
   })
   .refine((d) => Object.keys(d).length > 0, { message: "Informe ao menos um campo para alterar" });
 
+// Filtro opcional da listagem de parcelamentos: só os de um cartão.
+export const listInstallmentsQuerySchema = z.object({ cartaoId: idSchema.optional() });
+
 export const createInstallmentSchema = z
   .object({
+    // sem cartaoId, o parcelamento vai para o cartão mais antigo do usuário
+    cartaoId: idSchema.optional(),
     descricao: z.string().trim().min(1).max(100),
     valorTotal: z.number().positive(),
     parcelas: z.number().int().min(1).max(120),
@@ -40,6 +55,7 @@ export const updateInstallmentSchema = z
   .refine((d) => Object.keys(d).length > 0, { message: "Informe ao menos um campo para alterar" });
 
 export type CreateInvestmentDto = z.infer<typeof createInvestmentSchema>;
+export type CreateCardDto = z.infer<typeof createCardSchema>;
 export type UpdateCardDto = z.infer<typeof updateCardSchema>;
 export type CreateInstallmentDto = z.infer<typeof createInstallmentSchema>;
 export type UpdateInstallmentDto = z.infer<typeof updateInstallmentSchema>;
@@ -120,6 +136,10 @@ export interface PortfolioResponseDto {
 
 export interface InstallmentResponseDto {
   id: string;
+  cartaoId: string;
+  // a transação (compra no crédito) que gerou o parcelamento; só aparece quando ele veio de uma compra. Um parcelamento
+  // assim some junto com a transação e não pode ser excluído por aqui.
+  transacaoId?: string;
   descricao: string;
   valorTotal: number;
   parcelas: number;
@@ -139,16 +159,33 @@ export interface InstallmentsResponseDto {
 }
 
 export interface CardResponseDto {
+  id: string;
+  nome: string;
+  // true no cartão mais antigo: o que recebe as compras no crédito sem cartão indicado (e as rotas /card antigas)
+  padrao: boolean;
   limite: number;
   diaVencimento: number;
   // limite - compras no crédito do mês - saldo devedor dos parcelamentos (pode ficar negativo se o limite estourar)
   limiteDisponivel: number;
+  saldoDevedor: number; // dos parcelamentos ainda ativos deste cartão
+  parcelamentosAtivos: number;
   fatura: {
     mes: string; // AAAA-MM
     valor: number; // compras no crédito do mês + parcelas do mês
-    comprasNoCredito: number; // despesas reais pagas com cartão de crédito neste mês
+    comprasNoCredito: number; // despesas reais à vista no crédito neste mês (as parceladas entram pelas parcelas)
     parcelasDoMes: number;
     vencimento: string; // AAAA-MM-DD
     diasParaVencer: number;
+  };
+}
+
+export interface CardsResponseDto {
+  cartoes: CardResponseDto[]; // do mais antigo para o mais novo
+  maximo: number; // quantos cartões o usuário pode ter
+  totais: {
+    limite: number;
+    limiteDisponivel: number;
+    saldoDevedor: number;
+    faturaDoMes: number;
   };
 }

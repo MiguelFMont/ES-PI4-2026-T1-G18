@@ -3,6 +3,7 @@ import { formatarData, formatarMoeda, formatarPercentual } from '../../../../sha
 /** Etiqueta do estado da meta. O texto sempre aparece; a cor só reforça. */
 function statusDa(meta) {
   if (meta.concluida) return { rotulo: 'Concluída', situacao: 'ok' };
+  if (!meta.prazo) return { rotulo: 'Em andamento', situacao: 'andamento' }; // meta sem prazo nunca vence
   if (!meta.noPrazo) return { rotulo: 'Prazo vencido', situacao: 'erro' };
   return { rotulo: 'No prazo', situacao: 'andamento' };
 }
@@ -69,8 +70,14 @@ export function iniciarLista(raiz, { signal, aoEditar, aoExcluir, tentarNovament
     campo(cartao, 'objetivo').textContent = formatarMoeda(meta.valorObjetivo);
     campo(cartao, 'percentual').textContent = formatarPercentual(meta.percentual);
     campo(cartao, 'falta').textContent = meta.concluida ? 'Nada: meta atingida!' : formatarMoeda(meta.falta);
-    campo(cartao, 'prazo').textContent = textoDoPrazo(meta);
-    campo(cartao, 'aporte').textContent = meta.concluida ? '-' : formatarMoeda(meta.aporteMensalNecessario);
+    // meta sem prazo: os cards Prazo e Guardar por mês não aparecem (não há o que calcular)
+    const temPrazo = Boolean(meta.prazo);
+    campo(cartao, 'prazo').parentElement.hidden = !temPrazo;
+    campo(cartao, 'aporte').parentElement.hidden = !temPrazo;
+    if (temPrazo) {
+      campo(cartao, 'prazo').textContent = textoDoPrazo(meta);
+      campo(cartao, 'aporte').textContent = meta.concluida ? '-' : formatarMoeda(meta.aporteMensalNecessario);
+    }
 
     const status = statusDa(meta);
     const etiqueta = campo(cartao, 'status');

@@ -8,9 +8,10 @@ export interface Aportes {
 }
 
 export const goalsRepository = {
-  // Sempre filtrada por userId: nunca expor meta de um usuário para outro. Prazo mais próximo primeiro.
+  // Sempre filtrada por userId: nunca expor meta de um usuário para outro. Prazo mais próximo primeiro; as sem prazo no fim.
   async findByUser(userId: string) {
-    return GoalModel.find({ userId }).sort({ prazo: 1, _id: 1 }).lean();
+    const metas = await GoalModel.find({ userId }).sort({ prazo: 1, _id: 1 }).lean();
+    return [...metas.filter((m) => m.prazo), ...metas.filter((m) => !m.prazo)];
   },
 
   // Uma meta do usuário (ou null se não existe ou é de outro usuário).
@@ -24,8 +25,11 @@ export const goalsRepository = {
   },
 
   // O filtro com o userId garante que só o dono altera. Devolve null se não existe ou é de outro usuário.
-  async update(userId: string, id: string, alteracoes: Partial<GoalDocument>) {
-    return GoalModel.findOneAndUpdate({ _id: id, userId }, { $set: alteracoes }, { new: true, runValidators: true }).lean();
+  // `prazo: null` tira o prazo da meta.
+  async update(userId: string, id: string, alteracoes: Partial<Omit<GoalDocument, "prazo">> & { prazo?: Date | null }) {
+    const { prazo, ...resto } = alteracoes;
+    const operacao = prazo === null ? { $set: resto, $unset: { prazo: "" } } : { $set: { ...resto, ...(prazo && { prazo }) } };
+    return GoalModel.findOneAndUpdate({ _id: id, userId }, operacao, { new: true, runValidators: true }).lean();
   },
 
   // Exclui a meta e DESVINCULA as transações dela (elas continuam no extrato, só deixam de apontar para uma meta que não

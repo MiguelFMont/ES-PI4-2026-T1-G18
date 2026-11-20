@@ -28,9 +28,6 @@
 
 .minha-conta {
     width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 28px;
     color: var(--conta-texto);
     font-family: inherit;
 }
@@ -425,15 +422,81 @@
     text-decoration: none;
 }
 
+/* PREFERÊNCIAS */
+
+.preferencia-item__controle {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 12px;
+}
+
+.interruptor__estado {
+    color: var(--conta-suave);
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* interruptor (botão com role="switch"): ligado = trilho na cor de destaque, bolinha à direita */
+.minha-conta .interruptor {
+    position: relative;
+    flex-shrink: 0;
+    width: 46px;
+    height: 26px;
+    padding: 0;
+    border: 1px solid var(--conta-borda);
+    border-radius: 999px;
+    background: var(--conta-campo);
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.minha-conta .interruptor[aria-checked="true"] {
+    border-color: var(--conta-destaque);
+    background: var(--conta-destaque);
+}
+
+.interruptor__bolinha {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--conta-texto);
+    transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.minha-conta .interruptor[aria-checked="true"] .interruptor__bolinha {
+    transform: translateX(20px);
+    background: #ffffff;
+}
+
+.minha-conta .interruptor:focus-visible {
+    outline: 2px solid var(--conta-destaque);
+    outline-offset: 3px;
+}
+
+#preferencias-mensagem {
+    min-height: 1.2em;
+    margin-top: 14px;
+    color: var(--conta-suave);
+    font-size: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .minha-conta .interruptor,
+    .interruptor__bolinha {
+        transition: none;
+    }
+}
+
 /* ========================================
    RESPONSIVIDADE
 ======================================== */
 
 @media (max-width: 750px) {
-    .minha-conta {
-        padding: 18px;
-    }
-
     .visao-geral {
         grid-template-columns: 1fr;
     }
@@ -449,7 +512,8 @@
         font-size: 12px;
     }
 
-    .seguranca-item {
+    .seguranca-item,
+    .preferencia-item {
         align-items: flex-start;
         flex-direction: column;
     }

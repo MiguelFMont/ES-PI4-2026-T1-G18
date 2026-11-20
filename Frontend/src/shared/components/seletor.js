@@ -2,6 +2,9 @@ import { entradaPorTeclado } from '../utils/entrada.js';
 
 const ESPERA_PARA_ABRIR_MS = 120; // evita a lista piscar quando o mouse só passa pelo campo
 const ESPERA_PARA_FECHAR_MS = 250; // tolera o vão entre o campo e a lista
+const DURACAO_FADE_MS = 220; // um pouco mais que a transição de 0,2 s da lista no CSS
+const MARGEM_PX = 12; // folga entre a lista e a borda da janela
+const ALTURA_MINIMA_PX = 120; // a lista nunca fica menor que isso
 
 /**
  * Liga as listas dos selects dos campos com a classe `campo--seletor` dentro de `raiz` (o HTML de cada campo está em
@@ -20,7 +23,7 @@ export function ligarSeletores(raiz, signal) {
   const modelo = raiz.querySelector('#modelo-opcao-seletor');
   const cadaCampo = raiz.querySelectorAll('.campo--seletor');
 
-  for (const campo of cadaCampo) ligarSeletor(campo, modelo);
+  for (const campo of cadaCampo) ligarSeletor(campo, modelo, signal);
 
   // clicar fora de qualquer campo fecha as listas (o caminho do evento evita erro se a opção clicada foi recriada)
   document.addEventListener('click', (evento) => {
@@ -30,10 +33,11 @@ export function ligarSeletores(raiz, signal) {
   }, { signal }); // `signal` tira este ouvinte do document quando a tela é desmontada
 }
 
-function ligarSeletor(campo, modelo) {
+function ligarSeletor(campo, modelo, signal) {
   const select = campo.querySelector('select');
   const lista = campo.querySelector('.seletor__lista');
   let temporizador;
+  let limpeza;
 
   const aberta = () => lista.classList.contains('seletor__lista--aberta');
   const focoPorTeclado = () => document.activeElement === select && entradaPorTeclado();
@@ -47,15 +51,43 @@ function ligarSeletor(campo, modelo) {
       if (opcao.selected) item.classList.add('seletor__opcao--escolhida');
       return item;
     });
+    const rolagem = lista.scrollTop;
     lista.replaceChildren(...itens);
+    lista.scrollTop = rolagem; // trocar as opções zera a rolagem: devolve e garante a escolhida à vista
+    lista.querySelector('.seletor__opcao--escolhida')?.scrollIntoView({ block: 'nearest' });
   }
 
   function abrir() {
     clearTimeout(temporizador);
+    clearTimeout(limpeza);
     if (aberta()) return;
+    limpar();
     desenhar();
     lista.classList.add('seletor__lista--aberta');
     select.setAttribute('aria-expanded', 'true');
+    posicionar();
+  }
+
+  // Cabe no espaço livre: embaixo do campo, ou em cima se faltar espaço embaixo e sobrar em cima. Sempre recalcula do
+  // zero (altura padrão primeiro), então volta ao tamanho normal quando a página rola para uma região com espaço.
+  function posicionar() {
+    const rolagem = lista.scrollTop;
+    lista.style.removeProperty('--altura-lista');
+    lista.classList.remove('seletor__lista--acima');
+    const caixa = campo.getBoundingClientRect();
+    const natural = lista.scrollHeight; // altura que a lista teria sem limite
+    const abaixo = window.innerHeight - caixa.bottom - MARGEM_PX;
+    const acima = caixa.top - MARGEM_PX;
+    const subir = natural > abaixo && acima > abaixo;
+    const espaco = Math.max(subir ? acima : abaixo, ALTURA_MINIMA_PX);
+    lista.classList.toggle('seletor__lista--acima', subir);
+    if (natural > espaco) lista.style.setProperty('--altura-lista', `${Math.floor(espaco)}px`);
+    lista.scrollTop = rolagem; // refazer a altura não pode perder a posição rolada
+  }
+
+  function limpar() {
+    lista.style.removeProperty('--altura-lista');
+    lista.classList.remove('seletor__lista--acima');
   }
 
   function fechar() {
@@ -63,6 +95,8 @@ function ligarSeletor(campo, modelo) {
     if (!aberta()) return;
     lista.classList.remove('seletor__lista--aberta');
     select.setAttribute('aria-expanded', 'false');
+    // altura e sentido só voltam ao padrão depois do desaparecimento, para a lista não pular durante o fade-out
+    limpeza = setTimeout(limpar, DURACAO_FADE_MS);
   }
 
   function mover(tecla) {
@@ -124,4 +158,12 @@ function ligarSeletor(campo, modelo) {
   });
 
   campo.addEventListener('seletor:fechar', fechar);
+
+  // Rolar a página ou mudar a janela muda o espaço livre: recalcula posição e altura (inclusive voltando ao normal).
+  const reposicionar = (evento) => {
+    if (evento?.target instanceof Node && lista.contains(evento.target)) return; // rolar a própria lista não reposiciona
+    if (aberta()) posicionar();
+  };
+  window.addEventListener('scroll', reposicionar, { capture: true, passive: true, signal });
+  window.addEventListener('resize', reposicionar, { signal });
 }

@@ -9,7 +9,7 @@ export interface GoalDocument {
   valorObjetivo: number;
   // quanto o usuário já tinha guardado quando criou a meta (opcional, 0 por padrão)
   valorInicial: number;
-  prazo: Date;
+  prazo?: Date; // opcional: meta sem prazo não tem aporte mensal nem "vencida"
 }
 
 const GoalSchema = new Schema<GoalDocument>(
@@ -18,7 +18,7 @@ const GoalSchema = new Schema<GoalDocument>(
     titulo: { type: String, required: true, trim: true, maxlength: 100 },
     valorObjetivo: { type: Number, required: true, min: 0 },
     valorInicial: { type: Number, default: 0, min: 0 },
-    prazo: { type: Date, required: true },
+    prazo: { type: Date },
   },
   { timestamps: true }
 );

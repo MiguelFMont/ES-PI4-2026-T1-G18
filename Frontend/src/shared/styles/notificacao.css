@@ -28,10 +28,12 @@
   padding: 15px;
   border-top-left-radius: 8px;
   border-bottom-left-radius: 8px;
-  color: var(--white);
+  color: var(--white, #fff);
   background: var(--cor);
   box-shadow: -4px 8px 10px rgb(0 0 0 / 0.2);
-  animation: alerta-entrar 0.2s ease-out forwards;
+  animation: alerta-entrar 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  position: relative;
+  overflow: hidden; /* a linha de tempo na base acompanha o canto arredondado */
 }
 
 .alerta--sucesso { --cor: var(--alerta-sucesso); }
@@ -39,7 +41,7 @@
 .alerta--erro { --cor: var(--alerta-erro); }
 
 .alerta--saindo {
-  animation: alerta-sair 0.2s ease-out forwards;
+  animation: alerta-sair 0.12s cubic-bezier(0.7, 0, 0.84, 0) forwards; /* sai mais rápido do que entra */
 }
 
 /* o ícone do tipo é também o botão de fechar */
@@ -62,6 +64,29 @@
 .alerta__fechar:focus-visible {
   outline: 2px solid var(--white);
   outline-offset: 2px;
+}
+
+/* linha de tempo: esvazia de forma linear até a notificação sumir; pausa junto com o temporizador (mouse ou foco) */
+.alerta__tempo {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  background: rgb(255 255 255 / 0.35);
+  pointer-events: none;
+}
+
+.alerta__tempo-barra {
+  height: 100%;
+  background: color-mix(in srgb, var(--cor) 55%, #000);
+  transform-origin: left center;
+  will-change: transform;
+  /* a animação (scaleX de 1 a 0) é criada em notificacao.js, que também a pausa; ela é o relógio da notificação */
+}
+
+.alerta--pausado .alerta__tempo-barra {
+  opacity: 0.6; /* sinal discreto de que o tempo está parado */
 }
 
 .alerta__mensagem {
@@ -90,15 +115,15 @@
   justify-content: center;
   padding-top: 10vh;
   background: rgb(0 0 0 / 0.5);
-  animation: confirmacao-fundo-entrar 0.2s ease-out forwards;
+  animation: confirmacao-fundo-entrar 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .confirmacao--saindo {
-  animation: confirmacao-fundo-sair 0.2s ease-out forwards;
+  animation: confirmacao-fundo-sair 0.12s cubic-bezier(0.7, 0, 0.84, 0) forwards;
 }
 
 .confirmacao--saindo .confirmacao__janela {
-  animation: confirmacao-sair 0.2s ease-out forwards;
+  animation: confirmacao-sair 0.12s cubic-bezier(0.7, 0, 0.84, 0) forwards;
 }
 
 .confirmacao__janela {
@@ -110,7 +135,8 @@
   color: var(--white);
   background: var(--cor);
   box-shadow: 0 8px 20px rgb(0 0 0 / 0.2);
-  animation: confirmacao-entrar 0.3s ease-out forwards;
+  transform-origin: top center; /* a janela cresce do alto, de onde ela aparece */
+  animation: confirmacao-entrar 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .confirmacao__janela--sucesso { --cor: #25e475; }
@@ -190,8 +216,8 @@
 
 @keyframes confirmacao-fundo-entrar { from { opacity: 0; } to { opacity: 1; } }
 @keyframes confirmacao-fundo-sair { from { opacity: 1; } to { opacity: 0; } }
-@keyframes confirmacao-entrar { from { transform: translateY(-100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-@keyframes confirmacao-sair { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-100px); opacity: 0; } }
+@keyframes confirmacao-entrar { from { transform: scale(0.96) translateY(-0.5rem); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes confirmacao-sair { from { transform: none; opacity: 1; } to { transform: scale(0.96) translateY(-0.5rem); opacity: 0; } }
 
 @media (prefers-reduced-motion: reduce) {
   .alerta,

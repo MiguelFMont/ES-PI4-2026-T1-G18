@@ -1,8 +1,9 @@
+import { notificar } from "../../../shared/components/notificacao.js";
+
 export function iniciarReportarProblema() {
     const formulario = document.getElementById("form-reportar-problema");
-    const mensagem = document.getElementById("mensagem-reporte");
 
-    if (!formulario || !mensagem) return;
+    if (!formulario) return;
 
     // Evita registrar o evento duas vezes
     if (formulario.dataset.inicializado === "true") return;
@@ -17,12 +18,11 @@ export function iniciarReportarProblema() {
         const botao = formulario.querySelector('button[type="submit"]');
 
         if (!token) {
-            mensagem.textContent = "Faça login para enviar um relatório.";
+            notificar("Faça login para enviar um relatório.", "aviso");
             return;
         }
         botao.disabled = true;
         botao.textContent = "Enviando...";
-        mensagem.textContent = "";
         try {
             const resposta = await fetch("/v1/suporte", {
                 method: "POST",
@@ -44,11 +44,11 @@ export function iniciarReportarProblema() {
                 );
             }
 
-            mensagem.textContent = "Problema reportado com sucesso!";
+            notificar("Problema reportado com sucesso!", "sucesso");
             formulario.reset();
 
         } catch (erro) {
-            mensagem.textContent = erro.message || "Não foi possível enviar o relatório.";
+            notificar(erro.message || "Não foi possível enviar o relatório.", "erro");
         } finally {
             botao.disabled = false;
             botao.textContent = "Enviar relatório";

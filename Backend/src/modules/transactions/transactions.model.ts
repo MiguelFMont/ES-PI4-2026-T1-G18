@@ -20,6 +20,14 @@ export interface TransactionDocument {
   contaConectadaId?: string;
   // A meta (Grupo 5) a que esta transação foi vinculada: o valor dela conta como aporte no progresso da meta. Opcional.
   metaId?: string;
+  // Cartão de crédito (seção 6 do contrato) a que a compra pertence. Só com formaPagamento "credito"; sem ele, a compra
+  // conta para o cartão mais antigo do usuário.
+  cartaoId?: string;
+  // Número de parcelas da compra no crédito (1 a 24). Ausente = 1.
+  parcelas?: number;
+  // O parcelamento (card_installments) criado por esta compra quando parcelas > 1. Com ele a compra NÃO entra na fatura
+  // como compra à vista: a fatura conta as parcelas do parcelamento.
+  parcelamentoId?: string;
 }
 
 const TransactionSchema = new Schema<TransactionDocument>(
@@ -36,6 +44,9 @@ const TransactionSchema = new Schema<TransactionDocument>(
     externalId: { type: String },
     contaConectadaId: { type: String, index: true },
     metaId: { type: String },
+    cartaoId: { type: String },
+    parcelas: { type: Number, min: 1, max: 24 },
+    parcelamentoId: { type: String },
   },
   { timestamps: true }
 );
@@ -44,6 +55,9 @@ const TransactionSchema = new Schema<TransactionDocument>(
 TransactionSchema.index({ userId: 1, data: -1 });
 // o progresso de cada meta soma as transações vinculadas a ela
 TransactionSchema.index({ userId: 1, metaId: 1 });
+
+// a fatura de cada cartão soma as compras no crédito ligadas a ele
+TransactionSchema.index({ userId: 1, cartaoId: 1 });
 
 // A mesma transação da Pluggy não entra duas vezes para o mesmo usuário. Parcial: as manuais não têm externalId.
 TransactionSchema.index(

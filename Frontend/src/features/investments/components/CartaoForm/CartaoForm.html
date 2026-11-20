@@ -1,0 +1,26 @@
+<!-- Componente: formulário para criar um cartão ou editar o nome, o limite e o vencimento de um cartão. Lógica em CartaoForm.js.
+     Fica escondido até o usuário escolher Novo cartão ou Editar em um card. -->
+<section id="invest-cartao-form-area" class="investments-cartao" aria-labelledby="invest-cartao-form-titulo" hidden>
+  <form id="invest-cartao-form" class="investments-form" novalidate>
+    <h2 id="invest-cartao-form-titulo" class="investments-campo--larga">Novo cartão</h2>
+    <div class="campo investments-campo--larga">
+      <label for="invest-cartao-nome">Nome do cartão *</label>
+      <input type="text" id="invest-cartao-nome" name="nome" maxlength="40" placeholder="Ex: Nubank, Itaú" autocomplete="off">
+      <p class="campo__erro" id="invest-cartao-nome-erro" hidden></p>
+    </div>
+    <div class="campo">
+      <label for="invest-cartao-limite">Limite (R$) *</label>
+      <input type="text" id="invest-cartao-limite" name="limite" inputmode="decimal" placeholder="0,00" autocomplete="off">
+      <p class="campo__erro" id="invest-cartao-limite-erro" hidden></p>
+    </div>
+    <div class="campo">
+      <label for="invest-cartao-dia">Dia do vencimento (1 a 28) *</label>
+      <input type="text" id="invest-cartao-dia" name="diaVencimento" inputmode="numeric" maxlength="2" placeholder="10" autocomplete="off">
+      <p class="campo__erro" id="invest-cartao-dia-erro" hidden></p>
+    </div>
+    <div class="investments-acoes investments-campo--larga">
+      <button type="submit" id="invest-cartao-salvar" class="investments-botao">Criar cartão</button>
+      <button type="button" id="invest-cartao-cancelar" class="investments-botao investments-botao--secundario">Cancelar</button>
+    </div>
+  </form>
+</section>

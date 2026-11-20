@@ -13,6 +13,7 @@ export const MENSAGENS_CAMPO = {
   formaPagamento: 'Escolha o pagamento.',
   meta: 'Escolha a meta.',
   metaId: 'Escolha a meta.',
+  cartao: 'Escolha o cartão e as parcelas (de 1 a 24).',
   observacoes: `Máximo de ${LIMITE_OBSERVACOES} caracteres.`,
 };
 
