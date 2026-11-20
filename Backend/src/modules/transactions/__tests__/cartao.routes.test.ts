@@ -480,3 +480,57 @@ describe("POST /v1/transactions/:id/duplicate: cartão e parcelas", () => {
     assert.ok(await parcelamentoDoBanco(original.parcelamentoId));
   });
 });
+
+// ------------------------------------------------------------------------------------------------ listar por cartão
+
+describe("GET /v1/transactions?cartaoId=: as compras de um cartão", () => {
+  const listarDoCartao = async (cartaoId: string, token: string | null = ANA) => tx("GET", `?cartaoId=${cartaoId}&limite=100`, undefined, token);
+
+  test("traz só as despesas no crédito do cartão; as sem cartão vão para o padrão (o mais antigo)", async () => {
+    const padrao = await criarCartao("Primeiro");
+    const outro = await criarCartao("Segundo");
+    const noPadrao = await criada({ cartaoId: padrao.id, descricao: "No padrão" });
+    const noOutro = await criada({ cartaoId: outro.id, descricao: "No outro" });
+    const semCartao = await criada({ descricao: "Sem cartão" });
+    await criada({ formaPagamento: "debito", descricao: "No débito" });
+    await criada({ tipo: "receita", descricao: "Estorno" });
+
+    const doPadrao = await json(await listarDoCartao(padrao.id));
+    assert.deepEqual(doPadrao.itens.map((t: any) => t.id).sort(), [noPadrao.id, semCartao.id].sort());
+    assert.equal(doPadrao.total, 2);
+
+    const doOutro = await json(await listarDoCartao(outro.id));
+    assert.deepEqual(doOutro.itens.map((t: any) => t.id), [noOutro.id]);
+  });
+
+  test("compra parcelada aparece no cartão dela, com as parcelas", async () => {
+    const cartao = await criarCartao("Nubank");
+    const parcelada = await criada({ cartaoId: cartao.id, parcelas: 3, descricao: "Notebook" });
+    const lista = await json(await listarDoCartao(cartao.id));
+    assert.equal(lista.itens.length, 1);
+    assert.equal(lista.itens[0].id, parcelada.id);
+    assert.equal(lista.itens[0].parcelas, 3);
+  });
+
+  test("a soma do resumo é a das compras do cartão", async () => {
+    const cartao = await criarCartao("Nubank");
+    await criada({ cartaoId: cartao.id, valor: 100 });
+    await criada({ cartaoId: cartao.id, valor: 50.5 });
+    const lista = await json(await listarDoCartao(cartao.id));
+    assert.equal(lista.resumo.despesas, 150.5);
+  });
+
+  test("cartão de outro usuário ou inexistente: 404 CARD_NOT_FOUND", async () => {
+    const daAna = await criarCartao("Da Ana");
+    const deOutro = await listarDoCartao(daAna.id, BETO);
+    assert.equal(deOutro.status, 404);
+    assert.equal((await json(deOutro)).error.code, "CARD_NOT_FOUND");
+    assert.equal((await listarDoCartao(ID_INEXISTENTE)).status, 404);
+  });
+
+  test("id mal formado: 400 VALIDATION_ERROR", async () => {
+    const resposta = await listarDoCartao("abc");
+    assert.equal(resposta.status, 400);
+    assert.equal((await json(resposta)).error.code, "VALIDATION_ERROR");
+  });
+});

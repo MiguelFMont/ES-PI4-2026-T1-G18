@@ -193,7 +193,15 @@ async function planejarEdicao(
 
 export const transactionsService = {
   async list(userId: string, filtros: TransactionFiltersDto): Promise<TransactionListResponseDto> {
-    const { docs, total, totais } = await transactionsRepository.findByUser(userId, filtros);
+    let cartaoPadrao = false;
+    if (filtros.cartaoId) {
+      if (!(await investmentsRepository.findCard(userId, filtros.cartaoId))) {
+        throw new AppError("Cartão não encontrado", 404, "CARD_NOT_FOUND");
+      }
+      const maisAntigo = await investmentsRepository.findOldestCard(userId);
+      cartaoPadrao = String(maisAntigo?._id) === filtros.cartaoId;
+    }
+    const { docs, total, totais } = await transactionsRepository.findByUser(userId, filtros, { cartaoPadrao });
     return {
       itens: docs.map(paraDto),
       pagina: filtros.pagina,

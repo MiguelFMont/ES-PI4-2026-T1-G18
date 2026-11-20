@@ -49,6 +49,8 @@ export const transactionFiltersSchema = z
     origem: z.enum(["manual", "pluggy"]).optional(),
     // id de uma meta (só as vinculadas a ela) ou "nenhuma" (só as sem meta)
     metaId: z.union([z.string().regex(/^[a-f\d]{24}$/i, "Id inválido"), z.literal("nenhuma")]).optional(),
+    // id de um cartão do usuário: só as despesas no crédito dele (as sem cartão contam para o cartão padrão, como na fatura)
+    cartaoId: z.string().regex(/^[a-f\d]{24}$/i, "Id inválido").optional(),
     busca: z.string().trim().min(1).max(100).optional(),
     dataInicio: z.coerce.date().optional(),
     dataFim: z.coerce.date().optional(),

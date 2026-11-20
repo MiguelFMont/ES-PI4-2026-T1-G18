@@ -44,7 +44,8 @@ function escaparRegex(texto: string): string {
 
 export const transactionsRepository = {
   // Sempre filtrada por userId: nunca expor transação de um usuário para outro.
-  async findByUser(userId: string, filtros: TransactionFiltersDto) {
+  // `cartaoPadrao`: o cartão de `filtros.cartaoId` é o mais antigo do usuário, que também recebe as compras no crédito sem cartão.
+  async findByUser(userId: string, filtros: TransactionFiltersDto, { cartaoPadrao = false }: { cartaoPadrao?: boolean } = {}) {
     const query: Record<string, unknown> = { userId };
 
     if (filtros.tipo) query.tipo = filtros.tipo;
@@ -53,6 +54,12 @@ export const transactionsRepository = {
     if (filtros.origem) query.origem = filtros.origem;
     if (filtros.metaId) query.metaId = filtros.metaId === "nenhuma" ? { $exists: false } : filtros.metaId;
     if (filtros.busca) query.descricao = { $regex: escaparRegex(filtros.busca), $options: "i" };
+    if (filtros.cartaoId) {
+      // as compras de um cartão: despesas no crédito feitas nele (e, no cartão padrão, as sem cartão, igual à fatura)
+      query.tipo = "despesa";
+      query.formaPagamento = "credito";
+      query.$or = cartaoPadrao ? [{ cartaoId: filtros.cartaoId }, { cartaoId: { $exists: false } }] : [{ cartaoId: filtros.cartaoId }];
+    }
 
     if (filtros.dataInicio || filtros.dataFim) {
       // dataFim sem horário (meia-noite) vale até o fim daquele dia

@@ -220,6 +220,7 @@ Parâmetros de consulta (todos opcionais, combinam entre si com "e"):
 | `formaPagamento` | texto | Só desta forma de pagamento (lista 2.2) |
 | `busca` | texto de 1 a 100 caracteres | Só transações cuja `descricao` **contém** o texto (sem diferenciar maiúsculas de minúsculas) |
 | `origem` | `manual` ou `pluggy` | Só desta origem |
+| `cartaoId` | id de um cartão (6.2) | Só as **despesas no crédito** desse cartão; as sem cartão contam para o cartão padrão (o mais antigo), como na fatura. Cartão de outro usuário ou inexistente: `404 CARD_NOT_FOUND` |
 | `metaId` | id de uma meta ou `nenhuma` | Só as transações vinculadas a essa meta (seção 5), ou só as que não têm meta |
 | `dataInicio` | data | `data` maior ou igual a este valor |
 | `dataFim` | data | `data` menor ou igual a este valor. Se for meia-noite UTC (como `2026-10-31`), inclui o **dia inteiro** |
