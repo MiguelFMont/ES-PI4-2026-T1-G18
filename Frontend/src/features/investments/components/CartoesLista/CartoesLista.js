@@ -6,10 +6,11 @@ const MES_EM_TEXTO = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'nu
 /**
  * Liga a lista de cartões (HTML em CartoesLista.html): um card grande para cada cartão, com a fatura do mês, o vencimento,
  * o limite (e a barra de uso) e os totais, mais o card de adicionar outro (desligado no limite de 5 cartões). A tela
- * decide o que fazer em cada ação: `editar(cartao)`, `excluir(cartao)` e `novo()`. Todo texto entra com textContent (vem
- * da API). Devolve { mostrar(cartoes) }, com a lista de GET /investments/cards.
+ * decide o que fazer em cada ação: `selecionar(cartao)`, `editar(cartao)`, `excluir(cartao)` e `novo()`. Clicar em qualquer
+ * lugar do card (ou no botão Ver compras, para o teclado) o seleciona. Todo texto entra com textContent (vem da API).
+ * Devolve { mostrar(cartoes, idSelecionado) }, com a lista de GET /investments/cards.
  */
-export function iniciarCartoes(raiz, { signal, editar, excluir, novo }) {
+export function iniciarCartoes(raiz, { signal, selecionar, editar, excluir, novo }) {
   const lista = raiz.querySelector('#invest-cartoes-lista');
   const modelo = raiz.querySelector('#modelo-cartao');
   const modeloNovo = raiz.querySelector('#modelo-cartao-novo');
@@ -19,22 +20,29 @@ export function iniciarCartoes(raiz, { signal, editar, excluir, novo }) {
   // Um só ouvinte para os botões de todos os cards (delegação): eles são recriados a cada carga.
   lista.addEventListener('click', (evento) => {
     const botao = evento.target.closest('button');
-    if (!botao || botao.disabled) return;
-    if (botao.id === 'invest-cartao-novo') {
+    if (botao?.disabled) return;
+    if (botao?.id === 'invest-cartao-novo') {
       novo();
       return;
     }
-    const cartao = cartoesPorId.get(botao.closest('li[data-id]')?.dataset.id);
+    const cartao = cartoesPorId.get(evento.target.closest('li[data-id]')?.dataset.id);
     if (!cartao) return;
-    if (botao.dataset.acao === 'editar') editar(cartao);
-    else if (botao.dataset.acao === 'excluir') excluir(cartao);
+    // um botão de ação faz a ação dele; qualquer outro ponto do card (ou o Ver compras) seleciona o cartão
+    if (botao?.dataset.acao === 'editar') editar(cartao);
+    else if (botao?.dataset.acao === 'excluir') excluir(cartao);
+    else selecionar(cartao);
   }, { signal });
 
   const campo = (card, nome) => card.querySelector(`[data-campo="${nome}"]`);
 
-  function criarCard(cartao) {
+  function criarCard(cartao, idSelecionado) {
     const card = modelo.content.firstElementChild.cloneNode(true);
     card.dataset.id = cartao.id;
+    const selecionado = cartao.id === idSelecionado;
+    card.classList.toggle('investments-cartao-card--selecionado', selecionado);
+    const botaoVer = card.querySelector('[data-acao="selecionar"]');
+    botaoVer.setAttribute('aria-pressed', String(selecionado));
+    botaoVer.setAttribute('aria-label', `Ver as compras do cartão ${cartao.nome}`);
     const { fatura } = cartao;
 
     campo(card, 'nome').textContent = cartao.nome;
@@ -70,7 +78,7 @@ export function iniciarCartoes(raiz, { signal, editar, excluir, novo }) {
   }
 
   return {
-    mostrar(cartoes) {
+    mostrar(cartoes, idSelecionado) {
       cartoesPorId.clear();
       for (const cartao of cartoes) cartoesPorId.set(cartao.id, cartao);
 
@@ -80,7 +88,7 @@ export function iniciarCartoes(raiz, { signal, editar, excluir, novo }) {
       botaoNovo.disabled = cheio;
       if (cheio) botaoNovo.title = `Você chegou ao limite de ${MAX_CARTOES} cartões.`;
 
-      lista.replaceChildren(...cartoes.map(criarCard), cardNovo);
+      lista.replaceChildren(...cartoes.map((c) => criarCard(c, idSelecionado)), cardNovo);
     },
   };
 }

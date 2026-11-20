@@ -1,5 +1,5 @@
 <!-- Componente: um card para cada cartão do usuário, já com a fatura do mês, o vencimento, o limite e os totais, mais o card
-     para adicionar outro. Lógica em CartoesLista.js. Cada card é feito a partir dos <template> no fim deste arquivo. -->
+     para adicionar outro. Clicar em um card (ou no botão Ver compras) o seleciona e mostra as compras feitas nele. Lógica em CartoesLista.js. Cada card é feito a partir dos <template> no fim deste arquivo. -->
 <section aria-labelledby="invest-cartoes-titulo">
   <h2 id="invest-cartoes-titulo" class="so-leitor">Seus cartões</h2>
   <ul id="invest-cartoes-lista" class="investments-cartoes"></ul>
@@ -7,13 +7,14 @@
 
 <!-- Modelo de um cartão: o JS copia este bloco para cada cartão e só preenche os textos. -->
 <template id="modelo-cartao">
-  <li class="investments-cartao-card">
+  <li class="investments-cartao-card" tabindex="-1">
     <div class="investments-cartao-card__topo">
       <div class="investments-cartao-card__nome">
         <h3 data-campo="nome"></h3>
         <span class="investments-etiqueta" data-campo="padrao" hidden>Padrão</span>
       </div>
       <div class="investments-acoes">
+        <button type="button" class="investments-botao investments-botao--pequeno investments-botao--secundario" data-acao="selecionar" aria-pressed="false">Ver compras</button>
         <button type="button" class="investments-botao investments-botao--pequeno investments-botao--secundario" data-acao="editar">Editar</button>
         <button type="button" class="investments-botao investments-botao--pequeno investments-botao--perigo" data-acao="excluir">Excluir</button>
       </div>

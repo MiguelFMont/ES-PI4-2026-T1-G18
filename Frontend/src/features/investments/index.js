@@ -9,7 +9,7 @@
 //     InvestmentsPage/    (só JS)                    coordena a tela: chama a API e conecta os componentes
 //     CartoesLista/                                  um card por cartão: fatura, vencimento, limite e totais (editar, excluir, novo)
 //     CartaoForm/                                    formulário para criar um cartão ou editar nome, limite e vencimento
-//     CardInstallments/                              parcelamentos de todos os cartões (parcela, juros, saldo devedor) e novo parcelamento
+//     CartaoCompras/                                 as compras feitas no cartão escolhido (despesas no crédito, inclusive as parceladas)
 //   services/investmentsService.js                   chamadas ao Backend (/investments/card e .../installments)
 //   utils/constants.js                               mensagens de erro e leitura de inteiros
 //   (o calendário, a máscara de moeda e as notificações são compartilhados: src/shared/;

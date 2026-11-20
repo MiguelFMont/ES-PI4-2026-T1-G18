@@ -298,6 +298,17 @@
   border-radius: 1.1rem;
   background: var(--fundo-card);
   box-shadow: var(--sombra);
+  cursor: pointer; /* o card inteiro seleciona o cartão (o botão Ver compras é o caminho do teclado) */
+  transition: box-shadow 0.15s ease;
+}
+
+/* o cartão escolhido: um anel na cor principal (o botão Ver compras também fica marcado, então a cor não é a única pista) */
+.investments-cartao-card--selecionado {
+  box-shadow: 0 0 0 2px var(--destaque), var(--sombra);
+}
+
+.investments-cartao-card:focus {
+  outline: none;
 }
 
 .investments-cartao-card__topo {
@@ -378,4 +389,35 @@
 .investments-cartao-novo__botao:disabled {
   cursor: not-allowed;
   opacity: 0.55;
+}
+
+/* ---------------------------------------------------------------- compras do cartão */
+
+.investments-tabela-rolavel {
+  overflow-x: auto;
+}
+
+.investments-compras {
+  width: 100%;
+  min-width: 36rem;
+  border-collapse: collapse;
+}
+
+.investments-compras th,
+.investments-compras td {
+  padding: 0.65rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--borda);
+}
+
+.investments-compras thead th {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+}
+
+.investments-compras .investments-compras__valor {
+  text-align: right;
+  white-space: nowrap;
+  font-weight: 700;
 }

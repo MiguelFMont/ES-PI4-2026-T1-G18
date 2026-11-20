@@ -1,28 +1,23 @@
 import {
   atualizarCartao,
-  atualizarParcelamento,
   criarCartao,
-  criarParcelamento,
   excluirCartao,
-  excluirParcelamento,
   listarCartoes,
-  listarParcelamentos,
 } from '../../services/investmentsService.js';
 import { notificar, confirmar } from '../../../../shared/components/notificacao.js';
-import { ligarSeletores } from '../../../../shared/components/seletor.js';
 import { mensagemDeErro } from '../../utils/constants.js';
 import { iniciarCartoes } from '../CartoesLista/CartoesLista.js';
 import { iniciarCartaoForm } from '../CartaoForm/CartaoForm.js';
-import { iniciarParcelamentos } from '../CardInstallments/CardInstallments.js';
+import { iniciarCompras } from '../CartaoCompras/CartaoCompras.js';
 
 /**
  * Liga a página do Cartão de crédito ao HTML de views/investments.html (já dentro do container): um card para cada cartão
- * do usuário (fatura, limite e totais), o formulário de cartão e os parcelamentos de todos os cartões. A estrutura da tela
- * está toda no HTML; aqui ficam só as partes que mudam com os dados. `signal` (de um AbortController) avisa que a tela foi
- * desmontada.
+ * do usuário (fatura e limite), o formulário de cartão e, embaixo, as compras do cartão escolhido (o primeiro, ao abrir).
+ * Os parcelamentos nascem das compras parceladas feitas em Transações (campo Parcelas). A estrutura da tela está toda no
+ * HTML; aqui ficam só as partes que mudam com os dados. `signal` (de um AbortController) avisa que a tela foi desmontada.
  */
 export function iniciarPaginaCartao(raiz, { signal } = {}) {
-  const estado = { sequencia: 0 };
+  const estado = { sequencia: 0, cartaoId: null }; // cartaoId: o cartão escolhido (null = o primeiro)
 
   // Ao desmontar a tela, uma resposta que ainda esteja a caminho deixa de valer.
   signal?.addEventListener('abort', () => { estado.sequencia += 1; });
@@ -32,16 +27,20 @@ export function iniciarPaginaCartao(raiz, { signal } = {}) {
   const erroTexto = raiz.querySelector('#investments-erro-texto');
   const conteudo = raiz.querySelector('#investments-conteudo');
 
-  ligarSeletores(raiz, signal); // a lista do cartão no formulário de parcelamento
-
   const formulario = iniciarCartaoForm(raiz, {
     signal,
     salvar: (dados, modo, atual) => (modo === 'novo'
-      ? agir(() => criarCartao(dados), 'Cartão criado.', 'Não foi possível criar o cartão.')
+      ? agir(() => criarCartao(dados), 'Cartão criado.', 'Não foi possível criar o cartão.', (criado) => { estado.cartaoId = criado.id; })
       : agir(() => atualizarCartao(atual.id, dados), 'Cartão atualizado.', 'Não foi possível atualizar o cartão.')),
   });
+  const compras = iniciarCompras(raiz, { signal });
   const cartoes = iniciarCartoes(raiz, {
     signal,
+    selecionar: (cartao) => {
+      if (cartao.id === estado.cartaoId) return;
+      estado.cartaoId = cartao.id;
+      mostrarEscolhido();
+    },
     novo: () => formulario.abrirNovo(),
     editar: (cartao) => formulario.abrirEditar(cartao),
     excluir: async (cartao) => {
@@ -49,21 +48,18 @@ export function iniciarPaginaCartao(raiz, { signal } = {}) {
       await agir(() => excluirCartao(cartao.id), 'Cartão excluído.', 'Não foi possível excluir o cartão.').catch(() => {});
     },
   });
-  const parcelamentos = iniciarParcelamentos(raiz, {
-    signal,
-    criar: (dados) => agir(() => criarParcelamento(dados), 'Parcelamento adicionado.', 'Não foi possível adicionar o parcelamento.'),
-    pagar: (p) =>
-      agir(() => atualizarParcelamento(p.id, { parcelasPagas: p.parcelasPagas + 1 }), 'Parcela paga.', 'Não foi possível registrar o pagamento.')
-        .catch(() => {}),
-    excluir: async (p) => {
-      if (!(await confirmar(`Excluir o parcelamento "${p.descricao}"?`, 'aviso'))) return;
-      await agir(() => excluirParcelamento(p.id), 'Parcelamento excluído.', 'Não foi possível excluir o parcelamento.').catch(() => {});
-    },
-  });
+
+  let lista = []; // os cartões carregados
 
   raiz.querySelector('#investments-tentar-novamente').addEventListener('click', () => carregar(), { signal });
 
-  /** Busca tudo de uma vez. `silencioso` atualiza sem trocar a tela por "Carregando..." (depois de uma ação). */
+  /** Marca o card escolhido e mostra as compras dele. */
+  function mostrarEscolhido() {
+    cartoes.mostrar(lista, estado.cartaoId);
+    compras.mostrar(lista.find((c) => c.id === estado.cartaoId));
+  }
+
+  /** Busca os cartões. `silencioso` atualiza sem trocar a tela por "Carregando..." (depois de uma ação). */
   async function carregar({ silencioso = false } = {}) {
     const minha = ++estado.sequencia; // ignora respostas antigas
     if (!silencioso) {
@@ -73,13 +69,12 @@ export function iniciarPaginaCartao(raiz, { signal } = {}) {
     }
 
     try {
-      const [{ cartoes: lista }, dadosDosParcelamentos] = await Promise.all([listarCartoes(), listarParcelamentos()]);
+      const resposta = await listarCartoes();
       if (minha !== estado.sequencia) return;
+      lista = resposta.cartoes;
+      if (!lista.some((c) => c.id === estado.cartaoId)) estado.cartaoId = lista[0].id; // o escolhido sumiu: volta ao padrão
 
-      cartoes.mostrar(lista);
-      parcelamentos.definirCartoes(lista);
-      parcelamentos.mostrar(dadosDosParcelamentos);
-
+      mostrarEscolhido();
       carregando.hidden = true;
       erro.hidden = true;
       conteudo.hidden = false;
@@ -99,13 +94,15 @@ export function iniciarPaginaCartao(raiz, { signal } = {}) {
 
   // Faz uma chamada, avisa o resultado e atualiza a tela. Se a chamada falhar, avisa e devolve o erro (o formulário
   // continua aberto e mostra os erros de campo).
-  async function agir(chamada, sucesso, falha) {
+  async function agir(chamada, sucesso, falha, aoConcluir) {
+    let resultado;
     try {
-      await chamada();
+      resultado = await chamada();
     } catch (falhou) {
       notificar(mensagemDeErro(falhou, falha), 'erro');
       throw falhou;
     }
+    aoConcluir?.(resultado); // por exemplo, passar a mostrar o cartão que acabou de ser criado
     notificar(sucesso, 'sucesso');
     await carregar({ silencioso: true });
   }
