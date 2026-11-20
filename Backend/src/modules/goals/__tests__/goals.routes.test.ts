@@ -108,7 +108,6 @@ describe("POST /v1/goals: validação (400 VALIDATION_ERROR, e nada é salvo)", 
     { nome: "valor objetivo negativo", corpo: () => ({ ...META(), valorObjetivo: -1 }), campo: "valorObjetivo" },
     { nome: "valor objetivo como texto", corpo: () => ({ ...META(), valorObjetivo: "10" }), campo: "valorObjetivo" },
     { nome: "valor inicial negativo", corpo: () => ({ ...META(), valorInicial: -5 }), campo: "valorInicial" },
-    { nome: "sem prazo", corpo: () => ({ ...META(), prazo: undefined }), campo: "prazo" },
     { nome: "prazo inválido", corpo: () => ({ ...META(), prazo: "amanhã" }), campo: "prazo" },
   ];
 
@@ -275,7 +274,7 @@ describe("PATCH /v1/goals/:id: editar", () => {
     const resposta = await api("PATCH", `/${meta.id}`, { prazo: diasAtras(5).toISOString() });
     assert.equal(resposta.status, 400);
     assert.equal((await json(resposta)).error.code, "VALIDATION_ERROR");
-    assert.equal((await GoalModel.findById(meta.id).lean())?.prazo.toISOString(), meta.prazo, "nada foi alterado");
+    assert.equal((await GoalModel.findById(meta.id).lean())?.prazo?.toISOString(), meta.prazo, "nada foi alterado");
   });
 
   test("editar outros campos de uma meta já vencida não exige mudar o prazo", async () => {
@@ -386,5 +385,46 @@ describe("autenticação", () => {
       assert.equal((await json(resposta)).error.code, "UNAUTHENTICATED");
     }
     assert.equal(await GoalModel.countDocuments(), 0);
+  });
+});
+
+// ------------------------------------------------------------------------------------------------ prazo opcional
+
+describe("meta sem prazo", () => {
+  test("cria sem prazo: sem prazo, dias e aporte mensal; nunca vencida", async () => {
+    simularServidorGrupo5();
+    const { prazo: _prazo, ...semPrazo } = META();
+    const resposta = await api("POST", "", semPrazo);
+    assert.equal(resposta.status, 201);
+    const meta = await json(resposta);
+    assert.equal(meta.prazo, undefined);
+    assert.equal(meta.diasRestantes, undefined);
+    assert.equal(meta.mesesRestantes, undefined);
+    assert.equal(meta.aporteMensalNecessario, undefined);
+    assert.equal(meta.noPrazo, true);
+    assert.equal(meta.falta, 10000);
+  });
+
+  test("aparece na listagem depois das metas com prazo", async () => {
+    simularServidorGrupo5();
+    const { prazo: _prazo, ...semPrazo } = META();
+    await criar({ ...semPrazo, titulo: "sem prazo" });
+    await criar({ ...META(), titulo: "com prazo" });
+    const lista = await json(await api("GET", ""));
+    assert.deepEqual(lista.map((m: any) => m.titulo), ["com prazo", "sem prazo"]);
+  });
+
+  test("editar com prazo null tira o prazo; depois dá para pôr de novo", async () => {
+    simularServidorGrupo5();
+    const meta = await criar(META());
+    const sem = await json(await api("PATCH", `/${meta.id}`, { prazo: null }));
+    assert.equal(sem.prazo, undefined);
+    assert.equal(sem.aporteMensalNecessario, undefined);
+    assert.equal((await GoalModel.findById(meta.id).lean())?.prazo, undefined);
+
+    const novo = diasAFrente(60).toISOString();
+    const com = await json(await api("PATCH", `/${meta.id}`, { prazo: novo }));
+    assert.equal(com.prazo, novo);
+    assert.ok(com.aporteMensalNecessario > 0);
   });
 });

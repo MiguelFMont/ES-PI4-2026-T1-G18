@@ -764,7 +764,7 @@ Todas as rotas exigem token, e cada usuário só vê e altera as próprias metas
 | `titulo` | texto | Nome da meta (1 a 100 caracteres) |
 | `valorObjetivo` | número | Quanto quer juntar (maior que zero) |
 | `valorInicial` | número | Quanto já tinha guardado ao criar a meta (0 ou mais; padrão `0`) |
-| `prazo` | texto (ISO 8601) | Até quando (ao criar, ou ao mudar o prazo, não pode estar no passado) |
+| `prazo` | texto (ISO 8601) | **Opcional.** Até quando (ao criar, ou ao mudar o prazo, não pode estar no passado). Meta sem prazo: `prazo`, `diasRestantes`, `mesesRestantes` e `aporteMensalNecessario` não vêm e `noPrazo` é sempre `true` |
 | `valorAtual` | número | `valorInicial` + `valorAportado` |
 | `valorAportado` | número | Despesas vinculadas menos receitas vinculadas (pode ser negativo) |
 | `quantidadeAportes` | inteiro | Quantas transações estão vinculadas à meta |
@@ -804,17 +804,17 @@ Exemplo (meta de R$ 10.000 com R$ 5.000 já guardados e prazo daqui a 181 dias):
 
 | Método e rota | O que faz | Resposta |
 |---|---|---|
-| `GET /v1/goals` | Lista as metas do usuário, com o prazo mais próximo primeiro, já com o progresso | `200` com a lista de `Goal` (vazia se não há metas) |
-| `POST /v1/goals` | Cria uma meta. Corpo: `titulo`, `valorObjetivo`, `prazo` (obrigatórios); `valorInicial` (opcional) | `201` com a `Goal` |
+| `GET /v1/goals` | Lista as metas do usuário, com o prazo mais próximo primeiro (as sem prazo no fim), já com o progresso | `200` com a lista de `Goal` (vazia se não há metas) |
+| `POST /v1/goals` | Cria uma meta. Corpo: `titulo`, `valorObjetivo` (obrigatórios); `valorInicial` e `prazo` (opcionais) | `201` com a `Goal` |
 | `GET /v1/goals/:id` | Uma meta | `200` com a `Goal` |
-| `PATCH /v1/goals/:id` | Edita só os campos enviados (`titulo`, `valorObjetivo`, `valorInicial`, `prazo`). Um prazo novo não pode estar no passado; editar outros campos de uma meta já vencida não exige mudar o prazo | `200` com a `Goal` recalculada |
+| `PATCH /v1/goals/:id` | Edita só os campos enviados (`titulo`, `valorObjetivo`, `valorInicial`, `prazo`). Um prazo novo não pode estar no passado; `prazo: null` tira o prazo da meta; editar outros campos de uma meta já vencida não exige mudar o prazo | `200` com a `Goal` recalculada |
 | `DELETE /v1/goals/:id` | Exclui a meta e **desvincula** as transações dela (`metaId` é removido; as transações **não** são apagadas) | `204` |
 
 ### 5.3 Erros
 
 | Status | `code` | Quando |
 |---|---|---|
-| 400 | `VALIDATION_ERROR` | Campo inválido (título vazio ou com mais de 100 caracteres, valor objetivo zero ou negativo, valor inicial negativo, prazo ausente, inválido ou no passado, `PATCH` sem nenhum campo, `:id` mal formado). Os campos de formato errado vêm em `details` |
+| 400 | `VALIDATION_ERROR` | Campo inválido (título vazio ou com mais de 100 caracteres, valor objetivo zero ou negativo, valor inicial negativo, prazo inválido ou no passado, `PATCH` sem nenhum campo, `:id` mal formado). Os campos de formato errado vêm em `details` |
 | 401 | `UNAUTHENTICATED` | Sem token ou token inválido |
 | 404 | `GOAL_NOT_FOUND` | A meta não existe ou é de outro usuário (os dois casos são tratados igual) |
 | 503 | `JAVA_SERVER_UNAVAILABLE` | O Servidor de cálculos está fora do ar |
@@ -823,7 +823,7 @@ Exemplo (meta de R$ 10.000 com R$ 5.000 já guardados e prazo daqui a 181 dias):
 
 `PedidoProgressoMeta` → `RespostaProgressoMeta`. O pedido leva `valorAtual`, `valorObjetivo` e `prazo` (ISO 8601); a resposta traz `percentual`, `falta`, `concluida`, `noPrazo`, `diasRestantes`, `mesesRestantes` e `aporteMensalNecessario` (os mesmos nomes do objeto `Goal`). O pedido aceita ainda um `hoje` opcional, só para os testes fixarem o dia.
 
-**Coleção `goals` (MongoDB):** `userId`, `titulo`, `valorObjetivo`, `valorInicial`, `prazo` e os carimbos de data. Índice `{ userId, prazo }`. O vínculo fica na coleção `transactions`, no campo `metaId` (índice `{ userId, metaId }`): é a soma dessas transações que dá o `valorAportado`.
+**Coleção `goals` (MongoDB):** `userId`, `titulo`, `valorObjetivo`, `valorInicial`, `prazo` (opcional) e os carimbos de data. Índice `{ userId, prazo }`. O vínculo fica na coleção `transactions`, no campo `metaId` (índice `{ userId, metaId }`): é a soma dessas transações que dá o `valorAportado`.
 
 ---
 

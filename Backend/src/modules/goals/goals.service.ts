@@ -36,6 +36,8 @@ function prazoNaoPassou(prazo: Date) {
 
 // O progresso vem das transações que o usuário VINCULOU à meta (valorInicial + a soma delas) e a conta (percentual, o que
 // falta, aporte por mês) é feita pelo Servidor Java. Nada disto é guardado: é recalculado a cada leitura.
+// Meta sem prazo: o Servidor Java exige uma data, então vai a de hoje (só o percentual e o que falta são usados); os campos
+// que dependem do prazo (dias, meses, aporte mensal) não são devolvidos e a meta nunca fica "vencida".
 async function calcularProgresso(meta: CamposDaMeta, aportes: Aportes) {
   const valorAportado = emReais(aportes.total);
   const valorAtual = emReais(meta.valorInicial + valorAportado);
@@ -43,8 +45,13 @@ async function calcularProgresso(meta: CamposDaMeta, aportes: Aportes) {
   const progresso = await javaServerClient.enviarPedido<PedidoProgressoMeta, RespostaProgressoMeta>(
     "PedidoProgressoMeta",
     "RespostaProgressoMeta",
-    { valorAtual, valorObjetivo: meta.valorObjetivo, prazo: meta.prazo.toISOString() }
+    { valorAtual, valorObjetivo: meta.valorObjetivo, prazo: (meta.prazo ?? inicioDoDia()).toISOString() }
   );
+  if (!meta.prazo) {
+    const { diasRestantes, mesesRestantes, aporteMensalNecessario, ...semPrazo } = progresso;
+    void diasRestantes, mesesRestantes, aporteMensalNecessario;
+    return { valorAtual, valorAportado, quantidadeAportes: aportes.quantidade, ...semPrazo, noPrazo: true };
+  }
   return { valorAtual, valorAportado, quantidadeAportes: aportes.quantidade, ...progresso };
 }
 
@@ -54,7 +61,7 @@ function paraDto(meta: MetaLida, progresso: Awaited<ReturnType<typeof calcularPr
     titulo: meta.titulo,
     valorObjetivo: meta.valorObjetivo,
     valorInicial: meta.valorInicial,
-    prazo: meta.prazo.toISOString(),
+    ...(meta.prazo ? { prazo: meta.prazo.toISOString() } : {}),
     criadaEm: meta.createdAt.toISOString(),
     ...progresso,
   };
@@ -76,7 +83,7 @@ export const goalsService = {
 
   // O progresso é calculado ANTES de gravar: se o Servidor Java estiver fora do ar (503), nada é salvo.
   async create(userId: string, dados: CreateGoalDto): Promise<GoalResponseDto> {
-    prazoNaoPassou(dados.prazo);
+    if (dados.prazo) prazoNaoPassou(dados.prazo);
     const campos: CamposDaMeta = { valorObjetivo: dados.valorObjetivo, valorInicial: dados.valorInicial, prazo: dados.prazo };
     const progresso = await calcularProgresso(campos, SEM_APORTES); // meta nova: ainda sem transações vinculadas
 
@@ -87,12 +94,12 @@ export const goalsService = {
   async update(userId: string, id: string, alteracoes: UpdateGoalDto): Promise<GoalResponseDto> {
     const atual = await goalsRepository.findOneByUser(userId, id);
     if (!atual) throw naoEncontrada();
-    if (alteracoes.prazo) prazoNaoPassou(alteracoes.prazo);
+    if (alteracoes.prazo) prazoNaoPassou(alteracoes.prazo); // null = tirar o prazo
 
     const campos: CamposDaMeta = {
       valorObjetivo: alteracoes.valorObjetivo ?? atual.valorObjetivo,
       valorInicial: alteracoes.valorInicial ?? atual.valorInicial,
-      prazo: alteracoes.prazo ?? atual.prazo,
+      prazo: alteracoes.prazo === undefined ? atual.prazo : (alteracoes.prazo ?? undefined),
     };
     const aportes = await goalsRepository.somarAportes(userId, new Date());
     const progresso = await calcularProgresso(campos, aportes.get(id) ?? SEM_APORTES);
