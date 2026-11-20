@@ -1,42 +1,43 @@
-/* Componente TransactionFilters: cartão de filtros, mais compacto que o resto da página, com todos os
-   campos numa linha (quebra em mais linhas só quando a tela é estreita).
+/* Componente TransactionFilters: cartão de filtros, mais compacto que o resto da página. Os campos ficam em uma grade de
+   colunas iguais: cabem todos numa linha em janelas largas e, em janelas mais estreitas (por exemplo com o menu lateral
+   aberto), quebram em linhas com o mesmo tamanho de coluna, sem um campo esticado sozinho.
    Cartão, botões e utilitários de grade ficam em styles/transactions.css. */
 
-.transactions-cartao--compacto {
-  gap: 0.6rem;
-  padding: 0.9rem 1rem;
-}
-
-.transactions-cartao--compacto h2 {
-  font-size: 0.95rem;
+/* A barra de filtros é o alto do cartão do extrato (o #transactions-extrato é o cartão): não tem fundo, borda nem sombra
+   próprios, então não há divisão entre os filtros e a tabela. */
+.transactions-filtros-barra {
+  min-width: 0;
 }
 
 .transactions-filtros {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 0.9rem 0.75rem; /* o quadro Período se projeta para baixo; o espaço entre linhas evita encostar na seguinte */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  align-items: end;
+  gap: 1.1rem 0.75rem; /* o quadro Período se projeta para baixo; o espaço entre linhas evita encostar na seguinte */
+}
+
+/* Em cartões largos (menu recolhido, janela grande): 8 colunas e duas linhas fixas, com colunas de no máximo 9,4 rem (o
+   tamanho dos campos com o menu aberto): o resto da largura fica vazio à direita, os campos não esticam.
+   Linha 1: Período (2 colunas), Descrição, Categoria, Pagamento, Tipo, Meta e Origem.
+   Linha 2: Valor mín. e Valor máx. (embaixo do Período) e Limpar filtros. */
+@container (min-width: 68rem) {
+  .transactions-filtros {
+    grid-template-columns: repeat(8, minmax(0, 9.4rem));
+  }
 }
 
 .transactions-filtros .campo {
-  flex: 1 1 6.5rem;
+  min-width: 0;
   gap: 0.2rem;
-}
-
-.transactions-filtros .campo:first-child {
-  flex-basis: 9rem; /* descrição: um pouco mais larga */
 }
 
 /* Quadro "Período": a largura dele é a do calendário (17,5 rem) e encolhe junto se a tela ficar menor.
    A margem negativa embaixo faz as caixas Início/Final alinharem com os outros campos da linha. */
 .transactions-filtros .campo--periodo {
   display: block;
-  flex: 0 1 17.5rem;
-  max-width: 100%;
+  grid-column: span 2; /* as duas caixas (Início e Final) ocupam duas colunas */
   min-width: 0;
-  margin: 0 0 calc(-1 * (0.75rem + 1px));
-  margin-top: -10px;
-  margin-bottom: 0px;
+  margin: 0 0 calc(-1 * (0.75rem + 1px)); /* as caixas de data alinham com os outros campos da linha */
   padding: 0.5rem 0.8rem 0.75rem;
   border: var(--borda-elemento, 0);
   border-radius: 0.6rem;
@@ -54,13 +55,15 @@
   margin-top: 0.2rem;
 }
 
-.transactions-filtros .campo:nth-last-child(2),
-.transactions-filtros .campo:nth-last-child(3) {
-  flex: 0.6 1 5.5rem; /* valor mínimo e máximo */
+.transactions-filtros__acoes {
+  align-self: end;
 }
 
-.transactions-filtros__acoes {
-  flex: 0 0 auto;
+/* em tela muito estreita (uma coluna), o Período não pode pedir duas colunas */
+@media (max-width: 40rem) {
+  .transactions-filtros .campo--periodo {
+    grid-column: 1 / -1;
+  }
 }
 
 /* campos menores que o padrão de shared/styles/campos.css */

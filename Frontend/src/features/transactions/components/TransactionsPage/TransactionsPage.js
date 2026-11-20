@@ -11,7 +11,7 @@ const ITENS_POR_PAGINA_INICIAL = 20;
 
 /**
  * Liga a lógica da página de Transações (extrato) ao HTML de views/transactions.html (já dentro do container):
- * formulário de nova transação, filtros (a tela nasce filtrada pelo mês atual) e a lista paginada de receitas e
+ * formulário de nova transação, filtros (a tela abre sem filtro: mostra tudo) e a lista paginada de receitas e
  * despesas, com o resumo de entradas, saídas e saldo e a edição e exclusão de transações. A estrutura da tela está
  * toda no HTML; aqui ficam só as partes que mudam com os dados. `signal` (de um AbortController) avisa que a tela foi
  * desmontada.
@@ -126,7 +126,7 @@ export function iniciarPaginaTransacoes(raiz, { signal } = {}) {
 
   carregarMetas();
 
-  // Os filtros já nascem com o mês atual e chamam aoMudar assim que são ligados: é a primeira consulta da tela.
+  // Os filtros já nascem vazios (tudo) e chamam aoMudar assim que são ligados: é a primeira consulta da tela.
   filtros = iniciarFiltros(raiz, {
     signal,
     aoMudar: (parametros) => {

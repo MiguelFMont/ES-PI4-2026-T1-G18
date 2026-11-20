@@ -5,7 +5,15 @@
   gap: 1rem;
 }
 
-.transactions-extrato--carregando {
+/* o cartão do extrato é o contêiner da grade dos filtros (@container em TransactionFilters.css): ela muda com a largura do
+   cartão, que depende do menu lateral estar aberto ou recolhido */
+.transactions-extrato {
+  container-type: inline-size;
+}
+
+/* recarregando (por exemplo, ao mudar um filtro): a lista fica mais clara, mas os filtros continuam normais para o usuário
+   poder seguir mudando */
+.transactions-extrato--carregando > :not(.transactions-filtros-barra) {
   opacity: 0.6;
 }
 
@@ -38,7 +46,8 @@
   border-radius: 0.5rem;
 }
 
-/* Barra das transações selecionadas (dentro do cartão do extrato, no tom das linhas) */
+/* Barra das transações selecionadas e das alterações pendentes (no tom das linhas). A das selecionadas fica ao lado da
+   contagem de transações (.extrato-selecao--linha); as duas aparecem com uma entrada curta. */
 .extrato-selecao {
   display: flex;
   flex-wrap: wrap;
@@ -48,6 +57,69 @@
   border: var(--borda-elemento, 0);
   border-radius: 0.75rem;
   background: color-mix(in srgb, var(--texto) 2.5%, var(--fundo-card)); /* só um pouco mais claro que o cartão */
+  transform-origin: left center;
+}
+
+.extrato-selecao--linha {
+  padding: 0.3rem 0.75rem;
+  min-height: 2.8rem;
+}
+
+/* a contagem e a barra das selecionadas, lado a lado, à esquerda; o "Por página" fica à direita */
+.transactions-resumo-area__texto {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  min-width: 0;
+  min-height: 2.8rem; /* a altura da barra: a contagem fica no mesmo lugar com ou sem a barra ao lado */
+}
+
+/* a edição em lote abre embaixo da linha da contagem, no mesmo tom da barra */
+.transactions-extrato__conteudo > .extrato-edicao-lote {
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--texto) 2.5%, var(--fundo-card));
+}
+
+.extrato-selecao:not([hidden]) {
+  animation: extrato-selecao-entrar 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes extrato-selecao-entrar {
+  from { opacity: 0; transform: translateX(-0.75rem) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+/* a edição em lote entra e sai por cima/por baixo da linha da contagem */
+.extrato-edicao-lote:not([hidden]) {
+  transform-origin: top center;
+  animation: extrato-lote-entrar 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes extrato-lote-entrar {
+  from { opacity: 0; transform: translateY(-0.5rem); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Saída: mais rápida do que a entrada e com ease-in. A classe é posta por alternarComSaida (TransactionExtrato.js), que só
+   depois tira o elemento da tela (hidden). Vem depois das regras de entrada para vencê-las. */
+.extrato-selecao.extrato-saindo {
+  animation: extrato-selecao-sair 0.12s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+}
+
+.extrato-edicao-lote.extrato-saindo {
+  animation: extrato-lote-sair 0.12s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+}
+
+@keyframes extrato-selecao-sair {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateX(-0.75rem) scale(0.98); }
+}
+
+@keyframes extrato-lote-sair {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateY(-0.5rem); }
 }
 
 .extrato-selecao__texto {
@@ -67,27 +139,43 @@
   font-size: 0.85rem;
 }
 
+/* Os campos da edição em lote têm o mesmo tamanho dos filtros (TransactionFilters.css): grade de colunas iguais e, em cartões
+   largos, 8 colunas de no máximo 9,4 rem. */
 .extrato-edicao-lote {
-  display: flex;
-  flex: 1 0 100%;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 0.75rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  align-items: end;
+  gap: 1.1rem 0.75rem;
+}
+
+@container (min-width: 68rem) {
+  .extrato-edicao-lote {
+    grid-template-columns: repeat(8, minmax(0, 9.4rem));
+  }
 }
 
 .extrato-edicao-lote .campo {
-  flex: 0 1 12rem;
+  min-width: 0;
+  gap: 0.2rem;
 }
 
-.extrato-edicao-lote select,
-.extrato-edicao-lote input {
+.extrato-edicao-lote .campo label {
+  font-size: 0.75rem;
+}
+
+.extrato-edicao-lote .campo input:not([type='radio']):not([type='checkbox']),
+.extrato-edicao-lote .campo select {
   min-height: 2.1rem;
+  padding: 0.25rem 0.6rem;
   font-size: 0.85rem;
+  border-radius: 0.5rem;
 }
 
 .extrato-edicao-lote .transactions-botao {
   min-height: 2.1rem;
   padding: 0.25rem 0.9rem;
+  font-size: 0.85rem;
+  white-space: nowrap;
 }
 
 /* Um cartão (.transactions-cartao, no HTML) cobre todo o extrato. Dentro dele, cada transação é um bloco (fundo
@@ -135,13 +223,17 @@
   border-block: var(--borda-elemento, 0);
 }
 
+/* A linha é uma fileira de células: o contorno de cima e de baixo vem de cada célula (border-block) e as laterais, da primeira
+   e da última, para a borda do estilo "bordas" fechar em volta da linha inteira. */
 .transactions-tabela tbody td:first-child {
   padding-left: 0.6rem;
+  border-left: var(--borda-elemento, 0);
   border-radius: 0.75rem 0 0 0.75rem;
 }
 
 .transactions-tabela tbody td:last-child {
   padding-right: 0.5rem;
+  border-right: var(--borda-elemento, 0);
   border-radius: 0 0.75rem 0.75rem 0;
 }
 

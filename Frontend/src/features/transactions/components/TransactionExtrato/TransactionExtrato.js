@@ -35,6 +35,28 @@ let titulosDasMetas = new Map();
  *   salvarAlteracoes(itens), editarVarias(transacoes, mudancas), duplicarVarias(transacoes) e excluirVarias(transacoes) devolvem uma Promise,
  *   avisam o resultado e atualizam a lista; se falharem, a área mantém o que o usuário estava fazendo.
  */
+// Quanto a saída dura (o CSS, .extrato-saindo, usa 0,12 s): só depois disso o elemento recebe `hidden`.
+const DURACAO_SAIDA_MS = 130;
+const saidasEmAndamento = new WeakMap(); // elemento -> temporizador da saída
+
+/** Mostra ou esconde um elemento com animação de entrada e de saída (a entrada vem do CSS, ao tirar o `hidden`). */
+function alternarComSaida(elemento, visivel) {
+  clearTimeout(saidasEmAndamento.get(elemento));
+  if (visivel) {
+    elemento.classList.remove('extrato-saindo');
+    elemento.hidden = false;
+    return;
+  }
+  if (elemento.hidden || elemento.classList.contains('extrato-saindo')) return;
+  elemento.classList.add('extrato-saindo');
+  saidasEmAndamento.set(elemento, setTimeout(() => {
+    elemento.hidden = true;
+    elemento.classList.remove('extrato-saindo');
+  }, DURACAO_SAIDA_MS));
+}
+
+const estaAberto = (elemento) => !elemento.hidden && !elemento.classList.contains('extrato-saindo');
+
 export function iniciarExtrato(raiz, { irParaPagina, tentarNovamente, mudarLimite, salvarAlteracoes, editarVarias, duplicarVarias, excluirVarias, signal }) {
   const area = raiz.querySelector('#transactions-extrato');
   const carregando = raiz.querySelector('#extrato-carregando');
@@ -148,7 +170,7 @@ export function iniciarExtrato(raiz, { irParaPagina, tentarNovamente, mudarLimit
 
   function atualizarSelecao() {
     const quantidade = selecionadas.size;
-    barra.hidden = quantidade === 0;
+    alternarComSaida(barra, quantidade > 0);
     raiz.querySelector('#extrato-selecao-texto').textContent =
       `${quantidade} ${quantidade === 1 ? 'selecionada' : 'selecionadas'}`;
     selecionarTodas.checked = itens.length > 0 && quantidade === itens.length;
@@ -162,7 +184,7 @@ export function iniciarExtrato(raiz, { irParaPagina, tentarNovamente, mudarLimit
   }
 
   function alternarEdicaoLote(abrir) {
-    edicaoLote.hidden = !abrir;
+    alternarComSaida(edicaoLote, abrir);
     botaoEditarVarias.setAttribute('aria-expanded', String(abrir));
     if (!abrir) {
       edicaoLote.reset();
@@ -211,7 +233,7 @@ export function iniciarExtrato(raiz, { irParaPagina, tentarNovamente, mudarLimit
     selecionadas.clear();
     atualizarSelecao();
   });
-  botaoEditarVarias.addEventListener('click', () => alternarEdicaoLote(edicaoLote.hidden));
+  botaoEditarVarias.addEventListener('click', () => alternarEdicaoLote(!estaAberto(edicaoLote)));
 
   edicaoLote.addEventListener('submit', async (evento) => {
     evento.preventDefault();
