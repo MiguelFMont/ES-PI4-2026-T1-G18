@@ -31,6 +31,7 @@
 }
 
 .mentor-ia-chat {
+  position: relative; /* o texto .so-leitor (position: absolute) de cada mensagem fica preso ao cartão: sem isso ele escapa do overflow e a página rola além do fim */
   display: flex;
   flex-direction: column;
   min-height: 0;
