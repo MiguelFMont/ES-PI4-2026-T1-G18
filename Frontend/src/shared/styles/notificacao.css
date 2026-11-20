@@ -81,11 +81,12 @@
   height: 100%;
   background: color-mix(in srgb, var(--cor) 55%, #000);
   transform-origin: left center;
-  animation: alerta-tempo 5s linear forwards; /* a duração real vem do JS (style.animationDuration) */
+  will-change: transform;
+  /* a animação (scaleX de 1 a 0) é criada em notificacao.js, que também a pausa; ela é o relógio da notificação */
 }
 
 .alerta--pausado .alerta__tempo-barra {
-  animation-play-state: paused;
+  opacity: 0.6; /* sinal discreto de que o tempo está parado */
 }
 
 .alerta__mensagem {
@@ -97,11 +98,6 @@
 @keyframes alerta-entrar {
   from { transform: translateX(100%); }
   to { transform: translateX(0); }
-}
-
-@keyframes alerta-tempo {
-  from { transform: scaleX(1); }
-  to { transform: scaleX(0); }
 }
 
 @keyframes alerta-sair {
@@ -230,10 +226,5 @@
   .confirmacao__janela,
   .confirmacao--saindo .confirmacao__janela {
     animation: none;
-  }
-
-  /* sem movimento suave: a linha de tempo esvazia em passos */
-  .alerta__tempo-barra {
-    animation-timing-function: steps(10, end);
   }
 }

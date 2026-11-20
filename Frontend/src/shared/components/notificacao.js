@@ -7,7 +7,8 @@
  *   await confirmar('Excluir?', 'erro')        janela com Cancelar e Confirmar; devolve true ou false
  *
  * `tipo` aceita 'sucesso', 'aviso' ou 'erro' (e os sinônimos 'success', 'warning', 'error', 'info' e 'notificacao').
- * Passar o mouse ou focar uma notificação pausa a linha e o temporizador; ao sair, ambos continuam de onde pararam.
+ * Mexer o mouse sobre uma notificação ou focá-la pausa a linha de tempo (que é o relógio dela); ao sair, continua de onde
+ * parou. A pausa dura no máximo 10 s de uma vez.
  * Opções de notificar: `duracao` em ms (0 = fica até ser fechada, sem linha de tempo) e `pausavel` (padrão true).
  * O estilo está em shared/styles/notificacao.css (carregado pelo index.html e pelas páginas de features/auth).
  * Diferenças do original: várias notificações podem aparecer juntas (uma embaixo da outra) em vez de uma substituir
@@ -15,6 +16,9 @@
  */
 const DURACAO_MS = 5000;
 const DURACAO_ANIMACAO_MS = 300;
+// Quanto a notificação pode ficar parada (mouse ou foco em cima dela) de uma vez. Passou disso, o tempo volta a correr:
+// uma pausa esquecida (cursor parado em cima, toque na tela, foco que não sai) nunca prende a notificação para sempre.
+const PAUSA_MAXIMA_MS = 10000;
 
 const TIPOS = {
   sucesso: { classe: 'sucesso', icone: '✓' },
@@ -38,6 +42,49 @@ function regiao() {
   return area;
 }
 
+/**
+ * Pausa a linha de tempo enquanto o mouse se mexe sobre a notificação ou o foco do teclado está dentro dela, e retoma de
+ * onde parou. Só conta o mouse de verdade: um toque na tela não pausa (não existe "sair de cima" no toque), e um cursor
+ * parado no lugar onde a notificação apareceu também não (só vale se ele se mexer em cima dela).
+ */
+function ligarPausa(alerta, animacao) {
+  const motivos = new Set(); // 'mouse' e/ou 'foco'
+  let limite = null;
+
+  const atualizar = () => {
+    if (alerta.classList.contains('alerta--saindo')) return;
+    if (motivos.size > 0) {
+      if (animacao.playState !== 'running') return;
+      animacao.pause();
+      alerta.classList.add('alerta--pausado');
+      limite = setTimeout(() => {
+        motivos.clear();
+        atualizar();
+      }, PAUSA_MAXIMA_MS);
+    } else {
+      clearTimeout(limite);
+      alerta.classList.remove('alerta--pausado');
+      if (animacao.playState === 'paused') animacao.play();
+    }
+  };
+  const marcar = (motivo, ligado) => {
+    if (ligado === motivos.has(motivo)) return;
+    if (ligado) motivos.add(motivo);
+    else motivos.delete(motivo);
+    atualizar();
+  };
+
+  alerta.addEventListener('pointermove', (evento) => {
+    if (evento.pointerType === 'mouse' && (evento.movementX !== 0 || evento.movementY !== 0)) marcar('mouse', true);
+  });
+  alerta.addEventListener('pointerleave', () => marcar('mouse', false));
+  alerta.addEventListener('pointercancel', () => marcar('mouse', false));
+  alerta.addEventListener('focusin', () => marcar('foco', true));
+  alerta.addEventListener('focusout', (evento) => {
+    if (!alerta.contains(evento.relatedTarget)) marcar('foco', false);
+  });
+}
+
 export function notificar(mensagem, tipo = 'sucesso', { duracao = DURACAO_MS, pausavel = true } = {}) {
   const { classe, icone } = tipoDe(tipo);
   const persistente = !(duracao > 0);
@@ -59,57 +106,36 @@ export function notificar(mensagem, tipo = 'sucesso', { duracao = DURACAO_MS, pa
 
   alerta.append(fechar, texto);
 
-  let temporizador;
-  let restante = duracao;
-  let iniciadoEm = null; // null = temporizador parado (pausado)
+  let animacao = null; // o relógio da notificação: a própria linha de tempo (ver abaixo)
 
   const encerrar = () => {
-    clearTimeout(temporizador);
     if (alerta.classList.contains('alerta--saindo')) return;
     alerta.classList.add('alerta--saindo');
+    animacao?.cancel();
     setTimeout(() => alerta.remove(), DURACAO_ANIMACAO_MS);
   };
   fechar.addEventListener('click', encerrar);
 
   if (!persistente) {
-    // Linha de tempo: esvazia da direita para a esquerda durante a mesma duração do temporizador.
+    // Linha de tempo: esvazia da direita para a esquerda e É o relógio da notificação: quando ela termina, a notificação
+    // sai. Como a barra e o fechamento são a mesma animação, os dois nunca se separam (antes eram uma animação CSS e um
+    // setTimeout, e a barra podia parar com a notificação ainda na tela). Pausar e retomar mexem só nela.
     const tempo = document.createElement('div');
     tempo.className = 'alerta__tempo';
     tempo.setAttribute('aria-hidden', 'true');
     const barra = document.createElement('div');
     barra.className = 'alerta__tempo-barra';
-    barra.style.animationDuration = `${duracao}ms`;
     tempo.append(barra);
     alerta.append(tempo);
 
-    const iniciar = () => {
-      iniciadoEm = Date.now();
-      temporizador = setTimeout(encerrar, restante);
-    };
-    iniciar();
+    const semMovimento = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    animacao = barra.animate(
+      [{ transform: 'scaleX(1)' }, { transform: 'scaleX(0)' }],
+      { duration: duracao, easing: semMovimento ? 'steps(10, end)' : 'linear', fill: 'forwards' }
+    );
+    animacao.onfinish = encerrar;
 
-    if (pausavel) {
-      const pausar = () => {
-        if (iniciadoEm === null || alerta.classList.contains('alerta--saindo')) return;
-        clearTimeout(temporizador);
-        restante = Math.max(0, restante - (Date.now() - iniciadoEm));
-        iniciadoEm = null;
-        alerta.classList.add('alerta--pausado');
-      };
-      const retomar = () => {
-        if (iniciadoEm !== null || alerta.classList.contains('alerta--saindo')) return;
-        alerta.classList.remove('alerta--pausado');
-        iniciar();
-      };
-      alerta.addEventListener('mouseenter', pausar);
-      alerta.addEventListener('mouseleave', () => {
-        if (!alerta.contains(document.activeElement)) retomar();
-      });
-      alerta.addEventListener('focusin', pausar);
-      alerta.addEventListener('focusout', () => {
-        if (!alerta.matches(':hover')) retomar();
-      });
-    }
+    if (pausavel) ligarPausa(alerta, animacao);
   }
 
   regiao().append(alerta);
