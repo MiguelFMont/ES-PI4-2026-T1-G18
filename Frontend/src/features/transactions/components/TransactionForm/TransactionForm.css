@@ -84,31 +84,31 @@
   background: rgb(0 0 0 / 0.55);
   opacity: 0;
   visibility: hidden; /* fechado, não recebe clique nem foco */
-  transition: opacity 0.3s ease, visibility 0s 0.3s;
+  transition: opacity 0.15s cubic-bezier(0.7, 0, 0.84, 0), visibility 0s 0.15s; /* fecha mais rápido do que abre */
 }
 
 .transactions-fundo--aberto {
   opacity: 1;
   visibility: visible;
-  transition: opacity 0.3s ease, visibility 0s;
+  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s;
 }
 
 .transactions-painel {
   position: fixed;
-  inset: 0 0 0 var(--largura-menu, 14rem); /* a esquerda é a largura do menu lateral (core/styles/global.css, muda ao recolher): o painel cobre só o conteúdo */
+  inset: 0; /* a página inteira: o cartão do formulário fica centralizado na janela, com o menu aberto ou recolhido */
   z-index: 50;
   display: flex; /* o cartão fica no meio do painel (na horizontal e na vertical) */
   overflow-y: auto;
   padding: 1rem;
   transform: translateY(-100%);
   visibility: hidden;
-  transition: transform 0.35s ease, visibility 0s 0.35s;
+  transition: transform 0.15s cubic-bezier(0.7, 0, 0.84, 0), visibility 0s 0.15s; /* fecha mais rápido do que abre */
 }
 
 .transactions-painel--aberto {
   transform: translateY(0);
   visibility: visible;
-  transition: transform 0.35s ease, visibility 0s;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s;
 }
 
 .transactions-painel .transactions-cartao {
@@ -139,10 +139,6 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-}
-
-body.transactions-painel-aberto {
-  overflow: hidden;
 }
 
 @media (max-width: 767px) {
@@ -232,10 +228,10 @@ body.transactions-painel-aberto {
   font-size: 0.85rem;
 }
 
-/* A janela "Nova meta": por cima do painel (z-index 50) e do fundo escuro, cobrindo só o conteúdo (a esquerda é o menu). */
+/* A janela "Nova meta": por cima do painel (z-index 50) e do fundo escuro, centralizada na página inteira. */
 .transactions-meta-modal {
   position: fixed;
-  inset: 0 0 0 var(--largura-menu, 14rem);
+  inset: 0;
   z-index: 60;
   display: grid;
   place-items: center;

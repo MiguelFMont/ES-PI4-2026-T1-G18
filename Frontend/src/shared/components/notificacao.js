@@ -14,8 +14,10 @@
  * Diferenças do original: várias notificações podem aparecer juntas (uma embaixo da outra) em vez de uma substituir
  * a outra, a mensagem entra sempre como texto, e a confirmação devolve uma Promise em vez de receber um callback.
  */
+import { liberarRolagem, travarRolagem } from '../utils/rolagem.js';
+
 const DURACAO_MS = 5000;
-const DURACAO_ANIMACAO_MS = 300;
+const DURACAO_ANIMACAO_MS = 140; // a saída dura 0,12 s (notificacao.css)
 // Quanto a notificação pode ficar parada (mouse ou foco em cima dela) de uma vez. Passou disso, o tempo volta a correr:
 // uma pausa esquecida (cursor parado em cima, toque na tela, foco que não sai) nunca prende a notificação para sempre.
 const PAUSA_MAXIMA_MS = 10000;
@@ -187,7 +189,7 @@ export function confirmar(mensagem, tipo = 'aviso') {
     janela.append(conteudo, botoes);
     fundo.append(janela);
     document.body.append(fundo);
-    document.body.style.overflow = 'hidden';
+    travarRolagem(); // sem a barra sumir e deslocar a página (shared/utils/rolagem.js)
     cancelar.focus();
 
     function fechar(resultado) {
@@ -195,10 +197,10 @@ export function confirmar(mensagem, tipo = 'aviso') {
       fundo.classList.add('confirmacao--saindo');
       setTimeout(() => {
         fundo.remove();
-        document.body.style.overflow = '';
+        liberarRolagem();
         anterior?.focus?.();
         resolver(resultado);
-      }, 200);
+      }, 140); // a saída da confirmação dura 0,12 s (notificacao.css)
     }
 
     function teclado(evento) {

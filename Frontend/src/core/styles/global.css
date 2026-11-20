@@ -428,7 +428,7 @@ body.menu-recolhido .main-nav__grupo + .main-nav__grupo {
     transform: translateX(calc(-1 * var(--dica-recuo, 0px))) scaleX(var(--dica-escala, 1));
     opacity: 0;
     visibility: hidden;
-    transition: transform 0.2s cubic-bezier(0.4, 0, 0.6, 1), opacity 0.15s ease, visibility 0s linear 0.2s;
+    transition: transform 0.12s cubic-bezier(0.7, 0, 0.84, 0), opacity 0.1s ease, visibility 0s linear 0.12s; /* some mais rápido do que aparece */
 }
 
 .dica-menu__texto {
@@ -601,6 +601,10 @@ body.menu-recolhido .main-nav__grupo + .main-nav__grupo {
     height: 9rem;
 }
 
+.esqueleto--card {
+    height: 17rem;
+}
+
 .esqueleto--linha-extrato {
     height: 3.2rem;
 }
@@ -620,4 +624,16 @@ body.menu-recolhido .main-nav__grupo + .main-nav__grupo {
 /* Troca de tela: o roteador esconde o conteúdo (sem mostrar nada no lugar) até a tela nova estar montada (app/main.js) */
 #app-content.tela-trocando {
     visibility: hidden;
+}
+
+/* Movimento reduzido: quem pede menos movimento ao sistema não vê as transições nem as animações do projeto (hover, painéis, listas, menu). As animações que precisam existir mesmo assim têm regra própria (barra de tempo das notificações). */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        transition-delay: 0s !important;
+    }
 }

@@ -90,12 +90,13 @@
     /* descida suave ao abrir (a mesma do calendário) */
     opacity: 1;
     translate: 0 0;
-    transition: opacity 0.2s ease, translate 0.2s ease, overlay 0.2s allow-discrete, display 0.2s allow-discrete;
+    transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1), translate 0.18s cubic-bezier(0.16, 1, 0.3, 1), overlay 0.18s allow-discrete, display 0.18s allow-discrete;
   }
 
   .campo select::picker(select):not(:popover-open) {
     opacity: 0;
     translate: 0 -0.6rem;
+    transition: opacity 0.1s cubic-bezier(0.7, 0, 0.84, 0), translate 0.1s cubic-bezier(0.7, 0, 0.84, 0), overlay 0.1s allow-discrete, display 0.1s allow-discrete;
   }
 
   @starting-style {
@@ -210,7 +211,7 @@
   opacity: 0;
   visibility: hidden;
   transform: translateY(-0.6rem);
-  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s 0.2s;
+  transition: opacity 0.1s cubic-bezier(0.7, 0, 0.84, 0), transform 0.1s cubic-bezier(0.7, 0, 0.84, 0), visibility 0s 0.1s;
 }
 
 /* sem espaço embaixo do campo, a lista abre para cima (decidido em seletor.js) */
@@ -224,7 +225,7 @@
   opacity: 1;
   visibility: visible;
   transform: translateY(0);
-  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s;
+  transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1), transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s;
 }
 
 .seletor__opcao {

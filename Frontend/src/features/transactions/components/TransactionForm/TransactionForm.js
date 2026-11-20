@@ -2,6 +2,7 @@ import { criarTransacao } from '../../services/transactionsService.js';
 import { aplicarMascaraMoeda, ligarCampo } from '../../../../shared/components/campos.js';
 import { ligarCalendario } from '../../../../shared/components/Calendario.js';
 import { notificar } from '../../../../shared/components/notificacao.js';
+import { liberarRolagem, travarRolagem } from '../../../../shared/utils/rolagem.js';
 import { dataDeHoje } from '../../utils/format.js';
 import { CATEGORIAS, rotuloDe } from '../../utils/constants.js';
 import { LIMITE_OBSERVACOES, MENSAGENS_CAMPO, lerValor, validarFormulario } from '../../utils/formValidation.js';
@@ -57,11 +58,14 @@ export function iniciarFormulario(raiz, { aoSalvar, signal }) {
   });
 
   const painelAberto = () => painel.classList.contains('transactions-painel--aberto');
+  let rolagemTravada = false;
+  const travar = () => { if (!rolagemTravada) { travarRolagem(); rolagemTravada = true; } };
+  const liberar = () => { if (rolagemTravada) { liberarRolagem(); rolagemTravada = false; } };
 
   function abrirPainel() {
     painel.classList.add('transactions-painel--aberto');
     fundo.classList.add('transactions-fundo--aberto');
-    document.body.classList.add('transactions-painel-aberto'); // trava a rolagem da página de trás
+    travar(); // trava a rolagem da página de trás, sem a barra sumir e deslocar os campos
     botaoAbrir.setAttribute('aria-expanded', 'true');
     campos.descricao.focar();
   }
@@ -69,7 +73,7 @@ export function iniciarFormulario(raiz, { aoSalvar, signal }) {
   function fecharPainel() {
     painel.classList.remove('transactions-painel--aberto');
     fundo.classList.remove('transactions-fundo--aberto');
-    document.body.classList.remove('transactions-painel-aberto');
+    liberar();
     botaoAbrir.setAttribute('aria-expanded', 'false');
     botaoAbrir.focus(); // devolve o foco a quem abriu
   }
@@ -81,7 +85,7 @@ export function iniciarFormulario(raiz, { aoSalvar, signal }) {
     if (evento.key === 'Escape' && painelAberto()) fecharPainel();
   }, { signal }); // `signal` tira este ouvinte do document quando a tela é desmontada
   // ao sair da tela com o painel aberto, destrava a rolagem da página (a classe fica no <body>, que não é desmontado)
-  signal?.addEventListener('abort', () => document.body.classList.remove('transactions-painel-aberto'));
+  signal?.addEventListener('abort', liberar);
 
   // O Tab circula só dentro do painel enquanto ele está aberto.
   painel.addEventListener('keydown', (evento) => {
