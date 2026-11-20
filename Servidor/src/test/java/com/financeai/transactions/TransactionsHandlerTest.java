@@ -104,6 +104,14 @@ class TransactionsHandlerTest
     }
 
     @Test
+    void variacaoNoPluralNaoCasaComAPalavraChave ()
+    {
+        // limitacao conhecida: a comparacao e por palavra inteira, entao "farmacias" nao casa com "farmacia"
+        assertEquals ("Saude", TransactionsHandler.categoriaDe ("farmacia"));
+        assertEquals ("Outros", TransactionsHandler.categoriaDe ("farmacias"));
+    }
+
+    @Test
     void excecaoVemAntesDaRegraGeral ()
     {
         // "uber eats" e comida, apesar de "uber" ser transporte; "mercado livre" nao e supermercado
