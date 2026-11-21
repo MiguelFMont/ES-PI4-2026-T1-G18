@@ -86,9 +86,11 @@ public class DashboardHandler
         return Math.round ((atual - anterior) / Math.abs (anterior) * 10000.0) / 100.0;
     }
 
-    private static double numero (Map < String, Object > mapa, String chave)
+    private static double numero (Map < String, Object > mapa, String chave) throws ErroDeNegocio
     {
         Object valor = mapa.get (chave);
+        if (valor != null && !(valor instanceof Number))
+            throw new ErroDeNegocio ("VALIDATION", chave + " deve ser um numero");
         return valor == null ? 0 : ((Number) valor).doubleValue ();
     }
 }

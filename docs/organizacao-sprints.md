@@ -74,8 +74,9 @@ Cada grupo é uma **fatia vertical completa** (Frontend + Backend + Servidor Jav
 
 ### Grupo 5 — Metas Financeiras & Investimentos
 - Cadastro e acompanhamento de metas financeiras
-- Painel de investimentos simulado (patrimônio, portfólio, fatura de cartão)
-- Parcelamentos ativos do cartão (parcela atual/total, valor mensal)
+- Cartões de crédito simulados (até 5 por usuário): fatura do mês, vencimento, limite e compras de cada cartão
+- Compras parceladas: o parcelamento nasce da compra no crédito (Grupo 2), e as parcelas avançam sozinhas pelo calendário
+- Portfólio de investimentos simulado (patrimônio e rentabilidade): implementado na API, sem tela (funcionalidade futura)
 
 > Dados que um grupo consome de outro (ex.: Grupos 3, 4 e 5 usam as transações do Grupo 2) usam **dados de seed/mock** definidos no Sprint 0, sem esperar a feature real ficar pronta.
 

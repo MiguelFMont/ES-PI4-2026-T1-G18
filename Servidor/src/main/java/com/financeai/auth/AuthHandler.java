@@ -9,6 +9,7 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 
 import com.financeai.core.Comunicado;
+import com.financeai.core.ErroDeNegocio;
 import com.financeai.core.HandlerRegistry;
 
 public class AuthHandler
@@ -22,6 +23,9 @@ public class AuthHandler
     private Comunicado hashSenha (Comunicado pedido) throws Exception
     {
         PedidoHashSenha p = pedido.dadosComo (PedidoHashSenha.class);
+
+        if (p == null || p.getSenha () == null || p.getSenha ().isEmpty ())
+            throw new ErroDeNegocio ("VALIDATION", "senha e obrigatoria");
 
         byte[] sal = new byte[16];
         new SecureRandom().nextBytes (sal);
@@ -38,10 +42,24 @@ public class AuthHandler
     {
         PedidoValidarSenha p = pedido.dadosComo (PedidoValidarSenha.class);
 
-        String[] partes = p.getHash().split (":");
+        if (p == null || p.getSenha () == null || p.getHash () == null)
+            throw new ErroDeNegocio ("VALIDATION", "senha e hash sao obrigatorios");
 
-        byte[] sal = Base64.getDecoder().decode (partes[0]);
-        byte[] esperado = Base64.getDecoder().decode (partes[1]);
+        String[] partes = p.getHash().split (":");
+        if (partes.length != 2)
+            throw new ErroDeNegocio ("VALIDATION", "hash invalido");
+
+        byte[] sal;
+        byte[] esperado;
+        try
+        {
+            sal      = Base64.getDecoder().decode (partes[0]);
+            esperado = Base64.getDecoder().decode (partes[1]);
+        }
+        catch (IllegalArgumentException erro)   // nao e Base64
+        {
+            throw new ErroDeNegocio ("VALIDATION", "hash invalido");
+        }
 
         boolean valido = MessageDigest.isEqual (
             esperado,
