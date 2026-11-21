@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { authService } from "./auth.service";
 import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema} from "./auth.dto";
 import { AuthenticatedRequest } from "../../middlewares/auth.middleware";
+import { AppError } from "../../shared/errors/app-error";
 
 export const authController = {
     async register(req: Request, res: Response, next: NextFunction) {
@@ -18,13 +19,39 @@ export const authController = {
     async login(req: Request, res: Response, next: NextFunction) {
         try {
             const dados = loginSchema.parse(req.body);
-            const { usuario, token } = await authService.login(dados);
+            const resultado = await authService.login(dados);
 
-            res.status(200).json({ usuario, token });
+            res.status(200).json(resultado);
         } catch (error) {
             next(error);
         }
     },
+
+    async loginMfa(req: Request, res: Response, next: NextFunction) {
+        try {
+            const { mfaToken, codigo } = req.body;
+
+            if (
+                typeof mfaToken !== "string" ||
+                !mfaToken ||
+                typeof codigo !== "string" ||
+                !/^\d{6}$/.test(codigo)
+            ) {
+                throw new AppError(
+                    "Token temporário ou código MFA inválido.",
+                    400,
+                    "INVALID_MFA_REQUEST"
+                );
+            }
+                const resultado = await authService.loginMfa(mfaToken, codigo);
+
+            res.status(200).json(resultado);
+        } catch (error) {
+            next(error);
+        }
+    },
+
+       
 
     async me(req: AuthenticatedRequest, res: Response, next: NextFunction) {
         try {

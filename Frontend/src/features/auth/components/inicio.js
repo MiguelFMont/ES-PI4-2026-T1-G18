@@ -16,6 +16,11 @@ const loginForm = document.querySelector("#login-form");
 const loginEmail = document.querySelector("#login-email");
 const loginSenha = document.querySelector("#login-senha");
 const loginErro = document.querySelector("#login-erro");
+const modalMfa = document.querySelector("#modal-mfa");
+const codigoMfa = document.querySelector("#codigo-mfa");
+const confirmarMfa = document.querySelector("#confirmar-mfa");
+const cancelarMfa = document.querySelector("#cancelar-mfa");
+const mfaErro = document.querySelector("#mfa-erro");
 
 // Executa quando o usuário envia o formulário
 loginForm.addEventListener("submit", async function (event) {
@@ -45,6 +50,41 @@ loginForm.addEventListener("submit", async function (event) {
             }    
             return;
         }
+                if (resultado.mfaRequired) {
+            if (!resultado.mfaToken) {
+                loginErro.textContent = "Não foi possível iniciar a verificação MFA.";
+                return;
+            }
+            const codigo = await solicitarCodigoMfa();
+            if (codigo === null) {
+                return;
+            }
+            if (!/^\d{6}$/.test(codigo.trim())) {
+                loginErro.textContent = "Digite um código MFA válido de 6 dígitos.";
+                return;
+            }
+            const respostaMfa = await fetch("/v1/auth/login/mfa", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    mfaToken: resultado.mfaToken,
+                    codigo: codigo.trim()
+                })
+            });
+
+            const resultadoMfa = await respostaMfa.json();
+            if (!respostaMfa.ok) {
+                loginErro.textContent = "Código MFA incorreto ou expirado.";
+                return;
+            }
+            if (!resultadoMfa.token) {
+                loginErro.textContent = "O servidor não retornou o token de acesso.";
+                return;
+            }
+            resultado.token = resultadoMfa.token;
+        }
         if (!resultado.token) {
             loginErro.textContent = "O servidor não retornou um token.";
             return;
@@ -59,6 +99,53 @@ loginForm.addEventListener("submit", async function (event) {
         console.error("Erro no login:", error);
     }
 });
+
+function solicitarCodigoMfa() {
+    return new Promise((resolve) => {
+        modalMfa.classList.add("ativo");
+        codigoMfa.value = "";
+        mfaErro.textContent = "";
+        codigoMfa.focus();
+
+        function fechar(codigo) {
+            modalMfa.classList.remove("ativo");
+            confirmarMfa.removeEventListener("click", confirmar);
+            cancelarMfa.removeEventListener("click", cancelar);
+            codigoMfa.removeEventListener("keydown", teclaPressionada);
+            resolve(codigo);
+        }
+
+        function confirmar() {
+            const codigo = codigoMfa.value.trim();
+
+            if (!/^\d{6}$/.test(codigo)) {
+                mfaErro.textContent = "Digite um código válido de 6 dígitos.";
+                return;
+            }
+
+            fechar(codigo);
+        }
+
+        function cancelar() {
+            fechar(null);
+        }
+
+        function teclaPressionada(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                confirmar();
+            }
+
+            if (event.key === "Escape") {
+                cancelar();
+            }
+        }
+
+        confirmarMfa.addEventListener("click", confirmar);
+        cancelarMfa.addEventListener("click", cancelar);
+        codigoMfa.addEventListener("keydown", teclaPressionada);
+    });
+}
 // Seleciona o formulário de cadastro
 const cadastroForm = document.querySelector("#cadastro-form");
 

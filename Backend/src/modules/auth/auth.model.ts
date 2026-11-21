@@ -12,6 +12,7 @@ interface UserDocument {
     resetPasswordExpiresAt?: Date;
     mfaEnabled: boolean;
     mfaSecret?: string;
+    mfaUltimoContador?: number;
     plano: "free" | "pro";
     preferencias: {
         tema: "claro" | "escuro";
@@ -32,6 +33,7 @@ const UserSchema = new Schema<UserDocument>(
         resetPasswordExpiresAt: { type: Date, select: false },
         mfaEnabled: { type: Boolean, default: false },
         mfaSecret: { type: String, select: false },
+        mfaUltimoContador: { type: Number, select: false },
         plano: {
             type: String,
             enum: ["free", "pro"],

@@ -8,7 +8,8 @@ const FRAGMENTOS = {
     'perfil': 'perfil.html',
     'preferencias': 'preferencias.html',
     'seguranca': 'seguranca.html',
-    'reportar-problema': 'ReportarProblema.html'
+    'reportar-problema': 'ReportarProblema.html',
+    'mfa': 'mfa.html'
     
 };
 
@@ -131,6 +132,143 @@ function iniciarPreferencias(container) {
         'Configurações disponíveis após integração com o Backend.';
 }
 
+function iniciarSeguranca(container, signal) {
+    const status = container.querySelector('#mfa-status');
+    const mensagem = container.querySelector('#mfa-mensagem');
+    const botaoAtivar = container.querySelector('#ativar-mfa');
+    const configuracao = container.querySelector('#mfa-configuracao');
+    const desativacao = container.querySelector('#mfa-desativacao');
+    const botaoConfirmar = container.querySelector('#confirmar-mfa');
+    const botaoDesativar = container.querySelector('#desativar-mfa');
+    const codigoInput = container.querySelector('#mfa-codigo');
+    const codigoDesativarInput = container.querySelector('#mfa-codigo-desativar');
+    const qrCode = container.querySelector('#mfa-qrcode');
+
+    if (!usuarioAtual) {
+        status.textContent = 'Não foi possível identificar o usuário.';
+        return;
+    }
+
+    function atualizarEstado(ativo) {
+        status.textContent = ativo ? 'MFA ativado' : 'MFA desativado';
+        botaoAtivar.hidden = ativo;
+        configuracao.hidden = true;
+        desativacao.hidden = !ativo;
+        qrCode.replaceChildren();
+    }
+
+    async function requisicaoMFA(rota, codigo) {
+        const token = localStorage.getItem('@FinanceAI:token');
+
+        const resposta = await fetch(`/v1/auth/mfa/${rota}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
+            },
+            ...(codigo !== undefined && {
+                body: JSON.stringify({ codigo })
+            }),
+            signal
+        });
+
+        const dados = await resposta.json();
+
+        if (!resposta.ok) {
+            throw new Error(dados.message || dados.mensagem || 'Erro ao configurar MFA.');
+        }
+
+        return dados;
+    }
+
+    atualizarEstado(Boolean(usuarioAtual.mfaEnabled));
+
+    botaoAtivar.addEventListener('click', async () => {
+        botaoAtivar.disabled = true;
+        mensagem.textContent = 'Gerando configuração MFA...';
+
+        try {
+            const dados = await requisicaoMFA('enable');
+
+            botaoAtivar.hidden = true;
+            configuracao.hidden = false;
+
+            // Mostra a URI temporariamente até integrarmos o QR Code.
+            const QRCode = (await import(
+                '../../core/vendor/qrcode.js')).default;
+
+            const imagem = document.createElement('img');
+
+            imagem.src = await QRCode.toDataURL(dados.uri, {
+                width: 220,
+                margin: 2
+            });
+
+            imagem.alt = 'QR Code para configurar o autenticador FinanceAI';
+            qrCode.replaceChildren(imagem);
+
+            mensagem.textContent = 'Digite o código do aplicativo autenticador.';
+        } catch (erro) {
+            if (erro.name !== 'AbortError') {
+                mensagem.textContent = erro.message;
+            }
+        } finally {
+            botaoAtivar.disabled = false;
+        }
+    }, { signal });
+
+    botaoConfirmar.addEventListener('click', async () => {
+        const codigo = codigoInput.value.trim();
+
+        if (!/^\d{6}$/.test(codigo)) {
+            mensagem.textContent = 'Digite um código de 6 dígitos.';
+            return;
+        }
+
+        botaoConfirmar.disabled = true;
+
+        try {
+            const dados = await requisicaoMFA('validate', codigo);
+
+            usuarioAtual.mfaEnabled = dados.mfaEnabled;
+            atualizarEstado(true);
+            mensagem.textContent = 'MFA ativado com sucesso!';
+        } catch (erro) {
+            if (erro.name !== 'AbortError') {
+                mensagem.textContent = erro.message;
+            }
+        } finally {
+            botaoConfirmar.disabled = false;
+        }
+    }, { signal });
+
+    botaoDesativar.addEventListener('click', async () => {
+        const codigo = codigoDesativarInput.value.trim();
+
+        if (!/^\d{6}$/.test(codigo)) {
+            mensagem.textContent = 'Digite um código de 6 dígitos.';
+            return;
+        }
+
+        botaoDesativar.disabled = true;
+
+        try {
+            const dados = await requisicaoMFA('disable', codigo);
+
+            usuarioAtual.mfaEnabled = dados.mfaEnabled;
+            atualizarEstado(false);
+            mensagem.textContent = 'MFA desativado com sucesso!';
+        } catch (erro) {
+            if (erro.name !== 'AbortError') {
+                mensagem.textContent = erro.message;
+            }
+        } finally {
+            botaoDesativar.disabled = false;
+        }
+    }, { signal });
+}
+
+
 async function carregarAba(container, aba, signal) {
     const arquivo = FRAGMENTOS[aba];
 
@@ -167,6 +305,8 @@ async function carregarAba(container, aba, signal) {
             iniciarEdicaoPerfil(container, signal);
         } else if (aba === 'preferencias') {
             iniciarPreferencias(container);
+        } else if (aba === 'mfa') {
+            iniciarSeguranca(container, signal);
         }else if (aba === 'reportar-problema') {
             iniciarReportarProblema();
         }
