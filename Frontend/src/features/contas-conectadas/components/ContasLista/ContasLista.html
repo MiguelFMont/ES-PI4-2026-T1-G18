@@ -1,7 +1,12 @@
 <!-- Componente: lista das contas conectadas. Lógica em ContasLista.js. Mostra só um destes estados por vez (carregando, erro,
      nenhuma conta ou a lista). Cada conexão é um cartão feito a partir do <template> no fim deste arquivo. -->
 <div id="contas-lista-area" class="contas-lista-area">
-  <p id="contas-carregando" class="contas-estado">Carregando contas...</p>
+  <div id="contas-carregando" class="esqueleto-grupo" role="status">
+    <span class="esqueleto esqueleto--titulo"></span>
+    <span class="esqueleto esqueleto--bloco"></span>
+    <span class="esqueleto esqueleto--bloco"></span>
+    <span class="so-leitor">Carregando contas...</span>
+  </div>
 
   <div id="contas-erro" class="contas-estado" hidden>
     <p id="contas-erro-texto" role="alert"></p>

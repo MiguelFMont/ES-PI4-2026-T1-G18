@@ -9,6 +9,8 @@ import transactionsRouter from "./transactions/transactions.routes";
 import connectedAccountsRouter from "./connected-accounts/connected-accounts.routes";
 import dashboardRouter from "./dashboard/dashboard.routes";
 import mentorIaRouter from "./mentor-ia/mentor-ia.routes";
+import goalsRouter from "./goals/goals.routes";
+import investmentsRouter from "./investments/investments.routes";
 import { authRouter } from "./auth/auth.routes";
 import suporteRouter from "./suporte/suporte.routes";
 
@@ -18,6 +20,8 @@ router.use("/transactions", transactionsRouter);
 router.use("/connected-accounts", connectedAccountsRouter);
 router.use("/dashboard", dashboardRouter);
 router.use("/mentor-ia", mentorIaRouter);
+router.use("/goals", goalsRouter);
+router.use("/investments", investmentsRouter);
 router.use(sistemaRouter);
 router.use("/auth", authRouter);
  router.use("/suporte", suporteRouter);

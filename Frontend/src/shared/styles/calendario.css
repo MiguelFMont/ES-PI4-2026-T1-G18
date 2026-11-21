@@ -12,7 +12,7 @@
   opacity: 0;
   visibility: hidden; /* fechado, não recebe clique nem foco */
   transform: translateY(-0.6rem);
-  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s 0.2s;
+  transition: opacity 0.1s cubic-bezier(0.7, 0, 0.84, 0), transform 0.1s cubic-bezier(0.7, 0, 0.84, 0), visibility 0s 0.1s;
   position: absolute;
   top: calc(100% + 0.25rem);
   left: -1px; /* cobre a borda do quadro: mesma largura exata, e acompanha se o quadro encolher */
@@ -36,7 +36,7 @@
   opacity: 1;
   visibility: visible;
   transform: translateY(0);
-  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0s;
+  transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1), transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s;
 }
 
 .calendario:focus {
@@ -51,8 +51,9 @@
 }
 
 /* Atalhos de período (campo Período). O calendário fica sempre com a largura do campo, logo abaixo dele. Havendo espaço
-   à esquerda do campo, os atalhos formam um painel ao lado do calendário (.calendario--atalhos-esquerda, ligada
-   pelo JS); sem espaço, ficam numa grade de duas colunas acima do mês. */
+   à direita do campo, os atalhos formam um painel ao lado do calendário (.calendario--atalhos-direita, ligada pelo JS);
+   senão, à esquerda (.calendario--atalhos-esquerda); sem espaço dos dois lados, ficam numa grade de duas colunas acima do
+   mês. */
 .calendario__atalhos {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -60,11 +61,11 @@
   margin-bottom: 0.6rem;
 }
 
-.calendario--atalhos-esquerda .calendario__atalhos {
+.calendario--atalhos-esquerda .calendario__atalhos,
+.calendario--atalhos-direita .calendario__atalhos {
   position: absolute;
   top: 0;
   bottom: 0; /* mesma altura do calendário */
-  right: calc(100% + 0.25rem);
   display: flex;
   flex-direction: column;
   width: 9.5rem;
@@ -76,7 +77,16 @@
   box-shadow: var(--sombra-flutuante);
 }
 
-.calendario--atalhos-esquerda .calendario__atalho {
+.calendario--atalhos-esquerda .calendario__atalhos {
+  right: calc(100% + 0.25rem);
+}
+
+.calendario--atalhos-direita .calendario__atalhos {
+  left: calc(100% + 0.25rem);
+}
+
+.calendario--atalhos-esquerda .calendario__atalho,
+.calendario--atalhos-direita .calendario__atalho {
   flex: 1; /* os botões dividem a altura do painel por igual */
   text-align: left;
 }

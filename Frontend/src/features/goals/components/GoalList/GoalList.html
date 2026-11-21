@@ -1,0 +1,63 @@
+<!-- Componente: lista das metas com a barra de progresso. Lógica em GoalList.js. Mostra só um destes estados por vez
+     (carregando, erro, nenhuma meta ou a lista). Cada meta é um cartão feito a partir do <template> no fim deste arquivo. -->
+<div class="goals-lista-area">
+  <div id="goals-carregando" class="esqueleto-grupo" role="status">
+    <span class="esqueleto esqueleto--bloco"></span>
+    <span class="esqueleto esqueleto--bloco"></span>
+    <span class="esqueleto esqueleto--bloco"></span>
+    <span class="so-leitor">Carregando metas...</span>
+  </div>
+
+  <div id="goals-erro" class="goals-estado" hidden>
+    <p id="goals-erro-texto" role="alert"></p>
+    <button type="button" id="goals-tentar-novamente" class="goals-botao">Tentar novamente</button>
+  </div>
+
+  <p id="goals-vazio" class="goals-estado" hidden>
+    Você ainda não tem metas. Clique em "Nova meta" para criar a primeira.
+  </p>
+
+  <ul id="goals-itens" class="goals-itens" aria-label="Suas metas" hidden></ul>
+</div>
+
+<!-- Modelo de uma meta: o JS copia este bloco para cada meta e só preenche os textos. -->
+<template id="modelo-meta">
+  <li class="goals-item goals-cartao">
+    <div class="goals-item__topo">
+      <h2 class="goals-item__titulo" data-campo="titulo"></h2>
+      <span class="goals-status" data-campo="status"></span>
+    </div>
+
+    <p class="goals-item__valores">
+      <strong class="goals-item__atual valor-financeiro" data-campo="atual"></strong>
+      <span class="goals-texto-suave">de <span class="valor-financeiro" data-campo="objetivo"></span></span>
+      <span class="goals-item__percentual" data-campo="percentual"></span>
+    </p>
+
+    <div class="goals-barra" role="progressbar" aria-valuemin="0" aria-valuemax="100" data-campo="barra">
+      <div class="goals-barra__preenchida"></div>
+    </div>
+
+    <dl class="goals-detalhes">
+      <div>
+        <dt>Falta</dt>
+        <dd class="valor-financeiro" data-campo="falta"></dd>
+      </div>
+      <div>
+        <dt>Prazo</dt>
+        <dd data-campo="prazo"></dd>
+      </div>
+      <div>
+        <dt>Guardar por mês</dt>
+        <dd class="valor-financeiro" data-campo="aporte"></dd>
+      </div>
+    </dl>
+
+    <p class="goals-texto-suave goals-item__origem" data-campo="origem"></p>
+
+    <div class="goals-acoes">
+      <button type="button" class="goals-botao goals-botao--secundario" data-acao="editar">Editar</button>
+      <button type="button" class="goals-botao goals-botao--perigo" data-acao="excluir">Excluir</button>
+    </div>
+  </li>
+</template>

@@ -51,7 +51,7 @@ As páginas são servidas pelo Backend (`npm run dev` na pasta `Backend`, depois
 
 ## Tema (`theme/`)
 
-`theme.js` alterna entre tema escuro (padrão) e claro, gravando a escolha em `localStorage` (`@FinanceAI:tema`) e marcando `data-tema` no `<html>`. As cores são variáveis CSS definidas em `styles/global.css`; use-as nos estilos das features em vez de cores fixas.
+`theme.js` alterna entre tema escuro (padrão) e claro, gravando a escolha em `localStorage` (`@FinanceAI:tema`) e marcando `data-tema` no `<html>`. O estilo da interface (`sombras`, padrão, ou `bordas`) segue o mesmo caminho (`estiloAtual`, `aplicarEstilo`, `alternarEstilo`; chave `@FinanceAI:estilo`; atributo `data-estilo`), e as variáveis do estilo `bordas` ficam no bloco `:root[data-estilo='bordas']` de `styles/global.css`. As cores são variáveis CSS definidas em `styles/global.css`; use-as nos estilos das features em vez de cores fixas.
 
 ## Estilos (`styles/`)
 

@@ -1,0 +1,54 @@
+<!-- Componente: as compras feitas no cartão escolhido (despesas no crédito, inclusive as parceladas). Lógica em CartaoCompras.js.
+     Aparece quando um card de cartão está selecionado e mostra só um destes estados por vez (carregando, erro, nenhuma
+     compra ou a lista). Cada linha é feita a partir do <template> no fim deste arquivo. -->
+<section id="invest-compras-area" class="investments-cartao" aria-labelledby="invest-compras-titulo" hidden>
+  <div class="investments-secao-topo">
+    <h2 id="invest-compras-titulo">Compras no cartão</h2>
+    <p id="invest-compras-resumo" class="investments-texto-suave"></p>
+  </div>
+
+  <div id="invest-compras-carregando" class="esqueleto-grupo" role="status">
+    <span class="esqueleto esqueleto--linha-extrato"></span>
+    <span class="esqueleto esqueleto--linha-extrato"></span>
+    <span class="esqueleto esqueleto--linha-extrato"></span>
+    <span class="so-leitor">Carregando as compras do cartão...</span>
+  </div>
+
+  <div id="invest-compras-erro" class="investments-estado" hidden>
+    <p id="invest-compras-erro-texto" role="alert"></p>
+    <button type="button" id="invest-compras-tentar-novamente" class="investments-botao">Tentar novamente</button>
+  </div>
+
+  <p id="invest-compras-vazio" class="investments-vazio" hidden>
+    Nenhuma compra neste cartão ainda. Para registrar uma, use Nova transação em Transações e escolha Cartão de crédito.
+  </p>
+
+  <div id="invest-compras-conteudo" class="investments-tabela-rolavel" hidden>
+    <table class="investments-compras">
+      <caption class="so-leitor">Compras do cartão, da mais recente para a mais antiga</caption>
+      <thead>
+        <tr>
+          <th scope="col">Data</th>
+          <th scope="col">Descrição</th>
+          <th scope="col">Categoria</th>
+          <th scope="col">Parcelas</th>
+          <th scope="col" class="investments-compras__valor">Valor</th>
+        </tr>
+      </thead>
+      <tbody id="invest-compras-linhas"></tbody>
+    </table>
+  </div>
+
+  <p id="invest-compras-mais" class="investments-ajuda" hidden></p>
+</section>
+
+<!-- Modelo de uma compra: o JS copia este bloco para cada transação e só preenche os textos. -->
+<template id="modelo-compra">
+  <tr>
+    <td data-campo="data"></td>
+    <td data-campo="descricao"></td>
+    <td data-campo="categoria"></td>
+    <td data-campo="parcelas"></td>
+    <td class="investments-compras__valor valor-financeiro" data-campo="valor"></td>
+  </tr>
+</template>

@@ -42,13 +42,18 @@ export function ligarCalendario(area, { signal } = {}) {
 
   if (periodo) area.querySelector('.calendario__atalhos').hidden = false;
 
-  // Os atalhos ficam ao lado do calendário (à esquerda do campo) se couberem dentro da área da tela; senão, acima do mês.
+  // Os atalhos ficam ao lado do calendário, de preferência à DIREITA dele (se couber dentro da área da tela); sem espaço
+  // à direita, à esquerda; sem espaço dos dois lados, acima do mês.
   function posicionarAtalhos() {
     if (!periodo) return;
     const raizTela = area.closest('#app-content') ?? document.body;
     const largura = 9.5 * parseFloat(getComputedStyle(document.documentElement).fontSize) + 4; // painel + vão
-    const folga = area.getBoundingClientRect().left - raizTela.getBoundingClientRect().left;
-    calendario.classList.toggle('calendario--atalhos-esquerda', folga >= largura + 16);
+    const campo = area.getBoundingClientRect();
+    const tela = raizTela.getBoundingClientRect();
+    const direita = tela.right - campo.right >= largura + 16;
+    const esquerda = campo.left - tela.left >= largura + 16;
+    calendario.classList.toggle('calendario--atalhos-direita', direita);
+    calendario.classList.toggle('calendario--atalhos-esquerda', !direita && esquerda);
   }
 
   const aberto = () => calendario.classList.contains('calendario--aberto');
@@ -64,7 +69,7 @@ export function ligarCalendario(area, { signal } = {}) {
   // do que os atalhos precisam, ele cresce até caber todos, para nenhum botão ser cortado.
   function ajustarAlturaAtalhos() {
     calendario.style.minHeight = '';
-    if (!calendario.classList.contains('calendario--atalhos-esquerda')) return;
+    if (!calendario.classList.contains('calendario--atalhos-esquerda') && !calendario.classList.contains('calendario--atalhos-direita')) return;
     const atalhos = area.querySelector('.calendario__atalhos');
     // o scrollHeight não conta o espaço de baixo do painel quando o conteúdo ultrapassa a altura: soma-se aqui
     const necessaria = atalhos.scrollHeight + parseFloat(getComputedStyle(atalhos).paddingBottom);

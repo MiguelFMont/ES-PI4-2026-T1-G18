@@ -275,3 +275,15 @@
 #cancelar-mfa:hover {
     color: #ffffff;
 }
+
+/* Movimento reduzido: as páginas de acesso não usam o global.css, então a regra vale aqui também (o painel do login desliza). */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        transition-delay: 0s !important;
+    }
+}

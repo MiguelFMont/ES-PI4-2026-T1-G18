@@ -21,6 +21,7 @@ interface UserDocument {
   plano: "free" | "pro";
   preferencias: {
     tema: "claro" | "escuro";
+    estilo: "sombras" | "bordas";
     ocultarValores: boolean;
   };
 }
@@ -36,6 +37,7 @@ const UserSchema = new Schema<UserDocument>(
     plano: { type: String, enum: ["free", "pro"], default: "free" },
     preferencias: {
       tema: { type: String, enum: ["claro", "escuro"], default: "claro" },
+      estilo: { type: String, enum: ["sombras", "bordas"], default: "sombras" },
       ocultarValores: { type: Boolean, default: false },
     },
   },

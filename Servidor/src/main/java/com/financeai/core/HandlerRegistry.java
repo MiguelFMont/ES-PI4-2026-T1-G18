@@ -5,6 +5,8 @@ import java.util.Map;
 import com.financeai.auth.AuthHandler;
 import com.financeai.auth.MFAHandler;
 import com.financeai.dashboard.DashboardHandler;
+import com.financeai.goals.GoalsHandler;
+import com.financeai.investments.InvestmentsHandler;
 import com.financeai.mentoria.MentorHandler;
 import com.financeai.transactions.TransactionsHandler;
 
@@ -37,6 +39,8 @@ public class HandlerRegistry
         new TransactionsHandler().registrarEm(registry);
         new DashboardHandler().registrarEm(registry);
         new MFAHandler().registrarEm(registry);
+        new GoalsHandler().registrarEm(registry);
+        new InvestmentsHandler().registrarEm(registry);
 
         return registry;
     }

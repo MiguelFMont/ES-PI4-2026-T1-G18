@@ -1,0 +1,452 @@
+/* Tela do Cartão de crédito: layout, cartões, fatura, limite e parcelamentos (prefixo investments-).
+   Os campos do formulário (.campo), as listas (.seletor__lista) e o calendário vêm de shared/styles.
+   Usa as variáveis de tema de core/styles/global.css. */
+
+.investments-page {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.investments-page [hidden] {
+  display: none !important; /* os estados do HTML usam o atributo hidden, mesmo em elementos com display próprio */
+}
+
+.investments-conteudo {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.investments-cabecalho h1 {
+  font-size: 1.75rem;
+}
+
+.investments-subtitulo,
+.investments-texto-suave,
+.investments-ajuda {
+  color: var(--texto-suave);
+}
+
+.investments-subtitulo {
+  margin-top: 0.25rem;
+}
+
+.investments-ajuda {
+  font-size: 0.9rem;
+}
+
+.investments-cartao {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem;
+  border: var(--borda-elemento, 0);
+  border-radius: 1rem;
+  background: var(--fundo-card);
+  box-shadow: var(--sombra);
+}
+
+.investments-cartao h2 {
+  font-size: 1.1rem;
+}
+
+.investments-secao-topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.investments-estado {
+  display: grid;
+  justify-items: start;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  border-radius: 1rem;
+  color: var(--texto-suave);
+  background: var(--fundo-card);
+  box-shadow: var(--sombra);
+}
+
+.investments-vazio {
+  padding: 0.9rem 1rem;
+  border-radius: 0.6rem;
+  color: var(--texto-suave);
+  background: var(--fundo-campo);
+}
+
+.investments-positivo {
+  color: var(--positivo);
+}
+
+.investments-negativo {
+  color: var(--negativo);
+}
+
+/* ---------------------------------------------------------------- botões */
+
+.investments-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.investments-botao {
+  transition: scale 0.1s ease, box-shadow 0.1s ease, background-color var(--duracao-cor) ease, color var(--duracao-cor) ease;
+  min-height: 2.75rem;
+  padding: 0.5rem 1.25rem;
+  border: var(--borda-elemento, 0);
+  border-radius: 0.6rem;
+  color: var(--destaque-texto);
+  background: var(--destaque); /* botão primário: verde */
+  box-shadow: var(--sombra);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.investments-botao--pequeno {
+  min-height: 2.25rem;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.investments-botao--secundario {
+  color: var(--texto-suave);
+  background: var(--fundo-campo);
+  font-weight: 600;
+}
+
+/* hover ou Tab: o botão secundário se preenche com a cor principal; desativado não muda */
+.investments-botao--secundario:hover:not(:disabled),
+.investments-botao--secundario:focus-visible:not(:disabled) {
+  color: var(--destaque-texto);
+  background: var(--destaque);
+}
+
+.investments-botao--perigo {
+  color: var(--white);
+  background: var(--negativo); /* ação destrutiva (remover, excluir): vermelho */
+}
+
+.investments-botao--perigo:hover:not(:disabled),
+.investments-botao--perigo:focus-visible:not(:disabled) {
+  background: color-mix(in srgb, var(--negativo) 82%, var(--black));
+}
+
+.investments-botao:hover:not(:disabled),
+.investments-botao:focus-visible:not(:disabled) {
+  scale: 1.01;
+}
+
+.investments-botao:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* foco do teclado visível: um contorno na cor de foco, além da sombra e do scale */
+.investments-botao:focus-visible {
+  outline: 2px solid var(--foco);
+  outline-offset: 2px;
+  box-shadow: var(--sombra-foco);
+}
+
+/* ---------------------------------------------------------------- formulários */
+
+.investments-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 1rem;
+}
+
+.investments-campo--larga {
+  grid-column: 1 / -1;
+  --escala-foco: 1.01; /* o campo ocupa a linha toda: crescer 3% (o padrão de campos.css) o faria passar da borda do cartão */
+}
+
+/* ---------------------------------------------------------------- cartão de crédito */
+
+.investments-fatura {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.investments-fatura__valor {
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+.investments-detalhes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.75rem;
+}
+
+.investments-detalhes div {
+  padding: 0.6rem 0.9rem;
+  border-radius: 0.6rem;
+  background: var(--fundo-campo);
+}
+
+.investments-detalhes dt {
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+}
+
+.investments-detalhes dd {
+  font-weight: 700;
+}
+
+.investments-limite {
+  display: grid;
+  gap: 0.5rem;
+}
+
+/* a barra do limite: --uso (0% a 100%) é definido pelo JS no elemento .investments-barra */
+.investments-barra {
+  height: 0.75rem;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--fundo-campo);
+}
+
+.investments-barra__preenchida {
+  width: var(--uso, 0%);
+  height: 100%;
+  border-radius: inherit;
+  background: var(--destaque);
+  transition: width 0.6s ease;
+}
+
+.investments-barra--alerta .investments-barra__preenchida {
+  background: var(--negativo);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .investments-barra__preenchida {
+    transition: none;
+  }
+}
+
+.investments-aviso {
+  padding: 0.6rem 0.9rem;
+  border-left: 0.25rem solid var(--negativo);
+  border-radius: 0.6rem;
+  background: var(--fundo-campo);
+}
+
+/* ---------------------------------------------------------------- parcelamentos */
+
+.investments-itens {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+  list-style: none;
+}
+
+.investments-parcelamento {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background: var(--fundo-linha, var(--fundo-campo));
+}
+
+.investments-parcelamento__topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.investments-parcelamento h3 {
+  font-size: 1.05rem;
+}
+
+/* etiqueta de estado: o texto sempre aparece; a cor só reforça */
+.investments-status {
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--texto);
+  background: var(--fundo-campo);
+}
+
+.investments-status--ok {
+  color: var(--positivo);
+}
+
+/* ---------------------------------------------------------------- cards dos cartões */
+
+/* Os cartões ficam em uma fila horizontal, com barra de rolagem para ver todos; cada um para na borda ao rolar. O respiro
+   em volta evita cortar o anel do cartão escolhido e a sombra. */
+.investments-cartoes-faixa {
+  display: flex;
+  align-items: stretch;
+  gap: 1.25rem;
+}
+
+.investments-cartoes {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  contain: inline-size; /* a largura vem do espaço livre, não do conteúdo (senão os cartões alargam a página) */
+  gap: 1.25rem;
+  padding: 0.5rem 0.5rem 1rem;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: 0.5rem;
+  list-style: none;
+}
+
+/* três cartões à vista, mesmo que haja mais (o resto se vê rolando) */
+.investments-cartoes > * {
+  flex: 0 0 max(15rem, calc((100% - 2.5rem) / 3));
+  scroll-snap-align: start;
+}
+
+.investments-cartao-novo-area {
+  display: grid;
+  flex: 0 0 11rem;
+  padding: 0.5rem 0 1rem;
+}
+
+.investments-cartao-card {
+  display: grid;
+  gap: 1.25rem;
+  align-content: start;
+  padding: 1.5rem;
+  border: var(--borda-elemento, 0);
+  border-radius: 1.1rem;
+  background: var(--fundo-card);
+  box-shadow: var(--sombra);
+  cursor: pointer; /* o card inteiro seleciona o cartão (o botão Ver compras é o caminho do teclado) */
+  transition: scale 0.1s ease, box-shadow 0.15s ease;
+}
+
+/* ao passar o mouse o card cresce um pouco */
+.investments-cartao-card:hover {
+  scale: 1.02;
+}
+
+/* o cartão escolhido não tem contorno: quem marca é o botão Ver compras, que fica na cor principal */
+.investments-cartao-card--selecionado [data-acao='selecionar'] {
+  background: var(--destaque);
+  color: var(--destaque-texto);
+}
+
+.investments-cartao-card:focus {
+  outline: none;
+}
+
+.investments-cartao-card__topo {
+  display: grid;
+  gap: 0.75rem; /* o nome em cima e os botões sempre embaixo dele */
+}
+
+.investments-cartao-card__nome {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.investments-cartao-card h3 {
+  font-size: 1.25rem;
+  overflow-wrap: anywhere;
+}
+
+/* etiqueta pequena: o texto sempre aparece, a cor só reforça */
+.investments-etiqueta {
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: var(--fundo-campo);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--texto-suave);
+}
+
+/* os totais dentro do card: três colunas que se ajustam à largura */
+.investments-cartao-card .investments-detalhes {
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+}
+
+/* o card que adiciona um cartão: ocupa o lugar de mais um card, com a mesma altura dos outros */
+.investments-cartao-novo {
+  display: grid;
+  min-height: 12rem;
+}
+
+.investments-cartao-novo__botao {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  border: 0;
+  border-radius: 1.1rem;
+  background: transparent;
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--texto) 18%, transparent);
+  color: var(--texto-suave);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: scale 0.1s ease, box-shadow 0.1s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.investments-cartao-novo__mais {
+  font-size: 2.2rem;
+  line-height: 1;
+}
+
+.investments-cartao-novo__botao:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--texto) 7%, transparent);
+  color: var(--texto);
+}
+
+.investments-cartao-novo__botao:focus-visible {
+  outline: none;
+  scale: 1.01;
+  box-shadow: inset 0 0 0 2px var(--destaque);
+}
+
+.investments-cartao-novo__botao:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* ---------------------------------------------------------------- compras do cartão */
+
+.investments-tabela-rolavel {
+  overflow-x: auto;
+}
+
+.investments-compras {
+  width: 100%;
+  min-width: 36rem;
+  border-collapse: collapse;
+}
+
+.investments-compras th,
+.investments-compras td {
+  padding: 0.65rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--borda);
+}
+
+.investments-compras thead th {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+}
+
+.investments-compras .investments-compras__valor {
+  text-align: right;
+  white-space: nowrap;
+  font-weight: 700;
+}

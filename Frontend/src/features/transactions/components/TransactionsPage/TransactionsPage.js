@@ -1,5 +1,6 @@
 import { atualizarTransacoesEmLote, duplicarTransacoes, excluirTransacoesEmLote, listarTransacoes } from '../../services/transactionsService.js';
 import { notificar } from '../../../../shared/components/notificacao.js';
+import { listarMetas } from '../../../goals/services/goalsService.js';
 import { ligarSeletores } from '../../../../shared/components/seletor.js';
 import { iniciarFormulario } from '../TransactionForm/TransactionForm.js';
 import { iniciarFiltros } from '../TransactionFilters/TransactionFilters.js';
@@ -10,12 +11,13 @@ const ITENS_POR_PAGINA_INICIAL = 20;
 
 /**
  * Liga a lógica da página de Transações (extrato) ao HTML de views/transactions.html (já dentro do container):
- * formulário de nova transação, filtros (a tela nasce filtrada pelo mês atual) e a lista paginada de receitas e
+ * formulário de nova transação, filtros (a tela abre sem filtro: mostra tudo) e a lista paginada de receitas e
  * despesas, com o resumo de entradas, saídas e saldo e a edição e exclusão de transações. A estrutura da tela está
  * toda no HTML; aqui ficam só as partes que mudam com os dados. `signal` (de um AbortController) avisa que a tela foi
  * desmontada.
  */
 export function iniciarPaginaTransacoes(raiz, { signal } = {}) {
+  let filtros; // ligado mais abaixo; as metas podem chegar antes ou depois dele
   const estado = { parametros: {}, pagina: 1, limite: ITENS_POR_PAGINA_INICIAL, sequencia: 0 };
 
   // Ao desmontar a tela, uma resposta que ainda esteja a caminho deixa de valer.
@@ -55,6 +57,19 @@ export function iniciarPaginaTransacoes(raiz, { signal } = {}) {
       falha: 'Não foi possível excluir as transações.',
     }),
   });
+
+  // As metas do usuário alimentam a coluna Meta e as listas de escolha do extrato. Sem elas o extrato funciona igual (a
+  // coluna só mostra "Meta" no lugar do título), então uma falha aqui não bloqueia a tela.
+  async function carregarMetas() {
+    try {
+      const metas = await listarMetas();
+      if (signal?.aborted) return;
+      extrato.definirMetas(metas);
+      filtros?.definirMetas(metas);
+    } catch {
+      // segue sem os títulos
+    }
+  }
 
   // Chama um endpoint em lote, avisa o resultado e atualiza a lista. O lote não é tudo ou nada: ids que não existem
   // mais voltam em `naoEncontradas` e contam como falha parcial. Se a chamada falhar, o erro segue para quem chamou.
@@ -104,12 +119,15 @@ export function iniciarPaginaTransacoes(raiz, { signal } = {}) {
     signal,
     aoSalvar: async () => {
       if (temFiltros()) notificar('Se a transação não aparecer na lista, confira os filtros.', 'info');
+      carregarMetas(); // o formulário pode ter criado uma meta nova
       await carregar(1);
     },
   });
 
-  // Os filtros já nascem com o mês atual e chamam aoMudar assim que são ligados: é a primeira consulta da tela.
-  iniciarFiltros(raiz, {
+  carregarMetas();
+
+  // Os filtros já nascem vazios (tudo) e chamam aoMudar assim que são ligados: é a primeira consulta da tela.
+  filtros = iniciarFiltros(raiz, {
     signal,
     aoMudar: (parametros) => {
       estado.parametros = parametros;

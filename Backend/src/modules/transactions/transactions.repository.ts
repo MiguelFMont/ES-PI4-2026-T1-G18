@@ -4,16 +4,35 @@ import { CreateTransactionDto, TransactionFiltersDto, UpdateTransactionDto } fro
 
 const UM_DIA_MS = 24 * 60 * 60 * 1000;
 
-// Converte as alterações de uma transação (edição em lote) em operadores do Mongo. `observacoes: ""` apaga o campo ($unset); sem isso o
-// Mongoose ignoraria o undefined e a observação antiga ficaria.
-function montarAtualizacao(dados: UpdateTransactionDto) {
-  const { observacoes, ...resto } = dados;
+// O que o service entrega ao repository na edição em lote: as alterações do usuário mais os campos do cartão que o próprio
+// service calcula (`null` apaga o campo; `parcelamentoId` nunca vem do usuário).
+export type AtualizacaoDeTransacao = Omit<UpdateTransactionDto, "parcelas"> & {
+  parcelas?: number | null;
+  parcelamentoId?: string | null;
+};
+
+// Converte as alterações de uma transação (edição em lote) em operadores do Mongo. `observacoes: ""` e `null` (metaId,
+// cartaoId, parcelas, parcelamentoId) apagam o campo ($unset); sem isso o Mongoose ignoraria o valor vazio e o antigo ficaria.
+function montarAtualizacao(dados: AtualizacaoDeTransacao) {
+  const { observacoes, metaId, cartaoId, parcelas, parcelamentoId, ...resto } = dados;
   const set: Record<string, unknown> = { ...resto };
-  const atualizacao: Record<string, unknown> = {};
+  const unset: Record<string, ""> = {};
+  const anulaveis = { cartaoId, parcelas, parcelamentoId };
+  for (const [campo, valor] of Object.entries(anulaveis)) {
+    if (valor === undefined) continue;
+    if (valor === null) unset[campo] = "";
+    else set[campo] = valor;
+  }
   if (observacoes !== undefined) {
-    if (observacoes === "") atualizacao.$unset = { observacoes: "" };
+    if (observacoes === "") unset.observacoes = "";
     else set.observacoes = observacoes;
   }
+  if (metaId !== undefined) {
+    if (metaId === null) unset.metaId = "";
+    else set.metaId = metaId;
+  }
+  const atualizacao: Record<string, unknown> = {};
+  if (Object.keys(unset).length > 0) atualizacao.$unset = unset;
   if (Object.keys(set).length > 0) atualizacao.$set = set;
   return atualizacao;
 }
@@ -25,14 +44,22 @@ function escaparRegex(texto: string): string {
 
 export const transactionsRepository = {
   // Sempre filtrada por userId: nunca expor transação de um usuário para outro.
-  async findByUser(userId: string, filtros: TransactionFiltersDto) {
+  // `cartaoPadrao`: o cartão de `filtros.cartaoId` é o mais antigo do usuário, que também recebe as compras no crédito sem cartão.
+  async findByUser(userId: string, filtros: TransactionFiltersDto, { cartaoPadrao = false }: { cartaoPadrao?: boolean } = {}) {
     const query: Record<string, unknown> = { userId };
 
     if (filtros.tipo) query.tipo = filtros.tipo;
     if (filtros.categoria) query.categoria = filtros.categoria;
     if (filtros.formaPagamento) query.formaPagamento = filtros.formaPagamento;
     if (filtros.origem) query.origem = filtros.origem;
+    if (filtros.metaId) query.metaId = filtros.metaId === "nenhuma" ? { $exists: false } : filtros.metaId;
     if (filtros.busca) query.descricao = { $regex: escaparRegex(filtros.busca), $options: "i" };
+    if (filtros.cartaoId) {
+      // as compras de um cartão: despesas no crédito feitas nele (e, no cartão padrão, as sem cartão, igual à fatura)
+      query.tipo = "despesa";
+      query.formaPagamento = "credito";
+      query.$or = cartaoPadrao ? [{ cartaoId: filtros.cartaoId }, { cartaoId: { $exists: false } }] : [{ cartaoId: filtros.cartaoId }];
+    }
 
     if (filtros.dataInicio || filtros.dataFim) {
       // dataFim sem horário (meia-noite) vale até o fim daquele dia
@@ -73,7 +100,7 @@ export const transactionsRepository = {
     return { docs, total, totais: { receitas: soma("receita"), despesas: soma("despesa") } };
   },
 
-  async create(dados: CreateTransactionDto & { userId: string; categoria: string }) {
+  async create(dados: Omit<CreateTransactionDto, "parcelas"> & { userId: string; categoria: string; parcelas?: number; parcelamentoId?: string }) {
     const transacao = await TransactionModel.create(dados);
     return transacao.toObject();
   },
@@ -81,6 +108,12 @@ export const transactionsRepository = {
   // Uma transação do usuário (ou null se não existe ou é de outro usuário).
   async findOneByUser(userId: string, id: string) {
     return TransactionModel.findOne({ _id: id, userId }).lean();
+  },
+
+  // As transações do usuário com os ids pedidos (as que não existem, ou são de outro usuário, não vêm).
+  async findManyByUser(userId: string, ids: string[]) {
+    if (ids.length === 0) return [];
+    return TransactionModel.find({ _id: { $in: ids }, userId }).lean();
   },
 
   // Dos ids pedidos, os que existem e são do usuário (o resto é "não encontrada").
@@ -110,7 +143,7 @@ export const transactionsRepository = {
     }
   },
 
-  async updateMany(userId: string, itens: { id: string; alteracoes: UpdateTransactionDto }[]) {
+  async updateMany(userId: string, itens: { id: string; alteracoes: AtualizacaoDeTransacao }[]) {
     if (itens.length === 0) return 0;
     const resultado = await TransactionModel.bulkWrite(
       itens.map(({ id, alteracoes }) => ({

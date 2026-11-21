@@ -40,6 +40,10 @@ export const authRepository = {
             atualizacoes["preferencias.tema"] = dados.preferencias.tema;
         }
 
+        if (dados.preferencias?.estilo !== undefined) {
+            atualizacoes["preferencias.estilo"] = dados.preferencias.estilo;
+        }
+
         if (dados.preferencias?.ocultarValores !== undefined) {
             atualizacoes["preferencias.ocultarValores"] =
                 dados.preferencias.ocultarValores;

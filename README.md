@@ -1,7 +1,5 @@
 # FinanceAI
 
-> ⚠️ **Documento provisório.** Este README será atualizado ao longo do Sprint 0 e das sprints seguintes, conforme o sistema for tomando forma. Seções marcadas como "TODO" ainda não têm conteúdo definitivo.
-
 Plataforma de gestão financeira pessoal que centraliza contas, cartões e investimentos em um único painel, usando Inteligência Artificial generativa para transformar dados financeiros brutos em explicações e orientações educacionais — sem depender de um consultor humano.
 
 Projeto desenvolvido para a disciplina de Projeto Integrador 4, curso de Engenharia de Software — PUC-Campinas.
@@ -35,20 +33,33 @@ O sistema é dividido em quatro camadas independentes:
 
 O projeto é dividido em 5 grupos de features, cada um responsável por uma fatia vertical completa (Frontend + Backend + Servidor + BD): Autenticação & Conta, Transações, Painel Financeiro & Análise, Mentor Financeiro (IA) e Metas & Investimentos.
 
-Detalhes completos da arquitetura, divisão de grupos, padrão de issues e cronograma de sprints estão em [`docs/organizacao-sprints.md`](docs/organizacao-sprints.md). O escopo e os requisitos funcionais completos estão em [`docs/documento-de-visao.docx`](docs/documento-de-visao.docx).
+Detalhes completos da arquitetura, divisão de grupos, padrão de issues e cronograma de sprints estão em [`docs/organizacao-sprints.md`](docs/organizacao-sprints.md). O escopo e os requisitos funcionais completos estão em [`docs/documento-de-visao.md`](docs/documento-de-visao.md), o contrato de todas as rotas em [`docs/contrato-api.md`](docs/contrato-api.md) e o roteiro do teste completo em [`docs/checklist-teste-completo.md`](docs/checklist-teste-completo.md).
 
-## Como executar (TODO)
+### O que cada grupo entregou
 
-> Instruções ainda incompletas — serão fechadas ao final do Sprint 0, quando os três ambientes estiverem configurados.
+| Grupo | Frontend | Backend (`/v1/...`) | Servidor Java |
+|---|---|---|---|
+| 1 — Autenticação & Conta | login, cadastro, recuperação de senha, perfil e preferências, planos, suporte | `auth`, `suporte` | hash e conferência de senha (PBKDF2) |
+| 2 — Transações | extrato com filtros, edição e exclusão em lote, duplicar, categoria automática, contas conectadas (Pluggy), compra no crédito com cartão e parcelas | `transactions`, `connected-accounts` | categorização pela descrição |
+| 3 — Painel & Análise | dashboard, gastos por categoria, comparação de períodos | `dashboard` | indicadores e comparação de períodos |
+| 4 — Mentor Financeiro (IA) | chat, alertas e mensagens proativas (Insight) | `mentor-ia` | contexto da IA e filtro de resposta |
+| 5 — Metas & Investimentos | metas (prazo opcional), cartões de crédito (até 5) com as compras de cada um | `goals`, `investments` | progresso de meta, parcelamentos e rentabilidade simulada |
+
+Ainda não há tela para o portfólio de investimentos (só a API) e o MFA (verificação em duas etapas) está só no cadastro do usuário: o fluxo com código TOTP ficou como funcionalidade futura. Outras ideias futuras: categorias digitáveis, aplicativo móvel.
+
+## Como executar
+
+Suba nesta ordem: Servidor Java (porta 3000), depois o Backend (porta 3001, que também entrega o Frontend). Abra `http://localhost:3001`.
 
 ### Frontend
 ```
-# TODO — abrir index.html diretamente no navegador (sem build)
+# Sem build: o Backend serve o Frontend em http://localhost:3001
+# Detalhes em Frontend/README.md
 ```
 
 ### Backend
 ```
-# Requer Node 20+. Copie Backend/.env.example para Backend/.env e ajuste JWT_SECRET e MONGO_URI.
+# Requer Node 20+ (usado: 22). Copie Backend/.env.example para Backend/.env e ajuste JWT_SECRET e MONGO_URI.
 cd Backend
 npm install
 npm run dev          # http://localhost:3001/v1
@@ -81,8 +92,8 @@ mvn exec:java -Dexec.mainClass=com.financeai.Main
 
 ### Testes automatizados
 ```
-cd Backend && npm test      # node:test; MongoDB em memória, IA e Servidor Java simulados (sem .env)
-cd Servidor && mvn test     # JUnit 5
+cd Backend && npm test      # node:test (566 testes); MongoDB em memória, IA e Servidor Java simulados (sem .env)
+cd Servidor && mvn test     # JUnit 5 (174 testes), inclusive os testes OO intraclasse e interclasse do Grupo 2
 # Integração Backend -> Servidor Java (com o Servidor no ar): JAVA_SERVER_INTEGRACAO=1 npm test
 # Detalhes na seção "Testes" de Backend/README.md e Servidor/README.md (ainda não há CI)
 ```
@@ -93,7 +104,7 @@ cd Servidor && mvn test     # JUnit 5
 Backend/     # API REST em TypeScript/Node.js (Express), MongoDB e cliente do Servidor Java
 Servidor/    # Servidor Java por sockets (JSON) que executa as operações específicas, build com Maven
 Frontend/    # Telas em HTML/CSS/JS
-docs/        # Documento de visão, organização de sprints, contratos de API
+docs/        # Documento de visão, organização de sprints, contrato da API, checklist de teste e palavras-chave das categorias
 ```
 
 ## Fluxo de trabalho
@@ -105,4 +116,4 @@ docs/        # Documento de visão, organização de sprints, contratos de API
 
 ## Status atual
 
-🚧 Sprint 0 — base das camadas pronta e testada: `core` do Servidor (sockets, JSON, erros, timeout) e Backend (Express, conexão com o MongoDB, `java-client` com pool de conexões, `/v1/eco`) funcionando juntos; os handlers e módulos dos grupos ainda são `.md` de exemplo. O Frontend está na branch `chore/estrutura-inicial-frontend`.
+Versão de entrega (1.0.0-final em preparação): as quatro camadas e os cinco grupos estão implementados e integrados na branch `develop`. Backend com 566 testes e Servidor com 174, todos passando. Falta o teste completo manual (`docs/checklist-teste-completo.md`), o ensaio da apresentação e a tag `1.0.0-final`.

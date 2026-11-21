@@ -81,6 +81,66 @@
         <p class="campo__erro" id="campo-formaPagamento-erro" hidden></p>
       </div>
 
+      <!-- Cartão e parcelas: só aparecem quando o pagamento é Cartão de crédito (as parcelas, só em despesa). Lógica em
+           CartaoDoLancamento.js. Uma compra em mais de 1 parcela cria o parcelamento dela no cartão (aba Cartão). -->
+      <div class="campo campo--seletor" id="campo-cartao-area" hidden>
+        <label for="campo-cartao">Cartão *</label>
+        <select id="campo-cartao" name="cartaoId" aria-controls="lista-campo-cartao" aria-expanded="false">
+          <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
+        </select>
+        <div class="seletor__lista" id="lista-campo-cartao" role="listbox" aria-label="Cartão"></div>
+        <p class="transactions-parcela-ajuda" id="campo-cartao-aviso" role="status" hidden></p>
+        <p class="campo__erro" id="campo-cartao-erro" hidden></p>
+      </div>
+
+      <div class="campo campo--seletor" id="campo-parcelas-area" hidden>
+        <label for="campo-parcelas">Parcelas</label>
+        <select id="campo-parcelas" name="parcelas" aria-controls="lista-campo-parcelas" aria-expanded="false">
+          <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
+      <option value="1">À vista</option>
+      <option value="2">2x</option>
+      <option value="3">3x</option>
+      <option value="4">4x</option>
+      <option value="5">5x</option>
+      <option value="6">6x</option>
+      <option value="7">7x</option>
+      <option value="8">8x</option>
+      <option value="9">9x</option>
+      <option value="10">10x</option>
+      <option value="11">11x</option>
+      <option value="12">12x</option>
+      <option value="13">13x</option>
+      <option value="14">14x</option>
+      <option value="15">15x</option>
+      <option value="16">16x</option>
+      <option value="17">17x</option>
+      <option value="18">18x</option>
+      <option value="19">19x</option>
+      <option value="20">20x</option>
+      <option value="21">21x</option>
+      <option value="22">22x</option>
+      <option value="23">23x</option>
+      <option value="24">24x</option>
+        </select>
+        <div class="seletor__lista" id="lista-campo-parcelas" role="listbox" aria-label="Parcelas"></div>
+        <p class="transactions-parcela-ajuda" id="campo-parcelas-ajuda" aria-live="polite"></p>
+      </div>
+
+      <!-- Meta (Grupo 5): vincula a transação a uma meta; a despesa soma no progresso da meta (guardou) e a receita subtrai (retirou). Lógica em
+           MetaDoLancamento.js: sem metas, abre a janela "Nova meta" (no fim deste arquivo); com metas, mostra a lista. -->
+      <fieldset class="transactions-meta transactions-campo--larga">
+        <legend class="so-leitor">Meta</legend>
+        <label class="transactions-meta-opcao">
+          <input type="checkbox" class="caixa-selecao" id="campo-vincular-meta" aria-describedby="campo-meta-ajuda">
+          <span>Vincular a uma meta</span>
+        </label>
+        <p class="transactions-meta-ajuda" id="campo-meta-ajuda">Separou esse dinheiro para um objetivo? Vincule: uma despesa guarda o valor na meta e uma receita retira da meta.</p>
+        <p id="campo-meta-carregando" class="transactions-meta-ajuda" role="status" hidden>Carregando suas metas...</p>
+        <div id="campo-meta-lista" class="transactions-meta-lista" role="radiogroup" aria-label="Meta da transação" hidden></div>
+        <button type="button" id="campo-meta-nova" class="transactions-botao transactions-botao--secundario transactions-meta-nova" hidden>Criar outra meta</button>
+        <p class="campo__erro" id="campo-meta-erro" hidden></p>
+      </fieldset>
+
       <div class="campo transactions-campo--larga">
         <label for="campo-observacoes">Observações</label>
         <textarea id="campo-observacoes" name="observacoes" rows="2" maxlength="300" placeholder="Informações adicionais (opcional)"></textarea>
@@ -94,3 +154,19 @@
     </form>
   </section>
 </div>
+
+<!-- Janela "Nova meta": abre por cima do painel quando o usuário quer vincular a transação a uma meta e ainda não tem nenhuma
+     (ou escolhe "Criar outra meta"). É o mesmo formulário da tela de Metas (features/goals). Fica fora do painel porque o
+     painel tem `transform`, que prenderia uma janela `fixed` dentro dele. -->
+<div id="transactions-meta-modal" class="transactions-meta-modal" role="dialog" aria-modal="true" aria-label="Nova meta" hidden>
+  <div data-incluir="/src/features/goals/components/GoalForm/GoalForm.html"></div>
+</div>
+
+<!-- Modelo de uma meta na lista de escolha: o JS copia este bloco para cada meta e só preenche os textos. -->
+<template id="modelo-meta-opcao">
+  <label class="transactions-meta-item">
+    <input type="radio" name="metaId">
+    <span class="transactions-meta-item__titulo" data-campo="titulo"></span>
+    <span class="transactions-meta-item__resumo" data-campo="resumo"></span>
+  </label>
+</template>

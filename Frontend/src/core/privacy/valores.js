@@ -23,9 +23,10 @@ export function iniciarOcultacaoValores() {
     if (!botao) return;
 
     function atualizar() {
-        botao.textContent = ocultos
-            ? 'Mostrar valores'
-            : 'Ocultar valores';
+        const texto = ocultos ? 'Mostrar valores' : 'Ocultar valores';
+        const rotulo = botao.querySelector('.menu-texto');
+        if (rotulo) rotulo.textContent = texto;
+        else botao.textContent = texto;
 
         botao.setAttribute('aria-pressed', String(ocultos));
 

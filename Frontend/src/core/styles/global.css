@@ -30,8 +30,8 @@
     --backgroundBarra:rgba(211, 211, 211, 0.071);
     /* sombra de quem flutua por cima da tela (calendário, listas, painel, notificações) */
     --sombra-flutuante: 0 12px 28px rgb(0 0 0 / 0.4);
-    /* contorno de cartões, campos e botões: nenhum neste estilo (a sombra os destaca). O global-sem-sombras.css troca
-       isto por uma borda fina. */
+    /* contorno de cartões, campos e botões: nenhum no estilo com sombras (a sombra os destaca). O estilo "bordas"
+       (bloco :root[data-estilo='bordas'], mais abaixo) troca isto por uma borda fina. */
     --borda-elemento: 0;
     /* fundo levemente mais cinza das linhas do extrato */
     --fundo-linha: color-mix(in srgb, var(--texto) 5%, var(--fundo-card));
@@ -59,6 +59,16 @@
         de acordo com o tema da pagina (claro/escuro)
         -Miguel Fernandes Monteiro */
     --backgroundBarra:rgba(211, 211, 211, 0.156); 
+}
+
+/* Estilo da interface "bordas" (Minha conta > Preferências; theme.js põe data-estilo="bordas" no <html>): no lugar
+   das sombras, linhas finas. Vale nos dois temas porque só usa as cores do tema (--borda, --destaque). Este bloco vem
+   depois do tema claro de propósito: tem a mesma especificidade e precisa vencer. */
+:root[data-estilo='bordas'] {
+    --sombra: 0 0 0 0 transparent; /* sem sombra (valor válido dentro de listas de box-shadow) */
+    --sombra-foco: 0 0 0 2px var(--destaque); /* o foco do teclado vira um anel */
+    --sombra-flutuante: 0 0 0 1px var(--borda); /* calendário, listas, painel: só uma linha fina */
+    --borda-elemento: 1px solid var(--borda);
 }
 
 body {
@@ -111,10 +121,87 @@ body:not(.com-sessao) #main-header {
     display: none;
 }
 
+/* Largura do menu lateral: 14rem aberto e 4.5rem recolhido (só os ícones). O painel do formulário de transação usa a
+   mesma variável para cobrir só o conteúdo. */
+:root {
+    --largura-menu: 14rem;
+}
+
+body.menu-recolhido {
+    --largura-menu: 4.5rem;
+}
+
+/* Espaçamento padrão das telas: o #app-content dá o mesmo recuo (ao menu, ao topo, à direita e à base, também com o menu
+   recolhido) e a mesma largura máxima a todas. As telas (features/*) não definem recuo nem largura próprios. */
+:root {
+    --espaco-pagina: 1.5rem;
+    --largura-maxima-conteudo: 90rem;
+}
+
+body.com-sessao #app-content {
+    padding: var(--espaco-pagina);
+}
+
+body.com-sessao #app-content > * {
+    width: 100%;
+    max-width: var(--largura-maxima-conteudo);
+    margin-inline: auto;
+}
+
+@media (max-width: 767px) {
+    :root {
+        --espaco-pagina: 1rem;
+    }
+}
+
+/* Barras de rolagem de todo o projeto: finas e cinzas (nos dois temas, pois a cor sai do --texto) */
+:root {
+    --rolagem-polegar: color-mix(in srgb, var(--texto) 28%, transparent);
+    --rolagem-polegar-hover: color-mix(in srgb, var(--texto) 45%, transparent);
+}
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--rolagem-polegar) transparent;
+}
+
+*::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+    background: transparent;
+}
+
+*::-webkit-scrollbar-track,
+*::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: var(--rolagem-polegar);
+    border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: var(--rolagem-polegar-hover);
+}
+
+*::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+/* Alguns navegadores recentes (Chromium) põem botões circulares de seta nas áreas que rolam na horizontal (a tabela do
+   extrato). O projeto não usa esse recurso, então ele é desligado (regra à parte: navegador sem suporte a ignora). */
+::scroll-button(*) {
+    content: none;
+}
+
 /* com sessão: menu lateral + conteúdo (o main.js marca o body) */
 body.com-sessao {
     display: grid;
-    grid-template-columns: 12rem 1fr;
+    grid-template-columns: var(--largura-menu) 1fr;
+    transition: grid-template-columns 0.25s ease;
 }
 
 body.com-sessao #app-content {
@@ -125,42 +212,121 @@ body.com-sessao #main-header {
     position: sticky;
     top: 0;
     height: 100vh;
-    padding: 1.5rem 1rem;
+    padding: 1.25rem 0.75rem;
     background: var(--fundo-card);
     border-right: 1px solid var(--borda);
+    overflow: hidden; /* o texto some sem quebrar linha enquanto a largura encolhe */
 }
 
 .menu-lateral {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1.25rem;
     height: 100%;
 }
 
+/* topo: marca e botão de recolher */
+.menu-lateral__topo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    min-height: 2.5rem;
+    padding-inline: 0.25rem;
+}
+
 .menu-lateral__marca {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--destaque);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--texto);
+    white-space: nowrap;
+}
+
+.menu-lateral__logo {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.6rem;
+    background: var(--destaque);
+    color: var(--destaque-texto);
+    font-weight: 800;
+}
+
+.menu-lateral__recolher {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border: 0; /* sem a borda padrão do navegador */
+    border-radius: 0.6rem;
+    color: var(--texto-suave);
+    background: transparent;
+    cursor: pointer;
+}
+
+.menu-lateral__recolher .menu-icone {
+    transition: rotate 0.25s ease;
+}
+
+/* ícones (SVG de traço, na cor do texto do item) */
+.menu-icone {
+    flex: none;
+    width: 1.25rem;
+    height: 1.25rem;
 }
 
 .main-nav {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 1rem;
+    min-height: 0;
+    overflow-y: auto; /* se a janela for baixa, só a lista rola; o rodapé continua visível */
 }
 
-.main-nav a {
+.main-nav__grupo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.main-nav__titulo {
+    padding: 0 0.75rem 0.3rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--texto-suave);
+    white-space: nowrap;
+}
+
+.menu-lateral a,
+.menu-lateral__rodape button {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 2.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.75rem;
+    white-space: nowrap;
+}
+
+.menu-lateral a {
     color: var(--texto-suave);
     text-decoration: none;
-    padding: 0.6rem 0.75rem;
-    border-radius: 0.6rem;
 }
 
-.main-nav a:hover {
+.menu-lateral a:hover {
     color: var(--texto);
+    background: color-mix(in srgb, var(--texto) 7%, transparent);
 }
 
-.main-nav a[aria-current='page'] {
+.menu-lateral a[aria-current='page'] {
     color: var(--destaque-texto);
     background: var(--destaque);
     font-weight: 700;
@@ -169,40 +335,149 @@ body.com-sessao #main-header {
 .menu-lateral__rodape {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.3rem;
     margin-top: auto;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--borda);
 }
 
 .menu-lateral__rodape button {
-    min-height: 2.5rem;
-    padding: 0.5rem 0.75rem;
-    border: var(--borda-elemento, 0);
-    border-radius: 0.6rem;
-    color: var(--texto);
-    background: var(--fundo-campo);
-    box-shadow: var(--sombra);
+    width: 100%;
+    border: 0; /* itens do menu nunca têm borda, nem no estilo "bordas" */
+    color: var(--texto-suave);
+    background: transparent;
     font: inherit;
     cursor: pointer;
 }
 
-.main-nav a,
-.menu-lateral__rodape button {
+.menu-lateral a,
+.menu-lateral__rodape button,
+.menu-lateral__recolher {
     transition: scale 0.1s ease, box-shadow 0.1s ease, background-color var(--duracao-cor) ease, color var(--duracao-cor) ease;
 }
 
-/* hover ou Tab: o botão se preenche com a cor principal */
+/* hover ou Tab nos botões: o fundo se preenche com a cor principal */
 .menu-lateral__rodape button:hover,
-.menu-lateral__rodape button:focus-visible {
+.menu-lateral__rodape button:focus-visible,
+.menu-lateral__recolher:hover,
+.menu-lateral__recolher:focus-visible {
     color: var(--destaque-texto);
     background: var(--destaque);
 }
 
 /* navegando com Tab: sem contorno, o item cresce um pouco (como o hover dos botões) e ganha uma sombra pequena */
-.main-nav a:focus-visible,
-.menu-lateral__rodape button:focus-visible {
+.menu-lateral a:focus-visible,
+.menu-lateral__rodape button:focus-visible,
+.menu-lateral__recolher:focus-visible {
     outline: none;
     scale: 1.01;
     box-shadow: var(--sombra-foco);
+}
+
+/* ---- menu recolhido: só os ícones. O texto continua para leitores de tela (mesma técnica do .so-leitor) */
+body.menu-recolhido .menu-texto {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+body.menu-recolhido .menu-lateral__topo {
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.75rem;
+    padding-inline: 0;
+}
+
+body.menu-recolhido .menu-lateral__recolher .menu-icone {
+    rotate: 180deg;
+}
+
+body.menu-recolhido .menu-lateral a,
+body.menu-recolhido .menu-lateral__rodape button {
+    justify-content: center;
+    padding-inline: 0;
+}
+
+/* sem os títulos dos grupos, um traço separa um do outro */
+body.menu-recolhido .main-nav__grupo + .main-nav__grupo {
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--borda);
+}
+
+/* ---- dica do menu recolhido (core/layout/dicaMenu.js): um rótulo que nasce do ícone e se expande para a direita.
+   position: fixed porque o #main-header corta o que passa da sua borda. Abaixo das notificações (z-index 100). */
+.dica-menu {
+    position: fixed;
+    z-index: 90;
+    display: flex;
+    align-items: center;
+    padding-inline: 0.9rem;
+    border-radius: 0.75rem;
+    color: var(--texto);
+    background: var(--fundo-card);
+    box-shadow: var(--sombra-flutuante);
+    font-size: 0.875rem;
+    font-weight: 600;
+    white-space: nowrap;
+    pointer-events: none;
+    transform-origin: left center;
+    /* escondida: do tamanho e da posição do ícone, transparente */
+    transform: translateX(calc(-1 * var(--dica-recuo, 0px))) scaleX(var(--dica-escala, 1));
+    opacity: 0;
+    visibility: hidden;
+    transition: transform 0.12s cubic-bezier(0.7, 0, 0.84, 0), opacity 0.1s ease, visibility 0s linear 0.12s; /* some mais rápido do que aparece */
+}
+
+.dica-menu__texto {
+    opacity: 0;
+    transition: opacity 0.1s ease;
+}
+
+.dica-menu--visivel {
+    transform: none;
+    opacity: 1;
+    visibility: visible;
+    transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.18s ease, visibility 0s;
+}
+
+.dica-menu--visivel .dica-menu__texto {
+    opacity: 1;
+    transition: opacity 0.16s ease 0.1s; /* o texto aparece quando a caixa já quase abriu, sem ficar esticado */
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dica-menu,
+    .dica-menu--visivel {
+        transform: none;
+        transition: opacity 0.15s ease, visibility 0s linear 0.15s;
+    }
+
+    .dica-menu--visivel {
+        transition: opacity 0.15s ease, visibility 0s;
+    }
+
+    .dica-menu__texto,
+    .dica-menu--visivel .dica-menu__texto {
+        opacity: 1;
+        transition: none;
+    }
+}
+
+/* celular: o menu nunca fica recolhido, então não há dica */
+@media (max-width: 767px) {
+    .dica-menu {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.com-sessao,
+    .menu-lateral__recolher .menu-icone {
+        transition: none;
+    }
 }
 
 /* Animação circular de troca de tema (View Transitions API) */
@@ -212,6 +487,7 @@ body.com-sessao #main-header {
     mix-blend-mode: normal;
 }
 
+/* Celular (fora do escopo da entrega; o app móvel será feito à parte): o menu vira uma faixa no topo, sempre aberto */
 @media (max-width: 767px) {
     body.com-sessao {
         grid-template-columns: 1fr;
@@ -223,6 +499,7 @@ body.com-sessao #main-header {
         border-right: 0;
         border-bottom: 1px solid var(--borda);
         padding: 0.75rem 1rem;
+        overflow: visible;
     }
 
     .menu-lateral {
@@ -232,15 +509,39 @@ body.com-sessao #main-header {
         gap: 0.75rem;
     }
 
+    .menu-lateral__recolher,
+    .main-nav__titulo {
+        display: none;
+    }
+
     .main-nav {
         flex-direction: row;
-        flex-wrap: wrap; /* com 5 itens o menu passa da largura do celular e alargaria a página toda */
+        flex-wrap: wrap; /* com 7 itens o menu passa da largura do celular e alargaria a página toda */
+        overflow: visible;
+    }
+
+    .main-nav__grupo {
+        display: contents;
     }
 
     .menu-lateral__rodape {
         flex-direction: row;
         margin-top: 0;
         margin-left: auto;
+        padding-top: 0;
+        border-top: 0;
+    }
+
+    .menu-lateral__rodape button {
+        width: auto;
+    }
+
+    /* no celular o menu nunca fica recolhido: o texto sempre aparece */
+    body.menu-recolhido .menu-texto {
+        position: static;
+        width: auto;
+        height: auto;
+        clip: auto;
     }
 }
 .valores-ocultos .valor-financeiro {
@@ -251,4 +552,88 @@ body.com-sessao #main-header {
     content: "••••••";
     font-size: 16px;
     color: var(--texto, #ffffff) !important;
+}
+
+/* Esqueleto de carregamento: blocos cinza com um brilho que passa, no lugar do conteúdo que ainda está chegando da API.
+   Cada componente põe o seu esqueleto no HTML (dentro de um .esqueleto-grupo) e o JS só liga e desliga o grupo, como
+   qualquer outro estado da tela. Use role="status" no grupo e um texto .so-leitor para quem usa leitor de tela. */
+:root {
+    --esqueleto-base: color-mix(in srgb, var(--texto) 9%, var(--fundo-card));
+    --esqueleto-brilho: color-mix(in srgb, var(--texto) 17%, var(--fundo-card));
+}
+
+.esqueleto-grupo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.esqueleto-grupo[hidden] {
+    display: none;
+}
+
+.esqueleto {
+    display: block;
+    min-height: 1rem;
+    border-radius: 0.75rem;
+    background: linear-gradient(100deg, var(--esqueleto-base) 30%, var(--esqueleto-brilho) 50%, var(--esqueleto-base) 70%) 100% 0 / 250% 100%;
+    animation: esqueleto-brilho 1.4s ease-in-out infinite;
+}
+
+.esqueleto--titulo {
+    width: 40%;
+    height: 1.4rem;
+}
+
+.esqueleto--linha {
+    height: 1rem;
+}
+
+.esqueleto--curto {
+    width: 55%;
+}
+
+.esqueleto--bloco {
+    height: 6.5rem;
+}
+
+.esqueleto--alto {
+    height: 9rem;
+}
+
+.esqueleto--card {
+    height: 17rem;
+}
+
+.esqueleto--linha-extrato {
+    height: 3.2rem;
+}
+
+@keyframes esqueleto-brilho {
+    to { background-position: 0 0; }
+}
+
+/* sem animação: só os blocos cinza, parados */
+@media (prefers-reduced-motion: reduce) {
+    .esqueleto {
+        animation: none;
+        background: var(--esqueleto-base);
+    }
+}
+
+/* Troca de tela: o roteador esconde o conteúdo (sem mostrar nada no lugar) até a tela nova estar montada (app/main.js) */
+#app-content.tela-trocando {
+    visibility: hidden;
+}
+
+/* Movimento reduzido: quem pede menos movimento ao sistema não vê as transições nem as animações do projeto (hover, painéis, listas, menu). As animações que precisam existir mesmo assim têm regra própria (barra de tempo das notificações). */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        transition-delay: 0s !important;
+    }
 }

@@ -5,14 +5,55 @@ import { alternarTema, temaAtual } from '../theme/theme.js';
 import { salvarPreferencias } from '../preferencias.js';
 
 
+const CHAVE_MENU_RECOLHIDO = '@FinanceAI:menuRecolhido';
+
 function rotuloTema() {
   return temaAtual() === 'claro' ? 'Tema escuro' : 'Tema claro';
+}
+
+/** Troca o texto de um botão do menu (o <span class="menu-texto">, que o botão recolhido esconde) A dica do menu recolhido (dicaMenu.js) lê esse texto. */
+function definirRotulo(botao, texto) {
+  const rotulo = botao.querySelector('.menu-texto');
+  if (rotulo) rotulo.textContent = texto;
+  else botao.textContent = texto;
+}
+
+function lerMenuRecolhido() {
+  try {
+    return localStorage.getItem(CHAVE_MENU_RECOLHIDO) === 'true';
+  } catch {
+    return false; // sem armazenamento (janela privada): o menu nasce aberto
+  }
+}
+
+/** Liga o botão que recolhe o menu aos ícones e lembra a escolha no navegador. */
+function ligarRecolher(raiz) {
+  const botao = raiz.querySelector('#botao-recolher-menu');
+  if (!botao) return;
+
+  function aplicar(recolhido) {
+    document.body.classList.toggle('menu-recolhido', recolhido);
+    botao.setAttribute('aria-expanded', String(!recolhido));
+    const rotulo = recolhido ? 'Expandir menu' : 'Recolher menu';
+    botao.setAttribute('aria-label', rotulo);
+  }
+
+  aplicar(lerMenuRecolhido());
+  botao.addEventListener('click', () => {
+    const recolhido = !document.body.classList.contains('menu-recolhido');
+    aplicar(recolhido);
+    try {
+      localStorage.setItem(CHAVE_MENU_RECOLHIDO, String(recolhido));
+    } catch {
+      // sem armazenamento: vale só até recarregar a página
+    }
+  });
 }
 
 export function ligarMenu(raiz = document) {
   const botaoTema = raiz.querySelector('#botao-tema');
   if (botaoTema) {
-    botaoTema.textContent = rotuloTema();
+    definirRotulo(botaoTema, rotuloTema());
     botaoTema.addEventListener('click', (evento) => {
       const novoTema = temaAtual() === 'claro' ? 'escuro' : 'claro';
       salvarPreferencias({ tema: novoTema }).catch((erro) => {
@@ -22,7 +63,7 @@ export function ligarMenu(raiz = document) {
       // Se o navegador não suportar View Transitions, troca direto
       if (!document.startViewTransition) {
         alternarTema();
-        botaoTema.textContent = rotuloTema();
+        definirRotulo(botaoTema, rotuloTema());
         return;
       }
 
@@ -39,7 +80,7 @@ export function ligarMenu(raiz = document) {
 
       const transicao = document.startViewTransition(() => {
         alternarTema();
-        botaoTema.textContent = rotuloTema();
+        definirRotulo(botaoTema, rotuloTema());
       });
 
       transicao.ready.then(() => {
@@ -59,6 +100,8 @@ export function ligarMenu(raiz = document) {
       });
     });
   }
+
+  ligarRecolher(raiz);
 
   const botaoSair = raiz.querySelector('#botao-sair');
   if (botaoSair) {

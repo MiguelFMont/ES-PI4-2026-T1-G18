@@ -12,15 +12,15 @@ npm run dev
 
 Abra `http://localhost:3001`. O Backend precisa do `.env` preenchido (ver `Backend/README.md`) e serve:
 
-- `/` abre o `index.html`, a única página: ele tem o menu fixo e um roteador por `#` (`#dashboard`, `#transactions`, `#contas-conectadas`, `#mentor-ia`) que troca só o conteúdo de `#app-content` (SPA);
+- `/` abre o `index.html`, a única página: ele tem o menu fixo e um roteador por `#` (`#dashboard`, `#transactions`, `#contas-conectadas`, `#metas`, `#cartao`, `#mentor-ia`) que troca só o conteúdo de `#app-content` (SPA);
 - `/transactions`, `/mentor-ia` e `/dashboard` são atalhos que redirecionam para `/#transactions` etc.; `/login` leva à página de login (`features/auth/components/inicio.html`, independente do `index.html`). Ficam em `Backend/src/http/frontend.ts`: quem criar uma tela nova acrescenta uma linha lá e uma entrada em `TELAS` no `src/app/main.js`;
 - `/v1/...` é a API.
 
 Não abra o `index.html` com duplo clique (`file://`): módulos ES e `fetch` não funcionam assim.
 
-### Sessão provisória (enquanto o login do Grupo 1 não existe)
+### Sessão
 
-As páginas internas exigem um token e, sem ele, voltam para o login. Para desenvolver, gere um token assinado com o `JWT_SECRET` do seu `.env` e guarde-o no console do navegador (F12):
+As páginas internas exigem um token e, sem ele, voltam para o login (`/login`): entre com uma conta cadastrada. Só para desenvolver sem passar pelo login, dá para gerar um token assinado com o `JWT_SECRET` do seu `.env` e guardá-lo no console do navegador (F12):
 
 ```js
 localStorage.setItem('@FinanceAI:token', '<token>')
@@ -51,8 +51,8 @@ src/
 
 Regra: **a estrutura é HTML; o JavaScript só cuida de comportamento** (chamar a API, validar, preencher dados). Textos vindos da API entram sempre por `textContent`.
 
-Componentes compartilhados em `src/shared/`: `Calendario.js` (calendário com atalhos de período), `seletor.js` (lista dos selects que abre ao passar o mouse), `notificacao.js` (`notificar(mensagem, 'sucesso' | 'erro' | 'info')`) e `campos.js` (ligar campos e `aceitarSomenteNumeros`). Para comparar o visual sem sombras, troque o `global.css` do `index.html` por `global-sem-sombras.css`.
+Componentes compartilhados em `src/shared/`: `Calendario.js` (calendário com atalhos de período), `seletor.js` (lista dos selects que abre ao passar o mouse), `notificacao.js` (`notificar(mensagem, 'sucesso' | 'erro' | 'info')`) e `campos.js` (ligar campos e `aceitarSomenteNumeros`). O visual com sombras (padrão) ou com bordas finas se escolhe em Minha conta > Preferências.
 
 A comunicação com o Backend é REST/HTTP: os services chamam exclusivamente `apiFetch` de `src/core/http/api.js`, que centraliza a URL base (`/v1`, a mesma origem da página), o token JWT, a leitura de respostas e os erros HTTP. Para outro ambiente, defina `window.FINANCEAI_API_URL` antes do módulo principal.
 
-Consulte `src/core/core.md`, `src/features/featuresExemplo.md` e `src/features/auth/authExemplo.md` para os contratos arquiteturais e exemplos, e `docs/contrato-api.md` para os endpoints. A feature `transactions` é o exemplo completo de página com componentes; `contas-conectadas` (Open Finance, Pluggy) segue o mesmo modelo e é um exemplo menor, com um widget de terceiros carregado sob demanda (`utils/pluggyConnect.js`).
+Consulte `src/core/core.md`, `src/features/featuresExemplo.md` e `src/features/auth/authExemplo.md` para os contratos arquiteturais e exemplos, e `docs/contrato-api.md` para os endpoints. A feature `transactions` é o exemplo completo de página com componentes; `contas-conectadas` (Open Finance, Pluggy) segue o mesmo modelo e é um exemplo menor, com um widget de terceiros carregado sob demanda (`utils/pluggyConnect.js`). `goals` (Metas) e `investments` (Cartão de crédito: um card grande e selecionável por cartão (fatura, vencimento, limite e totais, com editar, excluir e novo cartão) e, embaixo, as compras do cartão escolhido; no formulário de transação, o pagamento no crédito pede o cartão e as parcelas, em `transactions/.../CartaoDoLancamento.js`; o portfólio de investimentos simulado tem rotas no Backend mas ficou sem tela, como feature futura) seguem o mesmo modelo (o formulário de transação tem a opção "Vincular a uma meta", em `transactions/.../MetaDoLancamento.js`, que reaproveita o formulário de meta numa janela quando o usuário ainda não tem metas), com formulários que usam o calendário e a máscara de moeda compartilhados, barras de progresso acessíveis (`role="progressbar"`) e a formatação de dinheiro e datas de `shared/utils/moeda.js`.

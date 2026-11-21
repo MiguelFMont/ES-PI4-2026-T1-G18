@@ -11,6 +11,9 @@ export const MENSAGENS_CAMPO = {
   data: 'Informe uma data válida.',
   categoria: 'Escolha a categoria.',
   formaPagamento: 'Escolha o pagamento.',
+  meta: 'Escolha a meta.',
+  metaId: 'Escolha a meta.',
+  cartao: 'Escolha o cartão e as parcelas (de 1 a 24).',
   observacoes: `Máximo de ${LIMITE_OBSERVACOES} caracteres.`,
 };
 
@@ -46,6 +49,8 @@ export function validarCampo(nome, texto) {
     case 'data': return dataValida(entrada) ? { erro: null, valor: entrada } : falha(entrada ? 'Data inválida.' : undefined);
     case 'categoria': return estaEm(CATEGORIAS, entrada) ? { erro: null, valor: entrada } : falha();
     case 'formaPagamento': return estaEm(FORMAS_PAGAMENTO, entrada) ? { erro: null, valor: entrada } : falha();
+    // meta: vazio desvincula (null); senão, o id da meta. A lista de metas é do Backend, que confere se é do usuário.
+    case 'metaId': return !entrada ? { erro: null, valor: null } : /^[a-f\d]{24}$/i.test(entrada) ? { erro: null, valor: entrada } : falha();
     case 'observacoes': {
       const observacoes = entrada.trim();
       return observacoes.length <= LIMITE_OBSERVACOES ? { erro: null, valor: observacoes } : falha();

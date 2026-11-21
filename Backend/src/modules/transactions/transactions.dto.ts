@@ -2,7 +2,11 @@
 import { z } from "zod";
 import { FORMAS_PAGAMENTO, FormaPagamento } from "./transactions.model";
 
-export const createTransactionSchema = z.object({
+const ID_INVALIDO = "Id inválido";
+// Máximo de parcelas de uma compra no crédito.
+export const MAX_PARCELAS = 24;
+
+const createTransactionBase = z.object({
   tipo: z.enum(["receita", "despesa"]),
   valor: z.number().positive(),
   categoria: z.string().trim().min(1).optional(),
@@ -17,6 +21,24 @@ export const createTransactionSchema = z.object({
     .transform((texto) => texto || undefined),
   formaPagamento: z.enum(FORMAS_PAGAMENTO).default("outro"),
   origem: z.enum(["manual", "pluggy"]).default("manual"),
+  // vincula a transação a uma meta do próprio usuário (o valor dela conta como aporte no progresso da meta)
+  metaId: z.string().regex(/^[a-f\d]{24}$/i, ID_INVALIDO).optional(),
+  // cartão de crédito do próprio usuário e número de parcelas: só valem com formaPagamento "credito" (ver o refine abaixo)
+  cartaoId: z.string().regex(/^[a-f\d]{24}$/i, ID_INVALIDO).optional(),
+  parcelas: z.number().int().min(1).max(MAX_PARCELAS).optional(),
+});
+
+export const createTransactionSchema = createTransactionBase.superRefine((d, ctx) => {
+  if (d.formaPagamento !== "credito") {
+    if (d.cartaoId) ctx.addIssue({ code: "custom", path: ["cartaoId"], message: "O cartão só vale com a forma de pagamento crédito" });
+    if (d.parcelas !== undefined && d.parcelas !== 1) {
+      ctx.addIssue({ code: "custom", path: ["parcelas"], message: "As parcelas só valem com a forma de pagamento crédito" });
+    }
+  }
+  if (d.parcelas !== undefined && d.parcelas > 1) {
+    if (d.tipo !== "despesa") ctx.addIssue({ code: "custom", path: ["parcelas"], message: "Só despesas podem ser parceladas" });
+    if (d.origem !== "manual") ctx.addIssue({ code: "custom", path: ["parcelas"], message: "Transações importadas não podem ser parceladas" });
+  }
 });
 
 export const transactionFiltersSchema = z
@@ -25,6 +47,10 @@ export const transactionFiltersSchema = z
     categoria: z.string().optional(),
     formaPagamento: z.enum(FORMAS_PAGAMENTO).optional(),
     origem: z.enum(["manual", "pluggy"]).optional(),
+    // id de uma meta (só as vinculadas a ela) ou "nenhuma" (só as sem meta)
+    metaId: z.union([z.string().regex(/^[a-f\d]{24}$/i, "Id inválido"), z.literal("nenhuma")]).optional(),
+    // id de um cartão do usuário: só as despesas no crédito dele (as sem cartão contam para o cartão padrão, como na fatura)
+    cartaoId: z.string().regex(/^[a-f\d]{24}$/i, "Id inválido").optional(),
     busca: z.string().trim().min(1).max(100).optional(),
     dataInicio: z.coerce.date().optional(),
     dataFim: z.coerce.date().optional(),
@@ -51,6 +77,10 @@ export const updateTransactionSchema = z.object({
   descricao: z.string().trim().min(1),
   observacoes: z.string().trim().max(300), // "" = apagar; sem transform
   formaPagamento: z.enum(FORMAS_PAGAMENTO), // sem default
+  metaId: z.string().regex(/^[a-f\d]{24}$/i, ID_INVALIDO).nullable(), // null = desvincular da meta
+  // null = desvincular do cartão. cartaoId e parcelas > 1 só valem se a forma de pagamento final for crédito (o service confere)
+  cartaoId: z.string().regex(/^[a-f\d]{24}$/i, ID_INVALIDO).nullable(),
+  parcelas: z.number().int().min(1).max(MAX_PARCELAS),
 })
   .partial()
   .refine((d) => Object.keys(d).length > 0, { message: "Informe ao menos um campo para alterar" });
@@ -106,6 +136,10 @@ export interface TransactionResponseDto {
   observacoes?: string; // só aparece quando foi informada
   formaPagamento: FormaPagamento;
   origem: "manual" | "pluggy";
+  metaId?: string; // só aparece quando a transação foi vinculada a uma meta
+  cartaoId?: string; // só aparece quando a compra no crédito foi ligada a um cartão (sem ele, conta para o cartão mais antigo)
+  parcelas?: number; // só aparece em compras no crédito (1 = à vista)
+  parcelamentoId?: string; // só aparece quando parcelas > 1: o parcelamento criado no cartão (seção 6)
 }
 
 // Resposta das operações em lote: quantas foram feitas e quais ids não existem (ou não são do usuário).

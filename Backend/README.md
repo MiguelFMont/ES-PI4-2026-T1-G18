@@ -22,7 +22,7 @@ O navegador não consegue abrir um socket TCP puro, por isso o Backend fica no m
 
 | Backend | Servidor Java |
 |---|---|
-| Rotas HTTP, validação do corpo (`zod`), CORS, JWT | Hash e conferência de senha (PBKDF2), segredo e código TOTP do MFA |
+| Rotas HTTP, validação do corpo (`zod`), CORS, JWT | Hash e conferência de senha (PBKDF2) |
 | CRUD no MongoDB (usuários, transações, metas, chat...) | Categorização de transações |
 | Orquestração: lê os dados, pede a operação ao Servidor e grava o resultado | Cálculo dos indicadores do painel e comparação entre períodos |
 | Chamadas externas que precisam de internet e chave: API de IA generativa e Pluggy | Contexto e filtro de segurança do Mentor IA |
@@ -63,7 +63,7 @@ Quando uma operação falha, o Servidor responde `{"tipo":"Erro","dados":{"code"
 
 Em cada pasta há uma subpasta `exemplo/` com um `.md` para cada arquivo `.ts` planejado, explicando o que o arquivo deve ter (e o que **não** é responsabilidade dele) e trazendo um exemplo de implementação. Ao implementar, crie o `.ts` na pasta correspondente; o `.md` fica como referência (e pode ser apagado quando o projeto estiver andando).
 
-**Já implementados como código** (base da Sprint 0): `config/env.ts`, `http/app.ts`, `http/server.ts`, `database/mongo.connection.ts`, `java-client/` (`comunicado`, `parceiro`, `java-server.client`), `middlewares/error-handler.middleware.ts`, `shared/errors/` (`app-error`, `error-codes`) `modules/sistema/` (`/v1/health` e `/v1/eco`, para testar o caminho até o Servidor), `middlewares/auth.middleware.ts` o módulo `modules/transactions/` (cadastro e listagem, Grupo 2), que serve de modelo para os outros, e o módulo `modules/mentor-ia/` (chat com a IA, Grupo 4; ver "Mentor IA" abaixo). O restante dos módulos dos grupos está só nos `.md`.
+**Estado atual:** todos os módulos estão implementados como código: `sistema`, `auth` e `suporte` (Grupo 1), `transactions` e `connected-accounts` (Grupo 2), `dashboard` (Grupo 3), `mentor-ia` (Grupo 4) e `goals` e `investments` (Grupo 5). O sub-módulo `auth/mfa` (código TOTP) **não existe**: o cadastro guarda só a marca `mfaEnabled` e o fluxo do MFA ficou como funcionalidade futura. Os `.md` de `exemplo/` são só referência histórica.
 
 ## Estrutura de pastas
 
@@ -78,12 +78,14 @@ src/
   modules/
     sistema/         /v1/health e /v1/eco (verificação da base)
     auth/            Grupo 1 — Autenticação & Conta
-      mfa/           sub-módulo de MFA
+      mfa/           (planejado, não implementado)
     transactions/    Grupo 2 — Transações (Receitas e Despesas)
     dashboard/       Grupo 3 — Painel Financeiro & Análise de Gastos
     mentor-ia/       Grupo 4 — Mentor Financeiro (IA Generativa)
     goals/           Grupo 5 — Metas Financeiras
-    investments/     Grupo 5 — Investimentos
+    investments/     Grupo 5 — Cartões (até 5 por usuário, com tela), parcelamentos das compras no crédito e portfólio simulado (só API, sem tela)
+    connected-accounts/  Grupo 2 — Contas conectadas e importação da Pluggy
+    suporte/         Grupo 1 — Chamados de suporte
 ```
 
 ## Camadas de cada módulo (`modules/<feature>/`)
@@ -195,7 +197,7 @@ curl -X POST localhost:3001/v1/eco -H "content-type: application/json" -d '{"oi"
 
 ## Testes
 
-Os testes usam o executor nativo do Node (`node:test`) com o `tsx`, sem framework extra. Ficam em `__tests__/` dentro do módulo (hoje `mentor-ia`, `connected-accounts` e `transactions`) e seguem o padrão `*.test.ts`.
+Os testes usam o executor nativo do Node (`node:test`) com o `tsx`, sem framework extra. Ficam em `__tests__/` dentro do módulo (hoje são 566 testes, em todos os módulos com lógica) e seguem o padrão `*.test.ts`.
 
 ```bash
 npm test                    # todos os *.test.ts de src/
@@ -249,6 +251,35 @@ Dois comportamentos ficam registrados nos testes de propósito, para quem mexer 
 
 - O `POST /v1/transactions` aceita `origem: "pluggy"` no corpo, como diz o contrato (seção 2.4). Um usuário consegue, portanto, cadastrar à mão um lançamento que se diz importado, e ele deixa de poder ser duplicado.
 - `inserirImportadas` **pula** o documento que o schema recusa em vez de lançar erro (`insertMany` com `ordered: false`). Hoje o mapeador da Pluggy valida antes e conta em `ignoradas.invalidas`, então não acontece; se acontecesse, `lidas` deixaria de ser `importadas` mais as ignoradas.
+
+### Metas, investimentos e cartão (Grupo 5)
+
+Cada usuário pode ter até **5 cartões** (`/v1/investments/cards`); uma compra no crédito escolhe o cartão (`cartaoId`) e as parcelas (`parcelas`), e uma compra parcelada cria o parcelamento dela no cartão. Os testes ficam em `investments/__tests__/cartoes.routes.test.ts` e `transactions/__tests__/cartao.routes.test.ts` (o Servidor Java é simulado). Ao subir, o Backend migra os dados do tempo de "um cartão por usuário" (`investmentsRepository.migrarCartoes`).
+
+Os testes ficam em `src/modules/goals/__tests__/` (metas e integração) e `src/modules/investments/__tests__/`. Para rodar só eles:
+
+```bash
+node --import tsx --test "src/modules/goals/__tests__/*.test.ts" "src/modules/investments/__tests__/*.test.ts"
+```
+
+Reaproveitam o ambiente e o ajudante dos testes de transações (MongoDB em memória, Servidor Java **inalcançável de propósito**, dois usuários) e acrescentam `simularServidorGrupo5()` (`goals/__tests__/apoio.ts`), um Servidor Java simulado para os três pedidos do grupo que também guarda o que o Backend enviou. As contas de verdade do Servidor têm os próprios testes (`mvn test`, ver `../Servidor/README.md`).
+
+| Arquivo | O que cobre |
+|---|---|
+| `goals.routes.test.ts` | CRUD de `/v1/goals`: o progresso soma só as transações **vinculadas a cada meta** (cada meta tem o seu total; sem vínculo, de outro usuário ou com data futura não contam), meta atingida e prazo vencido, ordem pelo prazo, recálculo a cada leitura, prazo opcional (meta sem prazo não tem aporte mensal nem vence; `prazo: null` tira o prazo), prazo no passado recusado (e meta vencida editável sem mudar o prazo), edição parcial, exclusão que **desvincula** as transações sem apagá-las, isolamento entre usuários, 9 casos de validação, Servidor Java fora do ar (503 e nada salvo), `401` |
+| `vinculo.routes.test.ts` | Vincular a transação à meta pela API de transações: `POST /v1/transactions` com `metaId` (despesa soma e receita subtrai do progresso, meta de outro usuário ou inexistente = `404 GOAL_NOT_FOUND` sem salvar, id mal formado = `400`), duplicar copia o vínculo, `PATCH /bulk` vincula, troca de meta e desvincula com `null` (o lote inteiro é recusado se alguma meta não for do usuário), excluir a meta ou a transação |
+| `investments.routes.test.ts` | `/v1/investments`: portfólio e patrimônio (meses completos, juros compostos, percentual da carteira real no ativo novo), cartão (cartão padrão criado uma vez, fatura só com despesas reais no **crédito** do mês, parcelas do mês, limite disponível e estourado, vencimento), parcelamentos (tabela Price, totais só dos ativos, quitar, limite de parcelas; as parcelas pagas avançam sozinhas, uma por mês desde a compra, e um cartão cujo parcelamento o tempo quitou pode ser excluído), isolamento, validação, `503` e `401` |
+| `investments.unidade.test.ts` | Sem HTTP nem banco: `mesesCompletos` (o mês só fecha no mesmo dia, virada de ano, dia 31) e `proximoVencimento` (hoje, mês seguinte, virada de ano, dia 28) |
+| `grupo5.integracao.test.ts` | Backend + Servidor Java **de verdade**: prova que os nomes e tipos dos campos dos três pedidos batem dos dois lados, com os mesmos números do `mvn test` |
+
+O teste de integração fica **pulado** no `npm test` comum. Para rodar, suba o Servidor (`mvn exec:java -Dexec.mainClass=com.financeai.Main`, com a porta como argumento se quiser outra) e defina `JAVA_SERVER_INTEGRACAO=1` (o endereço vem de `JAVA_SERVER_HOST` e `JAVA_SERVER_PORT`):
+
+```bash
+JAVA_SERVER_INTEGRACAO=1 JAVA_SERVER_PORT=3000 npm test                       # bash
+$env:JAVA_SERVER_INTEGRACAO="1"; $env:JAVA_SERVER_PORT="3000"; npm test       # PowerShell
+```
+
+Dados de exemplo para as telas: `npm run seed:grupo5` (metas com os aportes vinculados, ativos, cartão e parcelamentos do `usuario-demo`; aceita `<userId>` e `--limpar`, que apaga também as transações vinculadas às metas). Os aportes das metas são transações que o próprio seed cria; a fatura do cartão soma as despesas no crédito do mês, então rode também o `npm run seed:transacoes` com o mesmo usuário para ela ter compras.
 
 ### Integração com o Servidor Java
 

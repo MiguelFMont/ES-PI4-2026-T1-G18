@@ -13,10 +13,17 @@ export function valorParaEditar(campo, transacao) {
 }
 
 // Escolhe o controle de cada campo: lista para os de opções, calendário nativo para a data e texto para o resto.
-function criarControle(campo, atual) {
-  if (OPCOES[campo]) {
+function criarControle(campo, atual, opcoes) {
+  const lista = opcoes ?? OPCOES[campo];
+  if (lista) {
     const select = document.createElement('select');
-    for (const { valor, rotulo } of OPCOES[campo]) select.add(new Option(rotulo, valor));
+    // texto exibido (select personalizável): o botão com <selectedcontent> permite truncar rótulos longos com reticências
+    const botaoTexto = document.createElement('button');
+    botaoTexto.type = 'button';
+    botaoTexto.tabIndex = -1;
+    botaoTexto.append(document.createElement('selectedcontent'));
+    select.append(botaoTexto);
+    for (const { valor, rotulo } of lista) select.add(new Option(rotulo, valor));
     select.value = atual;
     return select;
   }
@@ -37,11 +44,12 @@ function criarControle(campo, atual) {
  * Troca o botão de um campo do extrato por um campo de edição. Enter (ou sair do campo) salva, Esc cancela; nas
  * listas, escolher uma opção salva. Valor inválido mantém o campo aberto, com mensagem curta embaixo dele e uma
  * notificação geral. Valor igual ao atual só fecha.
+ *   `opcoes` ({ valor, rotulo }[]) troca a lista de opções do campo (usado pela meta, que depende dos dados do usuário).
  *   aoSalvar(valor) devolve uma Promise: se ela falhar, o campo continua aberto para tentar de novo (quem chama
  *   já mostrou a notificação do erro); se der certo, quem chama atualiza a lista e este campo deixa de existir.
  */
-export function iniciarEdicao({ botao, campo, atual, aoSalvar }) {
-  const controle = criarControle(campo, atual);
+export function iniciarEdicao({ botao, campo, atual, aoSalvar, opcoes }) {
+  const controle = criarControle(campo, atual, opcoes);
   const mensagem = document.createElement('p');
   mensagem.className = 'campo__erro extrato-editor__erro';
   mensagem.id = `erro-${campo}-${Math.random().toString(36).slice(2, 8)}`;
@@ -56,6 +64,7 @@ export function iniciarEdicao({ botao, campo, atual, aoSalvar }) {
   let encerrado = false;
   let salvando = false;
   const controladorFora = new AbortController();
+  let ouvirMovimento = () => {};
 
   function encerrar({ devolverFoco = true } = {}) {
     encerrado = true;
@@ -114,6 +123,17 @@ export function iniciarEdicao({ botao, campo, atual, aoSalvar }) {
     document.addEventListener('pointerdown', (evento) => {
       if (!evento.composedPath().includes(editor) && !salvando) encerrar({ devolverFoco: false });
     }, { capture: true, signal: controladorFora.signal });
+    // A lista nativa se encolhe para caber no espaço que sobra e não volta ao tamanho normal: rolar ou redimensionar a fecha.
+    // Rolar dentro da própria lista (descendente do select) não conta, nem o scroll que o navegador faz ao abrir.
+    const fecharAoMover = (evento) => {
+      if (salvando) return;
+      if (evento.target instanceof Node && editor.contains(evento.target)) return;
+      encerrar({ devolverFoco: false });
+    };
+    ouvirMovimento = () => {
+      window.addEventListener('scroll', fecharAoMover, { capture: true, passive: true, signal: controladorFora.signal });
+      window.addEventListener('resize', fecharAoMover, { signal: controladorFora.signal });
+    };
   } else {
     controle.addEventListener('blur', () => setTimeout(confirmar, 0)); // espera: um Esc ou um clique em outro botão passa antes
   }
@@ -125,6 +145,11 @@ export function iniciarEdicao({ botao, campo, atual, aoSalvar }) {
 
   botao.hidden = true;
   botao.after(editor);
+  if (eLista) controle.value = atual; // já no documento: garante o texto atual no botão do select personalizável
   controle.focus();
-  if (eLista) controle.showPicker?.();
+  if (eLista) {
+    controle.showPicker?.();
+    // só depois dos scrolls que o próprio navegador faz ao abrir a lista (dois quadros)
+    requestAnimationFrame(() => requestAnimationFrame(() => { if (!encerrado) ouvirMovimento(); }));
+  }
 }

@@ -2,7 +2,13 @@
      Mostra só um destes estados por vez: carregando, erro, boas-vindas (o usuário ainda não perguntou nada) ou
      mensagens. Nas boas-vindas, os insights que o Mentor mandou sozinho aparecem embaixo das sugestões. -->
 <div id="mentor-conversa" class="mentor-conversa" aria-busy="true">
-  <p id="conversa-carregando" class="mentor-estado">Carregando a conversa...</p>
+  <div id="conversa-carregando" class="esqueleto-grupo" role="status">
+    <span class="esqueleto esqueleto--linha esqueleto--curto"></span>
+    <span class="esqueleto esqueleto--bloco"></span>
+    <span class="esqueleto esqueleto--linha esqueleto--curto"></span>
+    <span class="esqueleto esqueleto--bloco"></span>
+    <span class="so-leitor">Carregando a conversa...</span>
+  </div>
 
   <div id="conversa-erro" class="mentor-estado" hidden>
     <p id="conversa-erro-texto" role="alert"></p>
