@@ -58,7 +58,7 @@ export const authRepository = {
     async setMfaSecret(userId: string, mfaSecret: string) {
         return UserModel.findByIdAndUpdate(
             userId,
-            { mfaSecret, mfaEnabled: true },
+            { $set: { mfaSecret } },
             { new: true }
         ).lean();
     },
@@ -69,6 +69,44 @@ export const authRepository = {
             .lean();
 
         return usuario?.mfaSecret ?? null;
+    },
+    async registrarContadorMfa(userId: string, contador: number) {
+        return UserModel.findOneAndUpdate(
+            {
+                _id: userId,
+                mfaEnabled: true,
+                $or: [
+                    { mfaUltimoContador: { $exists: false } },
+                    { mfaUltimoContador: { $lt: contador } }
+                ]
+            },
+            {
+                $set: { mfaUltimoContador: contador }
+            },
+            { new: true }
+        ).lean();
+    },
+
+    async enableMfa(userId: string) {
+        return UserModel.findOneAndUpdate(
+            {
+                _id: userId,
+                mfaEnabled: false,
+                mfaSecret: { $exists: true, $ne: null }
+            },
+            { $set: { mfaEnabled: true } },
+            { new: true }
+        ).lean();
+    },
+    async disableMfa(userId: string) {
+        return UserModel.findByIdAndUpdate(
+            userId,
+            {
+                $set: { mfaEnabled: false },
+                $unset: { mfaSecret: "", mfaUltimoContador: ""}
+            },
+            { new: true }
+        ).lean();
     },
 
     async savePasswordResetToken(

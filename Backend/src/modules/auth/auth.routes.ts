@@ -1,17 +1,17 @@
 import { Router } from "express";
 import { authController } from "./auth.controller";
 import { authMiddleware } from "../../middlewares/auth.middleware";
-//import { mfaRouter } from "./mfa/mfa.routes";
+import { mfaRouter } from "./mfa/mfa.routes";
 
 export const authRouter = Router();
 
 authRouter.post("/register", authController.register);
 authRouter.post("/login", authController.login);
+authRouter.post("/login/mfa", authController.loginMfa);
 authRouter.post("/forgot-password", authController.forgotPassword);
 authRouter.post("/reset-password", authController.resetPassword);
 authRouter.post("/verify-email", authController.verifyEmail);
 authRouter.get("/me", authMiddleware, authController.me);
 authRouter.patch("/me/plano", authMiddleware, authController.atualizarPlano);
 authRouter.patch("/me", authMiddleware, authController.atualizarPerfil);
-
-//authRouter.use("/mfa", mfaRouter);
+authRouter.use("/mfa", mfaRouter);

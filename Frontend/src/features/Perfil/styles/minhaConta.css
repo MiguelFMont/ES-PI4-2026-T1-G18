@@ -548,4 +548,279 @@
     opacity: 0.6;
     cursor: not-allowed;
 }
+/* Botão Salvar alterações — tema claro */
+:root[data-tema="claro"] #formulario-perfil #salvar-perfil {
+    background-color: #1d704e;
+    color: #ffffff;
+}
 
+:root[data-tema="claro"] #formulario-perfil #salvar-perfil:hover {
+    background-color: #15583c;
+}
+
+:root[data-tema="escuro"] #formulario-perfil #salvar-perfil {
+    background-color: #c5fa28;
+    color: #111318;
+}
+
+:root[data-tema="escuro"] #formulario-perfil #salvar-perfil:hover {
+    background-color: #b2e522;
+}
+
+/* SEGURANÇA E MFA */
+
+.minha-conta .seguranca-conta {
+    width: 100%;
+    max-width: 850px;
+    padding: 32px;
+    background: var(--conta-card);
+    border: 1px solid var(--conta-borda);
+    border-radius: 16px;
+    color: var(--conta-texto);
+}
+
+.minha-conta .seguranca-conta .secao-cabecalho {
+    margin-bottom: 28px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--conta-borda);
+}
+
+.minha-conta .seguranca-conta .secao-cabecalho h2 {
+    margin: 0 0 8px;
+    font-size: 23px;
+    font-weight: 700;
+    color: var(--conta-texto);
+}
+
+.minha-conta .seguranca-conta .secao-cabecalho p {
+    color: var(--conta-suave);
+    font-size: 13px;
+}
+
+.minha-conta .seguranca-conta__mfa {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.minha-conta .seguranca-conta__mfa h3,
+.minha-conta .seguranca-conta__mfa h4,
+.minha-conta .seguranca-conta__mfa label {
+    color: var(--conta-texto);
+}
+
+.minha-conta .seguranca-conta__mfa h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.minha-conta .seguranca-conta__mfa > p:not(#mfa-status):not(#mfa-mensagem),
+.minha-conta #mfa-configuracao > p {
+    margin: 0;
+    color: var(--conta-suave);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.minha-conta #mfa-status {
+    display: inline-flex;
+    align-items: center;
+    margin: 0;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: var(--conta-campo);
+    color: var(--conta-texto);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.minha-conta #mfa-configuracao,
+.minha-conta #mfa-desativacao {
+    width: 100%;
+    padding: 24px;
+    background: var(--conta-campo);
+    border: 1px solid var(--conta-borda);
+    border-radius: 12px;
+}
+
+.minha-conta #mfa-configuracao h4 {
+    margin: 0 0 12px;
+    font-size: 17px;
+}
+
+.minha-conta #mfa-qrcode {
+    display: flex;
+    justify-content: flex-start;
+    margin: 20px 0;
+}
+
+.minha-conta #mfa-qrcode img {
+    display: block;
+    width: 220px;
+    max-width: 100%;
+    height: auto;
+    padding: 10px;
+    border-radius: 12px;
+    background: #ffffff;
+}
+
+.minha-conta #mfa-configuracao label,
+.minha-conta #mfa-desativacao label {
+    display: block;
+    margin: 0 0 10px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.minha-conta #mfa-codigo,
+.minha-conta #mfa-codigo-desativar {
+    display: block;
+    width: 100%;
+    max-width: 320px;
+    height: 48px;
+    padding: 0 16px;
+    margin: 0 0 16px;
+    border: 1px solid var(--conta-borda);
+    border-radius: 8px;
+    outline: none;
+    background: var(--conta-card);
+    color: var(--conta-texto);
+    font: inherit;
+    font-size: 18px;
+    letter-spacing: 4px;
+}
+
+.minha-conta #mfa-codigo:focus,
+.minha-conta #mfa-codigo-desativar:focus {
+    border-color: var(--conta-destaque);
+}
+
+.minha-conta #ativar-mfa,
+.minha-conta #confirmar-mfa,
+.minha-conta .botao-configurar-mfa {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    padding: 12px 18px;
+    border: none;
+    border-radius: 8px;
+    background: var(--conta-destaque);
+    color: var(--conta-fundo);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    transition: filter 0.2s;
+}
+
+.minha-conta #ativar-mfa:hover,
+.minha-conta #confirmar-mfa:hover,
+.minha-conta .botao-configurar-mfa:hover {
+    filter: brightness(0.92);
+}
+
+.minha-conta #desativar-mfa {
+    padding: 12px 18px;
+    border: 1px solid #a84d54;
+    border-radius: 8px;
+    background: transparent;
+    color: #db6069;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+:root[data-tema="escuro"] .minha-conta #desativar-mfa {
+    color: #ff9da4;
+}
+
+.minha-conta #desativar-mfa:hover {
+    background: rgba(180, 60, 70, 0.12);
+}
+
+.minha-conta #ativar-mfa:disabled,
+.minha-conta #confirmar-mfa:disabled,
+.minha-conta #desativar-mfa:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.minha-conta #mfa-mensagem {
+    margin: 0;
+    color: var(--conta-texto);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.minha-conta .seguranca-conta [hidden] {
+    display: none !important;
+}
+
+@media (max-width: 600px) {
+    .minha-conta .seguranca-conta {
+        padding: 20px;
+    }
+
+    .minha-conta #mfa-configuracao,
+    .minha-conta #mfa-desativacao {
+        padding: 16px;
+    }
+
+    .minha-conta #ativar-mfa,
+    .minha-conta #confirmar-mfa,
+    .minha-conta #desativar-mfa,
+    .minha-conta .botao-configurar-mfa {
+        width: 100%;
+    }
+}
+/* Botões da aba Segurança */
+
+.minha-conta .seguranca-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+}
+
+.minha-conta .botao-seguranca {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 18px;
+    min-height: 42px;
+    border: none;
+    border-radius: 8px;
+    background: var(--conta-destaque);
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: filter 0.2s ease;
+}
+
+.minha-conta .botao-seguranca:hover {
+    filter: brightness(0.9);
+}
+
+:root[data-tema="escuro"] .minha-conta .botao-seguranca {
+    color: #111318;
+}
+
+@media (max-width: 650px) {
+    .minha-conta .seguranca-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .minha-conta .botao-seguranca {
+        width: 100%;
+        white-space: normal;
+        text-align: center;
+    }
+}

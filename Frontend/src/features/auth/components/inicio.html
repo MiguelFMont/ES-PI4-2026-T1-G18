@@ -61,4 +61,19 @@
     </div>
     <script type="module" src="inicio.js"></script>
 </body>
+
+<div id="modal-mfa" class="modal-mfa">
+    <div class="modal-mfa-conteudo">
+        <h2>Verificação de Segurança</h2>
+        <p>
+            Digite o código de 6 dígitos gerado
+            pelo Google Authenticator.
+        </p>
+
+        <input type="text" id="codigo-mfa" placeholder="000000" maxlength="6" inputmode="numeric"  autocomplete="one-time-code">
+        <p id="mfa-erro"></p>
+        <button type="button" id="confirmar-mfa">CONFIRMAR</button>
+        <button type="button" id="cancelar-mfa">Cancelar</button>
+    </div>
+</div>
 </html>
