@@ -6,7 +6,7 @@ Roteiro para testar o FinanceAI de ponta a ponta na branch de integração, ante
 
 ## 0. Preparação
 
-- [ ] Branch de teste montada: `develop` atual + as 4 branches do Grupo 5 + as 3 branches de Frontend (somente-cartão, barra lateral, tela de carregando). Sem conflito.
+- [ ] Branch de teste: a `develop` atual (já inclui o Grupo 5, os cartões múltiplos e os ajustes de interface). Servidor Java e Backend na versão dela.
 - [ ] `Backend/.env` com `MONGO_URI`, `JWT_SECRET`, `GENAI_API_KEY`, `PLUGGY_CLIENT_ID`, `PLUGGY_CLIENT_SECRET`, `EMAIL_USER` e `EMAIL_PASSWORD` (o e-mail é preciso para o cadastro e a recuperação de senha).
 - [ ] `npm install` rodado no `Backend` (o `package-lock.json` não vai para o Git).
 - [ ] Terminal 1, Servidor Java: `cd Servidor` e `mvn compile && mvn exec:java -Dexec.mainClass=com.financeai.Main`. Aparece "O servidor esta ativo!".
@@ -73,22 +73,24 @@ Roteiro para testar o FinanceAI de ponta a ponta na branch de integração, ante
 
 ## 5. Metas (Grupo 5)
 
-- [ ] Criar uma meta (nome, valor objetivo, prazo futuro, valor inicial opcional). Prazo no passado é recusado.
-- [ ] Na tela da meta aparece o percentual, quanto falta, os dias e o aporte mensal necessário (vem do Servidor Java).
+- [ ] Criar uma meta (nome, valor objetivo, valor inicial opcional e **prazo opcional**). Prazo no passado é recusado.
+- [ ] Meta **sem prazo**: os cards Prazo e Guardar por mês não aparecem, o selo é "Em andamento" e ela fica no fim da lista. Editar e esvaziar o prazo de uma meta que tinha prazo também funciona.
+- [ ] Na meta com prazo aparece o percentual, quanto falta, os dias e o aporte mensal necessário (vem do Servidor Java).
 - [ ] Cadastrar uma **despesa** com "Vincular a uma meta": o progresso da meta **sobe**. Uma **receita** vinculada **retira** do progresso.
 - [ ] Sem metas, a opção de vincular abre a janela "Nova meta" e, depois de criar, a meta fica selecionada.
 - [ ] Na coluna "Meta" do extrato dá para trocar a meta ou escolher "Nenhuma", por rascunho e confirmação. O filtro "Meta" (Todas / Sem meta / uma meta) funciona.
 - [ ] Editar uma meta (inclusive uma vencida, mantendo o prazo) e **excluir** uma meta: as transações vinculadas ficam, sem o vínculo.
 - [ ] Meta com mais retiradas do que aportes mostra 0% (nunca negativo).
 
-## 6. Cartão de crédito (Grupo 5)
+## 6. Cartões de crédito (Grupo 5)
 
-- [ ] A tela abre com a fatura do mês, o vencimento (padrão dia 10) e o limite (padrão R$ 5.000).
-- [ ] Cadastrar despesas com pagamento **Cartão de crédito**: a fatura sobe e o limite disponível desce.
-- [ ] Editar limite e dia do vencimento atualiza os números e a barra do limite; valor inválido mostra erro.
-- [ ] Novo parcelamento (descrição, valor total, parcelas, juros opcionais): aparecem a parcela, os juros e o saldo devedor. Conferir uma conta à mão (Tabela Price).
-- [ ] **Pagar parcela** avança uma parcela, e o parcelamento quitado aparece como "Quitado" fora dos totais.
-- [ ] Excluir parcelamento, com confirmação. Limite excedido mostra o aviso.
+- [ ] A tela abre com um card por cartão (fila horizontal, 3 à vista e barra de rolagem se houver mais), com fatura do mês, vencimento e limite. O card **Novo cartão** fica fixo à direita.
+- [ ] Criar até 5 cartões (nome único, limite, dia do vencimento de 1 a 28). Nome repetido, sexto cartão e valores inválidos mostram erro. Editar e excluir um cartão sem parcelamentos em andamento.
+- [ ] Clicar em um card (ou em **Ver compras**) o seleciona, com contorno, e abaixo aparecem **as compras feitas nele**, com data, descrição, categoria, parcelas e valor, mais o total. Cartão sem compras mostra a mensagem de vazio.
+- [ ] Em Nova transação, com pagamento **Cartão de crédito**, escolher o cartão e as **parcelas** (1 a 24). Compra à vista sobe a fatura do cartão escolhido; sem cartão escolhido vale o mais antigo.
+- [ ] Compra parcelada: a fatura passa a contar a parcela do mês (não a compra inteira); o saldo devedor e o limite disponível refletem o parcelamento. Conferir uma conta à mão (Tabela Price, se houver juros).
+- [ ] As parcelas pagas avançam sozinhas, uma por mês desde a compra (conferir com uma compra de data antiga). Não há mais tela de parcelamentos nem botão de pagar parcela.
+- [ ] Excluir uma transação parcelada remove o parcelamento dela. Excluir um cartão com parcelamento em andamento é recusado.
 
 ## 7. Início / Painel (Grupo 3)
 

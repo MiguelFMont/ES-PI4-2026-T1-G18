@@ -18,9 +18,9 @@ Abra `http://localhost:3001`. O Backend precisa do `.env` preenchido (ver `Backe
 
 Não abra o `index.html` com duplo clique (`file://`): módulos ES e `fetch` não funcionam assim.
 
-### Sessão provisória (enquanto o login do Grupo 1 não existe)
+### Sessão
 
-As páginas internas exigem um token e, sem ele, voltam para o login. Para desenvolver, gere um token assinado com o `JWT_SECRET` do seu `.env` e guarde-o no console do navegador (F12):
+As páginas internas exigem um token e, sem ele, voltam para o login (`/login`): entre com uma conta cadastrada. Só para desenvolver sem passar pelo login, dá para gerar um token assinado com o `JWT_SECRET` do seu `.env` e guardá-lo no console do navegador (F12):
 
 ```js
 localStorage.setItem('@FinanceAI:token', '<token>')
