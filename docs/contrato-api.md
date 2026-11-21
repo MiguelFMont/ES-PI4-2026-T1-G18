@@ -1017,6 +1017,11 @@ Os relatórios são registrados na coleção `suportes`.
 | `createdAt` | data | Data de criação do relatório |
 | `updatedAt` | data | Data da última atualização |
 
+**Índices da coleção `suportes`:**
+
+- `_id_`: índice único criado automaticamente pelo MongoDB.
+- `usuarioId_1`: índice crescente no campo `usuarioId`, utilizado para otimizar consultas dos relatórios por usuário.
+
 O usuário autenticado é identificado automaticamente pelo Backend, garantindo a associação do relatório à conta responsável pelo envio.
 
 ### 7.3 Integração com o Frontend

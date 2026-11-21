@@ -25,6 +25,7 @@ const suporteSchema = new Schema<ISuporte>(
         timestamps: true
     }
 );
+suporteSchema.index({ usuarioId: 1 });
 
 export const SuporteModel = model<ISuporte>(
     "Suporte",
