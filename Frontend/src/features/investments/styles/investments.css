@@ -325,12 +325,18 @@
   background: var(--fundo-card);
   box-shadow: var(--sombra);
   cursor: pointer; /* o card inteiro seleciona o cartão (o botão Ver compras é o caminho do teclado) */
-  transition: box-shadow 0.15s ease;
+  transition: scale 0.1s ease, box-shadow 0.15s ease;
 }
 
-/* o cartão escolhido: um anel na cor principal (o botão Ver compras também fica marcado, então a cor não é a única pista) */
-.investments-cartao-card--selecionado {
-  box-shadow: 0 0 0 2px var(--destaque), var(--sombra);
+/* ao passar o mouse o card cresce um pouco */
+.investments-cartao-card:hover {
+  scale: 1.02;
+}
+
+/* o cartão escolhido não tem contorno: quem marca é o botão Ver compras, que fica na cor principal */
+.investments-cartao-card--selecionado [data-acao='selecionar'] {
+  background: var(--destaque);
+  color: var(--destaque-texto);
 }
 
 .investments-cartao-card:focus {
@@ -338,11 +344,8 @@
 }
 
 .investments-cartao-card__topo {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.75rem;
+  display: grid;
+  gap: 0.75rem; /* o nome em cima e os botões sempre embaixo dele */
 }
 
 .investments-cartao-card__nome {
