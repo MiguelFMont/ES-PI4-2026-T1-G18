@@ -199,7 +199,7 @@ A coluna **Grupo** indica o grupo de features responsável (1 a 5, ou "todos"), 
 | **RF01** | O sistema deve permitir que o usuário crie uma conta informando nome completo, e-mail, CPF e senha. | 1 | #13, #15, #17, #32, #80 | Em andamento |
 | **RF02** | O sistema deve permitir login por e-mail e senha, restringindo o acesso a usuários autenticados. | 1 | #14, #16, #56 | Planejado |
 | **RF03** | O sistema deve permitir a recuperação de senha via e-mail cadastrado. | 1 | #31 | Planejado |
-| **RF04** | O sistema deve permitir, de forma opcional, a habilitação de autenticação multifator (MFA/2FA). | 1 | #33, #42 | Planejado |
+| **RF04** | O sistema deve permitir, de forma opcional, a habilitação de autenticação multifator (MFA/2FA). | 1 | #33, #42 | Feature futura |
 | **RF05** | O sistema deve permitir a edição de dados de perfil e de preferências (modo claro/escuro e ocultar valores sensíveis). | 1 | #43, #86 | Planejado |
 | **RF31** | O sistema deve permitir ao usuário consultar o plano da conta (Free ou Pro) e acessar uma tela de upgrade. | 1 | #44, #86 | Planejado |
 | **RF32** | O sistema deve oferecer um canal de suporte para o usuário reportar um problema. | 1 | #45, #72, #73, #85 | Em andamento |
@@ -252,7 +252,7 @@ A coluna **Grupo** indica o grupo de features responsável (1 a 5, ou "todos"), 
 | **RF25** | O sistema deve exibir um painel com o patrimônio total simulado do usuário. | 5 | #54, #75, #76 | Feature futura (Backend pronto, sem tela) |
 | **RF26** | O sistema deve listar os ativos do portfólio simulado do usuário, com valor investido, percentual da carteira e rentabilidade recente. | 5 | #54, #64, #75 | Feature futura (Backend e Servidor prontos, sem tela) |
 | **RF27** | O sistema deve exibir a fatura atual e o limite disponível de um cartão de crédito simulado. | 5 | #65, #77 | Planejado |
-| **RF36** | O sistema deve exibir os parcelamentos ativos do cartão de crédito simulado (valor da parcela, juros e saldo devedor). | 5 | #55, #77, #90 | Planejado |
+| **RF36** | O sistema deve exibir os parcelamentos ativos do cartão de crédito simulado (valor da parcela, juros e saldo devedor). | 5 | #55, #77, #90 | Parcial (parcelas nas compras; tela manual é feature futura) |
 
 ### 7.7. Personalização e segurança
 
@@ -291,7 +291,13 @@ Itens que fazem parte da visão do produto, mas que, por orientação do(a) prof
 
 | RF | Feature | Observação |
 |---|---|---|
+| **RF04** | Autenticação multifator (MFA/2FA) com código TOTP | O cadastro já guarda a marca `mfaEnabled`, mas não há geração do segredo, validação do código nem o fluxo de login em duas etapas (rota `mfa` comentada no Backend; mensagens do Servidor Java só planejadas). |
 | **RF08** | Marcar uma despesa como recorrente (fixa mensal) | Implica um campo de recorrência na transação, a geração automática das ocorrências mensais e a tela correspondente. Não há issue aberta. |
+| **RF25** | Painel com o patrimônio total simulado | Backend e Servidor Java prontos (`/v1/investments`); falta a tela. |
+| **RF26** | Lista dos ativos do portfólio simulado, com percentual da carteira e rentabilidade | Backend e Servidor Java prontos; falta a tela. |
+| **RF36** | Tela de parcelamentos do cartão com cadastro manual e pagamento de parcela | Foi retirada da tela do cartão: os parcelamentos nascem das compras parceladas feitas em Transações, e a tela do cartão mostra as compras de cada cartão. As rotas de parcelamento manual continuam no Backend. As parcelas avançam sozinhas, uma por mês. |
+| — | Categorias digitáveis pelo usuário | Hoje a categoria é escolhida na lista oficial (ou automática). Digitar e criar categorias exige uma coleção de categorias por usuário e o ajuste do Servidor Java. Sem RF nem issue. |
+| — | Aplicativo móvel | O Frontend é web; a versão móvel (Flutter) fica para depois da banca. Sem RF nem issue. |
 
 ---
 
