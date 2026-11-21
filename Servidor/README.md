@@ -165,7 +165,12 @@ Testes automatizados com JUnit 5 (dependência de teste no `pom.xml`, executada 
 mvn test        # ou mvn -q test
 ```
 
-São 158 testes no total. Cobertura do Grupo 2 e do `core/` (testes de Teste OO, intraclasse e interclasse):
+São 174 testes no total. Cobertura do Grupo 1 (`auth/`) e do Grupo 3 (`dashboard/`):
+
+- **`AuthHandlerTest`** (6 casos): hash no formato `sal:hash` e diferente da senha; a mesma senha gera hashes diferentes (sal); senha correta confere com o hash gerado por outro pedido; senha errada ou diferente só na caixa não confere; senha ausente e hash mal formado (sem `:` ou fora do Base64) respondem `VALIDATION`.
+- **`DashboardHandlerTest`** (10 casos): saldo, economia e fluxo de caixa; sem receitas a economia é 0; despesas maiores que receitas dão saldo e economia negativos; comparação com um só período, variação em %, tendência de alta, queda e estável (limite de 5%), período anterior zerado sem divisão por zero; lista vazia ou ausente e valor que não é número respondem `VALIDATION`.
+
+Cobertura do Grupo 2 e do `core/` (testes de Teste OO, intraclasse e interclasse):
 
 - **`TransactionsHandlerTest`** (14 casos): particionamento por categorias de métodos (registro no `HandlerRegistry`, serviço pelo registry, `categoriaDe`, normalização) e por atributos (classes de equivalência da `descricao`: palavra-chave, sem palavra-chave, só números, só ruído, palavra dentro de outra, exceção antes da regra geral, ausente ou em branco; o `valor` não influencia). Registra como limitação que o plural ("farmacias") não casa.
 - **`ComunicadoTest`** (9 casos, `core/`): estados do objeto (válido, sem dados, tipo ausente, vindo do JSON) e categorias de métodos (fábricas, conversão de e para JSON, leitura inválida).
