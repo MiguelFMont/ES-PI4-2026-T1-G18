@@ -5,6 +5,7 @@ import { ligarDicaMenu } from '../core/layout/dicaMenu.js';
 import { URL_LOGIN } from '../core/session/login.js';
 import { iniciarOcultacaoValores } from '../core/privacy/valores.js';
 import { confirmar } from '../shared/components/notificacao.js';
+import { traduzirValidacaoNativa } from '../shared/utils/validacaoEmPortugues.js';
 
 const appContent = document.querySelector('#app-content');
 // Troca de tela: o conteúdo antigo fica escondido (sem mostrar nada no lugar) do começo da troca até a tela nova estar
@@ -68,14 +69,14 @@ const TELAS = {
     modulo: () => import('../features/investments/index.js'),
   },
   perfil: {
-
     titulo: 'Minha conta',
-    html: '/src/features/perfil/components/minhaConta.html',
-  css: [
-      '/src/features/perfil/styles/minhaConta.css',
+    // a pasta é "Perfil" (P maiúsculo): no Linux os caminhos diferenciam maiúsculas de minúsculas
+    html: '/src/features/Perfil/components/minhaConta.html',
+    css: [
+      '/src/features/Perfil/styles/minhaConta.css',
     ],
-  modulo: () => import('../features/Perfil/index.js'),
-},
+    modulo: () => import('../features/Perfil/index.js'),
+  },
   'mentor-ia': {
     titulo: 'Mentor IA',
     html: '/src/features/mentor-ia/views/mentor-ia.html',
@@ -98,6 +99,7 @@ iniciarTema();
 ligarMenu();
 ligarDicaMenu();
 iniciarOcultacaoValores();
+traduzirValidacaoNativa(); // formulários do Perfil (nome, reportar problema) usam a validação do navegador
 
 // O menu está escrito no index.html; aqui só se mostra (com sessão) e se marca o item da rota atual.
 function renderMenu(route) {

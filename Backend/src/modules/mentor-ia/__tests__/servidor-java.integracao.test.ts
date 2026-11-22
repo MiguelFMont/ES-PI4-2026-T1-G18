@@ -72,11 +72,9 @@ describe(
     });
 
     test("sendMessage com o filtro real: a recomendação da IA não chega ao usuário", async () => {
-      mock.method(transactionsRepository, "findByUser", async () => ({
-        docs: [{ tipo: "despesa", valor: 1400, categoria: "Moradia", descricao: "Aluguel", data: new Date() }],
-        total: 1,
-        totais: { receitas: 0, despesas: 1400 },
-      }));
+      mock.method(transactionsRepository, "findParaResumo", async () => [
+        { tipo: "despesa", valor: 1400, categoria: "Moradia", descricao: "Aluguel", data: new Date() },
+      ]);
       mock.method(mentorIaRepository, "findRecent", async () => []);
       const salvar = mock.method(mentorIaRepository, "saveExchange", async (u: string, p: string, r: string) => [
         { _id: new Types.ObjectId(), userId: u, autor: "usuario", texto: p, createdAt: new Date() },

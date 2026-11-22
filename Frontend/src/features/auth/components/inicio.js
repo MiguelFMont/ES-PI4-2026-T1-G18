@@ -1,9 +1,16 @@
 import { notificar } from "../../../shared/components/notificacao.js";
+import { api, ApiError } from "../../../core/http/api.js";
+import { saveToken } from "../../../core/session/storage.js";
+import { traduzirValidacaoNativa } from "../../../shared/utils/validacaoEmPortugues.js";
+
+traduzirValidacaoNativa();
 
 // Tempo (ms) entre "login concluído" e a ida para o painel: é também a duração da linha de carregamento da notificação.
 const ESPERA_REDIRECIONAMENTO_MS = 3000;
 // Duração da notificação de cadastro, que tem um texto mais longo (precisa de tempo para ser lido).
 const DURACAO_CADASTRO_MS = 8000;
+// Duração das mensagens de erro que pedem uma ação (confirmar o e-mail, esperar o limite de tentativas).
+const DURACAO_AVISO_MS = 8000;
 
 var btnSignin = document.querySelector("#signin");
 var btnSignup = document.querySelector("#signup");
@@ -17,12 +24,61 @@ btnSignup.addEventListener("click", function () {
     body.className = "sign-up-js";
 });
 
+// Sem resposta do Backend (rede, servidor fora do ar): o api.js devolve ApiError com status 0.
+function semConexao(erro) {
+    return !(erro instanceof ApiError) || erro.status === 0;
+}
+
+// Mensagem de erro do login com e-mail e senha, pelo `code` que o Backend devolve.
+function mensagemDoLogin(erro) {
+    if (semConexao(erro)) return "Não foi possível conectar ao servidor.";
+    switch (erro.code) {
+        case "INVALID_CREDENTIALS":
+        case "VALIDATION_ERROR":
+            return "E-mail ou senha incorretos.";
+        case "EMAIL_NOT_VERIFIED":
+            return "Confirme seu e-mail antes de entrar: abra o link que enviamos para a sua caixa de entrada.";
+        case "TOO_MANY_REQUESTS":
+            return erro.message;
+        default:
+            return "Não foi possível realizar o login. Tente novamente.";
+    }
+}
+
+// Mensagem de erro da segunda etapa (código do aplicativo autenticador).
+function mensagemDoMfa(erro) {
+    if (semConexao(erro)) return "Não foi possível conectar ao servidor.";
+    switch (erro.code) {
+        case "INVALID_MFA_TOKEN":
+            return "A verificação expirou. Entre de novo com seu e-mail e senha.";
+        case "MFA_CODE_ALREADY_USED":
+        case "TOO_MANY_REQUESTS":
+            return erro.message;
+        default:
+            return "Código MFA incorreto ou expirado.";
+    }
+}
+
+// Mensagem de erro do cadastro: primeiro a regra do campo que falhou (CPF, senha, e-mail), depois a do Backend
+// (ex.: "E-mail já cadastrado", "CPF já cadastrado").
+function mensagemDoCadastro(erro) {
+    if (semConexao(erro)) return "Não foi possível conectar ao servidor.";
+    const detalhes = erro.details || {};
+    const doCampo = detalhes.cpf?.[0] || detalhes.senha?.[0] || detalhes.email?.[0] || detalhes.nome?.[0];
+    if (doCampo) return doCampo;
+    if (erro.status === 409 || erro.status === 429) return erro.message;
+    return "Não foi possível realizar o cadastro.";
+}
+
+const duracaoDoErro = (erro) =>
+    erro instanceof ApiError && (erro.code === "EMAIL_NOT_VERIFIED" || erro.code === "TOO_MANY_REQUESTS")
+        ? { duracao: DURACAO_AVISO_MS }
+        : {};
 
 // Seleciona o formulário de login
 const loginForm = document.querySelector("#login-form");
 const loginEmail = document.querySelector("#login-email");
 const loginSenha = document.querySelector("#login-senha");
-const loginErro = document.querySelector("#login-erro");
 const modalMfa = document.querySelector("#modal-mfa");
 const codigoMfa = document.querySelector("#codigo-mfa");
 const confirmarMfa = document.querySelector("#confirmar-mfa");
@@ -40,68 +96,43 @@ loginForm.addEventListener("submit", async function (event) {
     loginBotao.disabled = true;
     // Obtém os dados digitados
     const dados = {
-    email: loginEmail.value.trim(),
-    senha: loginSenha.value
+        email: loginEmail.value.trim(),
+        senha: loginSenha.value
     };
     try {
-        // Envia os dados para o Backend
-        const resposta = await fetch("/v1/auth/login", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(dados)
-        });
-        const resultado = await resposta.json();
-        if (!resposta.ok) {
-            if (resposta.status === 401) {
-                notificar("E-mail ou senha incorretos.", "erro");
-            } else {
-                notificar("Não foi possível realizar o login. Tente novamente.", "erro");
-            }
+        let resultado;
+        try {
+            resultado = await api("/auth/login", { method: "POST", body: JSON.stringify(dados) });
+        } catch (erro) {
+            notificar(mensagemDoLogin(erro), "erro", duracaoDoErro(erro));
             return;
         }
-                if (resultado.mfaRequired) {
+
+        if (resultado?.mfaRequired) {
             if (!resultado.mfaToken) {
-                loginErro.textContent = "Não foi possível iniciar a verificação MFA.";
+                notificar("Não foi possível iniciar a verificação MFA.", "erro");
                 return;
             }
             const codigo = await solicitarCodigoMfa();
             if (codigo === null) {
                 return;
             }
-            if (!/^\d{6}$/.test(codigo.trim())) {
-                loginErro.textContent = "Digite um código MFA válido de 6 dígitos.";
+            try {
+                resultado = await api("/auth/login/mfa", {
+                    method: "POST",
+                    body: JSON.stringify({ mfaToken: resultado.mfaToken, codigo })
+                });
+            } catch (erro) {
+                notificar(mensagemDoMfa(erro), "erro", duracaoDoErro(erro));
                 return;
             }
-            const respostaMfa = await fetch("/v1/auth/login/mfa", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    mfaToken: resultado.mfaToken,
-                    codigo: codigo.trim()
-                })
-            });
-
-            const resultadoMfa = await respostaMfa.json();
-            if (!respostaMfa.ok) {
-                loginErro.textContent = "Código MFA incorreto ou expirado.";
-                return;
-            }
-            if (!resultadoMfa.token) {
-                loginErro.textContent = "O servidor não retornou o token de acesso.";
-                return;
-            }
-            resultado.token = resultadoMfa.token;
         }
-        if (!resultado.token) {
+        if (!resultado?.token) {
             notificar("O servidor não retornou um token.", "erro");
             return;
         }
         // O token é salvo antes da espera: se a pessoa fechar a aba ou recarregar, o login já vale.
-        localStorage.setItem("@FinanceAI:token", resultado.token);
+        saveToken(resultado.token);
         redirecionando = true;
         notificar("Login concluído! Estamos levando você para o painel...", "sucesso", {
             duracao: ESPERA_REDIRECIONAMENTO_MS,
@@ -113,7 +144,7 @@ loginForm.addEventListener("submit", async function (event) {
         }, ESPERA_REDIRECIONAMENTO_MS);
 
     } catch (error) {
-        notificar("Não foi possível conectar ao servidor.", "erro");
+        notificar("Não foi possível realizar o login. Tente novamente.", "erro");
         console.error("Erro no login:", error);
     } finally {
         // Durante o redirecionamento o botão continua desabilitado
@@ -176,7 +207,8 @@ const cadastroCpf = document.querySelector("#cadastro-cpf");
 const cadastroSenha = document.querySelector("#cadastro-senha");
 const cadastroBotao = cadastroForm.querySelector("button");
 
-// REQUISITOS DA SENHA
+// REQUISITOS DA SENHA (as mesmas regras do Backend, em Backend/src/modules/auth/auth.dto.ts): letras acentuadas
+// contam como letras e qualquer símbolo (! @ # $ % - _ ...) conta como caractere especial; espaço não conta.
 
 const reqTamanho = document.querySelector("#req-tamanho");
 const reqComposicao = document.querySelector("#req-composicao");
@@ -190,10 +222,11 @@ function validarSenha(senha) {
         },
         {
             elemento: reqComposicao,
-            texto: "Pelo menos 1 letra maiúscula, 1 número e 1 caractere especial",
-            valido: /[A-Z]/.test(senha) &&
-                    /[0-9]/.test(senha) &&
-                    /[^a-zA-Z0-9]/.test(senha)
+            texto: "Pelo menos 1 letra minúscula, 1 maiúscula, 1 número e 1 caractere especial",
+            valido: /\p{Ll}/u.test(senha) &&
+                    /\p{Lu}/u.test(senha) &&
+                    /\p{Nd}/u.test(senha) &&
+                    /[^\p{L}\p{N}\s]/u.test(senha)
         }
     ];
 
@@ -235,43 +268,20 @@ cadastroForm.addEventListener("submit", async function (event) {
     }
     cadastroBotao.disabled = true;
     try {
-        const resposta = await fetch("/v1/auth/register", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(dados)
-        });
+        const resultado = await api("/auth/register", { method: "POST", body: JSON.stringify(dados) });
 
-        const resultado = await resposta.json();
-        if (!resposta.ok) {
-            // Exibe a mensagem de erro retornada pelo servidor
-            const mensagem = resultado.error?.details?.cpf?.[0]
-            ||  resultado.error?.details?.senha?.[0] || resultado.message
-            || resultado.error?.message;
-            notificar(
-                typeof mensagem === "string"
-                    ? mensagem
-                    : resposta.status === 409
-                        ? "Este e-mail ou CPF já está cadastrado."
-                        : "Não foi possível realizar o cadastro.",
-                "erro"
-            );
-            return;
-        }
         cadastroForm.reset();
         validarSenha("");
         // Exibe a tela de login após o cadastro
         notificar(
-            resultado.mensagem || "Cadastro realizado! Enviamos um link de confirmação para seu e-mail. Verifique sua caixa de entrada.",
+            resultado?.mensagem || "Cadastro realizado! Enviamos um link de confirmação para seu e-mail. Verifique sua caixa de entrada.",
             "sucesso",
             { duracao: DURACAO_CADASTRO_MS }
         );
 
-    } catch (error) {
-        notificar("Não foi possível conectar ao servidor.", "erro");
-
-        console.error("Erro no cadastro:", error);
+    } catch (erro) {
+        notificar(mensagemDoCadastro(erro), "erro", duracaoDoErro(erro));
+        if (semConexao(erro)) console.error("Erro no cadastro:", erro);
     } finally {
         cadastroBotao.disabled = false;
     }

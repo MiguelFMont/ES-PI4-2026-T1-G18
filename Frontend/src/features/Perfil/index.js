@@ -4,41 +4,35 @@ import { iniciarReportarProblema } from './components/ReportarProblema.js';
 import { alternarEstilo, estiloAtual } from '../../core/theme/theme.js';
 import { salvarPreferencias } from '../../core/preferencias.js';
 import { notificar } from '../../shared/components/notificacao.js';
-const CAMINHO = '/src/features/perfil/components';
+import { api, ApiError } from '../../core/http/api.js';
+
+// Os nomes têm de bater letra a letra com os arquivos (pasta "Perfil", "visaoGeral.html", "MFA.html"): no Linux os
+// caminhos diferenciam maiúsculas de minúsculas.
+const CAMINHO = '/src/features/Perfil/components';
 
 const FRAGMENTOS = {
-    'visao-geral': 'VisaoGeral.html',
+    'visao-geral': 'visaoGeral.html',
     'perfil': 'perfil.html',
     'preferencias': 'preferencias.html',
     'seguranca': 'seguranca.html',
     'reportar-problema': 'ReportarProblema.html',
-    'mfa': 'mfa.html'
-    
+    'mfa': 'MFA.html'
 };
 
 let controlador = null;
 let usuarioAtual = null;
 let sequencia = 0;
 
+// A mensagem do Backend (ex.: "Código MFA incorreto") quando ele respondeu; sem resposta, o aviso de conexão.
+function mensagemDoErro(erro, padrao) {
+    if (!(erro instanceof ApiError)) return padrao;
+    if (erro.status === 0) return 'Não foi possível conectar ao servidor.';
+    return erro.message || padrao;
+}
+
+// Sem sessão (ou com ela vencida) o api.js leva para o login.
 async function buscarUsuario(signal) {
-    const token = localStorage.getItem('@FinanceAI:token');
-
-    if (!token) {
-        throw new Error('Usuário não autenticado.');
-    }
-
-    const resposta = await fetch('/v1/auth/me', {
-        headers: {
-            Authorization: `Bearer ${token}`
-        },
-        signal
-    });
-
-    if (!resposta.ok) {
-        throw new Error('Não foi possível carregar o perfil.');
-    }
-
-    return resposta.json();
+    return api('/auth/me', { signal });
 }
 
 function preencherVisaoGeral(container) {
@@ -90,23 +84,11 @@ function iniciarEdicaoPerfil(container, signal) {
         botao.textContent = 'Salvando...';
 
         try {
-            const token = localStorage.getItem('@FinanceAI:token');
-
-            const resposta = await fetch('/v1/auth/me', {
+            const usuarioAtualizado = await api('/auth/me', {
                 method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
                 body: JSON.stringify({ nome }),
                 signal
             });
-
-            if (!resposta.ok) {
-                throw new Error('Não foi possível atualizar o nome.');
-            }
-
-            const usuarioAtualizado = await resposta.json();
 
             usuarioAtual = {
                 ...usuarioAtual,
@@ -117,8 +99,8 @@ function iniciarEdicaoPerfil(container, signal) {
             notificar('Nome atualizado com sucesso!', 'sucesso');
 
         } catch (erro) {
-            if (erro.name === 'AbortError') return;
-            notificar(erro.message, 'erro');
+            if (signal.aborted) return;
+            notificar(mensagemDoErro(erro, 'Não foi possível atualizar o nome.'), 'erro');
         } finally {
             botao.disabled = false;
             botao.textContent = 'Salvar alterações';
@@ -180,28 +162,21 @@ function iniciarSeguranca(container, signal) {
         qrCode.replaceChildren();
     }
 
+    // Um código errado é 401 INVALID_MFA_CODE: o api.js só encerra a sessão no 401 UNAUTHENTICATED, então a mensagem
+    // fica nesta tela.
     async function requisicaoMFA(rota, codigo) {
-        const token = localStorage.getItem('@FinanceAI:token');
-
-        const resposta = await fetch(`/v1/auth/mfa/${rota}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`
-            },
-            ...(codigo !== undefined && {
-                body: JSON.stringify({ codigo })
-            }),
-            signal
-        });
-
-        const dados = await resposta.json();
-
-        if (!resposta.ok) {
-            throw new Error(dados.message || dados.mensagem || 'Erro ao configurar MFA.');
+        try {
+            return await api(`/auth/mfa/${rota}`, {
+                method: 'POST',
+                ...(codigo !== undefined && {
+                    body: JSON.stringify({ codigo })
+                }),
+                signal
+            });
+        } catch (erro) {
+            if (signal.aborted) throw erro;
+            throw new Error(mensagemDoErro(erro, 'Erro ao configurar MFA.'));
         }
-
-        return dados;
     }
 
     atualizarEstado(Boolean(usuarioAtual.mfaEnabled));
@@ -232,7 +207,7 @@ function iniciarSeguranca(container, signal) {
 
             mensagem.textContent = 'Digite o código do aplicativo autenticador.';
         } catch (erro) {
-            if (erro.name !== 'AbortError') {
+            if (!signal.aborted) {
                 mensagem.textContent = erro.message;
             }
         } finally {
@@ -257,7 +232,7 @@ function iniciarSeguranca(container, signal) {
             atualizarEstado(true);
             mensagem.textContent = 'MFA ativado com sucesso!';
         } catch (erro) {
-            if (erro.name !== 'AbortError') {
+            if (!signal.aborted) {
                 mensagem.textContent = erro.message;
             }
         } finally {
@@ -282,7 +257,7 @@ function iniciarSeguranca(container, signal) {
             atualizarEstado(false);
             mensagem.textContent = 'MFA desativado com sucesso!';
         } catch (erro) {
-            if (erro.name !== 'AbortError') {
+            if (!signal.aborted) {
                 mensagem.textContent = erro.message;
             }
         } finally {

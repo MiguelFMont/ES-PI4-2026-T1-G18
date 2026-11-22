@@ -7,6 +7,9 @@ import { randomBytes, createHash } from "node:crypto";
 import { emailService } from "../../shared/email/email.service";
 import jwt, { type JwtPayload } from "jsonwebtoken";
 
+const emailEmUso = () => new AppError("E-mail já cadastrado", 409, "EMAIL_IN_USE");
+const cpfEmUso = () => new AppError("CPF já cadastrado", 409, "CPF_IN_USE");
+
 function gerarTokenAcesso(id: string, email: string) {
     return jwt.sign(
         { id, email },
@@ -36,10 +39,18 @@ function gerarRespostaLogin(usuario: {
 
 export const authService = {
     async register(dados: RegisterDto) {
-        const existente = await authRepository.findByEmail(dados.email);
+        // O CPF também é único: sem esta checagem o cadastro pendente era criado e a confirmação do e-mail quebrava
+        // no índice único do banco (erro 500).
+        const [existente, cpfExistente] = await Promise.all([
+            authRepository.findByEmail(dados.email),
+            authRepository.findByCpf(dados.cpf),
+        ]);
 
         if (existente) {
-            throw new AppError("E-mail já cadastrado", 409, "EMAIL_IN_USE");
+            throw emailEmUso();
+        }
+        if (cpfExistente) {
+            throw cpfEmUso();
         }
 
         const { hash } = await javaServerClient.enviarPedido<
@@ -356,10 +367,17 @@ export const authService = {
                 "INVALID_VERIFICATION_TOKEN"
             );
         }
-    const existente = await authRepository.findByEmail(pendente.email);
+    // Dois cadastros pendentes podem ter o mesmo e-mail ou CPF: só o primeiro confirmado vale.
+    const [existente, cpfExistente] = await Promise.all([
+        authRepository.findByEmail(pendente.email),
+        authRepository.findByCpf(pendente.cpf),
+    ]);
 
     if (existente) {
-        throw new AppError("E-mail já cadastrado", 409, "EMAIL_IN_USE");
+        throw emailEmUso();
+    }
+    if (cpfExistente) {
+        throw cpfEmUso();
     }
 
     await authRepository.create({

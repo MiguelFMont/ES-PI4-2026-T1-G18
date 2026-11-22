@@ -1,4 +1,14 @@
 import { notificar } from "../../../shared/components/notificacao.js";
+import { api, ApiError } from "../../../core/http/api.js";
+
+// Mensagem de erro do envio: a regra do campo que falhou (ex.: descrição com menos de 10 caracteres) ou a do Backend.
+function mensagemDoErro(erro) {
+    if (!(erro instanceof ApiError) || erro.status === 0) return "Não foi possível conectar ao servidor.";
+    const detalhes = erro.details || {};
+    return detalhes.assunto?.[0] || detalhes.categoria?.[0] || detalhes.descricao?.[0]
+        || (erro.code === "VALIDATION_ERROR" ? "Confira os campos do relatório." : erro.message)
+        || "Não foi possível enviar o relatório.";
+}
 
 export function iniciarReportarProblema() {
     const formulario = document.getElementById("form-reportar-problema");
@@ -14,22 +24,14 @@ export function iniciarReportarProblema() {
         const assunto = document.getElementById("assunto").value.trim();
         const categoria = document.getElementById("categoria").value;
         const descricao = document.getElementById("descricao").value.trim();
-        const token = localStorage.getItem("@FinanceAI:token");
         const botao = formulario.querySelector('button[type="submit"]');
 
-        if (!token) {
-            notificar("Faça login para enviar um relatório.", "aviso");
-            return;
-        }
         botao.disabled = true;
         botao.textContent = "Enviando...";
         try {
-            const resposta = await fetch("/v1/suporte", {
+            // sem sessão (ou com ela vencida) o api.js leva para o login
+            await api("/suporte", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
-                },
                 body: JSON.stringify({
                     assunto,
                     categoria,
@@ -37,18 +39,11 @@ export function iniciarReportarProblema() {
                 })
             });
 
-            const dados = await resposta.json();
-            if (!resposta.ok) {
-                throw new Error(
-                    dados.message || dados.mensagem || "Erro ao enviar relatório."
-                );
-            }
-
             notificar("Problema reportado com sucesso!", "sucesso");
             formulario.reset();
 
         } catch (erro) {
-            notificar(erro.message || "Não foi possível enviar o relatório.", "erro");
+            notificar(mensagemDoErro(erro), "erro");
         } finally {
             botao.disabled = false;
             botao.textContent = "Enviar relatório";
