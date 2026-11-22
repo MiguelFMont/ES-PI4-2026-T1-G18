@@ -6,6 +6,7 @@ import {
   DuplicateTransactionDto,
   PedidoCategorizarTransacao,
   RespostaCategorizarTransacao,
+  SuggestCategoryDto,
   TransactionFiltersDto,
   TransactionListResponseDto,
   TransactionResponseDto,
@@ -234,6 +235,18 @@ export const transactionsService = {
       }
       throw erro;
     }
+  },
+
+  // O botão "Sugerir" do formulário: pergunta ao Servidor Java a categoria de uma descrição, sem gravar nada. Diferente de
+  // sugerirCategoria (que cai em "Outros" para o cadastro não falhar), aqui o usuário pediu a sugestão: se o Servidor
+  // estiver fora do ar, o erro (503) segue e a tela avisa, em vez de devolver uma categoria que não foi sugerida por ninguém.
+  async suggestCategory(dados: SuggestCategoryDto): Promise<{ categoria: string }> {
+    const resposta = await javaServerClient.enviarPedido<PedidoCategorizarTransacao, RespostaCategorizarTransacao>(
+      "PedidoCategorizarTransacao",
+      "RespostaCategorizarTransacao",
+      { descricao: dados.descricao, valor: dados.valor ?? 0 }
+    );
+    return { categoria: resposta.categoria };
   },
 
   // Compra no crédito: cartaoId (do próprio usuário) e parcelas (1 a 24). Com parcelas > 1 o Backend cria o parcelamento

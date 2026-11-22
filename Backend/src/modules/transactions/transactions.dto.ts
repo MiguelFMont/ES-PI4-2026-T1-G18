@@ -89,6 +89,13 @@ const idSchema = z.string().regex(/^[a-f\d]{24}$/i, "Id inválido");
 
 export const transactionIdSchema = idSchema;
 
+// Sugerir a categoria antes de gravar (botão "Sugerir" do formulário): só a descrição é obrigatória; o valor é opcional
+// (o Servidor Java o recebe no pedido, mas hoje decide só pela descrição).
+export const suggestCategorySchema = z.object({
+  descricao: z.string().trim().min(1).max(200),
+  valor: z.number().min(0).optional(),
+});
+
 // Duplicar: o corpo é opcional; `data` é a data do novo lançamento (sem ela, vale o momento da chamada).
 export const duplicateTransactionSchema = z.object({ data: z.coerce.date().optional() }).default({});
 
@@ -109,6 +116,7 @@ export const bulkDeleteSchema = z.object({
   ids: z.array(idSchema).min(1).max(LIMITE_LOTE).refine(semRepetidos, { message: "Ids repetidos" }),
 });
 
+export type SuggestCategoryDto = z.infer<typeof suggestCategorySchema>;
 export type UpdateTransactionDto = z.infer<typeof updateTransactionSchema>;
 export type BulkUpdateDto = z.infer<typeof bulkUpdateSchema>;
 export type DuplicateTransactionDto = z.infer<typeof duplicateTransactionSchema>;
