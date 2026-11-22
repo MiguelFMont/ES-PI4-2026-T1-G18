@@ -11,7 +11,8 @@ Documento vivo que descreve **o que o Backend aceita e devolve**. É a referênc
 | Sistema | `/v1/health`, `/v1/eco` | Todos | Documentado (seção 1.6) |
 | Transações | `/v1/transactions` | 2 | **Cadastro, listagem (com filtros e paginação), edição e exclusão em lote documentados** (seção 2); contas conectadas e importação da Pluggy documentadas (2.8); duplicação (2.9) |
 | Autenticação e conta | `/v1/auth` | 1 | A documentar |
-| Painel e análise | `/v1/dashboard` | 3 | A documentar |
+| Painel e análise | `/v1/dashboard` | 3 | A documentar. **Planejado:** as transferências não entram nos totais (seção 9) |
+| Contas | `/v1/accounts` | 2 | **PLANEJADO** (seção 8): CRUD de contas, lista de bancos, saldo calculado; transferências em 2.11 |
 | Mentor financeiro (IA) | `/v1/mentor-ia` | 4 | **Chat (enviar mensagem, histórico e mensagem proativa) e alertas (listar e marcar como lido) documentados** (seção 3) |
 | Metas | `/v1/goals` | 5 | **CRUD das metas, com o progresso calculado a partir das transações vinculadas a cada meta, documentado** (seção 5; o vínculo é o `metaId` das transações, 2.4 e 2.6) |
 | Investimentos | `/v1/investments` | 5 | **Cartão simulado (fatura e limite) e parcelamentos, com tela; portfólio e patrimônio documentados, sem tela (feature futura)** (seção 6) |
@@ -69,7 +70,18 @@ Todo erro tem o mesmo formato, e o Frontend decide o que fazer pelo `code`, nunc
 | 503 | `JAVA_SERVER_UNAVAILABLE` | O Servidor de cálculos está fora do ar (só afeta as rotas que dependem dele) |
 | 503 | `JAVA_SERVER_SHUTTING_DOWN` | O Servidor de cálculos está sendo desligado |
 
-Cada módulo acrescenta os seus códigos de negócio na própria seção (por exemplo, `EMAIL_IN_USE` e `INVALID_CREDENTIALS` na autenticação, `TRANSACTION_NOT_FOUND` nas transações). Os da integração com a Pluggy (`PLUGGY_*` e `ACCOUNT_*`) estão na seção 2.8, os das metas (`GOAL_NOT_FOUND`) na 5.3 e os dos investimentos e do cartão (`INVESTMENT_NOT_FOUND`, `INSTALLMENT_NOT_FOUND`) na 6.4.
+Cada módulo acrescenta os seus códigos de negócio na própria seção (por exemplo, `EMAIL_IN_USE` e `INVALID_CREDENTIALS` na autenticação, `TRANSACTION_NOT_FOUND` nas transações). Os da integração com a Pluggy (`PLUGGY_*` e `ACCOUNT_*`) estão na seção 2.8, os das metas (`GOAL_NOT_FOUND`) na 5.3 e os dos investimentos e do cartão (`INVESTMENT_NOT_FOUND`, `INSTALLMENT_NOT_FOUND`) na 6.4. Os códigos **planejados** de contas e transferências (`PLAN_REQUIRED`, `ACCOUNT_REQUIRED`, `TRANSFER_NOT_ALLOWED`, `ACCOUNT_HAS_TRANSACTIONS`, `ACCOUNT_NOT_FOUND` e `ACCOUNT_NAME_IN_USE`) estão na 8.5.
+
+Códigos novos **planejados** (ainda não implementados; detalhes na 8.5):
+
+| Status | `code` | Quando |
+|---|---|---|
+| 403 | `PLAN_REQUIRED` | O recurso exige o plano Pro (criar conta Open Finance no plano Free) |
+| 404 | `ACCOUNT_NOT_FOUND` | A conta não existe ou é de outro usuário |
+| 409 | `ACCOUNT_NAME_IN_USE` | O usuário já tem uma conta com esse nome |
+| 409 | `ACCOUNT_HAS_TRANSACTIONS` | Excluir uma conta que tem lançamentos |
+| 422 | `ACCOUNT_REQUIRED` | Lançamento manual sem conta, ou usuário sem nenhuma conta criada |
+| 422 | `TRANSFER_NOT_ALLOWED` | Transferência que envolve conta Open Finance |
 
 ### 1.6 Rotas do sistema
 
@@ -89,7 +101,7 @@ Todas as rotas exigem token. Um usuário só vê e altera as próprias transaç�
 | Campo | Tipo | Descrição |
 |---|---|---|
 | `id` | texto | Identificador da transação |
-| `tipo` | `"receita"` ou `"despesa"` | Se o dinheiro entrou ou saiu |
+| `tipo` | `"receita"` ou `"despesa"` | Se o dinheiro entrou ou saiu. **Planejado:** também `"transferencia"` (movimento entre duas contas do usuário, 2.11; não é receita nem despesa) |
 | `valor` | número | Valor em reais, sempre positivo |
 | `categoria` | texto | Categoria (ver 2.3). Se não for enviada no cadastro, o Servidor Java a sugere pela descrição (ver 2.4); sem palavra-chave conhecida, vale `"Outros"` |
 | `data` | texto (ISO 8601) | Data da movimentação |
@@ -97,6 +109,8 @@ Todas as rotas exigem token. Um usuário só vê e altera as próprias transaç�
 | `formaPagamento` | texto | Uma das formas de pagamento (ver 2.2). Se não for enviada, vale `"outro"` |
 | `observacoes` | texto | Anotação livre de até 300 caracteres. **Só aparece quando foi informada** |
 | `origem` | `"manual"` ou `"pluggy"` | Como a transação entrou: digitada pelo usuário ou importada de uma conta conectada (ver 2.8) |
+| `conta` | objeto `{ id, nome, banco }` | **Planejado.** A conta do lançamento (seção 8); é o que a coluna **Origem** da tela mostra. Nas transferências é a conta de origem |
+| `contaDestino` | objeto `{ id, nome, banco }` | **Planejado.** A conta de destino. **Só aparece em transferências** (2.11) |
 | `metaId` | texto | A meta a que a transação foi vinculada (seção 5): se for despesa, soma no progresso da meta; se for receita, subtrai. **Só aparece quando a transação foi vinculada** |
 | `cartaoId` | texto | O cartão de crédito (6.2) em que a compra foi feita. **Só aparece em transações no crédito que têm cartão** |
 | `parcelas` | inteiro | Em quantas vezes a compra foi feita (1 = à vista). **Só aparece em transações no crédito** |
@@ -116,7 +130,7 @@ O campo `categoria` é texto livre, mas o Frontend deve oferecer esta lista para
 
 | Campo | Tipo | Obrigatório | Regra |
 |---|---|---|---|
-| `tipo` | texto | Sim | `receita` ou `despesa` |
+| `tipo` | texto | Sim | `receita` ou `despesa`. A transferência **não** é criada aqui: tem rota própria (2.11) |
 | `valor` | **número** | Sim | Maior que zero. Texto como `"10"` é recusado |
 | `data` | texto | Sim | Data válida (ver 1.3) |
 | `descricao` | texto | Sim | Não vazio (espaços nas pontas são removidos) |
@@ -124,6 +138,7 @@ O campo `categoria` é texto livre, mas o Frontend deve oferecer esta lista para
 | `formaPagamento` | texto | Não | Uma da lista 2.2. Se faltar, vale `"outro"` |
 | `observacoes` | texto | Não | Até 300 caracteres (espaços nas pontas são removidos). Texto vazio é o mesmo que não enviar |
 | `origem` | texto | Não | `manual` (padrão) ou `pluggy` |
+| `contaId` | texto | **Planejado: Sim** (nos manuais) | Id de uma **conta do próprio usuário** (seção 8). Sem `contaId`, ou com o usuário sem nenhuma conta criada: `422 ACCOUNT_REQUIRED`. Conta que não existe ou é de outro usuário: `404 ACCOUNT_NOT_FOUND`. Os importados da Pluggy ficam ligados à conta Open Finance de onde vieram |
 | `metaId` | texto | Não | Id de uma **meta do próprio usuário** (seção 5): a transação fica vinculada a ela: despesa soma no progresso da meta e receita subtrai. Uma meta que não existe, ou que é de outro usuário, responde `404 GOAL_NOT_FOUND` e **nada é salvo**. Id mal formado: `400 VALIDATION_ERROR` |
 | `cartaoId` | texto | Não | Id de um **cartão do próprio usuário** (6.2). Só vale com `formaPagamento: "credito"` (com outra forma, 400). Sem `cartaoId`, a compra no crédito conta para o cartão mais antigo |
 | `parcelas` | inteiro | Não | De 1 a 24 (padrão 1, à vista). Só vale no crédito e só em **despesa manual**. Com mais de 1 parcela, o Backend cria o parcelamento correspondente no cartão (sem juros, nenhuma parcela paga) e liga a transação a ele (`parcelamentoId`) |
@@ -215,11 +230,12 @@ Parâmetros de consulta (todos opcionais, combinam entre si com "e"):
 
 | Parâmetro | Tipo | Efeito |
 |---|---|---|
-| `tipo` | `receita` ou `despesa` | Só receitas ou só despesas |
+| `tipo` | `receita` ou `despesa` | Só receitas ou só despesas. **Planejado:** também aceita `transferencia` (2.11) |
 | `categoria` | texto | Só desta categoria (comparação exata) |
 | `formaPagamento` | texto | Só desta forma de pagamento (lista 2.2) |
 | `busca` | texto de 1 a 100 caracteres | Só transações cuja `descricao` **contém** o texto (sem diferenciar maiúsculas de minúsculas) |
 | `origem` | `manual` ou `pluggy` | Só desta origem |
+| `contaId` | id de uma conta (seção 8) | **Planejado.** Só os lançamentos dessa conta (inclusive as transferências em que ela é origem ou destino). Conta de outro usuário ou inexistente: `404 ACCOUNT_NOT_FOUND` |
 | `cartaoId` | id de um cartão (6.2) | Só as **despesas no crédito** desse cartão; as sem cartão contam para o cartão padrão (o mais antigo), como na fatura. Cartão de outro usuário ou inexistente: `404 CARD_NOT_FOUND` |
 | `metaId` | id de uma meta ou `nenhuma` | Só as transações vinculadas a essa meta (seção 5), ou só as que não têm meta |
 | `dataInicio` | data | `data` maior ou igual a este valor |
@@ -240,7 +256,9 @@ Os limites de data e de valor são **inclusivos**. `valorMin` não pode ser maio
 | `limite` | inteiro | Itens por página |
 | `total` | inteiro | Quantas transações passam nos filtros, somando **todas** as páginas |
 | `totalPaginas` | inteiro | `ceil(total / limite)`. É `0` quando não há nenhuma transação |
-| `resumo` | objeto | Totais de **todas** as transações que passam nos filtros (não só desta página): `receitas`, `despesas` (somas, sempre positivas) e `saldo` (`receitas - despesas`, pode ser negativo). É assim que a tela mostra o extrato sem somar página por página |
+| `resumo` | objeto | Totais de **todas** as transações que passam nos filtros (não só desta página): `receitas`, `despesas` (somas, sempre positivas) e `saldo` (`receitas - despesas`, pode ser negativo). É assim que a tela mostra o extrato sem somar página por página. **Planejado:** as transferências (2.11) **não entram** nesses totais |
+
+**Planejado:** cada item de `itens` passa a trazer `conta: { id, nome, banco }` (a conta do lançamento, que a coluna **Origem** da tela mostra). Nas transferências, `conta` é a conta de origem e o item também traz `contaDestino: { id, nome, banco }`.
 
 Exemplo: `GET /v1/transactions?valorMin=100&dataInicio=2026-10-01&dataFim=2026-10-31`
 
@@ -389,6 +407,8 @@ A resposta tem o mesmo formato da edição (`afetadas` e `naoEncontradas`). Excl
 
 Erros: `400 VALIDATION_ERROR` (lista vazia, mais de 100 ids, ids repetidos ou mal formados) e `401 UNAUTHENTICATED`.
 
+**Planejado:** excluir uma transferência (tipo `transferencia`, ver 2.11) recalcula o saldo das duas contas envolvidas. A edição em lote (2.6) poderá alterar `contaId` e os dados da transferência, também recalculando as duas contas (RN9).
+
 ### 2.8 Contas conectadas e importação (Pluggy) — `/v1/connected-accounts`
 
 O usuário conecta uma conta bancária do **sandbox da Pluggy** (instituições e dados fictícios) e o Backend importa as transações dela. Só o Backend fala com a Pluggy: a chave (`PLUGGY_CLIENT_ID` e `PLUGGY_CLIENT_SECRET`, em `Backend/.env`) é **uma só, compartilhada pelo time**, e nunca vai para o Frontend nem para o Git. Todas as rotas exigem token, e cada usuário só vê e altera as próprias contas.
@@ -493,6 +513,52 @@ Só lançamentos **manuais** podem ser duplicados.
 | 422 | `DUPLICATE_NOT_ALLOWED` | A transação foi importada da Pluggy (`origem: "pluggy"`) |
 
 ---
+
+### 2.10 Sugerir a categoria (sem gravar)
+
+`POST /v1/transactions/suggest-category` → `200 OK`. É o botão **Sugerir** do formulário de novo lançamento: pergunta ao Servidor Java a categoria de uma descrição e **não grava nada**. Corpo: `descricao` (obrigatória, até 200 caracteres) e `valor` (opcional, maior ou igual a zero).
+
+```json
+{ "descricao": "Netflix assinatura", "valor": 39.9 }
+```
+
+Resposta: `{ "categoria": "Lazer" }`. Diferente do cadastro sem `categoria` (que cai em `Outros` se o Servidor estiver fora do ar, para não falhar), aqui o usuário pediu a sugestão: com o Servidor fora do ar a resposta é `503 JAVA_SERVER_UNAVAILABLE`. Descrição ausente, em branco ou grande demais: `400 VALIDATION_ERROR`.
+
+### 2.11 Transferência entre contas (PLANEJADO)
+
+> **Planejado, ainda não implementado** (`especificacao-contas-e-transferencias.md`, RN6 a RN9).
+
+`POST /v1/transactions/transfers` → `201 Created`, com o objeto `Transaction` do tipo `transferencia`. Move um valor de uma conta de origem para uma conta de destino. É **um único registro**, não é receita nem despesa e **não entra** nos totais de receitas, despesas e saldo (ver `resumo` em 2.5 e o painel na seção 9).
+
+| Campo | Tipo | Obrigatório | Regra |
+|---|---|---|---|
+| `contaId` | texto | Sim | Conta de **origem**, do próprio usuário |
+| `contaDestinoId` | texto | Sim | Conta de **destino**, do próprio usuário e **diferente** da origem |
+| `valor` | **número** | Sim | Maior que zero |
+| `data` | texto | Sim | Data válida (ver 1.3) |
+| `descricao` | texto | Não | Descrição livre |
+| `observacoes` | texto | Não | Até 300 caracteres |
+
+Exemplo de requisição:
+
+```json
+{ "contaId": "6ad3fd7c273f8f0946dd7701", "contaDestinoId": "6ad3fd7c273f8f0946dd7702", "valor": 300, "data": "2026-10-05", "descricao": "Reserva do mês" }
+```
+
+Regras:
+- As duas contas precisam ser **manuais**: o saldo de uma conta Open Finance vem do banco e não pode ser alterado por um lançamento local (`422 TRANSFER_NOT_ALLOWED`).
+- Conta de origem igual à de destino, ou valor menor ou igual a zero: `400 VALIDATION_ERROR`.
+- Conta inexistente ou de outro usuário: `404 ACCOUNT_NOT_FOUND`.
+- Excluir ou editar uma transferência recalcula o saldo das duas contas (o saldo é sempre calculado, nunca gravado).
+
+Erros:
+
+| Status | `code` | Quando |
+|---|---|---|
+| 400 | `VALIDATION_ERROR` | Corpo inválido, origem igual ao destino ou valor menor ou igual a zero |
+| 401 | `UNAUTHENTICATED` | Sem token ou token inválido |
+| 404 | `ACCOUNT_NOT_FOUND` | Alguma das contas não existe ou é de outro usuário |
+| 422 | `TRANSFER_NOT_ALLOWED` | Alguma das contas é Open Finance |
 
 ## 3. Mentor financeiro (IA) — `/v1/mentor-ia` (Grupo 4)
 
@@ -859,14 +925,14 @@ Módulo **complementar** e **simulado**: os ativos, o cartão e os parcelamentos
 
 ### 6.2 Cartões de crédito simulados
 
-Cada usuário pode ter **até 5 cartões**, cada um com `nome` (1 a 40 caracteres, único por usuário sem diferenciar maiúsculas), `limite` e `diaVencimento`. Quem ainda não tem cartão recebe um chamado **Cartão** (limite de R$ 5.000, vencimento no dia 10) na primeira leitura. O cartão **mais antigo** é o **padrão**: recebe as compras no crédito sem `cartaoId` e os parcelamentos sem `cartaoId`.
+Cada usuário pode ter **até 5 cartões**, cada um com `nome` (1 a 40 caracteres, único por usuário sem diferenciar maiúsculas), `limite` e `diaFechamento`. Quem ainda não tem cartão recebe um chamado **Cartão** (limite de R$ 5.000, fatura fechando no dia 3 e vencendo no dia 10) na primeira leitura. O cartão **mais antigo** é o **padrão**: recebe as compras no crédito sem `cartaoId` e os parcelamentos sem `cartaoId`.
 
 | Método e rota | O que faz | Resposta |
 |---|---|---|
 | `GET /v1/investments/cards` | Lista os cartões, cada um com a sua fatura e o seu limite | `200` com `{ cartoes: [Card] }` (o mais antigo primeiro) |
-| `POST /v1/investments/cards` | Cria um cartão. Corpo: `nome` obrigatório; `limite` (maior que zero, padrão 5000) e `diaVencimento` (inteiro de 1 a 28, padrão 10) opcionais | `201` com o `Card` |
+| `POST /v1/investments/cards` | Cria um cartão. Corpo: `nome` obrigatório; `limite` (maior que zero, padrão 5000) e `diaFechamento` (inteiro de 1 a 28, padrão 3) opcionais | `201` com o `Card` |
 | `GET /v1/investments/cards/:id` | Um cartão | `200` com o `Card` |
-| `PATCH /v1/investments/cards/:id` | Altera `nome`, `limite` e/ou `diaVencimento` | `200` com o `Card` |
+| `PATCH /v1/investments/cards/:id` | Altera `nome`, `limite` e/ou `diaFechamento` | `200` com o `Card` |
 | `DELETE /v1/investments/cards/:id` | Exclui o cartão. As transações dele ficam, sem o vínculo. **Recusa se houver parcelamento em andamento** (`409 CARD_HAS_INSTALLMENTS`) | `204` |
 | `GET /v1/investments/card` e `PATCH /v1/investments/card` | Rotas antigas: valem para o **cartão padrão** | `200` com o `Card` |
 
@@ -876,7 +942,7 @@ Cada usuário pode ter **até 5 cartões**, cada um com `nome` (1 a 40 caractere
   "nome": "Nubank",
   "padrao": true,
   "limite": 8000,
-  "diaVencimento": 10,
+  "diaFechamento": 3,
   "limiteDisponivel": 1833.78,
   "saldoDevedor": 4878.36,
   "parcelamentosAtivos": 2,
@@ -885,6 +951,8 @@ Cada usuário pode ter **até 5 cartões**, cada um com `nome` (1 a 40 caractere
     "valor": 1287.86,
     "comprasNoCredito": 256.8,
     "parcelasDoMes": 1031.06,
+    "fechamento": "2026-12-03",
+    "diasParaFechar": 19,
     "vencimento": "2026-12-10",
     "diasParaVencer": 26
   }
@@ -894,9 +962,10 @@ Cada usuário pode ter **até 5 cartões**, cada um com `nome` (1 a 40 caractere
 - `comprasNoCredito`: soma das **despesas reais à vista** do usuário, no crédito **neste cartão**, no mês corrente (UTC), até agora. Receitas, outras formas de pagamento e outros meses não entram, e as compras **parceladas** também não (elas entram pelas parcelas).
 - `parcelasDoMes`: soma das parcelas dos parcelamentos **ainda ativos deste cartão** (6.3).
 - `fatura.valor` = `comprasNoCredito` + `parcelasDoMes`: uma compra nunca é contada duas vezes.
-- `vencimento`: o próximo dia de vencimento (neste mês, ou no seguinte se o dia já passou; o próprio dia ainda vale).
+- `fechamento`: o próximo fechamento da fatura (neste mês, ou no seguinte se o dia já passou; o próprio dia ainda vale). `diasParaFechar` conta os dias até ele.
+- `vencimento`: **7 dias depois do fechamento** (o cartão guarda só o dia do fechamento). `diasParaVencer` conta os dias até ele.
 - `limiteDisponivel` = `limite` − `comprasNoCredito` − `saldoDevedor` (dos parcelamentos do cartão). Pode ficar **negativo** se o limite estourar.
-- **Migração:** quem tinha um cartão único (versão anterior) continua com ele, que passa a se chamar **Cartão**; os parcelamentos antigos ficam nele. O Backend faz isso ao subir, de forma idempotente.
+- **Migração:** quem tinha um cartão único (versão anterior) continua com ele, que passa a se chamar **Cartão**; os parcelamentos antigos ficam nele. O Backend faz isso ao subir, de forma idempotente. A mesma migração troca o antigo `diaVencimento` pelo `diaFechamento` (7 dias antes: vencimento 15 vira fechamento 8; vencimento até o dia 7 vira fechamento do dia 22 ao 28).
 
 ### 6.3 Parcelamentos ativos
 
@@ -934,7 +1003,7 @@ Cada usuário pode ter **até 5 cartões**, cada um com `nome` (1 a 40 caractere
 
 - `PedidoRentabilidadeSimulada`: `ativos` (cada um com `id`, `nome`, `tipo`, `valor`, `taxaMensal` e `meses`) → `RespostaRentabilidadeSimulada`: os mesmos ativos com `valorAtual`, `rendimento`, `rentabilidade` e `percentualCarteira`, mais `totalInvestido`, `patrimonio`, `rendimento` e `rentabilidade`.
 - `PedidoCalcularParcelamentos`: `parcelamentos` (cada um com `id`, `descricao`, `valorTotal`, `parcelas`, `parcelasPagas` e `taxaJurosMensal`) → `RespostaCalcularParcelamentos`: os mesmos com `valorParcela`, `parcelasRestantes`, `saldoDevedor`, `jurosTotal` e `quitado`, mais `totalParcelasDoMes`, `totalSaldoDevedor` e `totalJuros`.
-- **Coleções (MongoDB):** `investments` (`userId`, `nome`, `tipo`, `valorInvestido`, `taxaMensal`, `dataAplicacao`), `cards` (`userId`, `nome` **único por usuário**, `limite`, `diaVencimento`) e `card_installments` (`userId`, `cartaoId`, `transacaoId`, `descricao`, `valorTotal`, `parcelas`, `parcelasPagas`, `taxaJurosMensal`).
+- **Coleções (MongoDB):** `investments` (`userId`, `nome`, `tipo`, `valorInvestido`, `taxaMensal`, `dataAplicacao`), `cards` (`userId`, `nome` **único por usuário**, `limite`, `diaFechamento`) e `card_installments` (`userId`, `cartaoId`, `transacaoId`, `descricao`, `valorTotal`, `parcelas`, `parcelasPagas`, `taxaJurosMensal`).
 
 ---
 
@@ -1031,3 +1100,102 @@ A API retorna `201 Created` com os dados do relatório.
 O Frontend apresenta a mensagem **"Problema reportado com sucesso!"** e mantém o usuário na página.
 
 Em caso de falha, o Frontend informa que não foi possível enviar o relatório.
+
+---
+
+## 8. Contas — `/v1/accounts` (Grupo 2) — PLANEJADA
+
+> **Planejado, ainda não implementado.** Esta seção descreve o contrato previsto em `especificacao-contas-e-transferencias.md` (seção 4). Nada daqui existe no Backend ainda; os campos e erros podem ser ajustados na implementação, e este documento é atualizado no mesmo Pull Request do código.
+
+Todas as rotas exigem token, e cada usuário só vê e altera as próprias contas. Uma **conta** tem nome, banco, tipo e saldo. O saldo atual **não é guardado**: é calculado a cada leitura (ver 8.4).
+
+### 8.1 Objeto `Account` (planejado)
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `id` | texto | Identificador da conta |
+| `nome` | texto | De 1 a 40 caracteres, **único por usuário**, sem diferenciar maiúsculas de minúsculas |
+| `banco` | texto | Código da lista de bancos (8.3), por exemplo `nubank`, `itau`, `outro` |
+| `tipo` | `"manual"` ou `"open_finance"` | Conta digitada pelo usuário ou conectada pela Pluggy (sandbox) |
+| `saldoInicial` | número | Manual: informado pelo usuário. Open Finance: o saldo no momento da conexão |
+| `saldoAtual` | número | **Calculado**: `saldoInicial` + receitas − despesas ± transferências da conta. Nas contas Open Finance, o saldo vem do provedor e é somente leitura |
+| `conectadaId` | texto | Id da conexão em `connected_accounts` (2.8). **Só aparece em contas `open_finance`** |
+| `criadaEm` | texto (ISO 8601) | Quando a conta foi criada |
+
+### 8.2 Rotas (planejado)
+
+| Método e rota | O que faz | Resposta |
+|---|---|---|
+| `GET /v1/accounts` | Lista as contas do usuário, cada uma com `saldoAtual` calculado | `200` com a lista de `Account` |
+| `GET /v1/accounts/banks` | Lista fixa de bancos para o campo Banco | `200` com a lista de bancos (8.3) |
+| `POST /v1/accounts` | Cria uma conta. `tipo: "open_finance"` exige o plano Pro | `201` com o `Account` criado |
+| `PATCH /v1/accounts/:id` | Altera `nome`, `banco` e/ou `saldoInicial` (conta manual) | `200` com o `Account` atualizado |
+| `DELETE /v1/accounts/:id` | Exclui a conta. Recusado se houver lançamentos nela | `204` |
+
+**Criar conta** (`POST /v1/accounts`):
+
+| Campo | Tipo | Obrigatório | Regra |
+|---|---|---|---|
+| `nome` | texto | Sim | De 1 a 40 caracteres (espaços nas pontas são removidos). Já usado pelo mesmo usuário: `409 ACCOUNT_NAME_IN_USE` |
+| `banco` | texto | Sim | Um código da lista de bancos (8.3) |
+| `tipo` | texto | Sim | `manual` ou `open_finance`. `open_finance` só no plano Pro (`403 PLAN_REQUIRED` no plano Free) |
+| `saldoInicial` | número | Sim | Saldo bancário da conta |
+
+Exemplo de requisição:
+
+```json
+{ "nome": "Conta do dia a dia", "banco": "nubank", "tipo": "manual", "saldoInicial": 1200.5 }
+```
+
+**Editar conta** (`PATCH /v1/accounts/:id`): edição parcial, com ao menos um de `nome`, `banco` e `saldoInicial`. O saldo de uma conta Open Finance vem do provedor e é somente leitura.
+
+**Excluir conta** (`DELETE /v1/accounts/:id`): uma conta com lançamentos (inclusive transferências em que ela é origem ou destino) é recusada com `409 ACCOUNT_HAS_TRANSACTIONS`; o usuário move ou exclui os lançamentos antes.
+
+**Regras de plano e de conta:**
+- A conta **manual** pode ser criada por qualquer plano.
+- A conta **Open Finance** só pode ser criada no plano **Pro**. No plano Free, a API responde `403 PLAN_REQUIRED` e a tela mostra a opção bloqueada, com o convite para o upgrade.
+- O usuário precisa ter **pelo menos uma conta** para fazer lançamentos manuais (ver 8.5).
+
+### 8.3 Lista de bancos (planejado)
+
+`GET /v1/accounts/banks` → `200 OK`, com a lista **fixa** que alimenta o campo Banco. Cada item tem `codigo` (o valor guardado em `banco`) e `nome` (o texto mostrado). A lista final de bancos ainda está em aberto; a proposta inicial é: Banco do Brasil, Bradesco, C6 Bank, Caixa, Inter, Itaú, Nubank, Santander, BTG Pactual e Outro.
+
+### 8.4 Saldo calculado (planejado)
+
+O `saldoAtual` de cada conta é calculado pelo **Servidor de cálculos**, com a mensagem `PedidoCalcularSaldoContas` / `RespostaCalcularSaldoContas` (Grupo 2): o Backend envia as contas (com `saldoInicial`) e os movimentos (receitas, despesas e transferências), e o Servidor devolve o saldo atual de cada uma. É uma operação pura, sem banco. Excluir ou editar uma transferência recalcula o saldo das duas contas, porque o saldo nunca é gravado.
+
+### 8.5 Erros (planejado)
+
+| Status | `code` | Quando |
+|---|---|---|
+| 400 | `VALIDATION_ERROR` | Corpo inválido (nome fora de 1 a 40 caracteres, banco fora da lista, `saldoInicial` que não é número, `:id` mal formado) |
+| 401 | `UNAUTHENTICATED` | Sem token ou token inválido |
+| 403 | `PLAN_REQUIRED` | Criar conta `open_finance` no plano Free |
+| 404 | `ACCOUNT_NOT_FOUND` | A conta não existe ou é de outro usuário (os dois casos são tratados igual) |
+| 409 | `ACCOUNT_NAME_IN_USE` | O usuário já tem uma conta com esse nome (sem diferenciar maiúsculas de minúsculas) |
+| 409 | `ACCOUNT_HAS_TRANSACTIONS` | Excluir uma conta que tem lançamentos |
+| 422 | `ACCOUNT_REQUIRED` | Lançamento manual sem conta, ou usuário sem nenhuma conta criada (ver 2.4) |
+| 422 | `TRANSFER_NOT_ALLOWED` | Transferência que envolve conta Open Finance (ver 2.11) |
+
+### 8.6 Coleção `accounts` (MongoDB, planejado)
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `userId` | texto | Dono da conta; índice |
+| `nome` | texto | De 1 a 40 caracteres |
+| `nomeChave` | texto | Nome em minúsculas, usado na unicidade |
+| `banco` | texto | Código da lista de bancos |
+| `tipo` | `"manual"` ou `"open_finance"` | |
+| `saldoInicial` | número | |
+| `conectadaId` | texto (opcional) | Id em `connected_accounts`, só em `open_finance` |
+| `createdAt`, `updatedAt` | data | |
+
+Índice **único** `(userId, nomeChave)`. **Migração:** os lançamentos antigos, sem conta, passam para uma conta manual **"Conta principal"** (banco "Outro", saldo inicial 0), criada por usuário; as contas conectadas já existentes (2.8) viram contas `open_finance`, sem a trava de plano, por já existirem.
+
+---
+
+## 9. Painel e resumo do período — transferências (Grupo 3) — PLANEJADO
+
+> **Planejado, ainda não implementado** (`especificacao-contas-e-transferencias.md`, RN6). O módulo do painel (`/v1/dashboard`) continua "a documentar"; esta seção registra só a regra nova.
+
+As **transferências** entre contas (2.11) **não entram** nos totais de receitas, despesas e saldo do painel nem no `resumo` da listagem de transações (2.5): mover dinheiro entre duas contas do próprio usuário não é ganho nem gasto. As transferências também não entram nas somas por categoria.

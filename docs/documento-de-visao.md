@@ -13,6 +13,7 @@ Campinas — 2026
 | 1.0 | 26/09/2026 | Versão inicial (anexada à issue #1) |
 | 1.1 | 09/11/2026 | Revisão para refletir a arquitetura e o plano de sprints atuais (ver a seção 1.3) |
 | 1.2 | 16/11/2026 | O portfólio de investimentos simulado (RF25 e RF26) passa a **feature futura**: o Backend e o Servidor estão prontos, mas a interface mostra só o cartão de crédito (RF27 e RF36). Ver a seção 5.8 |
+| 1.3 | 22/11/2026 | **Planejado:** contas (nome, banco e saldo), lançamentos vinculados a uma conta, transferências entre contas e coluna Origem mostrando a conta (RF37 a RF42, issues #101 a #115). Ver `especificacao-contas-e-transferencias.md` |
 
 ---
 
@@ -73,6 +74,7 @@ O FinanceAI é uma plataforma de gestão financeira pessoal que centraliza conta
 
 - Visualizar, em um dashboard consolidado, o saldo em contas, os gastos do mês, a economia acumulada e o fluxo de caixa;
 - Registrar manualmente receitas e despesas e importar transações de contas conectadas;
+- *(Planejado)* Criar mais de uma conta (nome, banco e saldo), vincular cada lançamento manual a uma conta e fazer transferências entre contas;
 - Consultar, filtrar, editar e excluir seu histórico de transações;
 - Analisar seus gastos por categoria, com comparação entre períodos;
 - Definir e acompanhar metas financeiras;
@@ -108,9 +110,11 @@ O sistema deverá oferecer mecanismo de recuperação de senha ("Esqueci minha s
 
 O usuário poderá cadastrar suas fontes de receita (salário, bolsas, outras rendas) e suas despesas, de forma manual ou por meio de importação via sandbox de Open Finance (Pluggy), que fornece dados de instituições fictícias sem necessidade de credenciais reais. Cada transação conterá descrição, valor, categoria, data e forma de pagamento, podendo incluir observações. As contas conectadas à Pluggy poderão ser listadas, conectadas e desconectadas. A marcação de recorrência (despesa fixa mensal) é uma feature futura (seção 9).
 
+**Contas e transferências (Planejado).** O usuário poderá criar uma ou mais contas, definindo o **nome**, o **banco** (escolhido numa lista fixa) e o **saldo bancário**, na tela Contas Conectadas. A conta pode ser **manual**, disponível em qualquer plano, ou **Open Finance**, conectada pela Pluggy e disponível **somente no plano Pro**. O usuário precisa ter pelo menos uma conta para fazer lançamentos manuais, e todo lançamento manual referencia obrigatoriamente uma conta. Além de receita e despesa, o lançamento pode ser uma **transferência** entre duas contas manuais do mesmo usuário: ela não é receita nem despesa e não entra nos totais do painel. Na lista de transações, a coluna **Origem** passa a mostrar a conta do lançamento. As regras completas estão em `especificacao-contas-e-transferencias.md`.
+
 ### 5.3. Categorização e listagem de transações
 
-Toda transação (receita ou despesa) é classificada em uma categoria da lista oficial adotada no projeto: **Alimentação, Transporte, Moradia, Saúde, Lazer, Educação, Salário e Outros**. Quando o usuário não escolhe uma categoria, o sistema a sugere automaticamente a partir da descrição; sem nenhuma pista, a categoria é "Outros". O usuário poderá consultar o histórico completo de transações, com filtros por descrição, categoria, período, faixa de valor, forma de pagamento e origem (manual ou importada), e poderá **editar ou excluir qualquer transação, manual ou importada**, uma a uma, direto no extrato, ou várias de uma vez.
+Toda transação (receita ou despesa) é classificada em uma categoria da lista oficial adotada no projeto: **Alimentação, Transporte, Moradia, Saúde, Lazer, Educação, Salário e Outros**. Quando o usuário não escolhe uma categoria, o sistema a sugere automaticamente a partir da descrição; sem nenhuma pista, a categoria é "Outros". O usuário poderá consultar o histórico completo de transações, com filtros por descrição, categoria, período, faixa de valor, forma de pagamento e origem (manual ou importada; no planejado, a origem passa a ser a conta do lançamento), e poderá **editar ou excluir qualquer transação, manual ou importada**, uma a uma, direto no extrato, ou várias de uma vez.
 
 ### 5.4. Dashboard financeiro
 
@@ -169,7 +173,7 @@ Os ambientes e tecnologias abaixo são considerados como base tecnológica do pr
 - Responsável pelas operações de cálculo e regra de negócio de cada funcionalidade: hash e conferência de senha e validação de MFA, categorização automática de transações, cálculo dos indicadores do dashboard e da comparação entre períodos, montagem do contexto enviado à IA e filtro das respostas, cálculo de progresso de metas, rentabilidade simulada e parcelamentos
 
 **Banco de Dados**
-- MongoDB (modelo não relacional), para armazenamento de usuários, transações, contas conectadas, mensagens do chat, metas, investimentos e parcelamentos
+- MongoDB (modelo não relacional), para armazenamento de usuários, transações, contas conectadas, contas (coleção `accounts`, planejada), mensagens do chat, metas, investimentos e parcelamentos
 - As categorias não são uma coleção: são a lista oficial adotada no projeto (seção 5.3)
 
 **Frontend**
@@ -216,6 +220,12 @@ A coluna **Grupo** indica o grupo de features responsável (1 a 5, ou "todos"), 
 | **RF12** | O sistema deve permitir a listagem e a filtragem de transações por descrição, categoria, período, faixa de valor, forma de pagamento e origem. | 2 | #19, #21, #48, #93, #94 | Em andamento |
 | **RF33** | O sistema deve permitir duplicar um lançamento existente. | 2 | #49 | Backend pronto; falta a ação no Frontend |
 | **RF34** | O sistema deve permitir ao usuário listar, conectar e desconectar contas bancárias do sandbox da Pluggy. | 2 | #47, #74, #87 | Planejado |
+| **RF37** | O sistema deve permitir ao usuário criar, editar e excluir uma conta, informando nome, banco (lista fixa) e saldo bancário, na tela Contas Conectadas. | 2 | #101, #102, #106, #108, #113 | Planejado |
+| **RF38** | O sistema deve permitir ao usuário ter mais de uma conta, cada uma com o saldo atual calculado. | 2 | #101, #102, #106, #108 | Planejado |
+| **RF39** | O sistema deve permitir criar contas manuais e contas Open Finance (Pluggy); a criação de conta Open Finance só é permitida no plano Pro. | 1, 2 | #102, #103, #108, #113 | Planejado |
+| **RF40** | O sistema deve exigir que todo lançamento manual referencie uma conta e que o usuário tenha pelo menos uma conta para lançar. | 2 | #101, #104, #109, #113 | Planejado |
+| **RF41** | O sistema deve permitir transferências entre contas, com a opção ao lado de receita e despesa no menu Lançamento; a transferência não entra nos totais de receitas, despesas e saldo do painel. | 2, 3 | #105, #106, #107, #110, #113 | Planejado |
+| **RF42** | O sistema deve mostrar, na coluna Origem da lista de transações, a conta do lançamento, com filtro por conta e o tipo Transferência na coluna Tipo. | 2 | #104, #111, #112 | Planejado |
 
 ### 7.3. Painel financeiro e análise
 
@@ -264,6 +274,8 @@ A coluna **Grupo** indica o grupo de features responsável (1 a 5, ou "todos"), 
 
 **Resumo em 09/11/2026 (35 requisitos):** 24 planejado, 6 em andamento, 3 entregue, 1 feature futura, 1 parcial.
 
+**Acréscimo em 22/11/2026:** os RF37 a RF42 (contas e transferências) entram como *Planejado*, o que leva o total a 41 requisitos. As issues #114 (atualização da documentação) e #115 (modelagem UML) acompanham esses requisitos, sem serem requisitos funcionais.
+
 ---
 
 ## 8. Requisitos Não Funcionais
@@ -296,6 +308,7 @@ Itens que fazem parte da visão do produto, mas que, por orientação do(a) prof
 | **RF25** | Painel com o patrimônio total simulado | Backend e Servidor Java prontos (`/v1/investments`); falta a tela. |
 | **RF26** | Lista dos ativos do portfólio simulado, com percentual da carteira e rentabilidade | Backend e Servidor Java prontos; falta a tela. |
 | **RF36** | Tela de parcelamentos do cartão com cadastro manual e pagamento de parcela | Foi retirada da tela do cartão: os parcelamentos nascem das compras parceladas feitas em Transações, e a tela do cartão mostra as compras de cada cartão. As rotas de parcelamento manual continuam no Backend. As parcelas avançam sozinhas, uma por mês. |
+| RF37 a RF42 | Transferências envolvendo contas Open Finance e limite de contas manuais no plano Free | Decisões em aberto da especificação de contas: por enquanto a transferência só envolve contas manuais (o saldo Open Finance vem do banco) e a proposta é não limitar contas manuais no plano Free. |
 | — | Categorias digitáveis pelo usuário | Hoje a categoria é escolhida na lista oficial (ou automática). Digitar e criar categorias exige uma coleção de categorias por usuário e o ajuste do Servidor Java. Sem RF nem issue. |
 | — | Aplicativo móvel | O Frontend é web; a versão móvel (Flutter) fica para depois da banca. Sem RF nem issue. |
 
@@ -312,6 +325,8 @@ A ligação entre requisitos e issues está na coluna **Issues** das tabelas da 
 - **Open Finance:** compartilhamento padronizado de dados financeiros entre instituições, com o consentimento do cliente.
 - **Pluggy:** provedor de Open Finance usado no projeto, em ambiente de **sandbox** (instituições e dados fictícios).
 - **Sandbox:** ambiente de teste, sem dados nem instituições reais.
+- **Conta (Planejado):** conta do usuário com nome, banco e saldo, manual ou Open Finance (esta só no plano Pro); todo lançamento manual referencia uma.
+- **Transferência (Planejado):** movimentação de valor entre duas contas manuais do mesmo usuário; não é receita nem despesa.
 - **MFA/2FA:** autenticação em mais de uma etapa (além da senha).
 - **JWT:** token assinado que identifica o usuário nas chamadas à API.
 - **Handler:** código do Servidor Java que trata um tipo de pedido (por exemplo, categorizar uma transação).
