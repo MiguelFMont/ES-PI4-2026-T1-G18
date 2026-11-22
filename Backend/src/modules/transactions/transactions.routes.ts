@@ -10,6 +10,8 @@ transactionsRouter.use(authMiddleware);
 
 transactionsRouter.get("/", transactionsController.list);
 transactionsRouter.post("/", transactionsController.create);
+// Sugestão de categoria pelo Servidor Java, sem gravar nada (botão "Sugerir" do formulário de novo lançamento).
+transactionsRouter.post("/suggest-category", transactionsController.suggestCategory);
 // Edição e exclusão só existem em lote (um item só também vale): não há PUT nem DELETE por id.
 transactionsRouter.post("/:id/duplicate", transactionsController.duplicate);
 transactionsRouter.patch("/bulk", transactionsController.updateMany);

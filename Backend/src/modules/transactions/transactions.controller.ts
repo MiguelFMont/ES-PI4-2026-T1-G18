@@ -6,6 +6,7 @@ import {
   bulkUpdateSchema,
   createTransactionSchema,
   duplicateTransactionSchema,
+  suggestCategorySchema,
   transactionIdSchema,
   transactionFiltersSchema,
 } from "./transactions.dto";
@@ -25,6 +26,15 @@ export const transactionsController = {
     try {
       const dados = createTransactionSchema.parse(req.body);
       res.status(201).json(await transactionsService.create(req.user!.id, dados));
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async suggestCategory(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const dados = suggestCategorySchema.parse(req.body);
+      res.status(200).json(await transactionsService.suggestCategory(dados));
     } catch (error) {
       next(error);
     }
