@@ -15,6 +15,7 @@ import { TransactionModel } from "../../transactions/transactions.model";
 import { AppError } from "../../../shared/errors/app-error";
 import { encerrarBanco, iniciarBanco, limparBanco } from "./banco-de-teste";
 import { respostaDaIa, simularApiDeIa, simularServidorJava } from "./apoio";
+import { zerarLimites } from "../../../middlewares/rate-limit.middleware";
 
 let servidor: Server;
 let base: string;
@@ -50,6 +51,8 @@ after(async () => {
 });
 
 beforeEach(limparBanco);
+// o limite de mensagens por minuto vale por usuário: cada teste começa sem mensagens anteriores
+beforeEach(zerarLimites);
 afterEach(() => mock.restoreAll());
 
 describe("POST /v1/mentor-ia/chat", () => {
@@ -154,6 +157,25 @@ describe("POST /v1/mentor-ia/chat", () => {
     assert.equal((await json(resposta)).error.code, "JAVA_SERVER_UNAVAILABLE");
 
     assert.equal(await ChatMessageModel.countDocuments(), 0);
+  });
+});
+
+describe("POST /v1/mentor-ia/chat: limite de mensagens", () => {
+  test("a 11ª mensagem no mesmo minuto: 429 TOO_MANY_REQUESTS, sem chamar a IA; o limite é de cada usuário", async () => {
+    simularServidorJava();
+    const chamadas = simularApiDeIa(() => respostaDaIa("ok"));
+
+    for (let i = 1; i <= 10; i++) {
+      assert.equal((await chat("POST", ANA, { texto: `pergunta ${i}` })).status, 200, `mensagem ${i}`);
+    }
+    const bloqueada = await chat("POST", ANA, { texto: "mais uma" });
+    assert.equal(bloqueada.status, 429);
+    assert.equal((await json(bloqueada)).error.code, "TOO_MANY_REQUESTS");
+    assert.ok(Number(bloqueada.headers.get("retry-after")) > 0);
+    assert.equal(chamadas.length, 10);
+
+    // o Beto não é afetado pelas mensagens da Ana
+    assert.equal((await chat("POST", BETO, { texto: "oi" })).status, 200);
   });
 });
 
