@@ -35,12 +35,13 @@ describe("GET /v1/investments/cards: listar os cartões", () => {
     assert.equal(cartao.nome, "Cartão");
     assert.equal(cartao.padrao, true);
     assert.equal(cartao.limite, 5000);
-    assert.equal(cartao.diaVencimento, 10);
+    assert.equal(cartao.diaFechamento, 3);
     assert.equal(cartao.limiteDisponivel, 5000);
     assert.equal(cartao.saldoDevedor, 0);
     assert.equal(cartao.parcelamentosAtivos, 0);
     assert.equal(cartao.fatura.valor, 0);
-    assert.match(cartao.fatura.vencimento, /^\d{4}-\d{2}-10$/);
+    assert.match(cartao.fatura.fechamento, /^\d{4}-\d{2}-03$/);
+    assert.match(cartao.fatura.vencimento, /^\d{4}-\d{2}-10$/, "vence 7 dias depois de fechar");
     assert.equal(primeira.maximo, MAX_CARTOES);
     assert.deepEqual(primeira.totais, { limite: 5000, limiteDisponivel: 5000, saldoDevedor: 0, faturaDoMes: 0 });
     assert.equal(await CardModel.countDocuments(), 1);
@@ -48,8 +49,8 @@ describe("GET /v1/investments/cards: listar os cartões", () => {
 
   test("lista do mais antigo (o padrão) para o mais novo, com os totais de todos os cartões", async () => {
     simularServidorGrupo5();
-    await criarCartao({ nome: "Nubank", limite: 3000, diaVencimento: 5 });
-    await criarCartao({ nome: "Inter", limite: 2000, diaVencimento: 20 });
+    await criarCartao({ nome: "Nubank", limite: 3000, diaFechamento: 5 });
+    await criarCartao({ nome: "Inter", limite: 2000, diaFechamento: 20 });
     const r = await listar();
 
     assert.deepEqual(r.cartoes.map((c: any) => c.nome), ["Nubank", "Inter"]);
@@ -76,26 +77,28 @@ describe("GET /v1/investments/cards: listar os cartões", () => {
 // ------------------------------------------------------------------------------------------------ criar
 
 describe("POST /v1/investments/cards: criar cartão", () => {
-  test("cria (201) com nome, limite e vencimento, já com a fatura", async () => {
+  test("cria (201) com nome, limite e dia do fechamento, já com a fatura", async () => {
     simularServidorGrupo5();
-    const resposta = await api("POST", "/cards", { nome: "Nubank", limite: 8000, diaVencimento: 25 });
+    const resposta = await api("POST", "/cards", { nome: "Nubank", limite: 8000, diaFechamento: 25 });
     const cartao = await json(resposta);
 
     assert.equal(resposta.status, 201);
     assert.equal(cartao.nome, "Nubank");
     assert.equal(cartao.limite, 8000);
-    assert.equal(cartao.diaVencimento, 25);
+    assert.equal(cartao.diaFechamento, 25);
     assert.equal(cartao.limiteDisponivel, 8000);
     assert.equal(cartao.padrao, true, "o primeiro cartão do usuário é o padrão");
-    assert.match(cartao.fatura.vencimento, /^\d{4}-\d{2}-25$/);
+    assert.match(cartao.fatura.fechamento, /^\d{4}-\d{2}-25$/);
+    const fecha = Date.parse(cartao.fatura.fechamento);
+    assert.equal(cartao.fatura.vencimento, new Date(fecha + 7 * 86_400_000).toISOString().slice(0, 10), "vence 7 dias depois de fechar");
   });
 
-  test("só o nome é obrigatório: limite 5000 e vencimento dia 10 por padrão; espaços nas pontas saem do nome", async () => {
+  test("só o nome é obrigatório: limite 5000 e fechamento dia 3 por padrão; espaços nas pontas saem do nome", async () => {
     simularServidorGrupo5();
     const cartao = await criarCartao({ nome: "  Itaú  " });
     assert.equal(cartao.nome, "Itaú");
     assert.equal(cartao.limite, 5000);
-    assert.equal(cartao.diaVencimento, 10);
+    assert.equal(cartao.diaFechamento, 3);
   });
 
   test("o primeiro cartão criado é o único: o padrão 'Cartão' não é criado junto", async () => {
@@ -140,8 +143,8 @@ describe("POST /v1/investments/cards: criar cartão", () => {
 
   test("o índice único do banco também segura duas criações com o mesmo nome", async () => {
     await CardModel.init();
-    await CardModel.create({ userId: "ana", nome: "Nubank", nomeChave: "nubank", limite: 1, diaVencimento: 1 });
-    await assert.rejects(CardModel.create({ userId: "ana", nome: "NUBANK", nomeChave: "nubank", limite: 1, diaVencimento: 1 }), { code: 11000 });
+    await CardModel.create({ userId: "ana", nome: "Nubank", nomeChave: "nubank", limite: 1, diaFechamento: 1 });
+    await assert.rejects(CardModel.create({ userId: "ana", nome: "NUBANK", nomeChave: "nubank", limite: 1, diaFechamento: 1 }), { code: 11000 });
   });
 
   const invalidos: { nome: string; corpo: Record<string, unknown>; campo: string }[] = [
@@ -152,9 +155,9 @@ describe("POST /v1/investments/cards: criar cartão", () => {
     { nome: "limite zero", corpo: { nome: "X", limite: 0 }, campo: "limite" },
     { nome: "limite negativo", corpo: { nome: "X", limite: -1 }, campo: "limite" },
     { nome: "limite como texto", corpo: { nome: "X", limite: "1000" }, campo: "limite" },
-    { nome: "dia 0", corpo: { nome: "X", diaVencimento: 0 }, campo: "diaVencimento" },
-    { nome: "dia 29", corpo: { nome: "X", diaVencimento: 29 }, campo: "diaVencimento" },
-    { nome: "dia fracionado", corpo: { nome: "X", diaVencimento: 1.5 }, campo: "diaVencimento" },
+    { nome: "dia 0", corpo: { nome: "X", diaFechamento: 0 }, campo: "diaFechamento" },
+    { nome: "dia 29", corpo: { nome: "X", diaFechamento: 29 }, campo: "diaFechamento" },
+    { nome: "dia fracionado", corpo: { nome: "X", diaFechamento: 1.5 }, campo: "diaFechamento" },
   ];
   for (const { nome, corpo, campo } of invalidos) {
     test(`validação: ${nome} (400 VALIDATION_ERROR, nada salvo)`, async () => {
@@ -187,19 +190,19 @@ describe("GET e PATCH /v1/investments/cards/:id", () => {
     assert.equal(cartao.fatura.valor, 0);
   });
 
-  test("PATCH muda nome, limite e dia de vencimento (juntos ou separados)", async () => {
+  test("PATCH muda nome, limite e dia de fechamento (juntos ou separados)", async () => {
     simularServidorGrupo5();
-    const { id } = await criarCartao({ nome: "Nubank", limite: 3000, diaVencimento: 5 });
+    const { id } = await criarCartao({ nome: "Nubank", limite: 3000, diaFechamento: 5 });
 
-    const tudo = await json(await api("PATCH", `/cards/${id}`, { nome: "Nubank Roxo", limite: 9000, diaVencimento: 27 }));
+    const tudo = await json(await api("PATCH", `/cards/${id}`, { nome: "Nubank Roxo", limite: 9000, diaFechamento: 27 }));
     assert.equal(tudo.nome, "Nubank Roxo");
     assert.equal(tudo.limite, 9000);
-    assert.equal(tudo.diaVencimento, 27);
+    assert.equal(tudo.diaFechamento, 27);
     assert.equal(tudo.limiteDisponivel, 9000);
 
     const so = await json(await api("PATCH", `/cards/${id}`, { limite: 100 }));
     assert.equal(so.nome, "Nubank Roxo");
-    assert.equal(so.diaVencimento, 27);
+    assert.equal(so.diaFechamento, 27);
     assert.equal((await CardModel.findById(id).lean())?.nomeChave, "nubank roxo");
   });
 
@@ -226,7 +229,7 @@ describe("GET e PATCH /v1/investments/cards/:id", () => {
     ["nome em branco", { nome: " " }],
     ["nome com 41 caracteres", { nome: textoDe(41) }],
     ["limite zero", { limite: 0 }],
-    ["dia 29", { diaVencimento: 29 }],
+    ["dia 29", { diaFechamento: 29 }],
   ];
   for (const [nome, corpo] of invalidos) {
     test(`PATCH inválido: ${nome} (400)`, async () => {
@@ -451,11 +454,12 @@ describe("migração dos dados de 'um cartão por usuário'", () => {
     const colecao = CardModel.collection;
     await CardModel.init();
     await colecao.createIndex({ userId: 1 }, { unique: true, name: "userId_1" });
+    // o modelo antigo guardava o dia do VENCIMENTO
     await colecao.insertOne({ userId: "ana", limite: 7000, diaVencimento: 15 });
     await colecao.insertOne({ userId: "beto", limite: 1000, diaVencimento: 3 });
     await CardInstallmentModel.collection.insertOne({ userId: "ana", descricao: "Antigo", valorTotal: 100, parcelas: 2, parcelasPagas: 0, taxaJurosMensal: 0 });
     // com o índice antigo, um segundo cartão do mesmo usuário é impossível
-    await assert.rejects(CardModel.create({ userId: "ana", nome: "Outro", nomeChave: "outro", limite: 1, diaVencimento: 1 }), { code: 11000 });
+    await assert.rejects(CardModel.create({ userId: "ana", nome: "Outro", nomeChave: "outro", limite: 1, diaFechamento: 1 }), { code: 11000 });
 
     await investmentsRepository.migrarCartoes();
     await investmentsRepository.migrarCartoes(); // idempotente
@@ -464,8 +468,10 @@ describe("migração dos dados de 'um cartão por usuário'", () => {
     const ana = await CardModel.findOne({ userId: "ana" }).lean();
     assert.equal(ana?.nome, "Cartão");
     assert.equal(ana?.nomeChave, "cartão");
-    assert.equal(ana?.limite, 7000, "limite e vencimento continuam os do cartão antigo");
-    assert.equal(ana?.diaVencimento, 15);
+    assert.equal(ana?.limite, 7000, "o limite continua o do cartão antigo");
+    assert.equal(ana?.diaFechamento, 8, "vencimento 15 -> fechamento 7 dias antes (dia 8)");
+    assert.equal((ana as Record<string, unknown>)?.diaVencimento, undefined, "o campo antigo saiu");
+    assert.equal((await CardModel.findOne({ userId: "beto" }).lean())?.diaFechamento, 24, "vencimento dia 3 -> fechamento no fim do mês anterior (dia 24)");
     assert.equal((await CardInstallmentModel.findOne({ userId: "ana" }).lean())?.cartaoId, String(ana?._id));
     assert.equal(await CardModel.countDocuments(), 2, "ninguém ganhou cartão a mais");
 

@@ -10,12 +10,12 @@ export function listarCartoes() {
   return apiFetch('/investments/cards');
 }
 
-/** Cria um cartão (POST /investments/cards). `dados`: { nome, limite?, diaVencimento? }. Devolve o cartão criado. */
+/** Cria um cartão (POST /investments/cards). `dados`: { nome, limite?, diaFechamento? }. Devolve o cartão criado. */
 export function criarCartao(dados) {
   return apiFetch('/investments/cards', { method: 'POST', body: JSON.stringify(dados) });
 }
 
-/** Altera o nome, o limite e/ou o dia de vencimento de um cartão (PATCH /investments/cards/:id). Devolve o cartão recalculado. */
+/** Altera o nome, o limite e/ou o dia de fechamento da fatura de um cartão (PATCH /investments/cards/:id). Devolve o cartão recalculado. */
 export function atualizarCartao(id, alteracoes) {
   return apiFetch(`/investments/cards/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(alteracoes) });
 }

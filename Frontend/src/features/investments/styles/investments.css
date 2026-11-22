@@ -309,6 +309,11 @@
   scroll-snap-align: start;
 }
 
+/* o esqueleto de carregamento usa a mesma fila, mas sem a barra de rolagem */
+.esqueleto-grupo .investments-cartoes {
+  overflow: hidden;
+}
+
 .investments-cartao-novo-area {
   display: grid;
   flex: 0 0 11rem;
@@ -449,4 +454,93 @@
   text-align: right;
   white-space: nowrap;
   font-weight: 700;
+}
+
+
+/* ---------------------------------------------------------------- janela "Novo cartão" / "Editar cartão"
+   No mesmo estilo das outras janelas do projeto (Novo lançamento, Nova meta): cartão de cantos bem arredondados, fundo escurecido
+   e desfocado, campos altos com borda fina e botões em pílula. Fica escondida até o formulário abrir (o JS tira o hidden do cartão). */
+.investments-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: none;
+  place-items: center;
+  overflow-y: auto;
+  padding: 1rem;
+  background: rgb(0 0 0 / 0.6);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.investments-modal:has(#invest-cartao-form-area:not([hidden])) {
+  display: grid;
+  animation: investments-modal-fundo 0.2s ease;
+}
+
+.investments-modal .investments-cartao {
+  width: 100%;
+  max-width: 28rem;
+  padding: 1.5rem;
+  border: 0;
+  border-radius: 1.75rem;
+  box-shadow: var(--sombra-flutuante);
+  animation: investments-modal-entrar 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes investments-modal-fundo {
+  from { opacity: 0; }
+}
+
+@keyframes investments-modal-entrar {
+  from { opacity: 0; transform: scale(0.96); }
+}
+
+.investments-modal .investments-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.investments-modal .investments-form h2 {
+  font-size: 1.35rem;
+}
+
+.investments-modal .campo label {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.investments-modal .campo input {
+  min-height: 3.25rem;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--borda);
+  border-radius: 1rem;
+  font-size: 1rem;
+}
+
+.investments-modal .investments-acoes {
+  flex-wrap: nowrap;
+  padding-top: 1rem;
+  border-top: 1px solid var(--borda);
+}
+
+.investments-modal .investments-botao {
+  min-height: 3.2rem;
+  border: 0;
+  border-radius: 999px;
+  box-shadow: none;
+}
+
+.investments-modal .investments-botao:not(.investments-botao--secundario) {
+  flex: 1;
+}
+
+.investments-modal .investments-botao:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+@media (max-width: 480px) {
+  .investments-modal .investments-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

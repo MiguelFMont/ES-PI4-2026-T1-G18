@@ -16,18 +16,18 @@ export const createInvestmentSchema = z.object({
 
 const nomeDoCartao = z.string().trim().min(1).max(40);
 
-// Cartão novo: só o nome é obrigatório; limite e vencimento assumem os valores padrão.
+// Cartão novo: só o nome é obrigatório; limite e dia do fechamento assumem os valores padrão.
 export const createCardSchema = z.object({
   nome: nomeDoCartao,
   limite: z.number().positive().default(CARTAO_PADRAO.limite),
-  diaVencimento: z.number().int().min(1).max(28).default(CARTAO_PADRAO.diaVencimento),
+  diaFechamento: z.number().int().min(1).max(28).default(CARTAO_PADRAO.diaFechamento),
 });
 
 export const updateCardSchema = z
   .object({
     nome: nomeDoCartao.optional(),
     limite: z.number().positive().optional(),
-    diaVencimento: z.number().int().min(1).max(28).optional(),
+    diaFechamento: z.number().int().min(1).max(28).optional(),
   })
   .refine((d) => Object.keys(d).length > 0, { message: "Informe ao menos um campo para alterar" });
 
@@ -164,7 +164,7 @@ export interface CardResponseDto {
   // true no cartão mais antigo: o que recebe as compras no crédito sem cartão indicado (e as rotas /card antigas)
   padrao: boolean;
   limite: number;
-  diaVencimento: number;
+  diaFechamento: number;
   // limite - compras no crédito do mês - saldo devedor dos parcelamentos (pode ficar negativo se o limite estourar)
   limiteDisponivel: number;
   saldoDevedor: number; // dos parcelamentos ainda ativos deste cartão
@@ -174,7 +174,9 @@ export interface CardResponseDto {
     valor: number; // compras no crédito do mês + parcelas do mês
     comprasNoCredito: number; // despesas reais à vista no crédito neste mês (as parceladas entram pelas parcelas)
     parcelasDoMes: number;
-    vencimento: string; // AAAA-MM-DD
+    fechamento: string; // AAAA-MM-DD: o próximo fechamento desta fatura
+    diasParaFechar: number;
+    vencimento: string; // AAAA-MM-DD: 7 dias depois do fechamento
     diasParaVencer: number;
   };
 }

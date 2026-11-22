@@ -81,11 +81,11 @@ export const investmentsRepository = {
     return CardModel.findOne({ userId }).sort({ createdAt: 1, _id: 1 }).lean();
   },
 
-  async createCard(dados: Pick<CardDocument, "userId" | "nome" | "limite" | "diaVencimento">) {
+  async createCard(dados: Pick<CardDocument, "userId" | "nome" | "limite" | "diaFechamento">) {
     return (await CardModel.create({ ...dados, nomeChave: chaveDoNome(dados.nome) })).toObject();
   },
 
-  async updateCard(userId: string, id: string, alteracoes: Partial<Pick<CardDocument, "nome" | "limite" | "diaVencimento">>) {
+  async updateCard(userId: string, id: string, alteracoes: Partial<Pick<CardDocument, "nome" | "limite" | "diaFechamento">>) {
     const { nome, ...resto } = alteracoes;
     const set = { ...resto, ...(nome !== undefined && { nome: nome.trim(), nomeChave: chaveDoNome(nome) }) };
     return CardModel.findOneAndUpdate({ _id: id, userId }, { $set: set }, { new: true, runValidators: true }).lean();
@@ -184,7 +184,8 @@ export const investmentsRepository = {
   //  1. remove o índice único antigo por userId (impediria o segundo cartão);
   //  2. dá o nome padrão aos cartões antigos (sem nome): cada usuário continua com o seu cartão, com o mesmo limite e
   //     vencimento, agora chamado "Cartão";
-  //  3. liga ao cartão mais antigo do usuário os parcelamentos antigos (sem cartaoId).
+  //  3. troca o dia do vencimento (modelo antigo) pelo dia do fechamento: o fechamento é 7 dias antes do vencimento;
+  //  4. liga ao cartão mais antigo do usuário os parcelamentos antigos (sem cartaoId).
   // As transações antigas em crédito não mudam: sem cartaoId, contam para o cartão mais antigo, como antes.
   async migrarCartoes(): Promise<void> {
     const indices = await CardModel.collection.indexes().catch(() => []);
@@ -195,6 +196,11 @@ export const investmentsRepository = {
       { nome: { $exists: false } },
       { $set: { nome: NOME_CARTAO_PADRAO, nomeChave: chaveDoNome(NOME_CARTAO_PADRAO) } }
     );
+    // diaFechamento = diaVencimento - 7 (dentro de 1 a 28: vencimento até o dia 7 fecha no fim do mês anterior, dia 22 a 28)
+    await CardModel.collection.updateMany({ diaFechamento: { $exists: false }, diaVencimento: { $exists: true } }, [
+      { $set: { diaFechamento: { $cond: [{ $gt: ["$diaVencimento", 7] }, { $subtract: ["$diaVencimento", 7] }, { $add: ["$diaVencimento", 21] }] } } },
+      { $unset: "diaVencimento" },
+    ]);
     await CardModel.createIndexes();
 
     const donos: string[] = await CardInstallmentModel.distinct("userId", { cartaoId: { $exists: false } });
