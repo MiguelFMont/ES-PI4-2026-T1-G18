@@ -34,3 +34,24 @@ export interface ComparePeriodsResponseDto {
     periodos: PeriodComparisonDto[];
     tendenciaDespesas: "alta" | "queda" | "estavel";
 }
+
+export interface CategoriaMaiorPesoDto {
+    categoria: string;
+    total: number;
+    percentual: number;
+}
+
+export interface PeriodSummaryResponseDto {
+    periodo: {
+        dataInicio: string;
+        dataFim: string;
+        dias: number;
+    };
+    totalGasto: number;
+    totalReceitas: number;
+    saldo: number;
+    numeroTransacoes: number;
+    numeroDespesas: number;
+    mediaDiaria: number;
+    categoriaMaiorPeso: CategoriaMaiorPesoDto | null;
+}
