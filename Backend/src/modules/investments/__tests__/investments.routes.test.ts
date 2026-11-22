@@ -187,13 +187,13 @@ describe("DELETE /v1/investments/:id", () => {
 // ------------------------------------------------------------------------------------------------ cartão
 
 describe("GET e PATCH /v1/investments/card: cartão, limite e fatura", () => {
-  test("primeira leitura cria o cartão com os valores padrão (limite 5000, vence dia 10), uma vez só", async () => {
+  test("primeira leitura cria o cartão com os valores padrão (limite 5000, fecha dia 3), uma vez só", async () => {
     simularServidorGrupo5();
     const cartao = await json(await api("GET", "/card"));
     await api("GET", "/card");
 
     assert.equal(cartao.limite, 5000);
-    assert.equal(cartao.diaVencimento, 10);
+    assert.equal(cartao.diaFechamento, 3);
     assert.equal(cartao.limiteDisponivel, 5000);
     assert.equal(cartao.fatura.valor, 0);
     assert.equal(cartao.fatura.comprasNoCredito, 0);
@@ -201,16 +201,19 @@ describe("GET e PATCH /v1/investments/card: cartão, limite e fatura", () => {
     assert.equal(await CardModel.countDocuments(), 1);
   });
 
-  test("a fatura é o mês corrente e o vencimento é o próximo dia 10 (deste mês, ou do seguinte se já passou)", async () => {
+  test("a fatura é o mês corrente: fecha no próximo dia 3 (deste mês, ou do seguinte se já passou) e vence 7 dias depois", async () => {
     simularServidorGrupo5();
     const { fatura } = await json(await api("GET", "/card"));
     const h = inicioDoDiaUtc();
-    const esperado = new Date(Date.UTC(h.getUTCFullYear(), h.getUTCDate() <= 10 ? h.getUTCMonth() : h.getUTCMonth() + 1, 10));
+    const fecha = new Date(Date.UTC(h.getUTCFullYear(), h.getUTCDate() <= 3 ? h.getUTCMonth() : h.getUTCMonth() + 1, 3));
+    const esperado = new Date(fecha.getTime() + 7 * 86_400_000);
 
     assert.equal(fatura.mes, h.toISOString().slice(0, 7));
+    assert.equal(fatura.fechamento, fecha.toISOString().slice(0, 10));
+    assert.equal(fatura.diasParaFechar, Math.round((fecha.getTime() - h.getTime()) / 86_400_000));
     assert.equal(fatura.vencimento, esperado.toISOString().slice(0, 10));
     assert.equal(fatura.diasParaVencer, Math.round((esperado.getTime() - h.getTime()) / 86_400_000));
-    assert.ok(fatura.diasParaVencer >= 0 && fatura.diasParaVencer <= 31);
+    assert.ok(fatura.diasParaVencer >= 7 && fatura.diasParaVencer <= 38);
   });
 
   test("a fatura soma as despesas REAIS no crédito deste mês (e só elas)", async () => {
@@ -246,20 +249,20 @@ describe("GET e PATCH /v1/investments/card: cartão, limite e fatura", () => {
     assert.equal((await json(await api("GET", "/card"))).limiteDisponivel, -1000);
   });
 
-  test("PATCH muda o limite e o dia de vencimento", async () => {
+  test("PATCH muda o limite e o dia de fechamento", async () => {
     simularServidorGrupo5();
-    const cartao = await json(await api("PATCH", "/card", { limite: 8000, diaVencimento: 25 }));
+    const cartao = await json(await api("PATCH", "/card", { limite: 8000, diaFechamento: 25 }));
     assert.equal(cartao.limite, 8000);
-    assert.equal(cartao.diaVencimento, 25);
+    assert.equal(cartao.diaFechamento, 25);
     assert.equal(cartao.limiteDisponivel, 8000);
-    assert.match(cartao.fatura.vencimento, /^\d{4}-\d{2}-25$/);
+    assert.match(cartao.fatura.fechamento, /^\d{4}-\d{2}-25$/);
   });
 
   test("PATCH antes de qualquer leitura cria o cartão e altera só o que veio (o resto fica no padrão)", async () => {
     simularServidorGrupo5();
     const cartao = await json(await api("PATCH", "/card", { limite: 2000 }));
     assert.equal(cartao.limite, 2000);
-    assert.equal(cartao.diaVencimento, 10);
+    assert.equal(cartao.diaFechamento, 3);
     assert.equal(await CardModel.countDocuments(), 1);
   });
 
@@ -275,9 +278,9 @@ describe("GET e PATCH /v1/investments/card: cartão, limite e fatura", () => {
     ["limite zero", { limite: 0 }],
     ["limite negativo", { limite: -10 }],
     ["limite como texto", { limite: "1000" }],
-    ["dia 0", { diaVencimento: 0 }],
-    ["dia 29 (não existe em todo mês)", { diaVencimento: 29 }],
-    ["dia fracionado", { diaVencimento: 1.5 }],
+    ["dia 0", { diaFechamento: 0 }],
+    ["dia 29 (não existe em todo mês)", { diaFechamento: 29 }],
+    ["dia fracionado", { diaFechamento: 1.5 }],
   ];
   for (const [nome, corpo] of invalidos) {
     test(`PATCH inválido: ${nome} (400)`, async () => {

@@ -37,7 +37,7 @@ export function iniciarCartoes(raiz, { signal, selecionar, editar, excluir, novo
 
   const campo = (card, nome) => card.querySelector(`[data-campo="${nome}"]`);
 
-  function criarCard(cartao, idSelecionado) {
+  function criarCard(cartao, idSelecionado, unico) {
     const card = modelo.content.firstElementChild.cloneNode(true);
     card.dataset.id = cartao.id;
     const selecionado = cartao.id === idSelecionado;
@@ -50,12 +50,19 @@ export function iniciarCartoes(raiz, { signal, selecionar, editar, excluir, novo
     campo(card, 'nome').textContent = cartao.nome;
     campo(card, 'padrao').hidden = !cartao.padrao;
     card.querySelector('[data-acao="editar"]').setAttribute('aria-label', `Editar o cartão ${cartao.nome}`);
-    card.querySelector('[data-acao="excluir"]').setAttribute('aria-label', `Excluir o cartão ${cartao.nome}`);
+    const botaoExcluir = card.querySelector('[data-acao="excluir"]');
+    botaoExcluir.setAttribute('aria-label', `Excluir o cartão ${cartao.nome}`);
+    // o último cartão não se exclui: o Backend cria um cartão padrão sempre que o usuário fica sem nenhum, então ele voltaria na hora
+    if (unico) {
+      botaoExcluir.disabled = true;
+      botaoExcluir.title = 'Você precisa ter pelo menos um cartão. Crie outro para poder excluir este.';
+    }
 
     campo(card, 'mes').textContent = MES_EM_TEXTO.format(new Date(`${fatura.mes}-01T00:00:00Z`));
     campo(card, 'faturaValor').textContent = formatarMoeda(fatura.valor);
-    const quando = fatura.diasParaVencer === 0 ? 'vence hoje' : `em ${fatura.diasParaVencer} ${fatura.diasParaVencer === 1 ? 'dia' : 'dias'}`;
-    campo(card, 'vencimento').textContent = `Vencimento em ${formatarData(`${fatura.vencimento}T00:00:00Z`)} (${quando})`;
+    const emDias = (dias) => (dias === 0 ? 'hoje' : `em ${dias} ${dias === 1 ? 'dia' : 'dias'}`);
+    campo(card, 'fechamento').textContent = `Fecha em ${formatarData(`${fatura.fechamento}T00:00:00Z`)} (${emDias(fatura.diasParaFechar)})`;
+    campo(card, 'vencimento').textContent = `Vence em ${formatarData(`${fatura.vencimento}T00:00:00Z`)} (${emDias(fatura.diasParaVencer)})`;
 
     campo(card, 'limiteDisponivel').textContent = formatarMoeda(cartao.limiteDisponivel);
     campo(card, 'limiteTotal').textContent = formatarMoeda(cartao.limite);
@@ -90,7 +97,7 @@ export function iniciarCartoes(raiz, { signal, selecionar, editar, excluir, novo
       botaoNovo.disabled = cheio;
       if (cheio) botaoNovo.title = `Você chegou ao limite de ${MAX_CARTOES} cartões.`;
 
-      lista.replaceChildren(...cartoes.map((c) => criarCard(c, idSelecionado)));
+      lista.replaceChildren(...cartoes.map((c) => criarCard(c, idSelecionado, cartoes.length === 1)));
       areaNovo.replaceChildren(cardNovo);
     },
   };

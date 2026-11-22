@@ -1,6 +1,6 @@
 // src/modules/investments/investments.service.ts
 import { investmentsRepository } from "./investments.repository";
-import { CardDocument, InstallmentDocument, InvestmentDocument, MAX_CARTOES } from "./investments.model";
+import { CardDocument, DIAS_DO_FECHAMENTO_AO_VENCIMENTO, InstallmentDocument, InvestmentDocument, MAX_CARTOES } from "./investments.model";
 import {
   AtivoParaCalculo,
   CardResponseDto,
@@ -38,13 +38,18 @@ export function mesesCompletos(desde: Date, ate: Date): number {
   return Math.max(0, meses);
 }
 
-// Próximo vencimento da fatura: o dia escolhido deste mês, ou do mês seguinte se este já passou.
-export function proximoVencimento(diaVencimento: number, hoje: Date): Date {
+// Próximo fechamento da fatura: o dia escolhido deste mês, ou do mês seguinte se este já passou.
+export function proximoFechamento(diaFechamento: number, hoje: Date): Date {
   const ano = hoje.getUTCFullYear();
   const mes = hoje.getUTCMonth();
-  return hoje.getUTCDate() <= diaVencimento
-    ? new Date(Date.UTC(ano, mes, diaVencimento))
-    : new Date(Date.UTC(ano, mes + 1, diaVencimento));
+  return hoje.getUTCDate() <= diaFechamento
+    ? new Date(Date.UTC(ano, mes, diaFechamento))
+    : new Date(Date.UTC(ano, mes + 1, diaFechamento));
+}
+
+// A fatura vence 7 dias depois de fechar.
+export function vencimentoDoFechamento(fechamento: Date): Date {
+  return new Date(fechamento.getTime() + DIAS_DO_FECHAMENTO_AO_VENCIMENTO * UM_DIA_MS);
 }
 
 // O que o repository devolve (lean) tem _id, mas o tipo gerado pelo Mongoose não o expõe: afirmamos aqui, num lugar só.
@@ -214,14 +219,15 @@ async function montarCartoes(userId: string, apenasId?: string): Promise<CardRes
       const comprasNoCredito = emReais(
         compras.filter((c) => c.cartaoId === id || (c.cartaoId === null && ehPadrao)).reduce((soma, c) => soma + c.total, 0)
       );
-      const vencimento = proximoVencimento(doc.diaVencimento, agora);
+      const fechamento = proximoFechamento(doc.diaFechamento, agora);
+      const vencimento = vencimentoDoFechamento(fechamento);
 
       return {
         id,
         nome: doc.nome,
         padrao: ehPadrao,
         limite: doc.limite,
-        diaVencimento: doc.diaVencimento,
+        diaFechamento: doc.diaFechamento,
         limiteDisponivel: emReais(doc.limite - comprasNoCredito - parc.totalSaldoDevedor),
         saldoDevedor: parc.totalSaldoDevedor,
         parcelamentosAtivos: parc.parcelamentos.filter((p) => !p.quitado).length,
@@ -230,6 +236,8 @@ async function montarCartoes(userId: string, apenasId?: string): Promise<CardRes
           valor: emReais(comprasNoCredito + parc.totalParcelasDoMes),
           comprasNoCredito,
           parcelasDoMes: parc.totalParcelasDoMes,
+          fechamento: fechamento.toISOString().slice(0, 10),
+          diasParaFechar: Math.round((fechamento.getTime() - inicioDoDia(agora).getTime()) / UM_DIA_MS),
           vencimento: vencimento.toISOString().slice(0, 10),
           diasParaVencer: Math.round((vencimento.getTime() - inicioDoDia(agora).getTime()) / UM_DIA_MS),
         },

@@ -3,7 +3,7 @@
 import "../../transactions/__tests__/ambiente";
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
-import { mesesCompletos, proximoVencimento } from "../investments.service";
+import { mesesCompletos, proximoFechamento, vencimentoDoFechamento } from "../investments.service";
 
 const d = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 
@@ -34,25 +34,36 @@ describe("mesesCompletos (o rendimento só conta meses fechados)", () => {
   });
 });
 
-describe("proximoVencimento", () => {
-  test("o dia ainda não passou: vence neste mês", () => {
-    assert.equal(proximoVencimento(10, d("2026-11-03")).toISOString().slice(0, 10), "2026-11-10");
+describe("proximoFechamento", () => {
+  test("o dia ainda não passou: fecha neste mês", () => {
+    assert.equal(proximoFechamento(10, d("2026-11-03")).toISOString().slice(0, 10), "2026-11-10");
   });
 
-  test("hoje é o dia do vencimento: ainda vence hoje", () => {
-    assert.equal(proximoVencimento(10, d("2026-11-10")).toISOString().slice(0, 10), "2026-11-10");
+  test("hoje é o dia do fechamento: ainda fecha hoje", () => {
+    assert.equal(proximoFechamento(10, d("2026-11-10")).toISOString().slice(0, 10), "2026-11-10");
   });
 
-  test("o dia já passou: vence no mês seguinte", () => {
-    assert.equal(proximoVencimento(10, d("2026-11-11")).toISOString().slice(0, 10), "2026-12-10");
+  test("o dia já passou: fecha no mês seguinte", () => {
+    assert.equal(proximoFechamento(10, d("2026-11-11")).toISOString().slice(0, 10), "2026-12-10");
   });
 
   test("virada do ano", () => {
-    assert.equal(proximoVencimento(5, d("2026-12-20")).toISOString().slice(0, 10), "2027-01-05");
+    assert.equal(proximoFechamento(5, d("2026-12-20")).toISOString().slice(0, 10), "2027-01-05");
   });
 
   test("dia 28 existe em todos os meses, inclusive fevereiro", () => {
-    assert.equal(proximoVencimento(28, d("2027-02-01")).toISOString().slice(0, 10), "2027-02-28");
-    assert.equal(proximoVencimento(28, d("2027-01-29")).toISOString().slice(0, 10), "2027-02-28");
+    assert.equal(proximoFechamento(28, d("2027-02-01")).toISOString().slice(0, 10), "2027-02-28");
+    assert.equal(proximoFechamento(28, d("2027-01-29")).toISOString().slice(0, 10), "2027-02-28");
+  });
+});
+
+describe("vencimentoDoFechamento", () => {
+  test("vence 7 dias depois de fechar", () => {
+    assert.equal(vencimentoDoFechamento(d("2026-12-03")).toISOString().slice(0, 10), "2026-12-10");
+  });
+
+  test("passa para o mês seguinte quando o fechamento é no fim do mês", () => {
+    assert.equal(vencimentoDoFechamento(d("2026-11-28")).toISOString().slice(0, 10), "2026-12-05");
+    assert.equal(vencimentoDoFechamento(d("2026-12-28")).toISOString().slice(0, 10), "2027-01-04");
   });
 });

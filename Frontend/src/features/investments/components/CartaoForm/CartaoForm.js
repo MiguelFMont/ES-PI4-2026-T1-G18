@@ -3,7 +3,7 @@ import { valorParaCampo, lerValor } from '../../../../shared/utils/moeda.js';
 import { lerInteiro } from '../../utils/constants.js';
 
 const LIMITE_PADRAO = 5000;
-const DIA_PADRAO = 10;
+const DIA_PADRAO = 3; // a fatura fecha no dia 3 e vence 7 dias depois
 
 const MENSAGENS = {
   nome: 'Informe um nome de até 40 caracteres.',
@@ -11,7 +11,7 @@ const MENSAGENS = {
   limite: 'Informe um limite maior que zero.',
   dia: 'Informe um dia de 1 a 28.',
 };
-const CAMPO_DA_API = { nome: 'nome', limite: 'limite', diaVencimento: 'dia' };
+const CAMPO_DA_API = { nome: 'nome', limite: 'limite', diaFechamento: 'dia' };
 
 /**
  * Liga o formulário de cartão (HTML em CartaoForm.html): criar um cartão novo ou mudar o nome, o limite e o dia do
@@ -48,9 +48,8 @@ export function iniciarCartaoForm(raiz, { signal, salvar }) {
     botaoSalvar.textContent = novo ? 'Criar cartão' : 'Salvar cartão';
     campos.nome.definir(novo ? '' : cartao.nome);
     campos.limite.definir(valorParaCampo(novo ? LIMITE_PADRAO : cartao.limite));
-    campos.dia.definir(String(novo ? DIA_PADRAO : cartao.diaVencimento));
+    campos.dia.definir(String(novo ? DIA_PADRAO : cartao.diaFechamento));
     area.hidden = false;
-    area.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     campos.nome.focar();
   }
 
@@ -61,6 +60,10 @@ export function iniciarCartaoForm(raiz, { signal, salvar }) {
   }
 
   raiz.querySelector('#invest-cartao-cancelar').addEventListener('click', fechar, { signal });
+  // Esc fecha a janela
+  document.addEventListener('keydown', (evento) => {
+    if (evento.key === 'Escape' && !area.hidden && !evento.defaultPrevented) fechar();
+  }, { signal });
 
   formulario.addEventListener('submit', async (evento) => {
     evento.preventDefault();
@@ -81,7 +84,7 @@ export function iniciarCartaoForm(raiz, { signal, salvar }) {
 
     botaoSalvar.disabled = true;
     try {
-      await salvar({ nome, limite, diaVencimento: dia }, modo, cartaoAtual);
+      await salvar({ nome, limite, diaFechamento: dia }, modo, cartaoAtual);
       fechar();
     } catch (erro) {
       if (erro?.code === 'CARD_NAME_TAKEN') campos.nome.definirErro(MENSAGENS.nomeEmUso);

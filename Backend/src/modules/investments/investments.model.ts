@@ -36,8 +36,11 @@ export const MAX_CARTOES = 5;
 // Nome do cartão criado sozinho quando o usuário ainda não tem nenhum.
 export const NOME_CARTAO_PADRAO = "Cartão";
 
-// Valores iniciais do cartão criado sozinho (e do cartão novo sem limite ou vencimento informados).
-export const CARTAO_PADRAO = { limite: 5000, diaVencimento: 10 } as const;
+// Valores iniciais do cartão criado sozinho (e do cartão novo sem limite ou fechamento informados): a fatura fecha no dia 3 e vence 7 dias depois (dia 10).
+export const CARTAO_PADRAO = { limite: 5000, diaFechamento: 3 } as const;
+
+// A fatura vence sempre este número de dias depois do fechamento (simulação: o cartão guarda só o dia do fechamento).
+export const DIAS_DO_FECHAMENTO_AO_VENCIMENTO = 7;
 
 // Chave de comparação do nome: sem espaços nas pontas e sem diferenciar maiúsculas de minúsculas.
 export const chaveDoNome = (nome: string) => nome.trim().toLocaleLowerCase("pt-BR");
@@ -50,8 +53,8 @@ export interface CardDocument {
   // nome em minúsculas: sustenta o índice único (nome único por usuário sem diferenciar maiúsculas)
   nomeChave: string;
   limite: number;
-  // dia do mês do vencimento da fatura (1 a 28, para existir em todos os meses)
-  diaVencimento: number;
+  // dia do mês em que a fatura fecha (1 a 28, para existir em todos os meses); o vencimento é 7 dias depois
+  diaFechamento: number;
 }
 
 const CardSchema = new Schema<CardDocument>(
@@ -60,7 +63,7 @@ const CardSchema = new Schema<CardDocument>(
     nome: { type: String, required: true, trim: true, minlength: 1, maxlength: 40 },
     nomeChave: { type: String, required: true },
     limite: { type: Number, required: true, min: 0 },
-    diaVencimento: { type: Number, required: true, min: 1, max: 28 },
+    diaFechamento: { type: Number, required: true, min: 1, max: 28 },
   },
   { timestamps: true }
 );

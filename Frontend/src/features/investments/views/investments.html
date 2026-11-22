@@ -12,9 +12,16 @@
     </div>
 
     <div id="investments-carregando" class="esqueleto-grupo" role="status">
-        <div class="investments-cartoes">
-            <span class="esqueleto esqueleto--card"></span>
-            <span class="esqueleto esqueleto--card"></span>
+        <!-- o mesmo desenho da fila de cartões: três cartões à vista e o espaço do cartão de novo cartão ao lado -->
+        <div class="investments-cartoes-faixa">
+            <div class="investments-cartoes">
+                <span class="esqueleto esqueleto--card"></span>
+                <span class="esqueleto esqueleto--card"></span>
+                <span class="esqueleto esqueleto--card"></span>
+            </div>
+            <div class="investments-cartao-novo-area">
+                <span class="esqueleto esqueleto--card"></span>
+            </div>
         </div>
         <span class="so-leitor">Carregando seu cartão...</span>
     </div>
@@ -26,7 +33,10 @@
 
     <div id="investments-conteudo" class="investments-conteudo" hidden>
         <div data-incluir="/src/features/investments/components/CartoesLista/CartoesLista.html"></div>
-        <div data-incluir="/src/features/investments/components/CartaoForm/CartaoForm.html"></div>
+        <!-- O formulário do cartão é só uma janela (modal): aparece por cima da página ao clicar em Novo cartão ou Editar -->
+        <div class="investments-modal">
+            <div data-incluir="/src/features/investments/components/CartaoForm/CartaoForm.html"></div>
+        </div>
         <div data-incluir="/src/features/investments/components/CartaoCompras/CartaoCompras.html"></div>
     </div>
 </section>
