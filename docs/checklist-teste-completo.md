@@ -37,7 +37,7 @@ Roteiro para testar o FinanceAI de ponta a ponta na branch de integração, ante
 ## 3. Transações (Grupo 2)
 
 **Cadastro e categoria automática**
-- [ ] Nova transação (despesa) com categoria **Automática** e descrição `Netflix`: a categoria fica **Lazer**.
+- [ ] Nova transação (despesa) com a descrição `Netflix`: clicar em **Sugerir** preenche a categoria **Lazer** antes de salvar. Sem descrição, o botão avisa. A categoria é obrigatória: salvar sem escolher mostra o erro.
 - [ ] Descrições `Uber` (Transporte), `Condomínio` (Moradia), `Farmácia` (Saúde), `Mercado Livre` (Outros) e `Salário` (receita, Salário) caem na categoria esperada.
 - [ ] Descrição sem palavra conhecida fica em **Outros**.
 - [ ] Valor zero, valor negativo, descrição vazia e data inválida são recusados com mensagem no campo.
@@ -116,7 +116,7 @@ Roteiro para testar o FinanceAI de ponta a ponta na branch de integração, ante
 ## 10. Resiliência (Servidor fora do ar)
 
 - [ ] No Terminal 1, digitar `desativar`. O Servidor encerra.
-- [ ] Cadastrar uma transação com categoria Automática continua funcionando e cai em **Outros**.
+- [ ] Com o Servidor Java desligado, o botão **Sugerir** avisa que não foi possível (sem inventar categoria) e dá para escolher na lista.
 - [ ] Criar ou ler uma meta, o Mentor e o cartão respondem com mensagem amigável de "servidor de cálculos fora do ar" (503), **sem travar a tela** nem mostrar erro técnico.
 - [ ] Subir o Servidor de novo **sem reiniciar o Backend**: as telas voltam a funcionar na próxima ação (o pool reconecta).
 
@@ -132,7 +132,52 @@ Roteiro para testar o FinanceAI de ponta a ponta na branch de integração, ante
 - [ ] `cd Servidor && mvn test`: todos passam (130 testes).
 - [ ] Console do navegador sem erros em nenhuma das telas acima.
 
-## 13. Fechamento
+## 13. Contas e transferências (PLANEJADA)
+
+> **Planejado:** ainda não implementado. Testar só depois que as issues #101 a #113 forem entregues (regras RN1 a RN10 em `especificacao-contas-e-transferencias.md`). Use um usuário do plano **Free** e outro do plano **Pro**.
+
+**Contas manuais (Contas conectadas)**
+- [ ] Criar conta manual (Nova conta) com nome, banco e saldo inicial: ela aparece na lista com o saldo atual igual ao saldo inicial.
+- [ ] Nome vazio, com mais de 40 caracteres ou repetido (mesmo trocando maiúsculas por minúsculas) é recusado com mensagem (`409 ACCOUNT_NAME_IN_USE` no repetido).
+- [ ] Criar mais de uma conta (por exemplo, Nubank e Itaú): todas aparecem na lista, cada uma com o seu banco.
+- [ ] Editar nome, banco e saldo inicial de uma conta manual e conferir que o saldo atual recalcula.
+- [ ] Excluir uma conta sem lançamentos funciona, com confirmação. Excluir uma conta com lançamentos é recusado com mensagem clara (`409 ACCOUNT_HAS_TRANSACTIONS`).
+- [ ] Usuário que já tinha lançamentos antes da mudança: existe a conta **Conta principal** (banco "Outro", saldo inicial 0) com todos os lançamentos antigos nela, e as contas conectadas antigas viraram contas Open Finance.
+
+**Regra do plano Pro (Open Finance)**
+- [ ] Plano **Free**: em Nova conta, a opção Open Finance aparece com o selo **PRO** e bloqueada, com o convite para o upgrade. A conta manual continua liberada.
+- [ ] Plano Free: tentar criar conta `open_finance` direto pela API responde `403 PLAN_REQUIRED`, sem criar nada.
+- [ ] Plano **Pro**: a opção Open Finance está liberada e a conexão (Pluggy sandbox) cria a conta com o saldo vindo do provedor.
+- [ ] Conta Open Finance: o saldo não pode ser editado à mão.
+
+**Bloqueio de lançamento sem conta**
+- [ ] Usuário sem nenhuma conta: o botão **Lançamento** leva a criar uma conta em vez de abrir o formulário.
+- [ ] Pela API, `POST /transactions` sem `contaId` ou sem nenhuma conta responde `422 ACCOUNT_REQUIRED`.
+- [ ] Com conta criada, o formulário de lançamento tem o campo **Conta** obrigatório; salvar sem escolher mostra o erro no campo.
+- [ ] Depois de salvar, o lançamento fica ligado à conta escolhida e o saldo dessa conta muda (receita soma, despesa subtrai).
+- [ ] Conta de outro usuário (ou inexistente) no `contaId` responde `404 ACCOUNT_NOT_FOUND`.
+
+**Transferências**
+- [ ] O menu **Lançamento** mostra Nova despesa, Nova receita e **Nova transferência**; o atalho **T** abre a janela da transferência.
+- [ ] Transferir um valor da conta A para a conta B (valor, data, descrição e observação): o saldo de A diminui e o de B aumenta no mesmo valor.
+- [ ] Conta de origem igual à de destino, valor zero ou negativo e campos vazios são recusados com mensagem.
+- [ ] Transferência envolvendo conta Open Finance é recusada (`422 TRANSFER_NOT_ALLOWED`).
+- [ ] A transferência aparece na lista como **um único registro** com tipo **Transferência**.
+- [ ] Editar o valor e excluir uma transferência: os saldos das duas contas recalculam.
+- [ ] O resumo do período e o painel **não** contam a transferência em receitas, despesas nem saldo.
+
+**Coluna Origem mostrando a conta**
+- [ ] A coluna **Origem** mostra a conta (banco e nome) em cada linha, e não só "Manual" ou "Open Finance".
+- [ ] Na transferência, a Origem mostra as duas contas (origem e destino).
+- [ ] O filtro **Origem** lista as contas do usuário e filtra corretamente, sozinho e combinado com os outros filtros (`GET /transactions?contaId=`).
+- [ ] Transações importadas da Pluggy mostram a conta Open Finance de onde vieram.
+
+**Barra de transações (ajustes visuais)**
+- [ ] A faixa de filtros do topo não existe mais: os filtros ficam no cabeçalho das colunas (Tipo, Categoria, Pagamento, Meta, Origem e Valor).
+- [ ] O botão **Selecionar** fica ao lado do botão **Lançamento**.
+- [ ] Os totais (receitas, despesas e saldo) aparecem dentro de um cartão com fundo mais escuro, legível nos temas claro e escuro.
+
+## 14. Fechamento
 
 - [ ] Bugs encontrados registrados abaixo e, se for o caso, abertos como issue na Sprint 5 (#67).
 - [ ] Nenhum arquivo secreto (`.env`) no `git status`.

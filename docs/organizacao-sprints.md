@@ -33,7 +33,7 @@ Cada grupo cria seus próprios tipos de mensagem (`PedidoXxx`/`RespostaXxx`, est
 | Grupo | Tipos de mensagem que ele registra no Servidor Java (operações específicas; o CRUD e o banco ficam no Backend) |
 |---|---|
 | Autenticação & Conta | `PedidoHashSenha`, `PedidoValidarSenha`, `PedidoGerarSegredoMFA`, `PedidoValidarMFA` |
-| Transações (receitas/despesas) | `PedidoCategorizarTransacao` |
+| Transações (receitas/despesas) | `PedidoCategorizarTransacao`, `PedidoCalcularSaldoContas` (Planejado) |
 | Painel Financeiro & Análise | `PedidoCalcularIndicadores`, `PedidoCompararPeriodos` |
 | Mentor Financeiro (IA) | `PedidoMontarContextoIA`, `PedidoFiltrarResposta` |
 | Metas & Investimentos | `PedidoProgressoMeta`, `PedidoRentabilidadeSimulada`, `PedidoCalcularParcelamentos` |
@@ -50,6 +50,7 @@ Cada grupo é uma **fatia vertical completa** (Frontend + Backend + Servidor Jav
 - MFA opcional
 - Perfil e preferências (modo claro/escuro, ocultar valores sensíveis)
 - Plano da conta (Free/Pro) e tela de upgrade
+- **Planejado:** regra do plano Pro para contas Open Finance — só o plano Pro cria conta Open Finance; no Free a API responde `403 PLAN_REQUIRED` e a tela mostra a opção bloqueada com o convite para o upgrade (RN3 de `especificacao-contas-e-transferencias.md`)
 - Canal de suporte / reportar problema
 
 ### Grupo 2 — Transações (Receitas e Despesas)
@@ -59,12 +60,19 @@ Cada grupo é uma **fatia vertical completa** (Frontend + Backend + Servidor Jav
 - Categorização automática, com edição manual
 - Listagem e filtros (categoria, período, valor, origem)
 - Editar, excluir e duplicar lançamento
+- **Planejado:** contas (criar, editar e excluir, com nome, banco e saldo inicial), manuais e Open Finance (esta só no plano Pro), em Contas Conectadas
+- **Planejado:** lançamento manual vinculado a uma conta (`contaId` obrigatório; sem conta, o usuário é levado a criar uma)
+- **Planejado:** transferências entre contas (contas manuais), com a opção "Nova transferência" no menu Lançamento junto de despesa e receita (atalho T)
+- **Planejado:** coluna Origem mostrando a conta, filtro por conta e tipo Transferência na lista
+- **Planejado:** `PedidoCalcularSaldoContas` no Servidor Java (saldo atual de cada conta)
+- Detalhes em `especificacao-contas-e-transferencias.md`
 
 ### Grupo 3 — Painel Financeiro & Análise de Gastos
 - Dashboard inicial (saldo, gastos do mês, economia, fluxo de caixa)
 - Distribuição de gastos por categoria, com visão agregada por grupos de categoria
 - Comparação entre períodos (mensal, últimos 6 meses, YTD)
 - Resumo do período (total, categoria de maior peso, média diária)
+- **Planejado:** painel e resumo do período ignoram transferências nos totais de receitas, despesas e saldo (RN6)
 
 ### Grupo 4 — Mentor Financeiro (IA Generativa)
 - Chat com IA sobre a situação financeira do usuário
@@ -177,6 +185,7 @@ Servidor/src/main/java/com/financeai/
   transactions/
     TransactionsHandler.java
     PedidoCategorizarTransacao (+ Resposta)
+    PedidoCalcularSaldoContas (+ Resposta)   // Planejado
   dashboard/
     DashboardHandler.java
     PedidoCalcularIndicadores, PedidoCompararPeriodos (+ Respostas)
@@ -267,5 +276,27 @@ Cada grupo segue a mesma sequência (CRUD básico → regra de negócio própria
 - Sem features novas
 - Ensaio da apresentação
 - Tag `1.0.0-final`
+
+#### Contas e transferências — trabalho planejado na Sprint 5
+
+Issues #101 a #115, descritas em `especificacao-contas-e-transferencias.md`. Todas **Planejado** (nada implementado ainda).
+
+| Issue | Título | Camada | Grupo | Estimativa |
+|---|---|---|---|---|
+| #101 | Coleção accounts + migração dos lançamentos antigos | BD | 2 | 2,5 h |
+| #102 | CRUD de contas e lista de bancos | Backend | 2 | 5 h |
+| #103 | Restrição do plano Pro para contas Open Finance | Backend | 1 | 2 h |
+| #104 | Lançamentos vinculados a uma conta: contaId obrigatório, filtro e resposta | Backend | 2 | 4 h |
+| #105 | Transferências entre contas (POST /transactions/transfers) | Backend | 2 | 4 h |
+| #106 | Mensagem PedidoCalcularSaldoContas + handler | Servidor | 2 | 3 h |
+| #107 | Painel e resumo do período ignoram transferências nos totais | Backend | 3 | 2 h |
+| #108 | Contas Conectadas: criar, editar e excluir contas (manual e Open Finance só Pro) | Frontend | 2 | 5 h |
+| #109 | Formulário de lançamento com Conta obrigatória e bloqueio sem conta | Frontend | 2 | 3 h |
+| #110 | Nova transferência no menu Lançamento (modal e atalho T) | Frontend | 2 | 4 h |
+| #111 | Coluna Origem mostra a conta e filtro por conta; tipo Transferência na lista | Frontend | 2 | 3 h |
+| #112 | Barra de transações: filtros no cabeçalho das colunas, Selecionar ao lado de Lançamento e totais em cartão escuro | Frontend | 2 | 3 h |
+| #113 | Testes de contas, lançamentos por conta e transferências | Backend | 2 | 4 h |
+| #114 | Atualizar a documentação para contas e transferências | Docs | 2 | 2 h |
+| #115 | Modelagem UML: casos de uso, diagrama de classes, arquitetura e estrutura do Servidor | Docs | — | 6 h |
 
 | **Total** | **50 dias** |
