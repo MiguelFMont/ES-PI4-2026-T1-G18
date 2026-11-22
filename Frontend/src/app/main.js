@@ -11,6 +11,22 @@ const appContent = document.querySelector('#app-content');
 // em #app-content e chama montar(container); ao sair, chama desmontar() e tira os CSS. Quem criar uma tela
 // nova acrescenta uma entrada aqui (o link do menu no index.html usa o mesmo nome em data-rota).
 const TELAS = {
+  dashboard: {
+    titulo: 'Dashboard',
+    html: '/src/features/dashboard/views/dashboard.html',
+    css: [
+      '/src/shared/styles/campos.css',
+      '/src/features/transactions/styles/transactions.css',
+      '/src/features/dashboard/styles/dashboard.css',
+      '/src/features/dashboard/components/DashboardHeader/DashboardHeader.css',
+      '/src/features/dashboard/components/DashboardEstado/DashboardEstado.css',
+      '/src/features/dashboard/components/DashboardResumo/DashboardResumo.css',
+      '/src/features/dashboard/components/DashboardCategorias/DashboardCategorias.css',
+      '/src/features/dashboard/components/DashboardComparacao/DashboardComparacao.css',
+    ],
+    modulo: () => import('../features/dashboard/index.js'),
+  },
+  
   transactions: {
     titulo: 'Transações',
     html: '/src/features/transactions/views/transactions.html',
