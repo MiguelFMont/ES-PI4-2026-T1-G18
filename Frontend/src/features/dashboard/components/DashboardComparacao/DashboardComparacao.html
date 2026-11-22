@@ -1,0 +1,17 @@
+<!-- Componente: Comparação histórica entre períodos calculada pelo Servidor Java (Issues #51 e #89) -->
+<section class="transactions-cartao dashboard-comparacao" aria-labelledby="dash-comparacao-titulo">
+    <div class="dashboard-secao-topo">
+        <div>
+        <h2 id="dash-comparacao-titulo">Comparativo entre períodos</h2>
+        <p class="dashboard-secao-subtitulo">Evolução de receitas, despesas e variação percentual calculada pelo Servidor.</p>
+        </div>
+
+        <div class="dashboard-pills" id="dash-comparacao-botoes" role="group" aria-label="Período de comparação">
+        <button type="button" class="dashboard-pill ativo" data-comp="mes">Mês vs. Anterior</button>
+        <button type="button" class="dashboard-pill" data-comp="6meses">Últimos 6 meses</button>
+        <button type="button" class="dashboard-pill" data-comp="ytd">No ano (YTD)</button>
+        </div>
+    </div>
+
+    <div id="dash-comparacao-conteudo" class="dashboard-comparacao-grid"></div>
+</section>

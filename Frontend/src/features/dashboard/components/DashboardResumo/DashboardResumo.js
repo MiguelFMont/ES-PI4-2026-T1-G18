@@ -1,26 +1,78 @@
-const formatadorBRL = new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-});
+// src/features/dashboard/components/DashboardResumo/DashboardResumo.js
+import { formatarMoeda } from '../../../transactions/utils/format.js';
 
-export function iniciarDashboardResumo(dados = {}) {
-    const container = document.querySelector('#dashboard-resumo');
-    if (!container) return;
+export function iniciarDashboardResumo(raiz) {
+    const elSaldo = raiz.querySelector('#resumo-saldo');
+    const elEntradas = raiz.querySelector('#resumo-entradas');
+    const elSaidas = raiz.querySelector('#resumo-saidas');
+    const elEconomia = raiz.querySelector('#dash-kpi-economia');
 
-    const saldo = Number(dados.saldo ?? 0);
-    const despesas = Number(dados.despesas ?? dados.gastos ?? 0);
-    const receitas = Number(dados.receitas ?? 0);
+    const elSaldoVar = raiz.querySelector('#dash-kpi-saldo-var');
+    const elRecVar = raiz.querySelector('#dash-kpi-receitas-var');
+    const elDespVar = raiz.querySelector('#dash-kpi-despesas-var');
+    const elMetaTexto = raiz.querySelector('#dash-kpi-meta-texto');
+    const elMetaBarra = raiz.querySelector('#dash-kpi-meta-barra');
 
-    const elSaldo = container.querySelector('#card-saldo');
-    const elDespesas = container.querySelector('#card-despesas');
-    const elReceitas = container.querySelector('#card-receitas');
+    function formatarTextoVariacao(valor) {
+        const num = Number(valor || 0);
+        const sinal = num > 0 ? '+' : '';
+        return `${sinal}${num.toFixed(0)}% vs mês anterior`;
+    }
 
-    elSaldo.textContent = formatadorBRL.format(saldo);
-    elSaldo.classList.remove('resumo-card__valor--positivo', 'resumo-card__valor--negativo');
-    elSaldo.classList.add(saldo >= 0 ? 'resumo-card__valor--positivo' : 'resumo-card__valor--negativo');
+    return {
+        atualizarPorTransacoes(transacoes) {
+        const receitas = transacoes.filter((t) => t.tipo === 'receita');
+        const despesas = transacoes.filter((t) => t.tipo === 'despesa');
 
-    elDespesas.textContent = formatadorBRL.format(despesas);
-    elReceitas.textContent = formatadorBRL.format(receitas);
+        const totalRec = receitas.reduce((acc, t) => acc + Number(t.valor || 0), 0);
+        const totalDesp = despesas.reduce((acc, t) => acc + Number(t.valor || 0), 0);
+        const saldo = totalRec - totalDesp;
 
-    container.hidden = false;
+        // Meta de economia sugerida: 30% das receitas (ou R$ 1.000,00 caso ainda não haja receita no período)
+        const metaAlvo = totalRec > 0 ? totalRec * 0.3 : 1000;
+        const economizado = Math.max(0, saldo);
+        const pctMeta = Math.min(100, Math.max(0, Math.round((economizado / metaAlvo) * 100)));
+
+        if (elSaldo) elSaldo.textContent = formatarMoeda(saldo);
+        if (elEntradas) elEntradas.textContent = formatarMoeda(totalRec);
+        if (elSaidas) elSaidas.textContent = formatarMoeda(totalDesp);
+        if (elEconomia) elEconomia.textContent = formatarMoeda(economizado);
+
+        if (elMetaTexto) elMetaTexto.textContent = `${pctMeta}% da meta`;
+        if (elMetaBarra) elMetaBarra.style.width = `${pctMeta}%`;
+        },
+
+        atualizarVariacoes(periodos = []) {
+        const ultimo = periodos[periodos.length - 1];
+        if (!ultimo) return;
+
+        const varSaldo = Number(ultimo.variacaoSaldo || 0);
+        const varRec = Number(ultimo.variacaoReceitas || 0);
+        const varDesp = Number(ultimo.variacaoDespesas || 0);
+
+        if (elSaldoVar) {
+            elSaldoVar.textContent = formatarTextoVariacao(varSaldo);
+            elSaldoVar.className = `dashboard-kpi__variacao ${
+            varSaldo >= 0 ? 'dashboard-kpi__variacao--positiva' : 'dashboard-kpi__variacao--negativa'
+            }`;
+        }
+
+        if (elRecVar) {
+            elRecVar.textContent = formatarTextoVariacao(varRec);
+            elRecVar.className = `dashboard-kpi__variacao ${
+            varRec >= 0 ? 'dashboard-kpi__variacao--positiva' : 'dashboard-kpi__variacao--negativa'
+            }`;
+        }
+
+        if (elDespVar) {
+            elDespVar.textContent = formatarTextoVariacao(varDesp);
+            // Para despesas, subir (+) fica vermelho e cair (-) fica verde, igual na foto!
+            elDespVar.className = `dashboard-kpi__variacao ${
+            varDesp > 0 ? 'dashboard-kpi__variacao--negativa' : 'dashboard-kpi__variacao--positiva'
+            }`;
+        }
+        },
+
+        definirTendencia() {},
+    };
 }

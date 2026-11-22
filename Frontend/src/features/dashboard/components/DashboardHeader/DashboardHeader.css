@@ -1,19 +1,58 @@
+/* Componente DashboardHeader */
 .dashboard-header {
-    display: flex;
-    justify-content: space-between;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 1rem;
 }
 
-.dashboard-header h1 {
+.dashboard-header__ola {
     font-size: 1.75rem;
-    font-weight: 700;
-    color: var(--texto);
-    margin-bottom: 0.25rem;
+    font-weight: 800;
 }
 
-.dashboard-header__subtitulo {
-    color: var(--texto-suave);
+.dashboard-header__sub {
     font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--texto-suave);
+    margin-top: 0.2rem;
+}
+
+.dashboard-header__controles {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.dashboard-header__datas {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 0.75rem;
+    background: var(--fundo-card);
+    box-shadow: var(--sombra);
+    border: var(--borda-elemento, 0);
+}
+
+.dashboard-campo-data {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.dashboard-campo-data label {
+    font-size: 0.75rem;
+    color: var(--texto-suave);
+    font-weight: 700;
+}
+
+.dashboard-campo-data input[type='date'] {
+    min-height: 2rem;
+    padding: 0.2rem 0.5rem;
+    border: 0;
+    border-radius: 0.45rem;
+    background: var(--fundo-campo);
+    color: var(--texto);
+    font: inherit;
+    font-size: 0.82rem;
 }
