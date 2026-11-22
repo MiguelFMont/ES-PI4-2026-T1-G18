@@ -1,18 +1,21 @@
-<!-- Componente: formulário "Nova transação". Lógica em TransactionForm.js.
-     É um painel que desce do topo da tela por cima do conteúdo (CSS em TransactionForm.css);
-     o fundo escurece a página enquanto ele está aberto. -->
+<!-- Componente: janela "Novo lançamento". Lógica em TransactionForm.js.
+     Os campos de lista e a data abrem só ao clicar (data-ao-clicar), não ao passar o mouse. Abre no centro da tela por cima do conteúdo (CSS em TransactionForm.css); o fundo escurece a página enquanto ela está aberta.
+     A categoria se escolhe na lista ou com o botão Sugerir (que pergunta ao Servidor pela descrição). Despesa e Receita são abas; Observação e Meta ficam recolhidas atrás dos botões redondos até serem pedidas. -->
 <div id="transactions-fundo" class="transactions-fundo"></div>
 <div id="transactions-painel-form" class="transactions-painel" role="dialog" aria-modal="true"
   aria-labelledby="transactions-form-titulo">
   <section class="transactions-cartao" aria-labelledby="transactions-form-titulo">
     <div class="transactions-form-topo">
-      <h2 id="transactions-form-titulo">Nova transação</h2>
-      <button type="button" id="botao-fechar-form" class="transactions-botao transactions-botao--secundario">Fechar</button>
+      <h2 id="transactions-form-titulo">Novo lançamento</h2>
+      <button type="button" id="botao-fechar-form" class="form-fechar" aria-label="Fechar">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+      </button>
     </div>
 
     <form id="form-transacao" class="transactions-form" novalidate>
+      <!-- Tipo: duas abas (o botão de opção continua no HTML, para o teclado e o leitor de tela) -->
       <fieldset class="transactions-tipo">
-        <legend>Tipo *</legend>
+        <legend class="so-leitor">Tipo *</legend>
         <div class="transactions-opcoes">
           <label class="transactions-opcao">
             <input type="radio" name="tipo" value="despesa" checked>
@@ -27,31 +30,57 @@
       </fieldset>
 
       <div class="campo transactions-campo--larga">
-        <label for="campo-descricao">Descrição *</label>
-        <input type="text" id="campo-descricao" name="descricao" placeholder="Ex: Supermercado, Uber, Salário" autocomplete="off">
+        <label for="campo-descricao">Descrição</label>
+        <input type="text" id="campo-descricao" name="descricao" placeholder="Adicione uma descrição para o lançamento" autocomplete="off">
         <p class="campo__erro" id="campo-descricao-erro" hidden></p>
       </div>
 
       <div class="campo">
-        <label for="campo-valor">Valor (R$) *</label>
-        <input type="text" id="campo-valor" name="valor" inputmode="decimal" placeholder="0,00" autocomplete="off">
+        <label for="campo-valor">Valor</label>
+        <div class="form-prefixo">
+          <span class="form-prefixo__texto" aria-hidden="true">R$</span>
+          <input type="text" id="campo-valor" name="valor" inputmode="decimal" placeholder="0,00" autocomplete="off">
+        </div>
         <p class="campo__erro" id="campo-valor-erro" hidden></p>
       </div>
 
       <!-- Data: o mesmo calendário do filtro Período (abre ao passar o mouse); também dá para digitar dd/mm/aaaa. -->
-      <div class="campo" data-calendario="unico">
-        <label for="campo-data">Data *</label>
+      <div class="campo" data-calendario="unico" data-ao-clicar>
+        <label for="campo-data">Data</label>
         <input type="text" id="campo-data" name="data" class="calendario__caixa" placeholder="dd/mm/aaaa"
           inputmode="numeric" maxlength="10" autocomplete="off" aria-haspopup="dialog" aria-expanded="false">
         <div data-incluir="/src/shared/components/calendario/Calendario.html"></div>
         <p class="campo__erro" id="campo-data-erro" hidden></p>
       </div>
 
-      <div class="campo campo--seletor">
-        <label for="campo-categoria">Categoria</label>
+      <div class="campo campo--seletor" data-ao-clicar>
+        <label for="campo-formaPagamento">Pagamento</label>
+        <select id="campo-formaPagamento" name="formaPagamento" aria-controls="lista-campo-formaPagamento" aria-expanded="false">
+        <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
+      <option value="">Selecione...</option>
+      <option value="dinheiro">Dinheiro</option>
+      <option value="pix">Pix</option>
+      <option value="debito">Cartão de débito</option>
+      <option value="credito">Cartão de crédito</option>
+      <option value="boleto">Boleto</option>
+      <option value="outro">Outro</option>
+    </select>
+        <div class="seletor__lista" id="lista-campo-formaPagamento" role="listbox" aria-label="Pagamento"></div>
+        <p class="campo__erro" id="campo-formaPagamento-erro" hidden></p>
+      </div>
+
+      <div class="campo campo--seletor" data-ao-clicar>
+        <div class="form-rotulo-linha">
+          <label for="campo-categoria">Categoria</label>
+          <!-- Sugerir: só aqui o Servidor Java é chamado; ele devolve a categoria pela descrição e ela já aparece no campo -->
+          <button type="button" id="botao-sugerir" class="form-sugerir" title="Pergunta ao Servidor a categoria pela descrição">
+            <svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" fill="currentColor"/></svg>
+            <span>Sugerir</span>
+          </button>
+        </div>
         <select id="campo-categoria" name="categoria" aria-controls="lista-campo-categoria" aria-expanded="false">
         <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
-      <option value="">Automática</option>
+      <option value="">Selecione...</option>
       <option value="Alimentacao">Alimentação</option>
       <option value="Transporte">Transporte</option>
       <option value="Moradia">Moradia</option>
@@ -65,25 +94,9 @@
         <p class="campo__erro" id="campo-categoria-erro" hidden></p>
       </div>
 
-      <div class="campo campo--seletor">
-        <label for="campo-formaPagamento">Método de pagamento *</label>
-        <select id="campo-formaPagamento" name="formaPagamento" aria-controls="lista-campo-formaPagamento" aria-expanded="false">
-        <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
-      <option value="">Selecione...</option>
-      <option value="dinheiro">Dinheiro</option>
-      <option value="pix">Pix</option>
-      <option value="debito">Cartão de débito</option>
-      <option value="credito">Cartão de crédito</option>
-      <option value="boleto">Boleto</option>
-      <option value="outro">Outro</option>
-    </select>
-        <div class="seletor__lista" id="lista-campo-formaPagamento" role="listbox" aria-label="Método de pagamento"></div>
-        <p class="campo__erro" id="campo-formaPagamento-erro" hidden></p>
-      </div>
-
       <!-- Cartão e parcelas: só aparecem quando o pagamento é Cartão de crédito (as parcelas, só em despesa). Lógica em
            CartaoDoLancamento.js. Uma compra em mais de 1 parcela cria o parcelamento dela no cartão (aba Cartão). -->
-      <div class="campo campo--seletor" id="campo-cartao-area" hidden>
+      <div class="campo campo--seletor" id="campo-cartao-area" data-ao-clicar hidden>
         <label for="campo-cartao">Cartão *</label>
         <select id="campo-cartao" name="cartaoId" aria-controls="lista-campo-cartao" aria-expanded="false">
           <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
@@ -93,7 +106,7 @@
         <p class="campo__erro" id="campo-cartao-erro" hidden></p>
       </div>
 
-      <div class="campo campo--seletor" id="campo-parcelas-area" hidden>
+      <div class="campo campo--seletor" id="campo-parcelas-area" data-ao-clicar hidden>
         <label for="campo-parcelas">Parcelas</label>
         <select id="campo-parcelas" name="parcelas" aria-controls="lista-campo-parcelas" aria-expanded="false">
           <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
@@ -126,14 +139,29 @@
         <p class="transactions-parcela-ajuda" id="campo-parcelas-ajuda" aria-live="polite"></p>
       </div>
 
+      <!-- Os dois botões redondos abrem as partes recolhidas: Observação e Meta -->
+      <div class="form-extras transactions-campo--larga">
+        <button type="button" id="form-alternar-obs" class="form-redondo" aria-expanded="false" aria-controls="form-obs-area" aria-label="Observação" data-dica="Adicionar observação">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 5.5h14a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5H10l-4 3.5V16.5H5A1.5 1.5 0 0 1 3.5 15V7A1.5 1.5 0 0 1 5 5.5z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M8 10h8M8 13h5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+        </button>
+        <button type="button" id="form-alternar-meta" class="form-redondo" aria-expanded="false" aria-controls="form-meta-area" aria-label="Vincular a uma meta" data-dica="Vincular a uma meta" data-dica-lado="esquerda">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.9"/><circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="1.9"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>
+        </button>
+      </div>
+
+      <div id="form-obs-area" class="campo transactions-campo--larga" data-revelar hidden>
+        <label for="campo-observacoes">Observações</label>
+        <textarea id="campo-observacoes" name="observacoes" rows="2" maxlength="300" placeholder="Informações adicionais (opcional)"></textarea>
+        <p class="campo__erro" id="campo-observacoes-erro" hidden></p>
+        <p class="transactions-contador" id="contador-observacoes" aria-hidden="true">0/300</p>
+      </div>
+
       <!-- Meta (Grupo 5): vincula a transação a uma meta; a despesa soma no progresso da meta (guardou) e a receita subtrai (retirou). Lógica em
            MetaDoLancamento.js: sem metas, abre a janela "Nova meta" (no fim deste arquivo); com metas, mostra a lista. -->
-      <fieldset class="transactions-meta transactions-campo--larga">
+      <fieldset id="form-meta-area" class="transactions-meta transactions-campo--larga" data-revelar hidden>
         <legend class="so-leitor">Meta</legend>
-        <label class="transactions-meta-opcao">
-          <input type="checkbox" class="caixa-selecao" id="campo-vincular-meta" aria-describedby="campo-meta-ajuda">
-          <span>Vincular a uma meta</span>
-        </label>
+        <!-- O botão redondo de meta (acima) é quem liga e desliga o vínculo: esta caixa só guarda o estado e fica escondida -->
+        <input type="checkbox" id="campo-vincular-meta" hidden>
         <p class="transactions-meta-ajuda" id="campo-meta-ajuda">Separou esse dinheiro para um objetivo? Vincule: uma despesa guarda o valor na meta e uma receita retira da meta.</p>
         <p id="campo-meta-carregando" class="transactions-meta-ajuda" role="status" hidden>Carregando suas metas...</p>
         <div id="campo-meta-lista" class="transactions-meta-lista" role="radiogroup" aria-label="Meta da transação" hidden></div>
@@ -141,15 +169,18 @@
         <p class="campo__erro" id="campo-meta-erro" hidden></p>
       </fieldset>
 
-      <div class="campo transactions-campo--larga">
-        <label for="campo-observacoes">Observações</label>
-        <textarea id="campo-observacoes" name="observacoes" rows="2" maxlength="300" placeholder="Informações adicionais (opcional)"></textarea>
-        <p class="campo__erro" id="campo-observacoes-erro" hidden></p>
-        <p class="transactions-contador" id="contador-observacoes" aria-hidden="true">0/300</p>
-      </div>
-
-      <div class="transactions-acoes transactions-campo--larga">
-        <button type="submit" id="botao-salvar" class="transactions-botao">Adicionar transação →</button>
+      <!-- Rodapé: limpar o formulário, salvar (o botão verde) e salvar e criar outro -->
+      <div class="form-rodape transactions-campo--larga">
+        <button type="button" id="botao-limpar-form" class="form-lateral" aria-label="Limpar o formulário" data-dica="Limpar o formulário">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 7h14M10 7V4.8h4V7M7 7l.8 12.2h8.4L17 7M10.2 11v5M13.8 11v5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button type="submit" id="botao-salvar" class="form-salvar">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Salvar lançamento</span>
+        </button>
+        <button type="button" id="botao-salvar-outro" class="form-lateral" aria-label="Salvar e criar outro lançamento" data-dica="Salvar e criar outro" data-dica-lado="esquerda">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3.5" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M12 8.5v7M8.5 12h7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+        </button>
       </div>
     </form>
   </section>

@@ -5,6 +5,18 @@ const CHAVE = '@FinanceAI:tema';
 // em core/styles/global.css (bloco :root[data-estilo='bordas']).
 const CHAVE_ESTILO = '@FinanceAI:estilo';
 
+// Paleta de cores (a cor de destaque da interface): a escolhida vira o atributo data-paleta no <html>; as cores de cada
+// paleta estão em core/styles/global.css (blocos :root[data-paleta=...]). "padrao" é o verde-limão do tema escuro e o verde-floresta do claro.
+const CHAVE_PALETA = '@FinanceAI:paleta';
+// as cores mostradas nas amostras de Minha conta > Preferências: [cartão, destaque, apoio, destaque no tema claro]
+export const PALETAS = [
+  { valor: 'padrao', nome: 'Padrão', descricao: 'Neutra, com verde-limão no escuro', amostra: ['#0b0c10', '#c6f432', '#f1f3f2', '#1e6b47'] },
+  { valor: 'esmeralda', nome: 'Esmeralda e âmbar', descricao: 'Verde com um toque de dourado', amostra: ['#161a1e', '#34d399', '#fbbf24', '#047857'] },
+  { valor: 'oceano', nome: 'Oceano e coral', descricao: 'Azul-céu com rosa-coral', amostra: ['#151b23', '#38bdf8', '#fb7185', '#0369a1'] },
+  { valor: 'violeta', nome: 'Violeta e lima', descricao: 'Roxo com verde-limão', amostra: ['#18171e', '#a78bfa', '#bef264', '#6d28d9'] },
+  { valor: 'terra', nome: 'Terra e turquesa', descricao: 'Laranja queimado com turquesa', amostra: ['#1c1a17', '#fb923c', '#2dd4bf', '#c2410c'] },
+];
+
 function lerSalvo() {
   try {
     return localStorage.getItem(CHAVE);
@@ -48,10 +60,38 @@ export function aplicarEstilo(estilo) {
   }
 }
 
+function lerPaletaSalva() {
+  try {
+    return localStorage.getItem(CHAVE_PALETA);
+  } catch {
+    return null;
+  }
+}
+
+const paletaValida = (valor) => (PALETAS.some((p) => p.valor === valor) ? valor : 'padrao');
+
+export function paletaAtual() {
+  return paletaValida(document.documentElement.dataset.paleta);
+}
+
+export function aplicarPaleta(paleta) {
+  const valida = paletaValida(paleta);
+  const aplicar = () => { document.documentElement.dataset.paleta = valida; };
+  if (reduzirMovimento()) aplicar();
+  else trocarComFade(aplicar); // as cores passam suavemente de uma paleta à outra
+  try {
+    localStorage.setItem(CHAVE_PALETA, valida);
+  } catch {
+    // sem persistência, a paleta vale só nesta sessão da página
+  }
+  return valida;
+}
+
 // Aplica o tema e o estilo guardados. Roda antes de a tela ser montada, então não há piscada de outro visual.
 export function iniciarTema() {
   document.documentElement.dataset.tema = lerSalvo() === 'claro' ? 'claro' : 'escuro';
   document.documentElement.dataset.estilo = lerEstiloSalvo() === 'bordas' ? 'bordas' : 'sombras';
+  document.documentElement.dataset.paleta = paletaValida(lerPaletaSalva());
 }
 
 // Troca de tema com animação. Nos navegadores com a View Transitions API, o tema novo cresce em um círculo a

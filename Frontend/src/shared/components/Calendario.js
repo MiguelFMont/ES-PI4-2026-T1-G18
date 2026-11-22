@@ -174,17 +174,27 @@ export function ligarCalendario(area, { signal } = {}) {
   }
 
   // Abertura: mouse sobre o campo (com uma pequena espera) ou foco por Tab. Clicar não mantém o calendário aberto.
-  area.addEventListener('mouseenter', () => {
-    clearTimeout(temporizador);
-    temporizador = setTimeout(abrir, ESPERA_PARA_ABRIR_MS);
-  });
-  area.addEventListener('mouseleave', () => {
-    clearTimeout(temporizador);
-    temporizador = setTimeout(() => {
-      const focoPorTeclado = area.contains(document.activeElement) && entradaPorTeclado();
-      if (!focoPorTeclado) fechar();
-    }, ESPERA_PARA_FECHAR_MS);
-  });
+  // Com o atributo data-ao-clicar na área (ex.: a janela de novo lançamento), o mouse sobre o campo não abre: só o clique
+  // na caixa de data, e um clique fora fecha.
+  if (area.hasAttribute('data-ao-clicar')) {
+    for (const caixa of caixas) caixa.addEventListener('click', () => abrir());
+    document.addEventListener('click', (evento) => {
+      // o caminho do evento (e não o alvo) porque clicar num dia recria os botões do calendário antes de o clique chegar aqui
+      if (!evento.composedPath().includes(area)) fechar();
+    }, { signal });
+  } else {
+    area.addEventListener('mouseenter', () => {
+      clearTimeout(temporizador);
+      temporizador = setTimeout(abrir, ESPERA_PARA_ABRIR_MS);
+    });
+    area.addEventListener('mouseleave', () => {
+      clearTimeout(temporizador);
+      temporizador = setTimeout(() => {
+        const focoPorTeclado = area.contains(document.activeElement) && entradaPorTeclado();
+        if (!focoPorTeclado) fechar();
+      }, ESPERA_PARA_FECHAR_MS);
+    });
+  }
 
   for (const caixa of caixas) {
     caixa.addEventListener('focus', () => {

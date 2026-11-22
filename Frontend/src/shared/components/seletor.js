@@ -117,16 +117,30 @@ function ligarSeletor(campo, modelo, signal) {
   }
 
   // Mouse: abre depois de uma pequena espera e fecha ao sair, a menos que o campo esteja selecionado por Tab.
-  campo.addEventListener('mouseenter', () => {
-    clearTimeout(temporizador);
-    temporizador = setTimeout(abrir, ESPERA_PARA_ABRIR_MS);
-  });
-  campo.addEventListener('mouseleave', () => {
-    clearTimeout(temporizador);
-    temporizador = setTimeout(() => {
-      if (!focoPorTeclado()) fechar();
-    }, ESPERA_PARA_FECHAR_MS);
-  });
+  // Campo com o atributo data-ao-clicar (ex.: a janela de novo lançamento) não abre ao passar o mouse: só ao clicar nele.
+  if (campo.hasAttribute('data-ao-clicar')) {
+    campo.addEventListener('click', (evento) => {
+      if (lista.contains(evento.target)) return; // clicar numa opção é com o outro ouvinte (escolher)
+      // só o clique em cima da caixa do select abre a lista: o rótulo, um botão que fique dentro do campo (como o Sugerir), a
+      // mensagem de erro e o espaço em volta não abrem. O select tem pointer-events: none, então a posição do clique é que diz.
+      const caixa = select.getBoundingClientRect();
+      const dentro = evento.clientX >= caixa.left && evento.clientX <= caixa.right && evento.clientY >= caixa.top && evento.clientY <= caixa.bottom;
+      if (!dentro || evento.target.closest('label, .campo__erro, button:not(select > button)')) return;
+      if (aberta()) fechar();
+      else abrir();
+    });
+  } else {
+    campo.addEventListener('mouseenter', () => {
+      clearTimeout(temporizador);
+      temporizador = setTimeout(abrir, ESPERA_PARA_ABRIR_MS);
+    });
+    campo.addEventListener('mouseleave', () => {
+      clearTimeout(temporizador);
+      temporizador = setTimeout(() => {
+        if (!focoPorTeclado()) fechar();
+      }, ESPERA_PARA_FECHAR_MS);
+    });
+  }
 
   // Teclado: chegar com Tab abre; sair fecha. (Um foco vindo de clique não abre: quem abre é o mouse sobre o campo.)
   select.addEventListener('focus', () => {

@@ -1,0 +1,857 @@
+/* Lista das transações do mês (TransactionLista.html). Usa as variáveis de tema de core/styles/global.css. */
+
+.lista {
+  position: relative;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.lista__vazio {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--texto-suave);
+}
+
+/* ---------------------------------------------------------------- dia */
+.dia {
+  margin-top: 1.25rem;
+}
+
+.dia__titulo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-inline: 0.6rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.dia__titulo::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--borda);
+}
+
+.dia__lista {
+  display: grid;
+  margin-top: 0.4rem;
+  list-style: none;
+}
+
+/* ---------------------------------------------------------------- linha */
+/* a lista é um contêiner: as colunas menos importantes somem quando falta largura (consultas de contêiner abaixo) */
+.lista {
+  container-type: inline-size;
+  --icone-lapis: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M4.5 19.5l1-4L16.8 4.2a1.9 1.9 0 0 1 2.7 0l.3.3a1.9 1.9 0 0 1 0 2.7L8.5 18.5z'/%3E%3Cpath d='M14.5 6.5l3 3'/%3E%3C/svg%3E");
+}
+
+.linha,
+.lista__cabecalho {
+  --colunas: minmax(0, 1.7fr) 6.5rem minmax(5.5rem, 1fr) minmax(5.5rem, 1fr) minmax(4rem, 0.8fr) 6.5rem 8rem;
+  display: grid;
+  grid-template-columns: var(--colunas);
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.55rem 0.6rem;
+  border-radius: 1rem;
+  cursor: pointer;
+  transition: scale 0.1s ease, background-color 0.15s ease;
+}
+
+.linha:hover {
+  background: var(--fundo-linha);
+}
+
+.linha:focus-visible {
+  outline: none;
+  background: var(--fundo-linha);
+  box-shadow: var(--sombra-foco);
+}
+
+/* a caixa de marcar só existe no modo Selecionar: ela ganha uma coluna só dela, antes das outras */
+.linha__marca {
+  display: none;
+}
+
+/* a primeira coluna é sempre da mesma largura: o ícone de editar (fora do modo Selecionar) ou a caixa de marcar (no modo) */
+.linha,
+.lista__cabecalho,
+.lista--selecionando .linha,
+.lista--selecionando .lista__cabecalho {
+  grid-template-columns: 1.6rem var(--colunas);
+}
+
+.lista--selecionando .linha__marca {
+  display: inline-block;
+  /* as caixas surgem crescendo do centro, uma depois da outra (as primeiras linhas; o resto entra junto) */
+  animation: marca-entrar 0.3s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+.lista--selecionando .dia__lista > .linha:nth-child(2) .linha__marca { animation-delay: 0.03s; }
+.lista--selecionando .dia__lista > .linha:nth-child(3) .linha__marca { animation-delay: 0.06s; }
+.lista--selecionando .dia__lista > .linha:nth-child(4) .linha__marca { animation-delay: 0.09s; }
+.lista--selecionando .dia__lista > .linha:nth-child(5) .linha__marca { animation-delay: 0.12s; }
+.lista--selecionando .dia__lista > .linha:nth-child(6) .linha__marca { animation-delay: 0.15s; }
+.lista--selecionando .dia__lista > .linha:nth-child(7) .linha__marca { animation-delay: 0.18s; }
+.lista--selecionando .dia__lista > .linha:nth-child(8) .linha__marca { animation-delay: 0.21s; }
+.lista--selecionando .dia__lista > .linha:nth-child(9) .linha__marca { animation-delay: 0.24s; }
+.lista--selecionando .dia__lista > .linha:nth-child(10) .linha__marca { animation-delay: 0.27s; }
+
+@keyframes marca-entrar {
+  from { opacity: 0; transform: scale(0.3) rotate(-20deg); }
+}
+
+/* o "Selecionar todas" entra deslizando de leve, antes das caixas */
+.lista__todas:not([hidden]) {
+  animation: marca-area-entrar 0.25s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+@keyframes marca-area-entrar {
+  from { opacity: 0; transform: translateY(-0.3rem); }
+}
+
+.linha__detalhe {
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 0.5rem;
+  color: var(--texto-suave);
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.linha:hover .linha__detalhe {
+  color: var(--destaque);
+}
+
+.lista--selecionando .linha__detalhe {
+  display: none;
+}
+
+.linha--marcada,
+.linha--marcada:hover {
+  background: color-mix(in srgb, var(--destaque) 14%, transparent);
+}
+
+/* campos que se editam ao clicar: um realce leve ao passar o mouse mostra que dá para clicar */
+.celula {
+  position: relative;
+  /* o campo tem só a largura do próprio texto: clicar no espaço ao lado dele (na mesma coluna) abre os detalhes da transação,
+     e só clicar no texto edita */
+  justify-self: start;
+  max-width: 100%;
+  min-width: 0;
+  padding: 0.25rem 0.5rem;
+  margin-inline: -0.5rem;
+  border-radius: 0.6rem;
+  transition: background-color 0.15s ease;
+}
+
+/* Ao passar o mouse: o texto fica verde e um lápis aparece ao lado (não precisa clicar no lápis: é só um aviso de que dá para
+   editar). Sem fundo cinza. O lápis vem depois do texto; no valor (alinhado à direita) vem antes, para o número não andar. */
+.lista:not(.lista--selecionando) .celula:not(.celula--editando):hover {
+  color: var(--destaque);
+}
+
+.lista:not(.lista--selecionando) .celula:not(.celula--editando):hover::after,
+.lista:not(.lista--selecionando) .linha__valor.celula:not(.celula--editando):hover::before {
+  content: '';
+  display: inline-block;
+  flex: none;
+  width: 0.95rem;
+  height: 0.95rem;
+  margin-inline: 0.4rem 0;
+  vertical-align: -0.15em;
+  background: currentColor;
+  -webkit-mask: var(--icone-lapis) center / contain no-repeat;
+  mask: var(--icone-lapis) center / contain no-repeat;
+}
+
+.lista:not(.lista--selecionando) .linha__valor.celula:not(.celula--editando):hover::after {
+  content: none;
+}
+
+.lista:not(.lista--selecionando) .linha__valor.celula:not(.celula--editando):hover::before {
+  margin-inline: 0 0.4rem;
+}
+
+.celula--vazia {
+  /* mais apagado só no texto: a opacidade da célula inteira deixaria translúcida a lista de opções aberta dentro dela */
+  color: color-mix(in srgb, var(--texto-suave) 70%, transparent);
+}
+
+/* o valor fica encostado à direita; editando, qualquer campo ocupa a coluna toda para caber a caixa de texto */
+.linha__valor.celula {
+  justify-self: end;
+}
+
+.celula.celula--editando,
+.celula.celula--editando:hover {
+  justify-self: stretch;
+  background: transparent; /* editando: sem fundo, só o texto e o cursor */
+  z-index: 3;
+  overflow: visible; /* as colunas cortam o texto com reticências; o campo em edição precisa deixar a lista aparecer */
+  text-overflow: clip;
+}
+
+/* editando categoria, pagamento ou meta: o texto fica cortado com reticências dentro da própria coluna (a lista aparece por cima) */
+.celula--editando:has(> .celula__texto) {
+  display: flex;
+  align-items: center;
+}
+
+.celula__texto {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.celula__entrada {
+  width: 100%;
+  min-width: 0;
+  padding: 0; /* o texto fica exatamente onde estava */
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--texto);
+  font: inherit;
+}
+
+.linha__valor .celula__entrada {
+  text-align: right;
+}
+
+.celula__entrada:focus {
+  outline: none;
+}
+
+.celula__menu {
+  position: absolute;
+  top: calc(100% + 0.3rem);
+  left: 0;
+  z-index: 8;
+  display: grid;
+  min-width: 11rem;
+  max-height: 16rem;
+  padding: 0.35rem;
+  overflow-x: hidden; /* só rola na vertical */
+  overflow-y: auto;
+  border: var(--borda-elemento, 0);
+  border-radius: 1rem;
+  background: var(--fundo-card);
+  box-shadow: var(--sombra-flutuante);
+  animation: celula-menu-entrar 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: default;
+}
+
+.linha__valor .celula__menu {
+  left: auto;
+  right: 0;
+}
+
+@keyframes celula-menu-entrar {
+  from { opacity: 0; transform: translateY(-0.3rem) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+.celula__opcao {
+  padding: 0.5rem 0.75rem;
+  border: 0;
+  border-radius: 0.6rem;
+  background: transparent;
+  color: var(--texto);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.celula__opcao:hover,
+.celula__opcao:focus-visible {
+  background: var(--fundo-linha);
+  outline: none;
+}
+
+.celula__opcao[aria-selected='true'] {
+  font-weight: 700;
+  background: var(--fundo-celula);
+}
+
+.linha__celula,
+.linha__origem {
+  overflow: hidden;
+  color: var(--texto-suave);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.linha__origem {
+  font-size: 0.85rem;
+}
+
+.linha__descricao {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  font-weight: 500;
+}
+
+.linha__descricao > span:first-child {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.linha__etiqueta {
+  flex: none;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: var(--fundo-celula);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.linha__valor {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.linha__valor--receita {
+  color: var(--positivo);
+}
+
+/* nomes das colunas: a mesma grade das linhas; os espaços (ícone, caixa de marcar, recuo das células) imitam os da linha */
+.lista__cabecalho {
+  display: grid;
+  grid-template-columns: 1.6rem var(--colunas);
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.5rem 0.6rem 0.4rem;
+  color: var(--texto-suave);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+/* sempre ocupa a primeira coluna (acima do ícone de editar e da caixa de marcar) */
+.cab__marca {
+  display: block;
+  width: 1.6rem; /* a largura da caixa de marcar */
+}
+
+
+.cab {
+  min-width: 0;
+  padding: 0 0.5rem;
+  margin-inline: -0.5rem; /* o mesmo recuo das células editáveis, para o texto alinhar */
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.cab--valor {
+  text-align: right;
+}
+
+.lista__mais {
+  justify-self: center;
+  margin-top: 1rem;
+}
+
+/* ---------------------------------------------------------------- totais no alto do extrato */
+/* os totais ficam num cartão com o fundo da página, mais escuro que o dos cartões, no canto direito */
+.lista__resumo {
+  display: flex;
+  justify-content: flex-end; /* no canto direito */
+  margin-bottom: 0.75rem;
+}
+
+.lista__resumo .lista__totais {
+  padding: 0.9rem 1.4rem;
+  border-radius: 1.1rem;
+  background: var(--fundo);
+}
+
+.lista__totais {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 15rem;
+}
+
+.lista__totais > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+  color: var(--texto-suave);
+}
+
+.lista__totais dd {
+  font-variant-numeric: tabular-nums;
+}
+
+.lista__total-saldo {
+  font-size: 1.15rem;
+}
+
+.lista__total-saldo dd {
+  color: var(--positivo);
+  font-weight: 700;
+}
+
+.lista__total-saldo dd.lista__saldo--negativo {
+  color: var(--negativo);
+}
+
+/* ---------------------------------------------------------------- "Limpar seleção" */
+.lista__todas {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: fit-content;
+  margin: 0.5rem 0.6rem 0;
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+/* ---------------------------------------------------------------- barra escura das marcadas */
+/* a âncora tem altura zero e gruda no alto da janela ao rolar; a barra fica centralizada em cima da lista */
+.selecao-ancora {
+  position: sticky;
+  top: 1rem;
+  z-index: 6;
+  height: 0;
+}
+
+.selecao {
+  position: absolute;
+  top: -0.25rem;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 1.1rem;
+  background: #161816;
+  color: #f4f5f7;
+  box-shadow: var(--sombra-flutuante);
+  transform: translateX(-50%);
+  animation: selecao-entrar 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.selecao[hidden] {
+  display: none;
+}
+
+@keyframes selecao-entrar {
+  from { opacity: 0; transform: translate(-50%, -0.6rem); }
+  to { opacity: 1; transform: translateX(-50%); }
+}
+
+.selecao__chip {
+  padding: 0.3rem 0.8rem;
+  border-radius: 0.7rem;
+  background: var(--destaque-2);
+  color: var(--destaque-2-texto);
+  font-weight: 700;
+}
+
+.selecao__total {
+  font-weight: 700;
+  color: #fca5a5;
+}
+
+.selecao__total--positivo {
+  color: #86efac;
+}
+
+.selecao__divisor {
+  width: 1px;
+  align-self: stretch;
+  margin-block: 0.2rem;
+  background: rgb(255 255 255 / 0.18);
+}
+
+.selecao__acoes {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.selecao__area {
+  position: relative;
+}
+
+.selecao__botao {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border: 0;
+  border-radius: 0.7rem;
+  background: transparent;
+  color: #f4f5f7;
+  cursor: pointer;
+  transition: scale 0.1s ease, background-color 0.15s ease;
+}
+
+.selecao__botao--quadrado {
+  background: rgb(255 255 255 / 0.1);
+}
+
+.selecao__botao:hover,
+.selecao__botao:focus-visible,
+.selecao__botao[aria-expanded='true'] {
+  background: rgb(255 255 255 / 0.14);
+  scale: 1.06;
+}
+
+.selecao__botao:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--destaque);
+}
+
+.selecao__botao--perigo {
+  color: #fca5a5;
+}
+
+/* a dica ("Categoria", "Excluir"...) aparece embaixo do botão, num balão claro */
+.selecao__botao[data-dica]::after {
+  content: attr(data-dica);
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  left: 50%;
+  padding: 0.3rem 0.7rem;
+  border-radius: 0.6rem;
+  background: #fff;
+  color: #1f2937;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  box-shadow: var(--sombra-flutuante);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -0.25rem);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+
+.selecao__botao[data-dica]:hover::after,
+.selecao__botao[data-dica]:focus-visible::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.selecao__botao[aria-expanded='true']::after {
+  display: none;
+}
+
+.selecao__menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 50%;
+  z-index: 8;
+  display: grid;
+  min-width: 11rem;
+  padding: 0.35rem;
+  border-radius: 1rem;
+  background: #fff;
+  color: #1f2937;
+  box-shadow: var(--sombra-flutuante);
+  transform: translateX(-50%);
+  animation: selecao-menu-entrar 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.selecao__menu[hidden] {
+  display: none;
+}
+
+@keyframes selecao-menu-entrar {
+  from { opacity: 0; transform: translate(-50%, -0.4rem) scale(0.97); }
+  to { opacity: 1; transform: translateX(-50%); }
+}
+
+.selecao__opcao {
+  padding: 0.55rem 0.8rem;
+  border: 0;
+  border-radius: 0.65rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.selecao__opcao:hover,
+.selecao__opcao:focus-visible {
+  background: #f1f3f2;
+  outline: none;
+}
+
+@container (max-width: 62rem) {
+  .linha,
+  .lista__cabecalho {
+    --colunas: minmax(0, 1.7fr) 6.5rem minmax(5.5rem, 1fr) minmax(5.5rem, 1fr) 8rem;
+  }
+
+  .linha__celula--meta,
+  .linha__origem,
+  .cab--meta,
+  .cab--origem {
+    display: none;
+  }
+}
+
+@container (max-width: 40rem) {
+  .linha,
+  .lista__cabecalho {
+    --colunas: minmax(0, 1fr) 8rem;
+  }
+
+  .linha__celula,
+  .cab--celula {
+    display: none;
+  }
+}
+
+.selecao__menu--form {
+  display: grid;
+  gap: 0.4rem;
+  min-width: 16rem;
+  padding: 0.9rem;
+}
+
+.selecao__menu--form[hidden] {
+  display: none;
+}
+
+.selecao__menu--form label {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.selecao__menu--form input {
+  min-height: 2.4rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.7rem;
+  background: #fff;
+  color: #1f2937;
+  font: inherit;
+}
+
+.selecao__menu--form input:focus {
+  outline: none;
+  border-color: var(--destaque);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--destaque) 30%, transparent);
+}
+
+.selecao__aplicar {
+  margin-top: 0.4rem;
+  min-height: 2.5rem;
+  padding: 0.4rem 1rem;
+  border: 0;
+  border-radius: 0.8rem;
+  background: var(--destaque);
+  color: var(--destaque-texto);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@media (max-width: 767px) {
+  .linha,
+  .lista--selecionando .linha {
+    grid-template-columns: 1.6rem minmax(0, 1fr) auto;
+  }
+
+  .selecao {
+    gap: 0.4rem;
+  }
+
+  .selecao__total {
+    display: none;
+  }
+
+  .linha__conta {
+    display: none;
+  }
+}
+
+/* ---------------------------------------------------------------- alterações pendentes */
+
+/* o campo com alteração ainda não confirmada: um realce leve na cor de destaque */
+.celula--pendente {
+  background: color-mix(in srgb, var(--destaque) 16%, transparent);
+}
+
+/* a barra entra no fluxo, logo abaixo da lista (não cobre nenhuma linha) e, se a lista for longa, gruda embaixo da janela */
+.pendentes-ancora {
+  display: contents;
+}
+
+.pendentes {
+  position: sticky;
+  bottom: 1rem;
+  z-index: 6;
+  justify-self: center;
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 0.55rem 0.6rem 0.55rem 1.25rem;
+  border-radius: 1.1rem;
+  background: #161816;
+  color: #f4f5f7;
+  box-shadow: var(--sombra-flutuante);
+  animation: pendentes-entrar 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.pendentes[hidden] {
+  display: none;
+}
+
+@keyframes pendentes-entrar {
+  from { opacity: 0; transform: translateY(0.75rem); }
+  to { opacity: 1; transform: none; }
+}
+
+.pendentes__texto {
+  font-weight: 700;
+}
+
+.pendentes__acoes {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.pendentes__botao {
+  min-height: 2.4rem;
+  padding: 0.3rem 1rem;
+  border: 0;
+  border-radius: 0.8rem;
+  background: rgb(255 255 255 / 0.12);
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: scale 0.1s ease, background-color 0.15s ease;
+}
+
+.pendentes__botao:hover:not(:disabled),
+.pendentes__botao:focus-visible {
+  scale: 1.04;
+  outline: none;
+}
+
+.pendentes__botao--confirmar {
+  background: var(--destaque);
+  color: var(--destaque-texto);
+}
+
+.pendentes__botao:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+@media (max-width: 767px) {
+  .pendentes {
+    gap: 0.6rem;
+    padding-left: 0.9rem;
+  }
+}
+
+
+/* Tipo (Manter, Despesa, Receita) dentro do formulário do valor da barra escura: três pílulas de escolha única */
+.selecao__tipos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  min-width: 0;
+  margin: 0.2rem 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.selecao__tipos legend {
+  width: 100%;
+  margin-bottom: 0.3rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.selecao__tipo {
+  cursor: pointer;
+}
+
+.selecao__tipo input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.selecao__tipo span {
+  display: inline-block;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  background: #eef0f2;
+  color: #1f2937;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: background-color 0.15s ease, color 0.15s ease, scale 0.1s ease;
+}
+
+.selecao__tipo:hover span {
+  scale: 1.04;
+}
+
+.selecao__tipo input:checked + span {
+  background: var(--destaque);
+  color: var(--destaque-texto);
+}
+
+.selecao__tipo input:focus-visible + span {
+  box-shadow: 0 0 0 2px var(--destaque);
+}
+
+
+/* Colunas que são filtros: o cabeçalho deixa o menu do filtro sair da célula (sem cortar com reticências) */
+.cab--filtro {
+  position: relative;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+/* sem espaço para as colunas (a lista é estreita), os filtros passam para o painel da barra: o cabeçalho volta a ser só texto */
+@container (max-width: 62rem) {
+  .cab--filtro .barra__pilula-area {
+    pointer-events: none;
+  }
+
+  .cab--filtro .barra__cab-seta,
+  .cab--filtro .barra__menu {
+    display: none;
+  }
+}
+
+/* Telas largas: os totais sobem para a altura da primeira linha da barra (à direita, onde há espaço) e o resto da lista sobe junto */
+@container (min-width: 62rem) {
+  .lista__resumo {
+    position: relative;
+    z-index: 1;
+    margin-top: -4.1rem;
+    pointer-events: none; /* o cabeçalho ocupa a largura toda e cobriria os botões e filtros da barra */
+  }
+
+  .lista__resumo .lista__totais {
+    pointer-events: auto;
+  }
+}

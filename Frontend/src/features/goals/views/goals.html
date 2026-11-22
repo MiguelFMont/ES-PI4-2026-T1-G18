@@ -14,6 +14,9 @@
         <button type="button" id="goals-nova" class="goals-botao" aria-expanded="false" aria-controls="goals-form-area">Nova meta</button>
     </div>
 
-    <div data-incluir="/src/features/goals/components/GoalForm/GoalForm.html"></div>
+    <!-- O formulário é só uma janela (modal): aparece por cima da página ao clicar em Nova meta ou Editar -->
+    <div class="goals-modal">
+        <div data-incluir="/src/features/goals/components/GoalForm/GoalForm.html"></div>
+    </div>
     <div data-incluir="/src/features/goals/components/GoalList/GoalList.html"></div>
 </section>

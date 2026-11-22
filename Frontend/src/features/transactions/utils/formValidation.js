@@ -9,7 +9,7 @@ export const MENSAGENS_CAMPO = {
   descricao: 'Informe a descrição.',
   valor: 'Informe um valor maior que zero.',
   data: 'Informe uma data válida.',
-  categoria: 'Escolha a categoria.',
+  categoria: 'Escolha a categoria ou use Sugerir.',
   formaPagamento: 'Escolha o pagamento.',
   meta: 'Escolha a meta.',
   metaId: 'Escolha a meta.',
@@ -62,15 +62,14 @@ export function validarCampo(nome, texto) {
 /**
  * Confere os campos do formulário de cadastro.
  * Devolve `{ erros, dados }`: `erros` é um mapa campo -> mensagem; `dados` é o corpo pronto
- * para a API (ou null se houver algum erro). As observações e a categoria são opcionais: sem categoria
- * ("Automática"), o campo nem vai para a API e o Servidor sugere a categoria pela descrição.
+ * para a API (ou null se houver algum erro). As observações são opcionais; a categoria é obrigatória: o usuário a escolhe
+ * na lista ou pede ao Servidor com o botão Sugerir (a API ainda aceita cadastrar sem categoria e sugere sozinha).
  */
 export function validarFormulario(valores) {
   const erros = {};
   const dados = {};
 
   for (const nome of ['tipo', 'descricao', 'valor', 'data', 'categoria', 'formaPagamento', 'observacoes']) {
-    if (nome === 'categoria' && !String(valores.categoria ?? '').trim()) continue; // Automática
     const { erro, valor } = validarCampo(nome, valores[nome]);
     if (erro) erros[nome] = erro;
     else dados[nome] = valor;

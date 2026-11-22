@@ -1,0 +1,131 @@
+<!-- Componente: detalhes de uma transação, num painel que desliza da direita. Lógica em TransactionDetalhe.js.
+     Abre editando a DATA e a OBSERVAÇÃO; o botão "Editar todos os campos" mostra também descrição, valor, tipo, categoria, pagamento e meta
+     (que também se editam ao clicar neles na própria lista). O botão "Salvar alterações" só aparece quando algo mudou. "Editar todos os campos" liga os demais (descrição, valor, tipo, categoria, pagamento e meta). Embaixo ficam duplicar e excluir. -->
+<div id="detalhe-fundo" class="detalhe-fundo"></div>
+<aside id="detalhe" class="detalhe" role="dialog" aria-modal="true" aria-labelledby="detalhe-titulo" aria-hidden="true" inert>
+  <div class="detalhe__topo">
+    <span id="detalhe-tipo" class="detalhe__chip"></span>
+    <button type="button" id="detalhe-fechar" class="detalhe__fechar" aria-label="Fechar os detalhes">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+
+  <form id="detalhe-form" class="detalhe__form" novalidate>
+    <h2 id="detalhe-titulo" class="so-leitor">Detalhes da transação</h2>
+
+    <!-- Descrição e valor: só para ler (editam-se na lista) -->
+    <div class="detalhe__cabecalho">
+      <p id="detalhe-descricao" class="detalhe__descricao"></p>
+
+      <div class="detalhe__valor">
+        <span class="detalhe__moeda" aria-hidden="true">R$</span>
+        <span id="detalhe-valor" class="detalhe__valor-campo valor-financeiro"></span>
+        <span id="detalhe-origem" class="detalhe__chip detalhe__chip--ok"></span>
+      </div>
+    </div>
+
+    <!-- O painel abre só com a data e a observação (o que mais se muda); este botão liga a edição de TODOS os campos -->
+    <button type="button" id="detalhe-modo" class="detalhe__modo" aria-expanded="false" aria-controls="detalhe-extras">
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4.5 19.5l1-4L16.8 4.2a1.9 1.9 0 0 1 2.7 0l.3.3a1.9 1.9 0 0 1 0 2.7L8.5 18.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+      <span id="detalhe-modo-texto">Editar todos os campos</span>
+    </button>
+
+    <div class="detalhe__linhas">
+      <!-- Os demais campos: só aparecem no modo "todos os campos" -->
+      <div id="detalhe-extras" class="detalhe__extras" hidden>
+        <div class="campo detalhe__linha">
+          <label for="detalhe-descricao-campo">Descrição</label>
+          <input type="text" id="detalhe-descricao-campo" maxlength="200" autocomplete="off">
+          <p class="campo__erro" id="detalhe-descricao-erro" hidden></p>
+        </div>
+        <div class="campo detalhe__linha">
+          <label for="detalhe-valor-campo">Valor (R$)</label>
+          <input type="text" id="detalhe-valor-campo" inputmode="decimal" placeholder="0,00" autocomplete="off">
+          <p class="campo__erro" id="detalhe-valor-erro" hidden></p>
+        </div>
+        <div class="campo detalhe__linha campo--seletor" data-ao-clicar>
+          <label for="detalhe-tipo-campo">Tipo</label>
+          <select id="detalhe-tipo-campo" aria-controls="lista-detalhe-tipo-campo" aria-expanded="false">
+            <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
+            <option value="despesa">Despesa</option>
+            <option value="receita">Receita</option>
+          </select>
+          <div class="seletor__lista" id="lista-detalhe-tipo-campo" role="listbox" aria-label="Tipo"></div>
+          <p class="campo__erro" id="detalhe-tipo-erro" hidden></p>
+        </div>
+        <div class="campo detalhe__linha campo--seletor" data-ao-clicar>
+          <label for="detalhe-categoria">Categoria</label>
+          <select id="detalhe-categoria" aria-controls="lista-detalhe-categoria" aria-expanded="false">
+            <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
+            <option value="Alimentacao">Alimentação</option>
+            <option value="Transporte">Transporte</option>
+            <option value="Moradia">Moradia</option>
+            <option value="Saude">Saúde</option>
+            <option value="Lazer">Lazer</option>
+            <option value="Educacao">Educação</option>
+            <option value="Salario">Salário</option>
+            <option value="Outros">Outros</option>
+          </select>
+          <div class="seletor__lista" id="lista-detalhe-categoria" role="listbox" aria-label="Categoria"></div>
+          <p class="campo__erro" id="detalhe-categoria-erro" hidden></p>
+        </div>
+        <div class="campo detalhe__linha campo--seletor" data-ao-clicar>
+          <label for="detalhe-formaPagamento">Pagamento</label>
+          <select id="detalhe-formaPagamento" aria-controls="lista-detalhe-formaPagamento" aria-expanded="false">
+            <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
+            <option value="dinheiro">Dinheiro</option>
+            <option value="pix">Pix</option>
+            <option value="debito">Cartão de débito</option>
+            <option value="credito">Cartão de crédito</option>
+            <option value="boleto">Boleto</option>
+            <option value="outro">Outro</option>
+          </select>
+          <div class="seletor__lista" id="lista-detalhe-formaPagamento" role="listbox" aria-label="Pagamento"></div>
+          <p class="campo__erro" id="detalhe-formaPagamento-erro" hidden></p>
+        </div>
+        <div class="campo detalhe__linha campo--seletor" data-ao-clicar>
+          <label for="detalhe-metaId">Meta</label>
+          <select id="detalhe-metaId" aria-controls="lista-detalhe-metaId" aria-expanded="false">
+            <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
+            <option value="">Sem meta</option>
+          </select>
+          <div class="seletor__lista" id="lista-detalhe-metaId" role="listbox" aria-label="Meta"></div>
+          <p class="campo__erro" id="detalhe-metaId-erro" hidden></p>
+        </div>
+      </div>
+
+      <!-- Data: o calendário do projeto (shared/components/Calendario.js), o mesmo do formulário de novo lançamento; abre ao clicar. -->
+      <div class="campo detalhe__linha" data-calendario="unico" data-ao-clicar>
+        <label for="detalhe-data">Data</label>
+        <input type="text" id="detalhe-data" class="calendario__caixa" placeholder="dd/mm/aaaa"
+          inputmode="numeric" maxlength="10" autocomplete="off" aria-haspopup="dialog" aria-expanded="false">
+        <div data-incluir="/src/shared/components/calendario/Calendario.html"></div>
+        <p class="campo__erro" id="detalhe-data-erro" hidden></p>
+      </div>
+
+      <p id="detalhe-credito" class="detalhe__nota" hidden></p>
+
+      <div class="campo detalhe__linha detalhe__linha--texto">
+        <label for="detalhe-observacoes">Observação</label>
+        <textarea id="detalhe-observacoes" rows="5" maxlength="300" placeholder="Adicione uma observação"></textarea>
+        <p class="campo__erro" id="detalhe-observacoes-erro" hidden></p>
+      </div>
+    </div>
+  </form>
+
+  <div class="detalhe__rodape">
+    <button type="button" id="detalhe-salvar" class="detalhe__salvar" hidden>Salvar alterações</button>
+    <button type="button" id="detalhe-duplicar" class="detalhe__icone" aria-label="Duplicar com a data de hoje" data-dica="Duplicar com a data de hoje" data-dica-lado="esquerda">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="8.5" y="8.5" width="11" height="11" rx="2.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.5 8.5V6.7a2.2 2.2 0 0 0-2.2-2.2H6.7a2.2 2.2 0 0 0-2.2 2.2v6.6a2.2 2.2 0 0 0 2.2 2.2h1.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <button type="button" id="detalhe-excluir" class="detalhe__icone detalhe__icone--perigo" aria-label="Excluir transação" data-dica="Excluir transação" data-dica-lado="esquerda">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 7h14M10 7V4.8h4V7M7 7l.8 12.2h8.4L17 7M10.2 11v5M13.8 11v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+</aside>
+
+<!-- Modelo de uma opção das listas dos selects do projeto (shared/components/seletor.js copia este bloco para cada <option>):
+     usado pelas listas do formulário de novo lançamento, que fica na mesma tela. -->
+<template id="modelo-opcao-seletor">
+  <div class="seletor__opcao" role="option"></div>
+</template>

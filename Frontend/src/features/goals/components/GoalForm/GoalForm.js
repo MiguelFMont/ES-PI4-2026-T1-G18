@@ -121,6 +121,10 @@ export function iniciarFormulario(raiz, { signal, enviar, aoFechar }) {
 
   botaoAbrir?.addEventListener('click', () => (area.hidden ? iniciarNovo() : fechar()), { signal });
   raiz.querySelector('#goals-cancelar').addEventListener('click', () => fechar(), { signal });
+  // Esc fecha a janela (se o calendário do prazo estiver aberto, é ele que fecha primeiro)
+  document.addEventListener('keydown', (evento) => {
+    if (evento.key === 'Escape' && !area.hidden && !evento.defaultPrevented && !formulario.querySelector('[aria-expanded="true"]')) fechar();
+  }, { signal });
 
   function iniciarNovo() {
     idEmEdicao = null;

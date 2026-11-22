@@ -15,6 +15,17 @@ export function listarTransacoes(filtros = {}) {
 }
 
 /**
+ * Pergunta ao Servidor Java a categoria de uma descrição, sem gravar nada (POST /transactions/suggest-category): o botão
+ * "Sugerir" do formulário. `valor` é opcional. Devolve { categoria }.
+ */
+export function sugerirCategoria(descricao, valor) {
+  return apiFetch('/transactions/suggest-category', {
+    method: 'POST',
+    body: JSON.stringify(valor === undefined ? { descricao } : { descricao, valor }),
+  });
+}
+
+/**
  * Cadastra uma transação (POST /transactions).
  * `dados`: { tipo, valor, data, descricao, categoria?, formaPagamento? }. Devolve a transação criada.
  */

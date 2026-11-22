@@ -116,3 +116,14 @@
     flex: 1;
   }
 }
+
+/* o cartão único da tela: barra do topo e lista do mês */
+.transactions-novo {
+  display: grid;
+  gap: 1.25rem;
+  padding: 1.5rem;
+  border: var(--borda-elemento, 0);
+  border-radius: 1.75rem;
+  background: var(--fundo-card);
+  box-shadow: var(--sombra);
+}

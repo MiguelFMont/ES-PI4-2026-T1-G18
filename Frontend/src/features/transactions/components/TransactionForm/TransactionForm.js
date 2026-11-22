@@ -1,4 +1,4 @@
-import { criarTransacao } from '../../services/transactionsService.js';
+import { criarTransacao, sugerirCategoria } from '../../services/transactionsService.js';
 import { aplicarMascaraMoeda, ligarCampo } from '../../../../shared/components/campos.js';
 import { ligarCalendario } from '../../../../shared/components/Calendario.js';
 import { notificar } from '../../../../shared/components/notificacao.js';
@@ -13,12 +13,12 @@ const ORDEM_DOS_CAMPOS = ['tipo', 'descricao', 'valor', 'data', 'categoria', 'fo
 
 // Campo da API -> campo do formulário, quando os nomes são diferentes (cartaoId e parcelas aparecem juntos, no campo Cartão)
 const CAMPO_DA_API = { metaId: 'meta', cartaoId: 'cartao', parcelas: 'cartao' };
-const TEXTO_BOTAO = 'Adicionar transação →';
 
 /**
- * Liga a lógica ao formulário "Nova transação" (HTML em TransactionForm.html), que é um painel
- * que desce do topo da tela. O botão #botao-alternar-form da página o abre; ele fecha com o botão
- * "Fechar", com a tecla Esc ou clicando no fundo escuro.
+ * Liga a lógica à janela "Novo lançamento" (HTML em TransactionForm.html), que abre no centro da tela. O botão
+ * #botao-alternar-form da página (e o menu dele) a abre; ela fecha com o X, com a tecla Esc ou clicando no fundo escuro.
+ * A categoria é escolhida na lista ou pelo botão Sugerir, que chama o Servidor Java antes de salvar. Observação e Meta ficam recolhidas atrás de botões redondos. O botão verde salva e fecha; "Salvar e criar outro" salva e
+ * deixa a janela aberta, com os campos limpos; a lixeira limpa o formulário.
  * Erros de preenchimento mostram uma mensagem curta no campo e uma notificação geral. Só atualiza a tela depois
  * que o Backend confirma a gravação. Depois de salvar, o painel fecha e `aoSalvar()` é chamado (e aguardado); o tipo
  * e a data escolhidos ficam para o próximo lançamento.
@@ -62,7 +62,16 @@ export function iniciarFormulario(raiz, { aoSalvar, signal }) {
   const travar = () => { if (!rolagemTravada) { travarRolagem(); rolagemTravada = true; } };
   const liberar = () => { if (rolagemTravada) { liberarRolagem(); rolagemTravada = false; } };
 
-  function abrirPainel() {
+  // `tipo` ('despesa' ou 'receita') abre o formulário já nele; sem tipo (o clique direto no botão) vale o que estava marcado.
+  function abrirPainel(tipo) {
+    if (tipo === 'despesa' || tipo === 'receita') {
+      const opcao = raiz.querySelector(`input[name="tipo"][value="${tipo}"]`);
+      if (opcao && !opcao.checked) {
+        opcao.checked = true;
+        opcao.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    }
+    limparErros(); // os avisos de uma abertura anterior não ficam
     painel.classList.add('transactions-painel--aberto');
     fundo.classList.add('transactions-fundo--aberto');
     travar(); // trava a rolagem da página de trás, sem a barra sumir e deslocar os campos
@@ -102,11 +111,32 @@ export function iniciarFormulario(raiz, { aoSalvar, signal }) {
     }
   });
 
+  // Observação e Meta ficam recolhidas atrás dos botões redondos (aria-expanded diz se estão abertas)
+  const partes = [
+    { botao: raiz.querySelector('#form-alternar-obs'), area: raiz.querySelector('#form-obs-area') },
+    { botao: raiz.querySelector('#form-alternar-meta'), area: raiz.querySelector('#form-meta-area'), meta: true },
+  ];
+  const caixaMeta = raiz.querySelector('#campo-vincular-meta'); // escondida: o botão redondo de meta é quem a liga e desliga
+  function alternarParte(parte, abrir = parte.area.hidden) {
+    const { botao, area } = parte;
+    area.hidden = !abrir;
+    botao.setAttribute('aria-expanded', String(abrir));
+    botao.classList.toggle('form-redondo--ativo', abrir);
+    if (parte.meta && caixaMeta.checked !== abrir) {
+      caixaMeta.checked = abrir; // abrir = vincular a uma meta (carrega a lista ou abre a janela "Nova meta"); fechar = desvincular
+      caixaMeta.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  }
+  for (const parte of partes) parte.botao.addEventListener('click', () => alternarParte(parte));
+  const recolherPartes = () => partes.forEach((parte) => alternarParte(parte, false));
+
   function limparErros() {
     for (const campo of Object.values(campos)) campo.definirErro(null);
   }
 
   function mostrarErros(erros) {
+    if (erros.observacoes) alternarParte(partes[0], true); // o erro não pode ficar escondido atrás do botão
+    if (erros.meta) alternarParte(partes[1], true);
     const comErro = ORDEM_DOS_CAMPOS.filter((nome) => erros[nome]);
     for (const nome of comErro) campos[nome].definirErro(erros[nome]);
     notificar(comErro.length === 1 ? 'Corrija o campo destacado.' : 'Corrija os campos destacados.', 'erro');
@@ -117,12 +147,65 @@ export function iniciarFormulario(raiz, { aoSalvar, signal }) {
     for (const nome of ['descricao', 'valor', 'categoria', 'formaPagamento', 'observacoes']) campos[nome].definir('');
     campos.cartao.reiniciar(); // sem pagamento escolhido, as áreas de cartão e parcelas somem
     campos.meta.reiniciar(); // a meta não se repete de uma transação para a próxima
+    recolherPartes();
     contador.textContent = `0/${LIMITE_OBSERVACOES}`;
     campos.descricao.focar();
   }
 
+  // Sugerir: pergunta ao Servidor Java a categoria da descrição digitada e já a coloca no campo (nada é gravado ainda)
+  const botaoSugerir = raiz.querySelector('#botao-sugerir');
+  const textoSugerir = botaoSugerir.querySelector('span');
+  botaoSugerir.addEventListener('click', async () => {
+    const descricao = campos.descricao.ler().trim();
+    campos.descricao.definirErro(null);
+    if (!descricao) {
+      campos.descricao.definirErro('Informe a descrição para sugerir a categoria.');
+      campos.descricao.focar();
+      return;
+    }
+    const valor = lerValor(campos.valor.ler());
+    botaoSugerir.disabled = true;
+    textoSugerir.textContent = 'Sugerindo...';
+    try {
+      const { categoria } = await sugerirCategoria(descricao, Number.isNaN(valor) ? undefined : valor);
+      campos.categoria.definirErro(null);
+      campos.categoria.definir(categoria);
+      if (campos.categoria.ler() !== categoria) throw new Error('A categoria sugerida não está na lista. Escolha uma.');
+      campos.categoria.controle.dispatchEvent(new Event('change', { bubbles: true }));
+      notificar(`Categoria sugerida: ${rotuloDe(CATEGORIAS, categoria)}. Se não for essa, escolha outra na lista.`, 'info');
+    } catch (erro) {
+      notificar(erro?.status ? 'Não foi possível sugerir a categoria agora. Escolha na lista.' : (erro?.message ?? 'Erro inesperado.'), 'erro');
+    } finally {
+      botaoSugerir.disabled = false;
+      textoSugerir.textContent = 'Sugerir';
+    }
+  });
+
+  // a lixeira: apaga o que foi digitado (o tipo e a data ficam) e tira os avisos de erro
+  raiz.querySelector('#botao-limpar-form').addEventListener('click', () => {
+    limparErros();
+    limparParaProximo();
+  });
+
+  // "Salvar e criar outro": envia o formulário e, se der certo, deixa a janela aberta
+  let criarOutro = false;
+  const botaoOutro = raiz.querySelector('#botao-salvar-outro');
+  botaoOutro.addEventListener('click', () => {
+    criarOutro = true;
+    formulario.requestSubmit();
+  });
+
+  // enquanto grava, os botões de salvar ficam parados (o verde é só um ícone: o estado vai no aria-busy)
+  function ocupado(sim) {
+    botaoSalvar.disabled = sim;
+    botaoOutro.disabled = sim;
+    botaoSalvar.setAttribute('aria-busy', String(sim));
+  }
+
   formulario.addEventListener('submit', async (evento) => {
     evento.preventDefault();
+    const manterAberto = criarOutro;
+    criarOutro = false;
     limparErros();
 
     const valores = Object.fromEntries(ORDEM_DOS_CAMPOS.map((nome) => [nome, campos[nome].ler()]));
@@ -142,14 +225,12 @@ export function iniciarFormulario(raiz, { aoSalvar, signal }) {
     if (cartao?.cartaoId) dados.cartaoId = cartao.cartaoId;
     if (cartao && cartao.parcelas > 1) dados.parcelas = cartao.parcelas;
 
-    botaoSalvar.disabled = true;
-    botaoSalvar.textContent = 'Salvando...';
+    ocupado(true);
     let criada;
     try {
       criada = await criarTransacao(dados);
     } catch (erro) {
-      botaoSalvar.disabled = false;
-      botaoSalvar.textContent = TEXTO_BOTAO;
+      ocupado(false);
 
       if (erro?.code === 'GOAL_NOT_FOUND') {
         // a meta foi excluída (em outra aba, por exemplo) depois de escolhida: busca as metas de novo
@@ -182,10 +263,9 @@ export function iniciarFormulario(raiz, { aoSalvar, signal }) {
       return;
     }
 
-    botaoSalvar.disabled = false;
-    botaoSalvar.textContent = TEXTO_BOTAO;
+    ocupado(false);
     limparParaProximo();
-    fecharPainel();
+    if (!manterAberto) fecharPainel();
     // sem categoria escolhida, o Servidor sugeriu uma: o usuário fica sabendo qual foi
     const sugerida = dados.categoria === undefined && criada?.categoria;
     const vinculada = meta ? ` Vinculada à meta "${meta.titulo}".` : '';

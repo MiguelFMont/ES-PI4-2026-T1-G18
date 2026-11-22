@@ -18,6 +18,9 @@
     --texto-suave: #9aa1b2;
     --destaque: #c6f432  ;
     --destaque-texto: #0b0c10;
+    /* a cor de apoio: nas paletas é uma segunda cor que contrasta com o destaque; no padrão é o próprio destaque */
+    --destaque-2: var(--destaque);
+    --destaque-2-texto: var(--destaque-texto);
     --positivo: #4ade80;
     --negativo: #f87171;
     --foco: #c6f432;
@@ -40,7 +43,7 @@
 }
 
 :root[data-tema='claro'] {
-    --fundo: #ffffff;
+    --fundo: #f1f3f2; /* a página: mais escura que os cartões e o menu, que são brancos */
     --fundo-card: #ffffff;
     --fundo-campo: #ffffff;
     --borda: #d0d5dd;
@@ -69,6 +72,191 @@
     --sombra-foco: 0 0 0 2px var(--destaque); /* o foco do teclado vira um anel */
     --sombra-flutuante: 0 0 0 1px var(--borda); /* calendário, listas, painel: só uma linha fina */
     --borda-elemento: 1px solid var(--borda);
+}
+
+/* Matizes: as cores de apoio, usadas para distinguir categorias, formas de pagamento, origem e metas (um pontinho colorido ao lado do
+   texto). Mais claras no tema escuro e mais fechadas no claro, para manter o contraste. Quem quiser uma cor põe data-cor="azul" (ou
+   outro nome) no elemento e lê var(--matiz). "destaque" acompanha a paleta escolhida em Minha conta > Preferências. */
+:root {
+    --matiz-azul: #60a5fa;
+    --matiz-roxo: #a78bfa;
+    --matiz-rosa: #f472b6;
+    --matiz-laranja: #fb923c;
+    --matiz-ambar: #fbbf24;
+    --matiz-turquesa: #2dd4bf;
+    --matiz-verde: #4ade80;
+    --matiz-vermelho: #f87171;
+    --matiz-cinza: #8a91a3;
+}
+
+:root[data-tema='claro'] {
+    --matiz-azul: #2563eb;
+    --matiz-roxo: #7c3aed;
+    --matiz-rosa: #db2777;
+    --matiz-laranja: #ea580c;
+    --matiz-ambar: #d97706;
+    --matiz-turquesa: #0d9488;
+    --matiz-verde: #16a34a;
+    --matiz-vermelho: #dc2626;
+    --matiz-cinza: #98a2b3;
+}
+
+[data-cor='azul'] { --matiz: var(--matiz-azul); }
+[data-cor='roxo'] { --matiz: var(--matiz-roxo); }
+[data-cor='rosa'] { --matiz: var(--matiz-rosa); }
+[data-cor='laranja'] { --matiz: var(--matiz-laranja); }
+[data-cor='ambar'] { --matiz: var(--matiz-ambar); }
+[data-cor='turquesa'] { --matiz: var(--matiz-turquesa); }
+[data-cor='verde'] { --matiz: var(--matiz-verde); }
+[data-cor='vermelho'] { --matiz: var(--matiz-vermelho); }
+[data-cor='cinza'] { --matiz: var(--matiz-cinza); }
+[data-cor='destaque'] { --matiz: var(--destaque); }
+[data-cor='destaque2'] { --matiz: var(--destaque-2); }
+
+/* o pontinho colorido: nas células da lista de transações, nas opções dos menus e nos filtros */
+.linha__celula[data-cor]::before,
+.linha__origem[data-cor]::before,
+.celula__opcao[data-cor]::before,
+.selecao__opcao[data-cor]::before,
+.barra__opcao[data-cor]::before {
+    content: '';
+    display: inline-block;
+    flex: none;
+    width: 0.55rem;
+    height: 0.55rem;
+    margin-right: 0.55rem;
+    border-radius: 50%;
+    background: var(--matiz, var(--matiz-cinza));
+    vertical-align: 0.05em;
+}
+
+/* Paletas de cor (Minha conta > Preferências; theme.js põe data-paleta no <html>). Cada paleta mistura duas cores: fundos quase
+   neutros (só um toque da família), uma cor de destaque principal (botões, itens ativos) e uma cor de apoio que contrasta com ela
+   (--destaque-2: foco, marca do menu, chip de seleção). Também trocam texto, bordas, receita (positivo) e despesa (negativo).
+   Como o resto do projeto só lê essas variáveis, tudo muda junto. "padrao" não aparece aqui: são os valores dos blocos acima.
+   Cada paleta tem um bloco para o tema escuro e outro, mais específico, para o claro (por isso o claro define tudo de novo). */
+:root[data-paleta='esmeralda'] {
+    --fundo: #0e1114;
+    --fundo-card: #161a1e;
+    --fundo-campo: #1e2328;
+    --borda: #2a3138;
+    --texto: #f1f5f4;
+    --texto-suave: #9aa5a8;
+    --destaque: #34d399;
+    --destaque-texto: #04271c;
+    --destaque-2: #fbbf24;
+    --destaque-2-texto: #3b2a02;
+    --positivo: #34d399;
+    --negativo: #fb7185;
+    --foco: #fbbf24;
+}
+:root[data-tema='claro'][data-paleta='esmeralda'] {
+    --fundo: #f3f5f4;
+    --fundo-card: #ffffff;
+    --fundo-campo: #ffffff;
+    --borda: #d8dedc;
+    --texto: #12201b;
+    --texto-suave: #52615b;
+    --destaque: #047857;
+    --destaque-texto: #ffffff;
+    --destaque-2: #d97706;
+    --destaque-2-texto: #ffffff;
+    --positivo: #047857;
+    --negativo: #be123c;
+    --foco: grey;
+}
+
+:root[data-paleta='oceano'] {
+    --fundo: #0d1117;
+    --fundo-card: #151b23;
+    --fundo-campo: #1d2530;
+    --borda: #2a3441;
+    --texto: #eef3f8;
+    --texto-suave: #93a1b3;
+    --destaque: #38bdf8;
+    --destaque-texto: #06293d;
+    --destaque-2: #fb7185;
+    --destaque-2-texto: #3b0613;
+    --positivo: #34d399;
+    --negativo: #fb7185;
+    --foco: #fb7185;
+}
+:root[data-tema='claro'][data-paleta='oceano'] {
+    --fundo: #f2f5f9;
+    --fundo-card: #ffffff;
+    --fundo-campo: #ffffff;
+    --borda: #d5dde8;
+    --texto: #101a27;
+    --texto-suave: #4c5d73;
+    --destaque: #0369a1;
+    --destaque-texto: #ffffff;
+    --destaque-2: #e11d48;
+    --destaque-2-texto: #ffffff;
+    --positivo: #047857;
+    --negativo: #be123c;
+    --foco: grey;
+}
+
+:root[data-paleta='violeta'] {
+    --fundo: #100f14;
+    --fundo-card: #18171e;
+    --fundo-campo: #211f29;
+    --borda: #312e3b;
+    --texto: #f4f3f8;
+    --texto-suave: #a09cb0;
+    --destaque: #a78bfa;
+    --destaque-texto: #2b1065;
+    --destaque-2: #bef264;
+    --destaque-2-texto: #1a2e05;
+    --positivo: #bef264;
+    --negativo: #fb7185;
+    --foco: #bef264;
+}
+:root[data-tema='claro'][data-paleta='violeta'] {
+    --fundo: #f4f3f8;
+    --fundo-card: #ffffff;
+    --fundo-campo: #ffffff;
+    --borda: #ddd9e8;
+    --texto: #191527;
+    --texto-suave: #5b5470;
+    --destaque: #6d28d9;
+    --destaque-texto: #ffffff;
+    --destaque-2: #65a30d;
+    --destaque-2-texto: #ffffff;
+    --positivo: #4d7c0f;
+    --negativo: #be123c;
+    --foco: grey;
+}
+
+:root[data-paleta='terra'] {
+    --fundo: #13110f;
+    --fundo-card: #1c1a17;
+    --fundo-campo: #262320;
+    --borda: #393530;
+    --texto: #f7f3ee;
+    --texto-suave: #aaa196;
+    --destaque: #fb923c;
+    --destaque-texto: #3a1802;
+    --destaque-2: #2dd4bf;
+    --destaque-2-texto: #032b27;
+    --positivo: #2dd4bf;
+    --negativo: #fb7185;
+    --foco: #2dd4bf;
+}
+:root[data-tema='claro'][data-paleta='terra'] {
+    --fundo: #f6f3ef;
+    --fundo-card: #fffdfb;
+    --fundo-campo: #fffdfb;
+    --borda: #e3dbd0;
+    --texto: #25201a;
+    --texto-suave: #6b6257;
+    --destaque: #c2410c;
+    --destaque-texto: #ffffff;
+    --destaque-2: #0f766e;
+    --destaque-2-texto: #ffffff;
+    --positivo: #0f766e;
+    --negativo: #b91c1c;
+    --foco: grey;
 }
 
 body {
@@ -156,39 +344,51 @@ body.com-sessao #app-content > * {
 
 /* Barras de rolagem de todo o projeto: finas e cinzas (nos dois temas, pois a cor sai do --texto) */
 :root {
-    --rolagem-polegar: color-mix(in srgb, var(--texto) 28%, transparent);
-    --rolagem-polegar-hover: color-mix(in srgb, var(--texto) 45%, transparent);
+    --rolagem-polegar: color-mix(in srgb, var(--texto) 16%, transparent);
+    --rolagem-polegar-hover: color-mix(in srgb, var(--texto) 30%, transparent);
 }
 
-* {
-    scrollbar-width: thin;
-    scrollbar-color: var(--rolagem-polegar) transparent;
+/* Chromium (Chrome, Edge): só a listra fina e cinza, sem trilho nem setinhas. As propriedades padrão (scrollbar-width e
+   scrollbar-color) NÃO podem estar ligadas junto: quando estão, o Chromium ignora os ::-webkit-scrollbar abaixo. */
+@supports selector(::-webkit-scrollbar) {
+    *::-webkit-scrollbar {
+        width: 5px;
+        height: 5px;
+        background: transparent;
+    }
+
+    *::-webkit-scrollbar-track,
+    *::-webkit-scrollbar-track-piece,
+    *::-webkit-scrollbar-corner {
+        background: transparent;
+    }
+
+    *::-webkit-scrollbar-thumb {
+        background: var(--rolagem-polegar);
+        border-radius: 999px;
+        min-height: 2rem;
+    }
+
+    *::-webkit-scrollbar-thumb:hover {
+        background: var(--rolagem-polegar-hover);
+    }
+
+    *::-webkit-scrollbar-button,
+    *::-webkit-scrollbar-button:single-button,
+    *::-webkit-scrollbar-button:start:decrement,
+    *::-webkit-scrollbar-button:end:increment {
+        display: none;
+        width: 0;
+        height: 0;
+    }
 }
 
-*::-webkit-scrollbar {
-    width: 7px;
-    height: 7px;
-    background: transparent;
-}
-
-*::-webkit-scrollbar-track,
-*::-webkit-scrollbar-corner {
-    background: transparent;
-}
-
-*::-webkit-scrollbar-thumb {
-    background: var(--rolagem-polegar);
-    border-radius: 999px;
-}
-
-*::-webkit-scrollbar-thumb:hover {
-    background: var(--rolagem-polegar-hover);
-}
-
-*::-webkit-scrollbar-button {
-    display: none;
-    width: 0;
-    height: 0;
+/* Firefox e outros: a versão padrão, também fina e cinza (sem setinhas) */
+@supports not selector(::-webkit-scrollbar) {
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: var(--rolagem-polegar) transparent;
+    }
 }
 
 /* Alguns navegadores recentes (Chromium) põem botões circulares de seta nas áreas que rolam na horizontal (a tabela do
@@ -200,7 +400,8 @@ body.com-sessao #app-content > * {
 /* com sessão: menu lateral + conteúdo (o main.js marca o body) */
 body.com-sessao {
     display: grid;
-    grid-template-columns: var(--largura-menu) 1fr;
+    /* a coluna do menu leva também o recuo à esquerda do painel flutuante */
+    grid-template-columns: calc(var(--largura-menu) + var(--espaco-pagina)) 1fr;
     transition: grid-template-columns 0.25s ease;
 }
 
@@ -208,20 +409,25 @@ body.com-sessao #app-content {
     min-width: 0; /* sem isso uma tabela larga estica a coluna em vez de rolar dentro do cartão */
 }
 
+/* O menu é um painel flutuante de cantos arredondados, com o recuo da página em volta e o mesmo fundo dos cartões */
 body.com-sessao #main-header {
     position: sticky;
-    top: 0;
-    height: 100vh;
+    top: var(--espaco-pagina);
+    height: calc(100vh - 2 * var(--espaco-pagina));
+    margin: var(--espaco-pagina) 0 0 var(--espaco-pagina);
     padding: 1.25rem 0.75rem;
-    background: var(--fundo-card);
-    border-right: 1px solid var(--borda);
+    border: 1px solid var(--borda);
+    border-radius: 1.5rem;
+    background: var(--fundo-card); /* o mesmo fundo dos cartões; o fundo mais escuro é o da página (--fundo) */
     overflow: hidden; /* o texto some sem quebrar linha enquanto a largura encolhe */
 }
 
 .menu-lateral {
+    position: relative;
+    isolation: isolate; /* o marcador fica atrás dos itens, mas na frente do fundo do menu */
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
+    gap: 0.9rem; /* mais justo: com o painel menor, cabe em janelas baixas sem rolar */
     height: 100%;
 }
 
@@ -252,8 +458,8 @@ body.com-sessao #main-header {
     width: 2rem;
     height: 2rem;
     border-radius: 0.6rem;
-    background: var(--destaque);
-    color: var(--destaque-texto);
+    background: var(--destaque-2);
+    color: var(--destaque-2-texto);
     font-weight: 800;
 }
 
@@ -287,6 +493,11 @@ body.com-sessao #main-header {
     gap: 1rem;
     min-height: 0;
     overflow-y: auto; /* se a janela for baixa, só a lista rola; o rodapé continua visível */
+    scrollbar-width: none; /* sem barra de rolagem à vista no menu (a lista ainda rola com a roda do mouse) */
+}
+
+.main-nav::-webkit-scrollbar {
+    display: none;
 }
 
 .main-nav__grupo {
@@ -326,10 +537,47 @@ body.com-sessao #main-header {
     background: color-mix(in srgb, var(--texto) 7%, transparent);
 }
 
-.menu-lateral a[aria-current='page'] {
+.menu-lateral a[aria-current=page] {
     color: var(--destaque-texto);
     background: var(--destaque);
     font-weight: 700;
+}
+
+/* O marcador deslizante (core/layout/marcadorMenu.js): quando ele está à vista, o fundo do item atual fica por conta dele. */
+.menu-marcador {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 0;
+    border-radius: 0.75rem;
+    background: var(--destaque);
+    pointer-events: none;
+    opacity: 0;
+    /* entrada: a curva de entrada do projeto */
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), width 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+        height 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+}
+
+.menu-marcador--visivel {
+    opacity: 1;
+}
+
+.menu-marcador--parado {
+    transition: opacity 0.2s ease; /* reposiciona na hora (primeira vez, recolher o menu, rolar) */
+}
+
+.menu-lateral a,
+.menu-lateral__rodape button {
+    position: relative;
+    z-index: 1;
+}
+
+.menu-lateral a {
+    transition: color 0.25s ease;
+}
+
+.menu-lateral:has(.menu-marcador--visivel) a[aria-current=page] {
+    background: transparent;
 }
 
 .menu-lateral__rodape {
@@ -496,7 +744,9 @@ body.menu-recolhido .main-nav__grupo + .main-nav__grupo {
     body.com-sessao #main-header {
         position: static;
         height: auto;
-        border-right: 0;
+        margin: 0;
+        border: 0;
+        border-radius: 0;
         border-bottom: 1px solid var(--borda);
         padding: 0.75rem 1rem;
         overflow: visible;
@@ -636,4 +886,37 @@ body.menu-recolhido .main-nav__grupo + .main-nav__grupo {
         transition-duration: 0.01ms !important;
         transition-delay: 0s !important;
     }
+}
+
+
+/* ---------------------------------------------------------------- Revelar (padrão de animação)
+   Tudo o que aparece depois de apertar um botão (uma área que se abre, um campo extra, uma observação) usa o atributo
+   data-revelar no elemento que já alterna o atributo hidden: ao aparecer ele cresce em altura e ganha opacidade; ao sumir,
+   encolhe mais rápido. Nenhum JS novo: o código continua só fazendo `elemento.hidden = false/true`.
+   Entrada: a curva de entrada do projeto; saída: a de saída. O respiro (padding e margem negativa) evita cortar o anel de foco. */
+:root {
+    interpolate-size: allow-keywords; /* permite animar de 0 até "auto" */
+}
+
+[data-revelar] {
+    overflow: hidden;
+    padding: 0.35rem;
+    margin: -0.35rem;
+    height: auto;
+    opacity: 1;
+    transition: height 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, padding 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+        display 0.28s allow-discrete;
+    @starting-style {
+        height: 0;
+        opacity: 0;
+    }
+}
+
+[data-revelar][hidden] {
+    display: none;
+    height: 0;
+    padding-block: 0;
+    opacity: 0;
+    transition: height 0.14s cubic-bezier(0.7, 0, 0.84, 0), opacity 0.1s ease, padding 0.14s cubic-bezier(0.7, 0, 0.84, 0),
+        display 0.14s allow-discrete;
 }

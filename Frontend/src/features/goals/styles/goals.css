@@ -241,3 +241,107 @@
 .goals-item__origem {
   font-size: 0.85rem;
 }
+/* A janela "Nova meta" no mesmo estilo do "Novo lançamento": cartão de cantos bem arredondados, campos altos e sem contorno,
+   botões em pílula e a mesma entrada (zoom curto com fade). */
+:is(.transactions-meta-modal, .goals-modal):not([hidden]) .goals-cartao {
+  animation: meta-modal-entrar 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes meta-modal-entrar {
+  from { opacity: 0; transform: scale(0.96); }
+}
+
+:is(.transactions-meta-modal, .goals-modal) .goals-cartao {
+  width: 100%;
+  max-width: 28rem;
+  gap: 1rem;
+  padding: 1.5rem;
+  border: 0;
+  border-radius: 1.75rem;
+  box-shadow: var(--sombra-flutuante);
+}
+
+:is(.transactions-meta-modal, .goals-modal) .goals-cartao h2 {
+  font-size: 1.35rem;
+}
+
+:is(.transactions-meta-modal, .goals-modal) .goals-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+:is(.transactions-meta-modal, .goals-modal) .campo label {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+:is(.transactions-meta-modal, .goals-modal) .campo input:not([type='radio']):not([type='checkbox']) {
+  min-height: 3.25rem;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--borda);
+  border-radius: 1rem;
+  font-size: 1rem;
+}
+
+:is(.transactions-meta-modal, .goals-modal) .goals-ajuda {
+  font-size: 0.85rem;
+}
+
+:is(.transactions-meta-modal, .goals-modal) .goals-acoes {
+  flex-wrap: nowrap;
+  padding-top: 1rem;
+  border-top: 1px solid var(--borda);
+}
+
+:is(.transactions-meta-modal, .goals-modal) .goals-botao {
+  min-height: 3.2rem;
+  padding: 0.5rem 1.25rem;
+  border: 0;
+  border-radius: 999px;
+  box-shadow: none;
+}
+
+:is(.transactions-meta-modal, .goals-modal) .goals-botao:not(.goals-botao--secundario) {
+  flex: 1;
+  background: var(--destaque);
+  color: var(--destaque-texto);
+}
+
+:is(.transactions-meta-modal, .goals-modal) .goals-botao--secundario {
+  background: var(--fundo-celula);
+}
+
+/* sem contorno ao clicar nem ao usar o teclado: o botão só cresce de leve */
+:is(.transactions-meta-modal, .goals-modal) .goals-botao:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+/* A tela de Metas usa só a janela: o formulário fica escondido até clicar em "Nova meta" ou "Editar", e aparece por cima da página. */
+.goals-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: none;
+  place-items: center;
+  overflow-y: auto;
+  padding: 1rem;
+  background: rgb(0 0 0 / 0.6);
+  backdrop-filter: blur(6px); /* o fundo desfocado atrás da janela */
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.goals-modal:has(#goals-form-area:not([hidden])) {
+  display: grid;
+}
+
+.goals-modal .goals-cartao[hidden] {
+  display: none;
+}
+
+.goals-modal:has(#goals-form-area:not([hidden])) {
+  animation: meta-fundo-entrar 0.2s ease;
+}
+
+@keyframes meta-fundo-entrar {
+  from { opacity: 0; }
+}

@@ -9,7 +9,9 @@
  * `tipo` aceita 'sucesso', 'aviso' ou 'erro' (e os sinônimos 'success', 'warning', 'error', 'info' e 'notificacao').
  * Mexer o mouse sobre uma notificação ou focá-la pausa a linha de tempo (que é o relógio dela); ao sair, continua de onde
  * parou. A pausa dura no máximo 10 s de uma vez.
- * Opções de notificar: `duracao` em ms (0 = fica até ser fechada, sem linha de tempo) e `pausavel` (padrão true).
+ * Opções de notificar: `duracao` em ms (0 = fica até ser fechada, sem linha de tempo), `pausavel` (padrão true) e `acao`
+ * ({ rotulo, aoClicar }): um botão dentro da notificação, como "Desfazer". Ele some junto com a notificação quando o tempo acaba;
+ * ao clicar, roda `aoClicar` (pode ser assíncrona) e a notificação fecha.
  * O estilo está em shared/styles/notificacao.css (carregado pelo index.html e pelas páginas de features/auth).
  * Diferenças do original: várias notificações podem aparecer juntas (uma embaixo da outra) em vez de uma substituir
  * a outra, a mensagem entra sempre como texto, e a confirmação devolve uma Promise em vez de receber um callback.
@@ -87,7 +89,7 @@ function ligarPausa(alerta, animacao) {
   });
 }
 
-export function notificar(mensagem, tipo = 'sucesso', { duracao = DURACAO_MS, pausavel = true } = {}) {
+export function notificar(mensagem, tipo = 'sucesso', { duracao = DURACAO_MS, pausavel = true, acao = null } = {}) {
   const { classe, icone } = tipoDe(tipo);
   const persistente = !(duracao > 0);
 
@@ -107,6 +109,22 @@ export function notificar(mensagem, tipo = 'sucesso', { duracao = DURACAO_MS, pa
   texto.textContent = mensagem; // sempre como texto: a mensagem pode vir da API
 
   alerta.append(fechar, texto);
+
+  if (acao?.rotulo && typeof acao.aoClicar === 'function') {
+    const botaoAcao = document.createElement('button');
+    botaoAcao.type = 'button';
+    botaoAcao.className = 'alerta__acao';
+    botaoAcao.textContent = acao.rotulo;
+    botaoAcao.addEventListener('click', async () => {
+      botaoAcao.disabled = true; // um clique só
+      try {
+        await acao.aoClicar();
+      } finally {
+        encerrar();
+      }
+    });
+    alerta.append(botaoAcao);
+  }
 
   let animacao = null; // o relógio da notificação: a própria linha de tempo (ver abaixo)
 

@@ -1,6 +1,7 @@
 import { hasToken } from '../core/session/storage.js';
 import { iniciarTema } from '../core/theme/theme.js';
 import { ligarMenu } from '../core/layout/menu.js';
+import { ligarMarcadorMenu } from '../core/layout/marcadorMenu.js';
 import { ligarDicaMenu } from '../core/layout/dicaMenu.js';
 import { URL_LOGIN } from '../core/session/login.js';
 import { iniciarOcultacaoValores } from '../core/privacy/valores.js';
@@ -29,9 +30,9 @@ const TELAS = {
       '/src/shared/styles/campos.css',
       '/src/shared/styles/calendario.css',
       '/src/features/transactions/styles/transactions.css',
-      '/src/features/transactions/components/TransactionResumo/TransactionResumo.css',
-      '/src/features/transactions/components/TransactionFilters/TransactionFilters.css',
-      '/src/features/transactions/components/TransactionExtrato/TransactionExtrato.css',
+      '/src/features/transactions/components/TransactionBarra/TransactionBarra.css',
+      '/src/features/transactions/components/TransactionLista/TransactionLista.css',
+      '/src/features/transactions/components/TransactionDetalhe/TransactionDetalhe.css',
       '/src/features/transactions/components/TransactionForm/TransactionForm.css',
       '/src/features/goals/styles/goals.css', // o formulário "Nova meta" da janela de vincular a transação a uma meta
     ],
@@ -98,6 +99,7 @@ iniciarTema();
 ligarMenu();
 ligarDicaMenu();
 iniciarOcultacaoValores();
+const marcadorMenu = ligarMarcadorMenu();
 
 // O menu está escrito no index.html; aqui só se mostra (com sessão) e se marca o item da rota atual.
 function renderMenu(route) {
@@ -106,6 +108,7 @@ function renderMenu(route) {
     if (link.dataset.rota === route) link.setAttribute('aria-current', 'page');
     else link.removeAttribute('aria-current');
   }
+  marcadorMenu.atualizar(); // o marcador desliza até o item da rota
 }
 
 function currentRoute() {

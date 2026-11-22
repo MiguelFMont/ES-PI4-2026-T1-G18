@@ -1,7 +1,7 @@
 
 import { incluirFragmentos } from '../../core/views/includes.js';
 import { iniciarReportarProblema } from './components/ReportarProblema.js';
-import { alternarEstilo, estiloAtual } from '../../core/theme/theme.js';
+import { alternarEstilo, estiloAtual, aplicarPaleta, paletaAtual, PALETAS } from '../../core/theme/theme.js';
 import { salvarPreferencias } from '../../core/preferencias.js';
 import { notificar } from '../../shared/components/notificacao.js';
 const CAMINHO = '/src/features/perfil/components';
@@ -138,6 +138,46 @@ function iniciarPreferencias(container, signal) {
     }
 
     mostrarEstilo();
+
+    // Paleta de cores: um botão de opção por paleta, com as amostras do tema escuro e do claro
+    const caixaPaletas = container.querySelector('#preferencia-paletas');
+    const botoesPaleta = PALETAS.map((paleta) => {
+        const botao = document.createElement('button');
+        botao.type = 'button';
+        botao.className = 'paleta';
+        botao.setAttribute('role', 'radio');
+        botao.dataset.paleta = paleta.valor;
+
+        const amostras = document.createElement('span');
+        amostras.className = 'paleta__amostras';
+        for (const cor of paleta.amostra) {
+            const quadro = document.createElement('span');
+            quadro.style.background = cor;
+            amostras.append(quadro);
+        }
+        const nome = document.createElement('span');
+        nome.className = 'paleta__nome';
+        nome.textContent = paleta.nome;
+        const descricao = document.createElement('span');
+        descricao.className = 'paleta__descricao';
+        descricao.textContent = paleta.descricao;
+
+        botao.append(amostras, nome, descricao);
+        return botao;
+    });
+    caixaPaletas.replaceChildren(...botoesPaleta);
+
+    function mostrarPaleta() {
+        for (const botao of botoesPaleta) botao.setAttribute('aria-checked', String(botao.dataset.paleta === paletaAtual()));
+    }
+    mostrarPaleta();
+
+    caixaPaletas.addEventListener('click', (evento) => {
+        const botao = evento.target.closest('.paleta');
+        if (!botao) return;
+        aplicarPaleta(botao.dataset.paleta);
+        mostrarPaleta();
+    }, { signal });
 
     interruptor.addEventListener('click', () => {
         const novo = alternarEstilo();

@@ -1,27 +1,28 @@
 /* CORES DO TEMA ESCURO */
 
 :root[data-tema="escuro"] .minha-conta {
-    --conta-fundo: #0e0e11;
-    --conta-card: #17181d;
-    --conta-campo: #202127;
-    --conta-borda: #2b2d37;
-    --conta-texto: #f5f5f7;
-    --conta-suave: #a0a5b5;
-    --conta-hover: #24262e;
-    --conta-destaque: #c4f52b;
+    /* as cores vêm das variáveis globais (core/styles/global.css), então acompanham a paleta escolhida */
+    --conta-fundo: var(--fundo);
+    --conta-card: var(--fundo-card);
+    --conta-campo: var(--fundo-campo);
+    --conta-borda: var(--borda);
+    --conta-texto: var(--texto);
+    --conta-suave: var(--texto-suave);
+    --conta-hover: color-mix(in srgb, var(--texto) 8%, var(--fundo-card));
+    --conta-destaque: var(--destaque);
 }
 
 /* CORES DO TEMA CLARO */
 
 :root[data-tema="claro"] .minha-conta {
-    --conta-fundo: #ffffff;
-    --conta-card: #f6f7f9;
-    --conta-campo: #e9ecf1;
-    --conta-borda: #d5dae4;
-    --conta-texto: #182235;
-    --conta-suave: #64748b;
-    --conta-hover: #e9edf3;
-    --conta-destaque: #1d704e;
+    --conta-fundo: var(--fundo);
+    --conta-card: var(--fundo-card);
+    --conta-campo: color-mix(in srgb, var(--texto) 7%, var(--fundo-card));
+    --conta-borda: var(--borda);
+    --conta-texto: var(--texto);
+    --conta-suave: var(--texto-suave);
+    --conta-hover: color-mix(in srgb, var(--texto) 7%, var(--fundo-card));
+    --conta-destaque: var(--destaque);
 }
 
 /* ESTRUTURA PRINCIPAL */
@@ -436,6 +437,65 @@
     font-size: 12px;
     font-weight: 700;
     white-space: nowrap;
+}
+
+/* paletas de cor: um botão de opção com a amostra (escuro e claro) e o nome */
+.preferencia-item--paleta {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.paletas {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.paleta {
+    display: grid;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid var(--conta-borda);
+    border-radius: 14px;
+    background: var(--conta-campo);
+    color: var(--conta-texto);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: scale 0.1s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.paleta:hover,
+.paleta:focus-visible {
+    scale: 1.03;
+    outline: none;
+}
+
+.paleta[aria-checked="true"] {
+    border-color: var(--conta-destaque);
+    background: color-mix(in srgb, var(--conta-destaque) 14%, var(--conta-campo));
+}
+
+.paleta__amostras {
+    display: flex;
+    gap: 6px;
+}
+
+.paleta__amostras span {
+    flex: 1;
+    height: 28px;
+    border-radius: 8px;
+}
+
+.paleta__nome {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.paleta__descricao {
+    color: var(--conta-suave);
+    font-size: 12px;
 }
 
 /* interruptor (botão com role="switch"): ligado = trilho na cor de destaque, bolinha à direita */

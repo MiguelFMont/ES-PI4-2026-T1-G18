@@ -1,0 +1,169 @@
+<!-- Componente: lista das transações do mês, agrupadas por dia, com os totais no alto. Lógica em TransactionLista.js.
+     Mostra só um destes estados por vez (carregando, erro, vazio ou a lista). Clicar em uma linha abre os detalhes (TransactionDetalhe);
+     no modo "Selecionar" a linha marca ou desmarca, e uma barra escura no alto oferece trocar categoria e pagamento, duplicar e excluir as marcadas. -->
+<section id="lista" class="lista" aria-label="Transações do mês">
+  <!-- Totais do período (receitas, despesas e saldo): ficam no alto do extrato, em todos os estados -->
+  <header class="lista__resumo" aria-label="Totais do período">
+    <dl class="lista__totais">
+      <div><dt>receitas</dt><dd id="lista-receitas" class="valor-financeiro"></dd></div>
+      <div><dt>despesas</dt><dd id="lista-despesas" class="valor-financeiro"></dd></div>
+      <div class="lista__total-saldo"><dt>saldo</dt><dd id="lista-saldo" class="valor-financeiro"></dd></div>
+    </dl>
+  </header>
+
+  <div id="lista-carregando" class="esqueleto-grupo" role="status">
+    <span class="esqueleto esqueleto--titulo"></span>
+    <span class="esqueleto esqueleto--linha-extrato"></span>
+    <span class="esqueleto esqueleto--linha-extrato"></span>
+    <span class="esqueleto esqueleto--linha-extrato"></span>
+    <span class="esqueleto esqueleto--linha-extrato"></span>
+    <span class="so-leitor">Carregando transações...</span>
+  </div>
+
+  <div id="lista-erro" class="transactions-estado" hidden>
+    <p id="lista-erro-texto" role="alert"></p>
+    <button type="button" id="lista-tentar-novamente" class="transactions-botao">Tentar novamente</button>
+  </div>
+
+  <p id="lista-vazio" class="lista__vazio" hidden></p>
+
+  <div id="lista-conteudo" hidden>
+    <!-- Barra escura das marcadas: flutua no alto da lista (ocupa altura zero, então não empurra nada) -->
+    <div class="selecao-ancora">
+      <div id="lista-selecao" class="selecao" role="region" aria-label="Transações selecionadas" hidden>
+        <button type="button" id="lista-limpar" class="selecao__botao selecao__botao--quadrado" aria-label="Limpar seleção" data-dica="Limpar seleção">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+        </button>
+        <span id="lista-selecao-texto" class="selecao__chip" aria-live="polite"></span>
+        <span id="lista-selecao-total" class="selecao__total valor-financeiro"></span>
+        <span class="selecao__divisor" aria-hidden="true"></span>
+        <div class="selecao__acoes">
+          <div class="selecao__area">
+            <button type="button" id="lista-categoria" class="selecao__botao" aria-label="Trocar a categoria" aria-haspopup="listbox" aria-expanded="false" data-dica="Categoria">
+              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="7.5" cy="7.5" r="2.6" fill="none" stroke="currentColor" stroke-width="1.9"/><circle cx="16.5" cy="7.5" r="2.6" fill="none" stroke="currentColor" stroke-width="1.9"/><circle cx="7.5" cy="16.5" r="2.6" fill="none" stroke="currentColor" stroke-width="1.9"/><circle cx="16.5" cy="16.5" r="2.6" fill="none" stroke="currentColor" stroke-width="1.9"/></svg>
+            </button>
+            <div id="lista-categoria-menu" class="selecao__menu" role="listbox" aria-label="Categoria" hidden></div>
+          </div>
+          <div class="selecao__area">
+            <button type="button" id="lista-pagamento" class="selecao__botao" aria-label="Trocar o pagamento" aria-haspopup="listbox" aria-expanded="false" data-dica="Pagamento">
+              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="3.5" y="6" width="17" height="12" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M3.5 10.5h17" stroke="currentColor" stroke-width="1.9"/></svg>
+            </button>
+            <div id="lista-pagamento-menu" class="selecao__menu" role="listbox" aria-label="Pagamento" hidden></div>
+          </div>
+          <!-- Descrição e Valor: cada botão abre um campo só; o que for digitado vale para todas as selecionadas -->
+          <div class="selecao__area">
+            <button type="button" id="lista-descricao" class="selecao__botao" aria-label="Trocar a descrição das selecionadas" aria-haspopup="dialog" aria-expanded="false" data-dica="Descrição">
+              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h9" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+            </button>
+            <form id="lista-descricao-form" class="selecao__menu selecao__menu--form" aria-label="Trocar a descrição das selecionadas" novalidate hidden>
+              <label for="lista-descricao-campo">Descrição</label>
+              <input type="text" id="lista-descricao-campo" placeholder="Nova descrição" autocomplete="off" maxlength="200">
+              <button type="submit" class="selecao__aplicar">Aplicar nas selecionadas</button>
+            </form>
+          </div>
+          <div class="selecao__area">
+            <button type="button" id="lista-valor" class="selecao__botao" aria-label="Trocar o valor das selecionadas" aria-haspopup="dialog" aria-expanded="false" data-dica="Valor">
+              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M14.6 9.4c-.4-.9-1.4-1.4-2.6-1.4-1.5 0-2.5.7-2.5 1.8 0 2.4 5.2 1.1 5.2 3.6 0 1.1-1.1 1.9-2.7 1.9-1.3 0-2.3-.5-2.8-1.5M12 6.6V8M12 16v1.4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+            </button>
+            <form id="lista-valor-form" class="selecao__menu selecao__menu--form" aria-label="Trocar o valor das selecionadas" novalidate hidden>
+              <label for="lista-valor-campo">Valor (R$)</label>
+              <input type="text" id="lista-valor-campo" inputmode="decimal" placeholder="0,00" autocomplete="off">
+              <!-- O valor é sempre positivo: quem decide se é despesa ou receita é o tipo. Sem escolher, o tipo de cada transação fica como está. -->
+              <fieldset class="selecao__tipos">
+                <legend>Tipo</legend>
+                <label class="selecao__tipo"><input type="radio" name="lista-tipo" value="" checked><span>Manter</span></label>
+                <label class="selecao__tipo"><input type="radio" name="lista-tipo" value="despesa"><span>Despesa</span></label>
+                <label class="selecao__tipo"><input type="radio" name="lista-tipo" value="receita"><span>Receita</span></label>
+              </fieldset>
+              <button type="submit" class="selecao__aplicar">Aplicar nas selecionadas</button>
+            </form>
+          </div>
+          <!-- Data: um calendário (o do projeto); a data escolhida vale para todas as selecionadas -->
+          <div class="selecao__area">
+            <button type="button" id="lista-data" class="selecao__botao" aria-label="Trocar a data das selecionadas" aria-haspopup="dialog" aria-expanded="false" data-dica="Data">
+              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.6" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M3.5 10h17M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+            </button>
+            <form id="lista-data-form" class="selecao__menu selecao__menu--form campo" aria-label="Trocar a data das selecionadas" data-calendario="unico" data-ao-clicar novalidate hidden>
+              <label for="lista-data-campo">Data</label>
+              <input type="text" id="lista-data-campo" class="calendario__caixa" placeholder="dd/mm/aaaa" inputmode="numeric" maxlength="10" autocomplete="off" aria-haspopup="dialog" aria-expanded="false">
+              <div data-incluir="/src/shared/components/calendario/Calendario.html"></div>
+              <button type="submit" class="selecao__aplicar">Aplicar nas selecionadas</button>
+            </form>
+          </div>
+          <button type="button" id="lista-duplicar" class="selecao__botao" aria-label="Duplicar com a data de hoje" data-dica="Duplicar">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="8.5" y="8.5" width="11" height="11" rx="2.2" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M15.5 8.5V6.7a2.2 2.2 0 0 0-2.2-2.2H6.7a2.2 2.2 0 0 0-2.2 2.2v6.6a2.2 2.2 0 0 0 2.2 2.2h1.8" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+          </button>
+          <button type="button" id="lista-excluir" class="selecao__botao selecao__botao--perigo" aria-label="Excluir as selecionadas" data-dica="Excluir">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 7h14M10 7V4.8h4V7M7 7l.8 12.2h8.4L17 7M10.2 11v5M13.8 11v5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Marcar ou limpar todas as transações da lista (só no modo Selecionar) -->
+    <label id="lista-todas-area" class="lista__todas" hidden>
+      <input type="checkbox" id="lista-todas" class="caixa-selecao">
+      <span id="lista-todas-texto">Selecionar todas</span>
+    </label>
+
+    <!-- Nomes das colunas, logo abaixo dos totais (Descrição, Tipo, Categoria, Pagamento, Meta, Origem e Valor), que também são os filtros da lista; rolam com a página. -->
+    <div id="lista-cabecalho" class="lista__cabecalho">
+      <span class="cab__marca"></span>
+      <!-- A busca por descrição: TransactionBarra.js monta o campo aqui, no título da coluna Descrição -->
+      <span class="cab cab--busca" data-busca>Descrição</span>
+      <!-- Cada coluna com data-filtro vira um filtro (TransactionBarra.js põe um botão com a lista de opções dentro dela) -->
+      <span class="cab cab--celula cab--filtro" data-filtro="tipo">Tipo</span>
+      <span class="cab cab--celula cab--filtro" data-filtro="categoria">Categoria</span>
+      <span class="cab cab--celula cab--filtro" data-filtro="formaPagamento">Pagamento</span>
+      <span class="cab cab--celula cab--meta cab--filtro" data-filtro="metaId">Meta</span>
+      <span class="cab--origem cab--filtro" data-filtro="origem">Origem</span>
+      <span class="cab cab--valor cab--filtro" data-filtro="valor">Valor</span>
+    </div>
+
+    <div id="lista-grupos"></div>
+    <button type="button" id="lista-mais" class="transactions-botao transactions-botao--secundario lista__mais" hidden>Carregar mais</button>
+  </div>
+
+
+  <!-- Alterações pendentes: editar um campo (ou várias transações marcadas) só marca a alteração na tela; ela é enviada quando o
+       usuário confirma aqui. Fica no pé da lista (âncora de altura zero, grudada embaixo da janela). -->
+  <div class="pendentes-ancora">
+    <div id="lista-pendentes" class="pendentes" role="region" aria-label="Alterações pendentes" hidden>
+      <p id="lista-pendentes-texto" class="pendentes__texto" aria-live="polite"></p>
+      <div class="pendentes__acoes">
+        <button type="button" id="lista-descartar" class="pendentes__botao">Descartar</button>
+        <button type="button" id="lista-confirmar" class="pendentes__botao pendentes__botao--confirmar">Confirmar</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Modelo de um dia: o JS copia este bloco para cada dia e só preenche o título -->
+<template id="modelo-dia">
+  <section class="dia">
+    <h2 class="dia__titulo"><span data-campo="titulo"></span></h2>
+    <ul class="dia__lista"></ul>
+  </section>
+</template>
+
+<!-- Modelo de uma transação: o JS copia este bloco para cada transação e só preenche os textos -->
+<template id="modelo-transacao-linha">
+  <li class="linha" tabindex="0" role="button">
+    <input type="checkbox" class="caixa-selecao linha__marca" tabindex="-1" aria-label="Selecionar esta transação">
+    <!-- Ícone no começo da linha: abre os detalhes, onde se edita a data e a observação (a descrição se edita clicando nela) -->
+    <span class="linha__detalhe" aria-hidden="true" title="Editar a data e a observação">
+      <svg viewBox="0 0 24 24" width="18" height="18"><rect x="3.5" y="5" width="17" height="15.5" rx="2.6" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M3.5 10h17M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M9 16.2l.4-1.7 4.6-4.6a.9.9 0 0 1 1.3 0l.4.4a.9.9 0 0 1 0 1.3l-4.6 4.6z" fill="currentColor"/></svg>
+    </span>
+    <!-- Cada campo com data-editavel se edita ao clicar nele (a data e o resto, no painel de detalhes, ao clicar na linha) -->
+    <span class="linha__descricao celula" data-editavel="descricao" title="Clique para editar">
+      <span data-campo="descricao"></span>
+      <span class="linha__etiqueta" data-campo="etiqueta" hidden></span>
+    </span>
+    <span class="linha__celula celula" data-editavel="tipo" data-campo="tipo" title="Clique para editar"></span>
+    <span class="linha__celula celula" data-editavel="categoria" data-campo="categoria" title="Clique para editar"></span>
+    <span class="linha__celula celula" data-editavel="formaPagamento" data-campo="pagamento" title="Clique para editar"></span>
+    <span class="linha__celula linha__celula--meta celula" data-editavel="metaId" data-campo="meta" title="Clique para editar"></span>
+    <span class="linha__origem" data-campo="conta"></span>
+    <span class="linha__valor valor-financeiro celula" data-editavel="valor" data-campo="valor" title="Clique para editar"></span>
+  </li>
+</template>
