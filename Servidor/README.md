@@ -16,7 +16,7 @@ O Servidor é um **executor de operações**, como o fazedor de continhas: o Bac
 | Grupo | Operações no Servidor |
 |---|---|
 | 1 — Autenticação & Conta | hash e conferência de senha (PBKDF2). Geração do segredo TOTP e validação do código do MFA estão planejadas (só `.md` em `auth/exemplo/`), sem uso hoje |
-| 2 — Transações | categorização automática de uma transação. Planejado: cálculo do saldo atual de cada conta (contas e transferências) |
+| 2 — Transações | categorização automática de uma transação e cálculo do saldo atual de cada conta (contas e transferências) |
 | 3 — Painel & Análise | cálculo dos indicadores (saldo, economia, fluxo de caixa) e **comparação entre períodos** (variação % de receitas, despesas e saldo, tendência das despesas) |
 | 4 — Mentor Financeiro (IA) | montar o contexto da IA e filtrar a resposta (nunca recomendar compra/venda de ativo) |
 | 5 — Metas & Investimentos | progresso de uma meta, rentabilidade simulada com **juros compostos** e **cálculo de parcelamentos** (parcela, juros, saldo devedor pela Tabela Price) |
@@ -53,7 +53,7 @@ Os campos de cada mensagem estão no `.java` dela (quando já implementada) ou n
 | Grupo | Pedido → Resposta | Handler |
 |---|---|---|
 | 1 — Autenticação & Conta | `PedidoHashSenha` → `RespostaHashSenha`; `PedidoValidarSenha` → `RespostaValidarSenha`. Planejadas, ainda não implementadas: `PedidoGerarSegredoMFA` → `RespostaGerarSegredoMFA`; `PedidoValidarMFA` → `RespostaValidarMFA` | `AuthHandler` |
-| 2 — Transações | `PedidoCategorizarTransacao` → `RespostaCategorizarTransacao`. Planejada, ainda não implementada: `PedidoCalcularSaldoContas` → `RespostaCalcularSaldoContas` | `TransactionsHandler` |
+| 2 — Transações | `PedidoCategorizarTransacao` → `RespostaCategorizarTransacao`; `PedidoCalcularSaldoContas` → `RespostaCalcularSaldoContas` | `TransactionsHandler` |
 | 3 — Painel & Análise | `PedidoCalcularIndicadores` → `RespostaCalcularIndicadores`; `PedidoCompararPeriodos` → `RespostaCompararPeriodos` | `DashboardHandler` |
 | 4 — Mentor Financeiro (IA) | `PedidoMontarContextoIA` → `RespostaMontarContextoIA`; `PedidoFiltrarResposta` → `RespostaFiltrarResposta` | `MentorHandler` |
 | 5 — Metas & Investimentos | `PedidoProgressoMeta` → `RespostaProgressoMeta`; `PedidoRentabilidadeSimulada` → `RespostaRentabilidadeSimulada`; `PedidoCalcularParcelamentos` → `RespostaCalcularParcelamentos` | `GoalsHandler`, `InvestmentsHandler` |
@@ -74,18 +74,18 @@ Quando uma mensagem já está implementada, o contrato vale pelo `.java` (o `.md
 - **Quem chama é o Backend** (`transactionsService.sugerirCategoria`), no cadastro de uma transação sem `categoria`. Se o Servidor estiver fora do ar, o cadastro não falha: a transação é salva como `Outros`. Outros erros do Servidor (como `UNKNOWN_TYPE`, de um Servidor desatualizado) continuam sendo erro.
 - No Frontend, o botão **Sugerir** da categoria (formulário de novo lançamento) dispara esse pedido antes de salvar, pela rota `POST /v1/transactions/suggest-category` do Backend; a categoria sugerida já aparece no campo e pode ser trocada.
 
-### Grupo 2 — Saldo das contas (`transactions/`, Planejado)
+### Grupo 2 — Saldo das contas (`transactions/`)
 
-Mensagem **planejada**, ainda não implementada (issue #106; especificação em [`docs/especificacao-contas-e-transferencias.md`](../docs/especificacao-contas-e-transferencias.md), seção 5). Operação pura, sem banco, como as demais: o Backend lê as contas e os movimentos no MongoDB e manda tudo no pedido; o Servidor devolve o saldo atual de cada conta.
+Issue #106 (especificação em `docs/especificacao-contas-e-transferencias.md`, seção 5). Operação pura, sem banco, como as demais: o Backend lê as contas e os movimentos no MongoDB e manda tudo no pedido; o Servidor devolve o saldo atual de cada conta.
 
 | Mensagem | `dados` |
 |---|---|
-| `PedidoCalcularSaldoContas` (Planejado) | As contas (cada uma com o `saldoInicial`) e os movimentos (receitas, despesas e transferências). Os nomes exatos dos campos serão definidos com o Backend na implementação |
-| `RespostaCalcularSaldoContas` (Planejado) | O saldo atual de cada conta |
+| `PedidoCalcularSaldoContas` | `contas`: lista de `{ id, saldoInicial }` (só as manuais) e `movimentos`: lista de `{ tipo, valor, contaId, contaDestinoId? }`, com `tipo` `receita`, `despesa` ou `transferencia` (na transferência, `contaId` é a origem) |
+| `RespostaCalcularSaldoContas` | `saldos`: lista de `{ contaId, saldoAtual }`, na ordem das contas do pedido, arredondados em 2 casas |
 
 - **Regras** (RN2, RN6 e RN9 da especificação): para uma conta manual, `saldoAtual` = `saldoInicial` + receitas − despesas ± transferências da conta (a transferência subtrai da conta de origem e soma na conta de destino). O saldo é sempre calculado, nunca gravado: editar ou excluir uma transferência apenas muda o pedido seguinte.
 - **Quem chama é o Backend** (`GET /accounts`, que devolve cada conta com o `saldoAtual`). O lado do Servidor é do Grupo 2 (`TransactionsHandler`).
-- Como a mensagem ainda não existe como `.java`, o contrato vale pelo `.md` de `exemplo/` quando ele for criado; ao implementar, o `.java` passa a valer.
+- Movimentos de uma conta que não veio no pedido são ignorados. `contas` ausente, tipo de movimento desconhecido, valor menor ou igual a zero ou transferência sem destino: `Erro` `VALIDATION`. O `.java` é o contrato (`PedidoCalcularSaldoContas`, `RespostaCalcularSaldoContas`); os testes estão em `SaldoContasTest`.
 
 ### Grupo 4 — Mentor IA (`mentoria/`, implementado)
 
@@ -139,7 +139,7 @@ src/main/java/com/financeai/
 
 ## Estado atual
 
-Implementados como código: o `Main` e o `core/` (`Comunicado`, `Parceiro`, `Aceitadora`, `Supervisora`, `Handler`, `HandlerRegistry`, `ErroDeNegocio`, `Teclado`), o `EcoHandler` (handler de teste: `PedidoEco` devolve `RespostaEco` com os mesmos `dados`; com `{"falhar":"negocio"}` responde `Erro` `TESTE_NEGOCIO` e com `{"falhar":"interno"}` responde `Erro` `INTERNAL_ERROR`) e os handlers dos cinco grupos: `AuthHandler` (hash e conferência de senha), `TransactionsHandler` (categorização), `DashboardHandler` (indicadores e comparação de períodos), `MentorHandler` (contexto e filtro do Mentor IA), `GoalsHandler` e `InvestmentsHandler` (metas, rentabilidade e parcelamentos). Só as mensagens de MFA do Grupo 1 continuam como `.md` de exemplo. Planejado, ainda não implementado: `PedidoCalcularSaldoContas` / `RespostaCalcularSaldoContas` (Grupo 2).
+Implementados como código: o `Main` e o `core/` (`Comunicado`, `Parceiro`, `Aceitadora`, `Supervisora`, `Handler`, `HandlerRegistry`, `ErroDeNegocio`, `Teclado`), o `EcoHandler` (handler de teste: `PedidoEco` devolve `RespostaEco` com os mesmos `dados`; com `{"falhar":"negocio"}` responde `Erro` `TESTE_NEGOCIO` e com `{"falhar":"interno"}` responde `Erro` `INTERNAL_ERROR`) e os handlers dos cinco grupos: `AuthHandler` (hash e conferência de senha), `TransactionsHandler` (categorização e saldo das contas), `DashboardHandler` (indicadores e comparação de períodos), `MentorHandler` (contexto e filtro do Mentor IA), `GoalsHandler` e `InvestmentsHandler` (metas, rentabilidade e parcelamentos). Só as mensagens de MFA do Grupo 1 continuam como `.md` de exemplo.
 
 ## Build com Maven
 

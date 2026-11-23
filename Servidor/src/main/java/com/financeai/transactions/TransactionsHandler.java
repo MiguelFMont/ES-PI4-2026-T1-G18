@@ -1,7 +1,11 @@
 package com.financeai.transactions;
 
 import java.text.Normalizer;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 import com.financeai.core.Comunicado;
@@ -67,6 +71,82 @@ public class TransactionsHandler
     public void registrarEm (HandlerRegistry registry)
     {
         registry.registrar (PedidoCategorizarTransacao.TIPO, this::categorizar);
+        registry.registrar (PedidoCalcularSaldoContas.TIPO,  this::calcularSaldoContas);
+    }
+
+    // saldo atual = saldo inicial + receitas - despesas - transferencias enviadas + transferencias recebidas (RN2 e RN6).
+    // Movimentos de contas que nao vieram no pedido (ex.: uma conta Open Finance) sao ignorados.
+    private Comunicado calcularSaldoContas (Comunicado pedido) throws Exception
+    {
+        PedidoCalcularSaldoContas p;
+        try
+        {
+            p = pedido.dadosComo (PedidoCalcularSaldoContas.class);
+        }
+        catch (JsonParseException erro)
+        {
+            throw new ErroDeNegocio ("VALIDATION", "dados invalidos");
+        }
+
+        if (p == null || p.getContas() == null)
+            throw new ErroDeNegocio ("VALIDATION", "contas e obrigatorio");
+
+        Map < String, Double > saldos = new LinkedHashMap <> ();
+        for (PedidoCalcularSaldoContas.Conta conta : p.getContas())
+        {
+            if (conta == null || conta.getId() == null || conta.getId().isBlank())
+                throw new ErroDeNegocio ("VALIDATION", "toda conta precisa de id");
+            if (Double.isNaN (conta.getSaldoInicial()) || Double.isInfinite (conta.getSaldoInicial()))
+                throw new ErroDeNegocio ("VALIDATION", "saldoInicial invalido");
+            saldos.put (conta.getId(), conta.getSaldoInicial());
+        }
+
+        List < PedidoCalcularSaldoContas.Movimento > movimentos = p.getMovimentos() == null
+            ? new ArrayList <> () : p.getMovimentos();
+
+        for (PedidoCalcularSaldoContas.Movimento m : movimentos)
+        {
+            if (m == null || m.getTipo() == null)
+                throw new ErroDeNegocio ("VALIDATION", "todo movimento precisa de tipo");
+            if (Double.isNaN (m.getValor()) || Double.isInfinite (m.getValor()) || m.getValor() <= 0)
+                throw new ErroDeNegocio ("VALIDATION", "valor do movimento deve ser maior que zero");
+
+            switch (m.getTipo())
+            {
+                case "receita":
+                    somar (saldos, m.getContaId(), m.getValor());
+                    break;
+                case "despesa":
+                    somar (saldos, m.getContaId(), -m.getValor());
+                    break;
+                case "transferencia":
+                    if (m.getContaId() == null || m.getContaDestinoId() == null)
+                        throw new ErroDeNegocio ("VALIDATION", "transferencia precisa de contaId e contaDestinoId");
+                    somar (saldos, m.getContaId(), -m.getValor());
+                    somar (saldos, m.getContaDestinoId(), m.getValor());
+                    break;
+                default:
+                    throw new ErroDeNegocio ("VALIDATION", "tipo de movimento invalido: " + m.getTipo());
+            }
+        }
+
+        List < RespostaCalcularSaldoContas.Saldo > resposta = new ArrayList <> ();
+        for (Map.Entry < String, Double > e : saldos.entrySet())
+            resposta.add (new RespostaCalcularSaldoContas.Saldo (e.getKey(), emReais (e.getValue())));
+
+        return Comunicado.de (RespostaCalcularSaldoContas.TIPO, new RespostaCalcularSaldoContas (resposta));
+    }
+
+    private static void somar (Map < String, Double > saldos, String contaId, double valor)
+    {
+        if (contaId != null && saldos.containsKey (contaId))
+            saldos.put (contaId, saldos.get (contaId) + valor);
+    }
+
+    // arredonda em 2 casas: a soma de decimais nao pode devolver 0.30000000000000004
+    private static double emReais (double valor)
+    {
+        return Math.round (valor * 100.0) / 100.0;
     }
 
     private Comunicado categorizar (Comunicado pedido) throws Exception
