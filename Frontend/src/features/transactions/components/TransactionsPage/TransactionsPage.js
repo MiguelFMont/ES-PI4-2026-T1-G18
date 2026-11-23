@@ -38,8 +38,15 @@ export function iniciarPaginaTransacoes(raiz, { signal, escopo } = {}) {
 
   const temFiltros = () => Object.keys(estado.parametros).some((chave) => chave !== 'dataInicio' && chave !== 'dataFim');
 
-  if (escopo) raiz.dataset.escopoCartao = ''; // o CSS esconde, no formulário, a conta, o pagamento e o cartão (já são os do cartão)
-  else ligarSeletores(raiz, signal); // as listas dos campos do painel de detalhes (na aba Cartão, quem liga é a própria tela)
+  // O CSS esconde, no formulário, a conta, o pagamento e o cartão (já são os do cartão). `raiz` é o #app-content, que continua o mesmo
+  // ao trocar de tela: sem tirar a marca ao sair (e ao montar fora do cartão), ela ficaria na tela de Transações depois de passar pelo Cartão.
+  if (escopo) {
+    raiz.dataset.escopoCartao = '';
+    signal?.addEventListener('abort', () => { delete raiz.dataset.escopoCartao; });
+  } else {
+    delete raiz.dataset.escopoCartao;
+    ligarSeletores(raiz, signal); // as listas dos campos do painel de detalhes (na aba Cartão, quem liga é a própria tela)
+  }
 
   const lista = iniciarLista(raiz, {
     signal,
