@@ -1,4 +1,4 @@
-// src/modules/dashboard/dashboard.controller.ts
+// CEZAR AUGUSTO FERNANDEZ RULL - 25007452
 import { Response, NextFunction } from "express";
 import { dashboardService } from "./dashboard.service";
 import { AuthenticatedRequest } from "../../middlewares/auth.middleware";

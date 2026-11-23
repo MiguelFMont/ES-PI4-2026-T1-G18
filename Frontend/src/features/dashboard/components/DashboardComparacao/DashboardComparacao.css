@@ -1,4 +1,4 @@
-/* Componente DashboardComparacao (Issue #51) */
+/* CEZAR AUGUSTO FERNANDEZ RULL - 25007452 */
 .dashboard-comparacao-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(13.5rem, 1fr));

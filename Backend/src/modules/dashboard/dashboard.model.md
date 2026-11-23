@@ -1,6 +1,11 @@
+
+
+`// CEZAR AUGUSTO FERNANDEZ RULL - 25007452`
+
 # (sem model próprio) — por que este módulo não tem dashboard.model.ts
 
 ## O que explicar neste caso
+
 - O painel financeiro não é dono de nenhuma entidade persistida ele só lê e agrega dados que já pertencem ao módulo `transactions` (coleção `transactions`).
 - Por isso o `dashboard.repository.ts` importa o `TransactionModel` do módulo `transactions` em vez de declarar um schema próprio.
 - Se no futuro o grupo precisar cachear indicadores pesados (ex.: um snapshot diário pré-calculado), aí sim cria-se um `dashboard.model.ts` com uma coleção `dashboard_snapshots`, no mesmo padrão dos outros módulos. Até lá, manter esse arquivo "vazio" (sem model) é a opção mais simples e correta.

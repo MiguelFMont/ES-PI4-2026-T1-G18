@@ -1,4 +1,4 @@
-// src/features/dashboard/components/DashboardResumo/DashboardResumo.js
+// CEZAR AUGUSTO FERNANDEZ RULL - 25007452
 import { formatarMoeda } from '../../../transactions/utils/format.js';
 
 export function iniciarDashboardResumo(raiz) {

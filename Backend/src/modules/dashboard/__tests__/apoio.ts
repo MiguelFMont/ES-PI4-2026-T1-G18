@@ -1,4 +1,4 @@
-// src/modules/dashboard/__tests__/apoio.ts
+// CEZAR AUGUSTO FERNANDEZ RULL - 25007452
 // Reaproveita o ambiente isolado (sem Atlas nem Servidor Java real) e o helper de rotas de transactions.
 import "./ambiente";
 import { mock } from "node:test";

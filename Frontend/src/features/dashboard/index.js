@@ -1,4 +1,4 @@
-// src/features/dashboard/index.js
+// CEZAR AUGUSTO FERNANDEZ RULL - 25007452
 import { incluirFragmentos } from '../../core/views/includes.js';
 import { iniciarDashboardHeader } from './components/DashboardHeader/DashboardHeader.js';
 import { mostrarEstadoDashboard } from './components/DashboardEstado/DashboardEstado.js';

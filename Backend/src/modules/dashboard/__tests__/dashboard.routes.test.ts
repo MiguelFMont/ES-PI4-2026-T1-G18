@@ -1,4 +1,4 @@
-// src/modules/dashboard/__tests__/dashboard.routes.test.ts
+// CEZAR AUGUSTO FERNANDEZ RULL - 25007452
 // Testes de ponta a ponta das rotas /v1/dashboard (issue #61): indicadores, resumo por período, categorias e comparação.
 import { ANA, BETO, dataMesesAtras, inserir, json, prepararApi, rotuloMesesAtras, simularServidorDashboard } from "./apoio";
 import { describe, test } from "node:test";

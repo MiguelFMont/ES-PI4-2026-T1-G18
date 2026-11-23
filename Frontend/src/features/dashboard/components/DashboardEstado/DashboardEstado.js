@@ -1,4 +1,4 @@
-// src/features/dashboard/components/DashboardEstado/DashboardEstado.js
+// CEZAR AUGUSTO FERNANDEZ RULL - 25007452
 export function mostrarEstadoDashboard(raiz, { tipo = 'oculto', mensagem = '', aoTentarNovamente = null } = {}) {
     const box = raiz.querySelector('#dashboard-estado-box');
     const texto = raiz.querySelector('#dashboard-estado-texto');

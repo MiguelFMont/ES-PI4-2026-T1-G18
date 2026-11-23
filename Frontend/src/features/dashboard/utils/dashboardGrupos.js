@@ -1,4 +1,4 @@
-// src/features/dashboard/utils/dashboardGrupos.js
+// CEZAR AUGUSTO FERNANDEZ RULL - 25007452
 import { CATEGORIAS, rotuloDe } from '../../transactions/utils/constants.js';
 
 export const META_CATEGORIAS = {
