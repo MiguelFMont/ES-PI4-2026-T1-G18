@@ -119,7 +119,7 @@ describe("mentorIaService.sendMessage", () => {
       t.mock.timers.reset();
 
       const filtros = buscarTransacoes.calls.at(-1)!.arguments[1] as Record<string, unknown>;
-      assert.deepEqual(filtros, { dataInicio: new Date(caso.inicio), pagina: 1, limite: 100 });
+      assert.deepEqual(filtros, { dataInicio: new Date(caso.inicio), pagina: 1, limite: 100, todos: false });
       assert.equal(pedidos.at(-2)!.dados.diaDoMes, caso.dia);
     }
   });

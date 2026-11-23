@@ -75,20 +75,72 @@ export const investmentsRepository = {
     }
   },
 
-  // O cartão mais antigo (cria o padrão se o usuário não tem nenhum).
+  // O cartão mais antigo, ou null se o usuário não tem nenhum (não se cria mais um cartão sozinho: a conexão com o Open Finance é
+  // opcional, então ninguém é obrigado a ter cartão).
   async findOldestCard(userId: string) {
-    await investmentsRepository.ensureDefaultCard(userId);
     return CardModel.findOne({ userId }).sort({ createdAt: 1, _id: 1 }).lean();
   },
 
-  async createCard(dados: Pick<CardDocument, "userId" | "nome" | "limite" | "diaFechamento">) {
+  // Quantos cartões estão vinculados a uma conta (a conta com cartão não se exclui).
+  // O cartão mais antigo de uma conta (cartões antigos, sem conta, valem para qualquer conta), ou null.
+  async findOldestCardOfConta(userId: string, contaId: string) {
+    return CardModel.findOne({ userId, $or: [{ contaId }, { contaId: { $exists: false } }] })
+      .sort({ createdAt: 1, _id: 1 })
+      .lean();
+  },
+
+  async countCardsByConta(userId: string, contaId: string): Promise<number> {
+    return CardModel.countDocuments({ userId, contaId });
+  },
+
+  // Exclui cartões com tudo o que é deles: os lançamentos no cartão e os parcelamentos (em andamento ou não). `cartoes` leva o id e se o cartão
+  // é o mais antigo (que também fica com os parcelamentos antigos, sem cartaoId). Devolve o que saiu, para o desfazer.
+  async excluirCartoesComTudo(userId: string, cartoes: { id: string; ehPadrao: boolean }[]) {
+    const ids = cartoes.map((c) => c.id);
+    const docsCartoes = await CardModel.find({ userId, _id: { $in: ids } }).lean();
+    const parcelamentos = (await Promise.all(cartoes.map((c) => CardInstallmentModel.find({ userId, ...doCartao(c.id, c.ehPadrao) }).lean()))).flat();
+    const transacoes = await TransactionModel.find({ userId, cartaoId: { $in: ids } }).lean();
+    if (transacoes.length > 0) await TransactionModel.deleteMany({ _id: { $in: transacoes.map((t) => t._id) } });
+    if (parcelamentos.length > 0) await CardInstallmentModel.deleteMany({ _id: { $in: parcelamentos.map((p) => p._id) } });
+    await CardModel.deleteMany({ userId, _id: { $in: ids } });
+    return { cartoes: docsCartoes, parcelamentos, transacoes };
+  },
+
+  // Desfazer: os cartões, os parcelamentos e os lançamentos voltam com os mesmos ids.
+  async restaurarCartoes(saida: { cartoes: unknown[]; parcelamentos: unknown[]; transacoes: unknown[] }) {
+    if (saida.cartoes.length > 0) await CardModel.collection.insertMany(saida.cartoes as never[]);
+    if (saida.parcelamentos.length > 0) await CardInstallmentModel.collection.insertMany(saida.parcelamentos as never[]);
+    if (saida.transacoes.length > 0) await TransactionModel.collection.insertMany(saida.transacoes as never[]);
+  },
+
+  // O cartão mais antigo do usuário (o padrão), sem criar nada.
+  async idDoCartaoMaisAntigo(userId: string): Promise<string | undefined> {
+    const doc = await CardModel.findOne({ userId }).sort({ createdAt: 1, _id: 1 }).select("_id").lean();
+    return doc ? String(doc._id) : undefined;
+  },
+
+  // Os cartões vinculados a uma conta (para excluí-los junto com ela).
+  async findCardsByConta(userId: string, contaId: string) {
+    return CardModel.find({ userId, contaId }).lean();
+  },
+
+  async findCardByPluggyAccount(userId: string, pluggyAccountId: string) {
+    return CardModel.findOne({ userId, pluggyAccountId }).lean();
+  },
+
+  async createCard(dados: Pick<CardDocument, "userId" | "nome" | "limite" | "diaFechamento" | "contaId" | "pluggyAccountId">) {
     return (await CardModel.create({ ...dados, nomeChave: chaveDoNome(dados.nome) })).toObject();
   },
 
-  async updateCard(userId: string, id: string, alteracoes: Partial<Pick<CardDocument, "nome" | "limite" | "diaFechamento">>) {
+  async updateCard(userId: string, id: string, alteracoes: Partial<Pick<CardDocument, "nome" | "limite" | "diaFechamento" | "contaId">> & { icone?: string | null; cor?: string | null }) {
     const { nome, ...resto } = alteracoes;
     const set = { ...resto, ...(nome !== undefined && { nome: nome.trim(), nomeChave: chaveDoNome(nome) }) };
     return CardModel.findOneAndUpdate({ _id: id, userId }, { $set: set }, { new: true, runValidators: true }).lean();
+  },
+
+  // Ao desconectar o Open Finance a conta vira manual, e os cartões dela também (deixam de ser da Pluggy e voltam a poder ser editados e excluídos).
+  async soltarCartoesDaConta(userId: string, contaId: string) {
+    await CardModel.updateMany({ userId, contaId }, { $unset: { pluggyAccountId: "" } });
   },
 
   // Quantos parcelamentos do cartão ainda não foram quitados (isso impede a exclusão do cartão).
@@ -100,18 +152,16 @@ export const investmentsRepository = {
     });
   },
 
-  // Exclui o cartão. Sem parcelamentos ativos (quem chama já conferiu), os quitados saem junto e as transações que
-  // apontavam para o cartão são desvinculadas: perdem o cartão e o parcelamento (a compra parcelada vira uma compra
-  // comum, parcelas = 1) e passam a contar para o cartão mais antigo que sobrar.
+  // Quantas transações (compras no crédito, inclusive as parceladas) estão vinculadas ao cartão: com lançamentos, o cartão não se exclui.
+  async countTransactionsOfCard(userId: string, cartaoId: string): Promise<number> {
+    return TransactionModel.countDocuments({ userId, cartaoId });
+  },
+
+  // Exclui o cartão. Sem parcelamentos ativos nem lançamentos (quem chama já conferiu), os parcelamentos quitados saem junto.
   async removeCard(userId: string, cartaoId: string, ehPadrao: boolean): Promise<boolean> {
     const { deletedCount } = await CardModel.deleteOne({ _id: cartaoId, userId });
     if (deletedCount === 0) return false;
     await CardInstallmentModel.deleteMany({ userId, ...doCartao(cartaoId, ehPadrao) });
-    await TransactionModel.updateMany(
-      { userId, cartaoId, parcelamentoId: { $exists: true } },
-      { $unset: { cartaoId: "", parcelamentoId: "" }, $set: { parcelas: 1 } }
-    );
-    await TransactionModel.updateMany({ userId, cartaoId }, { $unset: { cartaoId: "" } });
     return true;
   },
 
@@ -123,13 +173,13 @@ export const investmentsRepository = {
       {
         $match: {
           userId,
-          tipo: "despesa",
+          tipo: { $in: ["despesa", "receita"] }, // a receita no cartão (estorno) abate a fatura
           formaPagamento: "credito",
           parcelamentoId: { $exists: false },
           data: { $gte: de, $lte: ate },
         },
       },
-      { $group: { _id: "$cartaoId", total: { $sum: "$valor" } } },
+      { $group: { _id: "$cartaoId", total: { $sum: { $cond: [{ $eq: ["$tipo", "despesa"] }, "$valor", { $multiply: ["$valor", -1] }] } } } },
     ]);
     return grupos.map((g) => ({ cartaoId: g._id ?? null, total: g.total }));
   },
@@ -158,6 +208,11 @@ export const investmentsRepository = {
 
   async removeInstallment(userId: string, id: string): Promise<boolean> {
     return (await CardInstallmentModel.deleteOne({ _id: id, userId })).deletedCount > 0;
+  },
+
+  // Para o desfazer de uma exclusão de lançamentos: os parcelamentos saem e voltam com os mesmos ids.
+  async restaurarParcelamentos(docs: unknown[]) {
+    if (docs.length > 0) await CardInstallmentModel.collection.insertMany(docs as never[]);
   },
 
   async removeInstallments(userId: string, ids: string[]): Promise<number> {

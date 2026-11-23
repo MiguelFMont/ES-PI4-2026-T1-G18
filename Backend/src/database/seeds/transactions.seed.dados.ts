@@ -5,7 +5,7 @@
 // regras de alerta não geram "gasto fora do padrão" com o seed em nenhum dia do ano.
 import type { TransactionDocument } from "../../modules/transactions/transactions.model";
 
-export type Exemplo = Omit<TransactionDocument, "userId" | "data" | "origem"> & { diasAtras: number };
+export type Exemplo = Omit<TransactionDocument, "userId" | "data" | "origem" | "tipo"> & { tipo: "receita" | "despesa"; diasAtras: number };
 
 const R = "receita" as const;
 const D = "despesa" as const;

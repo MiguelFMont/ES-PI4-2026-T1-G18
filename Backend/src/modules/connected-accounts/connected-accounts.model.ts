@@ -9,6 +9,9 @@ export interface ContaDaConexao {
   nome: string;
   saldo?: number;
   moeda?: string;
+  // só nas contas CREDIT: o limite do cartão e o dia do fechamento da fatura (de creditData), para criar o cartão ao conectar
+  limite?: number;
+  diaFechamento?: number;
 }
 
 export interface ConnectedAccountDocument {
@@ -19,6 +22,8 @@ export interface ConnectedAccountDocument {
   status: string; // status do item na Pluggy: UPDATED, UPDATING, LOGIN_ERROR, OUTDATED...
   contas: ContaDaConexao[]; // resumo das contas da conexão na última sincronização
   ultimaSincronizacao?: Date;
+  // O usuário excluiu a conta Open Finance desta conexão: a migração (RN10) não a recria sozinha. Voltar a criar a conta limpa a marca.
+  contaDispensada?: boolean;
 }
 
 const ConnectedAccountSchema = new Schema<ConnectedAccountDocument>(
@@ -36,9 +41,12 @@ const ConnectedAccountSchema = new Schema<ConnectedAccountDocument>(
         nome: { type: String, required: true },
         saldo: { type: Number },
         moeda: { type: String },
+        limite: { type: Number },
+        diaFechamento: { type: Number },
       },
     ],
     ultimaSincronizacao: { type: Date },
+    contaDispensada: { type: Boolean },
   },
   { timestamps: true, collection: "connected_accounts" }
 );

@@ -62,8 +62,7 @@ export const investmentsController = {
   }),
 
   removeCardById: tratar(async (req, res) => {
-    await investmentsService.removeCardById(req.user!.id, idSchema.parse(req.params.id));
-    res.status(204).send();
+    res.status(200).json(await investmentsService.removeCardById(req.user!.id, idSchema.parse(req.params.id))); // { desfazerId, lancamentos }
   }),
 
   // Rotas antigas: o cartão padrão (o mais antigo)

@@ -13,6 +13,10 @@ import { app } from "../../../http/app";
 import { env } from "../../../config/env";
 import { TransactionDocument, TransactionModel } from "../transactions.model";
 import { encerrarBanco, iniciarBanco, limparBanco } from "../../connected-accounts/__tests__/banco";
+import { CONTAS, comContaDoToken, criarContasDeTeste } from "./contas-de-teste";
+
+export { CONTAS };
+export { criarCartoesPadrao } from "./contas-de-teste";
 
 export const tokenDe = (id: string) => jwt.sign({ id, email: `${id}@teste.com` }, env.JWT_SECRET, { expiresIn: "1h" });
 
@@ -56,17 +60,27 @@ export function prepararApi() {
   });
 
   beforeEach(limparBanco);
+  beforeEach(() => criarContasDeTeste());
   afterEach(() => mock.restoreAll());
 
+  const chamarCru = (metodo: string, caminho: string, token?: string, corpo?: unknown) =>
+    fetch(`${base}/v1${caminho}`, {
+      method: metodo,
+      headers: { "Content-Type": "application/json", ...(token && { Authorization: `Bearer ${token}` }) },
+      body: corpo === undefined ? undefined : JSON.stringify(corpo),
+    });
+
   return {
-    /** Chama a API (`caminho` sem o /v1). Sem `token`, a chamada vai sem login. */
+    /**
+     * Chama a API (`caminho` sem o /v1). Sem `token`, a chamada vai sem login. Em POST /transactions sem `contaId` no corpo, a
+     * conta de teste do usuário do token é preenchida (ver contas-de-teste.ts); `chamarCru` não preenche nada.
+     */
     chamar(metodo: string, caminho: string, token?: string, corpo?: unknown) {
-      return fetch(`${base}/v1${caminho}`, {
-        method: metodo,
-        headers: { "Content-Type": "application/json", ...(token && { Authorization: `Bearer ${token}` }) },
-        body: corpo === undefined ? undefined : JSON.stringify(corpo),
-      });
+      return chamarCru(metodo, caminho, token, comContaDoToken(metodo, caminho, token, corpo));
     },
+
+    /** Como `chamar`, sem preencher o contaId. */
+    chamarCru,
 
     /** Como `chamar`, mas o corpo vai como texto cru (para mandar um JSON quebrado de propósito). */
     chamarComTexto(metodo: string, caminho: string, token: string, texto: string) {
@@ -85,6 +99,7 @@ export async function inserir(userId: string, dados: Partial<TransactionDocument
     ...TRANSACAO_VALIDA,
     data: new Date(TRANSACAO_VALIDA.data),
     userId,
+    ...(CONTAS[userId] ? { contaId: CONTAS[userId] } : {}),
     ...dados,
   });
   return criada._id.toString();

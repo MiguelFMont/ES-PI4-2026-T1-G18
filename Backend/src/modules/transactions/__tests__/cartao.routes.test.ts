@@ -2,7 +2,7 @@
 // Compras no crédito ligadas a um cartão e parceladas (/v1/transactions com cartaoId e parcelas): o parcelamento criado no
 // cartão, a fatura sem contar a mesma compra duas vezes, edição em lote segura, duplicar, excluir e os erros.
 // O Servidor Java é simulado só onde a fatura é lida (a transação em si não depende dele).
-import { ANA, BETO, ID_INEXISTENTE, inserir, json, prepararApi, simularServidorGrupo5, textoDe } from "../../goals/__tests__/apoio";
+import { ANA, BETO, CONTAS, ID_INEXISTENTE, criarCartoesPadrao, inserir, json, prepararApi, simularServidorGrupo5, textoDe } from "../../goals/__tests__/apoio";
 import { beforeEach, describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { CardInstallmentModel, CardModel } from "../../investments/investments.model";
@@ -46,11 +46,16 @@ describe("POST /v1/transactions: cartão e parcelas", () => {
     assert.equal((await doBanco(t.id))?.cartaoId, cartao.id);
   });
 
-  test("crédito sem cartaoId nem parcelas: segue como antes (sem cartaoId, parcelas 1)", async () => {
-    const t = await criada();
-    assert.equal(t.cartaoId, undefined);
-    assert.equal(t.parcelas, 1);
+  test("crédito sem cartaoId: toda compra no crédito é ligada a um cartão, o mais antigo da conta; sem nenhum, 422 CARD_REQUIRED", async () => {
+    const semCartao = await criar();
+    assert.equal(semCartao.status, 422);
+    assert.equal((await json(semCartao)).error.code, "CARD_REQUIRED");
     assert.equal(await CardModel.countDocuments(), 0, "nenhum cartão é criado só por registrar a compra");
+
+    const cartao = await criarCartao("Nubank");
+    const t = await criada();
+    assert.equal(t.cartaoId, cartao.id);
+    assert.equal(t.parcelas, 1);
   });
 
   test("outras formas de pagamento não trazem cartaoId nem parcelas na resposta; parcelas 1 é aceito", async () => {
@@ -85,19 +90,22 @@ describe("POST /v1/transactions: cartão e parcelas", () => {
     assert.equal((await parcelamentoDoBanco(t.parcelamentoId))?.cartaoId, primeiro.id);
   });
 
-  test("parcelada de quem ainda não tem cartão: cria o padrão 'Cartão' e usa ele", async () => {
-    const t = await criada({ parcelas: 2 });
-    const cartao = await CardModel.findOne({ userId: "ana" }).lean();
-    assert.equal(cartao?.nome, "Cartão");
-    assert.equal(t.cartaoId, String(cartao?._id));
+  test("parcelada de quem ainda não tem cartão: 422 CARD_REQUIRED e nada é salvo (ter cartão é opcional, mas parcelar precisa de um)", async () => {
+    const resposta = await criar({ parcelas: 2 });
+    assert.equal(resposta.status, 422);
+    assert.equal((await json(resposta)).error.code, "CARD_REQUIRED");
+    assert.equal(await TransactionModel.countDocuments(), 0);
+    assert.equal(await CardModel.countDocuments(), 0, "nenhum cartão é criado sozinho");
   });
 
   test("descrição longa (a da transação não tem limite): o parcelamento guarda os 100 primeiros caracteres", async () => {
+    await criarCartoesPadrao();
     const t = await criada({ parcelas: 2, descricao: textoDe(150) });
     assert.equal((await parcelamentoDoBanco(t.parcelamentoId))?.descricao, textoDe(100));
   });
 
   test("a mesma transação serve no máximo 24 parcelas", async () => {
+    await criarCartoesPadrao();
     assert.equal((await criar({ parcelas: 24 })).status, 201);
   });
 
@@ -205,6 +213,7 @@ describe("a fatura conta a compra à vista OU as parcelas, nunca as duas", () =>
   });
 
   test("o parcelamento de uma compra aparece com transacaoId e não pode ser excluído por /card/installments", async () => {
+    await criarCartoesPadrao();
     const t = await criada({ parcelas: 3 });
     const { parcelamentos } = await json(await inv("GET", "/card/installments"));
     assert.equal(parcelamentos[0].id, t.parcelamentoId);
@@ -220,12 +229,19 @@ describe("a fatura conta a compra à vista OU as parcelas, nunca as duas", () =>
 // ------------------------------------------------------------------------------------------------ excluir
 
 describe("POST /v1/transactions/bulk-delete: compras parceladas", () => {
+  beforeEach(() => criarCartoesPadrao()); // ter cartão é opcional: estes testes partem de um cartão "Cartão" já criado
   test("excluir a transação exclui o parcelamento ligado e a fatura volta ao que era", async () => {
     const t = await criada({ parcelas: 3 });
     const resposta = await excluir([t.id]);
-    assert.deepEqual(await json(resposta), { afetadas: 1, naoEncontradas: [] });
+    const { desfazerId, ...corpo } = await json(resposta);
+    assert.deepEqual(corpo, { afetadas: 1, naoEncontradas: [] });
     assert.equal(await parcelamentoDoBanco(t.parcelamentoId), null);
     assert.equal((await json(await inv("GET", "/cards"))).cartoes[0].fatura.valor, 0);
+
+    // o desfazer traz de volta a transação e o parcelamento, com os mesmos ids
+    assert.equal((await chamar("POST", `/undo/${desfazerId}`, ANA)).status, 200);
+    assert.ok(await doBanco(t.id));
+    assert.ok(await parcelamentoDoBanco(t.parcelamentoId));
   });
 
   test("só exclui o parcelamento das transações excluídas (e das do usuário)", async () => {
@@ -234,7 +250,9 @@ describe("POST /v1/transactions/bulk-delete: compras parceladas", () => {
     const doBeto = await criada({ parcelas: 2 }, BETO);
 
     const resposta = await excluir([a.id, doBeto.id]);
-    assert.deepEqual(await json(resposta), { afetadas: 1, naoEncontradas: [doBeto.id] });
+    const { desfazerId, ...corpo } = await json(resposta);
+    assert.ok(desfazerId);
+    assert.deepEqual(corpo, { afetadas: 1, naoEncontradas: [doBeto.id] });
     assert.equal(await parcelamentoDoBanco(a.parcelamentoId), null);
     assert.ok(await parcelamentoDoBanco(b.parcelamentoId));
     assert.ok(await parcelamentoDoBanco(doBeto.parcelamentoId), "o parcelamento do Beto não foi tocado");
@@ -252,6 +270,7 @@ describe("POST /v1/transactions/bulk-delete: compras parceladas", () => {
 // ------------------------------------------------------------------------------------------------ editar em lote
 
 describe("PATCH /v1/transactions/bulk: cartão e parcelas", () => {
+  beforeEach(() => criarCartoesPadrao()); // ter cartão é opcional: estes testes partem de um cartão "Cartão" já criado
   test("trocar o cartão de uma compra à vista", async () => {
     const a = await criarCartao("A");
     const b = await criarCartao("B");
@@ -264,7 +283,9 @@ describe("PATCH /v1/transactions/bulk: cartão e parcelas", () => {
     const a = await criarCartao("A");
     const t = await criada({ cartaoId: a.id });
     await editar(t.id, { cartaoId: null });
-    assert.equal((await doBanco(t.id))?.cartaoId, undefined);
+    // sem cartão a compra no crédito não existe: ela volta ao cartão mais antigo da conta
+    const depois = (await doBanco(t.id))?.cartaoId;
+    assert.ok(depois && depois !== a.id, "volta ao cartão mais antigo da conta (o padrão), não fica sem cartão");
   });
 
   test("à vista -> parcelada: cria o parcelamento e liga a transação", async () => {
@@ -373,8 +394,10 @@ describe("PATCH /v1/transactions/bulk: cartão e parcelas", () => {
 
   test("cartão de outro usuário ou inexistente: 404 CARD_NOT_FOUND e o lote inteiro é recusado", async () => {
     const doBeto = await criarCartao("do Beto", BETO);
+    await criarCartao("da Ana");
     const t = await criada();
     const outra = await criada({ descricao: "Outra" });
+    const cartaoOriginal = (await doBanco(t.id))?.cartaoId;
     for (const cartaoId of [doBeto.id, ID_INEXISTENTE]) {
       const resposta = await tx("PATCH", "/bulk", {
         itens: [{ id: outra.id, alteracoes: { valor: 5 } }, { id: t.id, alteracoes: { cartaoId } }],
@@ -383,7 +406,7 @@ describe("PATCH /v1/transactions/bulk: cartão e parcelas", () => {
       assert.equal((await json(resposta)).error.code, "CARD_NOT_FOUND");
     }
     assert.equal((await doBanco(outra.id))?.valor, 900);
-    assert.equal((await doBanco(t.id))?.cartaoId, undefined);
+    assert.equal((await doBanco(t.id))?.cartaoId, cartaoOriginal);
   });
 
   test("cartão e parcelas só valem no crédito: com a forma final diferente, 400 e nada é gravado", async () => {
@@ -405,11 +428,11 @@ describe("PATCH /v1/transactions/bulk: cartão e parcelas", () => {
     assert.equal((await doBanco(credito.id))?.formaPagamento, "credito");
   });
 
-  test("receita e transação importada não podem ser parceladas (400)", async () => {
+  test("receita não pode ser parcelada (400) e a importada nem se edita (422 OPEN_FINANCE_READ_ONLY)", async () => {
     const receita = await criada({ tipo: "receita" });
     const importada = await inserir("ana", { tipo: "despesa", valor: 10, formaPagamento: "credito", origem: "pluggy", externalId: "pl-2" });
     assert.equal((await editar(receita.id, { parcelas: 2 })).status, 400);
-    assert.equal((await editar(importada, { parcelas: 2 })).status, 400);
+    assert.equal((await editar(importada, { parcelas: 2 })).status, 422);
     assert.equal(await CardInstallmentModel.countDocuments(), 0);
   });
 
@@ -438,6 +461,7 @@ describe("PATCH /v1/transactions/bulk: cartão e parcelas", () => {
 // ------------------------------------------------------------------------------------------------ duplicar
 
 describe("POST /v1/transactions/:id/duplicate: cartão e parcelas", () => {
+  beforeEach(() => criarCartoesPadrao()); // ter cartão é opcional: estes testes partem de um cartão "Cartão" já criado
   test("copia o cartão e as parcelas e cria um parcelamento NOVO (o do original continua)", async () => {
     const a = await criarCartao("A");
     const original = await criada({ cartaoId: a.id, parcelas: 4 });
@@ -532,5 +556,75 @@ describe("GET /v1/transactions?cartaoId=: as compras de um cartão", () => {
     const resposta = await listarDoCartao("abc");
     assert.equal(resposta.status, 400);
     assert.equal((await json(resposta)).error.code, "VALIDATION_ERROR");
+  });
+});
+
+// ------------------------------------------------------------------------------------------------ cartão da conta
+
+describe("a compra no cartão é da conta a que o cartão está vinculado", () => {
+  const novaConta = async (nome: string) => json(await chamar("POST", "/accounts", ANA, { nome, banco: "inter" }));
+  const cartaoDa = async (nome: string, contaId: string) => json(await inv("POST", "/cards", { nome, contaId }));
+
+  test("cartão de outra conta: 422 CARD_ACCOUNT_MISMATCH e nada é salvo; na conta certa, 201 com o nome do cartão na resposta", async () => {
+    const reserva = await novaConta("Reserva");
+    const cartao = await cartaoDa("Inter Gold", reserva.id);
+
+    const errada = await criar({ cartaoId: cartao.id, contaId: CONTAS.ana });
+    assert.equal(errada.status, 422);
+    assert.equal((await json(errada)).error.code, "CARD_ACCOUNT_MISMATCH");
+    assert.equal(await TransactionModel.countDocuments(), 0);
+
+    const certa = await json(await criar({ cartaoId: cartao.id, contaId: reserva.id }));
+    assert.deepEqual(certa.cartao, { id: cartao.id, nome: "Inter Gold" });
+    const { itens } = await json(await tx("GET", ""));
+    assert.deepEqual(itens[0].cartao, { id: cartao.id, nome: "Inter Gold" });
+  });
+
+  test("mudar a conta de uma compra no cartão, ou o cartão para um de outra conta, é recusado (422)", async () => {
+    const reserva = await novaConta("Reserva");
+    const cartao = await cartaoDa("Inter Gold", reserva.id);
+    const t = await json(await criar({ cartaoId: cartao.id, contaId: reserva.id }));
+
+    assert.equal((await editar(t.id, { contaId: CONTAS.ana })).status, 422, "a conta nova não é a do cartão");
+    const outro = await cartaoDa("Outro", CONTAS.ana);
+    assert.equal((await editar(t.id, { cartaoId: outro.id })).status, 422, "o cartão novo é de outra conta");
+  });
+
+  test("parcelada sem cartaoId cai no cartão mais antigo DA CONTA; conta sem cartão: 422 CARD_REQUIRED", async () => {
+    const reserva = await novaConta("Reserva");
+    const daCorrente = await cartaoDa("Da corrente", CONTAS.ana);
+    const daReserva = await cartaoDa("Da reserva", reserva.id);
+
+    assert.equal((await json(await criar({ parcelas: 2, contaId: reserva.id }))).cartaoId, daReserva.id);
+    assert.equal((await json(await criar({ parcelas: 2, contaId: CONTAS.ana }))).cartaoId, daCorrente.id);
+
+    const semCartao = await novaConta("Sem cartão");
+    const resposta = await criar({ parcelas: 2, contaId: semCartao.id });
+    assert.equal(resposta.status, 422);
+    assert.equal((await json(resposta)).error.code, "CARD_REQUIRED");
+  });
+
+  test("trocar o pagamento de uma compra no débito para crédito já escolhendo o cartão da conta (edição pela lista) funciona", async () => {
+    const cartao = await cartaoDa("Nubank", CONTAS.ana);
+    const t = await json(await criar({ formaPagamento: "debito", contaId: CONTAS.ana }));
+    const resposta = await editar(t.id, { formaPagamento: "credito", cartaoId: cartao.id });
+    assert.equal(resposta.status, 200);
+    assert.equal((await json(resposta)).afetadas, 1);
+    const gravada = await doBanco(t.id);
+    assert.equal(gravada?.formaPagamento, "credito");
+    assert.equal(gravada?.cartaoId, cartao.id);
+  });
+});
+
+describe("compras antigas no crédito, sem cartão", () => {
+  test("ao listar, são ligadas ao cartão mais antigo da conta delas (e aparecem com o nome dele); sem cartão na conta, ficam como estão", async () => {
+    const antiga = await inserir("ana", { formaPagamento: "credito" }); // nasceu antes de a compra no crédito exigir cartão
+    assert.equal((await json(await tx("GET", ""))).itens[0].cartaoId, undefined, "sem nenhum cartão, nada é ligado");
+
+    const cartao = await json(await inv("POST", "/cards", { nome: "Nubank" }, ANA));
+    const { itens } = await json(await tx("GET", ""));
+    assert.equal(itens[0].cartaoId, cartao.id);
+    assert.deepEqual(itens[0].cartao, { id: cartao.id, nome: "Nubank" });
+    assert.equal((await doBanco(antiga))?.cartaoId, cartao.id, "o vínculo foi gravado");
   });
 });

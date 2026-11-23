@@ -428,3 +428,34 @@ describe("meta sem prazo", () => {
     assert.ok(com.aporteMensalNecessario > 0);
   });
 });
+
+describe("ícone e cor da meta (aparência)", () => {
+  test("cria com ícone e cor e devolve os dois; sem eles, os campos não aparecem", async () => {
+    simularServidorGrupo5();
+    const com = await criar({ ...META(), icone: "mala", cor: "laranja" });
+    assert.equal(com.icone, "mala");
+    assert.equal(com.cor, "laranja");
+    const sem = await criar();
+    assert.ok(!("icone" in sem) && !("cor" in sem));
+    const lista = await json(await api("GET", ""));
+    assert.equal(lista.find((m: any) => m.id === com.id).icone, "mala");
+  });
+
+  test("ícone ou cor fora da lista: 400 e nada é salvo", async () => {
+    simularServidorGrupo5();
+    for (const extra of [{ icone: "foguete" }, { cor: "dourado" }]) {
+      assert.equal((await api("POST", "", { ...META(), ...extra })).status, 400, JSON.stringify(extra));
+    }
+    assert.equal(await GoalModel.countDocuments({}), 0);
+  });
+
+  test("PATCH muda o ícone e a cor e null os tira", async () => {
+    simularServidorGrupo5();
+    const { id } = await criar({ ...META(), icone: "casa", cor: "azul" });
+    const mudou = await json(await api("PATCH", `/${id}`, { icone: "carro", cor: "roxo" }));
+    assert.equal(mudou.icone, "carro");
+    assert.equal(mudou.cor, "roxo");
+    const limpou = await json(await api("PATCH", `/${id}`, { icone: null, cor: null }));
+    assert.ok(!("icone" in limpou) && !("cor" in limpou));
+  });
+});

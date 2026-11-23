@@ -5,6 +5,7 @@ import {
   bulkDeleteSchema,
   bulkUpdateSchema,
   createTransactionSchema,
+  createTransferSchema,
   duplicateTransactionSchema,
   suggestCategorySchema,
   transactionIdSchema,
@@ -35,6 +36,15 @@ export const transactionsController = {
     try {
       const dados = suggestCategorySchema.parse(req.body);
       res.status(200).json(await transactionsService.suggestCategory(dados));
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async createTransfer(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const dados = createTransferSchema.parse(req.body);
+      res.status(201).json(await transactionsService.createTransfer(req.user!.id, dados));
     } catch (error) {
       next(error);
     }

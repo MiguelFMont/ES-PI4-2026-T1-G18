@@ -17,6 +17,8 @@ export interface PluggyAccount {
   name: string;
   balance?: number | null;
   currencyCode?: string | null;
+  // só nas contas CREDIT (cartão): o limite e a data de fechamento da fatura
+  creditData?: { creditLimit?: number | null; balanceCloseDate?: string | null } | null;
 }
 
 export interface PluggyTransaction {

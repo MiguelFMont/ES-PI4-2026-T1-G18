@@ -14,6 +14,7 @@ import { MotivoIgnorada, TransacaoParaImportar, mapearTransacao } from "../../in
 import { PluggyAccount } from "../../integrations/pluggy/pluggy.types";
 import { transactionsRepository } from "../transactions/transactions.repository";
 import { transactionsService } from "../transactions/transactions.service";
+import { accountsService } from "../accounts/accounts.service";
 import { ConnectedAccountDocument, ContaDaConexao } from "./connected-accounts.model";
 import { connectedAccountsRepository } from "./connected-accounts.repository";
 import { ConnectedAccountResponseDto, ResultadoImportacao } from "./connected-accounts.dto";
@@ -47,6 +48,9 @@ function paraDto(conta: ContaLida): ConnectedAccountResponseDto {
   };
 }
 
+// O dia do mês da data de fechamento da fatura, dentro de 1 a 28 (o cartão do FinanceAI fecha até o dia 28, para existir em todos os meses).
+const diaDoFechamento = (data: string) => Math.min(28, Math.max(1, Number(data.slice(8, 10)) || 3));
+
 function resumirContas(contas: PluggyAccount[]): ContaDaConexao[] {
   return contas.map((c) => ({
     pluggyAccountId: c.id,
@@ -54,6 +58,8 @@ function resumirContas(contas: PluggyAccount[]): ContaDaConexao[] {
     nome: c.name,
     ...(typeof c.balance === "number" ? { saldo: c.balance } : {}),
     ...(c.currencyCode ? { moeda: c.currencyCode } : {}),
+    ...(c.type === "CREDIT" && typeof c.creditData?.creditLimit === "number" ? { limite: c.creditData.creditLimit } : {}),
+    ...(c.type === "CREDIT" && c.creditData?.balanceCloseDate ? { diaFechamento: diaDoFechamento(c.creditData.balanceCloseDate) } : {}),
   }));
 }
 
@@ -119,6 +125,8 @@ async function importar(userId: string, conta: ContaLida): Promise<ResultadoImpo
   const categorias = await mapearComLimite(novas, CONCORRENCIA_DA_CATEGORIZACAO, (n) =>
     transactionsService.sugerirCategoria(n.descricao, n.valor)
   );
+  // RN5: o que vem da Pluggy fica ligado à conta Open Finance da conexão (se ela já virou conta; senão a migração liga depois)
+  const contaId = await accountsService.idDaContaDaConexao(userId, id);
   const importadas = await transactionsRepository.inserirImportadas(
     novas.map((n, i) => ({
       userId,
@@ -131,6 +139,7 @@ async function importar(userId: string, conta: ContaLida): Promise<ResultadoImpo
       origem: "pluggy" as const,
       externalId: n.externalId,
       contaConectadaId: id,
+      ...(contaId ? { contaId } : {}),
     }))
   );
 
@@ -195,6 +204,12 @@ export const connectedAccountsService = {
       throw erro;
     }
 
+    // o Pluggy Bank (e qualquer conexão com cartão de crédito) traz o cartão: cria um cartão para cada conta CREDIT, ligado à conta
+    // Open Finance da conexão. Uma falha aqui não derruba a conexão.
+    await accountsService.criarCartoesDaConexao(userId, criada._id.toString()).catch((erro) => {
+      console.warn(`[connected-accounts] cartões da conexão ${criada._id} não criados: ${(erro as Error).message}`);
+    });
+
     try {
       const importacao = await importar(userId, criada);
       const atual = comoLida(await connectedAccountsRepository.findOne(userId, criada._id.toString()));
@@ -238,6 +253,8 @@ export const connectedAccountsService = {
         console.warn(`[connected-accounts] item ${conta.pluggyItemId} não apagado na Pluggy: ${(erro as Error).message}`);
       }
     }
+    // a conta Open Finance ligada a esta conexão passa a ser manual (antes de a conexão sumir, para ler o último saldo dela)
+    await accountsService.converterParaManual(userId, id);
     await connectedAccountsRepository.remove(userId, id);
   },
 };

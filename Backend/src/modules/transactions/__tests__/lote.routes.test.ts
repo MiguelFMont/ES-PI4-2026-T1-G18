@@ -7,6 +7,8 @@ import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { TransactionModel } from "../transactions.model";
 
+// a exclusão também devolve o id do desfazer (POST /undo/:id), que muda a cada chamada
+const semDesfazer = ({ desfazerId, ...resto }: any) => resto;
 const { chamar, chamarComTexto } = prepararApi();
 
 const editar = (itens: unknown, token: string | null = ANA) =>
@@ -190,7 +192,7 @@ describe("POST /v1/transactions/bulk-delete: exclusão em lote", () => {
     const resposta = await excluir([a, b]);
 
     assert.equal(resposta.status, 200);
-    assert.deepEqual(await json(resposta), { afetadas: 2, naoEncontradas: [] });
+    assert.deepEqual(semDesfazer(await json(resposta)), { afetadas: 2, naoEncontradas: [] });
     assert.equal(await doBanco(a), null);
     assert.equal(await doBanco(b), null);
     assert.notEqual(await doBanco(fica), null, "o que não foi pedido continua");
@@ -198,14 +200,14 @@ describe("POST /v1/transactions/bulk-delete: exclusão em lote", () => {
 
   test("uma transação só também vale (lote de um item)", async () => {
     const id = await inserir("ana");
-    assert.deepEqual(await json(await excluir([id])), { afetadas: 1, naoEncontradas: [] });
+    assert.deepEqual(semDesfazer(await json(await excluir([id]))), { afetadas: 1, naoEncontradas: [] });
     assert.equal(await total(), 0);
   });
 
   test("não é tudo ou nada: o que existe é excluído e o que não existe volta em naoEncontradas", async () => {
     const existe = await inserir("ana");
     const resposta = await excluir([existe, ID_INEXISTENTE]);
-    assert.deepEqual(await json(resposta), { afetadas: 1, naoEncontradas: [ID_INEXISTENTE] });
+    assert.deepEqual(semDesfazer(await json(resposta)), { afetadas: 1, naoEncontradas: [ID_INEXISTENTE] });
     assert.equal(await total(), 0);
   });
 

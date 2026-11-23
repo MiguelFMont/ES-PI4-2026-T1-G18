@@ -21,7 +21,7 @@ afterEach(() => mock.restoreAll());
 
 const ID = "6ad3fd7c273f8f0946dd77e5";
 const ID2 = "6ad3fd7c273f8f0946dd77e6";
-const valida = { tipo: "despesa", valor: 10, data: "2026-10-05", descricao: "Teste" };
+const valida = { tipo: "despesa", valor: 10, data: "2026-10-05", descricao: "Teste", contaId: ID };
 
 describe("createTransactionSchema", () => {
   test("metaId é opcional e só aceita um id bem formado (24 caracteres hexadecimais)", () => {
@@ -62,6 +62,14 @@ describe("createTransactionSchema", () => {
     assert.equal(createTransactionSchema.safeParse({ ...valida, tipo: "transferencia" }).success, false);
     assert.equal(createTransactionSchema.safeParse({ ...valida, formaPagamento: "cheque" }).success, false);
     assert.equal(createTransactionSchema.safeParse({ ...valida, origem: "robo" }).success, false);
+  });
+
+  test("a conta é obrigatória e só aceita um id bem formado", () => {
+    const { contaId: _ausente, ...semConta } = valida;
+    assert.equal(createTransactionSchema.safeParse(semConta).success, false);
+    for (const ruim of ["abc", "", 5, null, ID + "0"]) {
+      assert.equal(createTransactionSchema.safeParse({ ...valida, contaId: ruim }).success, false, String(ruim));
+    }
   });
 
   test("observação: 300 caracteres passa, 301 não", () => {

@@ -1,6 +1,7 @@
 // src/modules/transactions/transactions.dto.ts
 import { z } from "zod";
 import { FORMAS_PAGAMENTO, FormaPagamento } from "./transactions.model";
+import { AccountResumoDto } from "../accounts/accounts.dto";
 
 const ID_INVALIDO = "Id inválido";
 // Máximo de parcelas de uma compra no crédito.
@@ -9,6 +10,8 @@ export const MAX_PARCELAS = 24;
 const createTransactionBase = z.object({
   tipo: z.enum(["receita", "despesa"]),
   valor: z.number().positive(),
+  // a conta do lançamento (obrigatória, RN5): uma conta do próprio usuário
+  contaId: z.string().regex(/^[a-f\d]{24}$/i, ID_INVALIDO),
   categoria: z.string().trim().min(1).optional(),
   data: z.coerce.date(),
   descricao: z.string().trim().min(1),
@@ -43,8 +46,10 @@ export const createTransactionSchema = createTransactionBase.superRefine((d, ctx
 
 export const transactionFiltersSchema = z
   .object({
-    tipo: z.enum(["receita", "despesa"]).optional(),
+    tipo: z.enum(["receita", "despesa", "transferencia"]).optional(),
     categoria: z.string().optional(),
+    // id de uma conta: as lançadas nela e as transferências que chegaram a ela
+    contaId: z.string().regex(/^[a-f\d]{24}$/i, "Id inválido").optional(),
     formaPagamento: z.enum(FORMAS_PAGAMENTO).optional(),
     origem: z.enum(["manual", "pluggy"]).optional(),
     // id de uma meta (só as vinculadas a ela) ou "nenhuma" (só as sem meta)
@@ -58,6 +63,8 @@ export const transactionFiltersSchema = z
     valorMax: z.coerce.number().min(0).optional(),
     pagina: z.coerce.number().int().min(1).default(1),
     limite: z.coerce.number().int().min(1).max(100).default(20),
+    // todos=true: devolve tudo o que passa nos filtros, sem paginar (o "Tudo" do "Por página" da tela); `limite` e `pagina` não valem
+    todos: z.enum(["true", "false"]).optional().transform((v) => v === "true"),
   })
   .refine((f) => !f.dataInicio || !f.dataFim || f.dataInicio <= f.dataFim, {
     message: "dataInicio não pode ser depois de dataFim",
@@ -76,6 +83,9 @@ export const updateTransactionSchema = z.object({
   data: z.coerce.date(),
   descricao: z.string().trim().min(1),
   observacoes: z.string().trim().max(300), // "" = apagar; sem transform
+  // mover o lançamento para outra conta (manual) e, só em transferência, trocar a conta de destino
+  contaId: z.string().regex(/^[a-f\d]{24}$/i, ID_INVALIDO),
+  contaDestinoId: z.string().regex(/^[a-f\d]{24}$/i, ID_INVALIDO),
   formaPagamento: z.enum(FORMAS_PAGAMENTO), // sem default
   metaId: z.string().regex(/^[a-f\d]{24}$/i, ID_INVALIDO).nullable(), // null = desvincular da meta
   // null = desvincular do cartão. cartaoId e parcelas > 1 só valem se a forma de pagamento final for crédito (o service confere)
@@ -94,6 +104,27 @@ export const transactionIdSchema = idSchema;
 export const suggestCategorySchema = z.object({
   descricao: z.string().trim().min(1).max(200),
   valor: z.number().min(0).optional(),
+});
+
+// Transferência entre duas contas manuais do usuário (RN6 e RN7): um único registro, que não é receita nem despesa.
+export const createTransferSchema = z.object({
+  contaId: z.string().regex(/^[a-f\d]{24}$/i, ID_INVALIDO), // origem
+  contaDestinoId: z.string().regex(/^[a-f\d]{24}$/i, ID_INVALIDO),
+  valor: z.number().positive(),
+  data: z.coerce.date(),
+  // em branco vira "Transferência"
+  descricao: z
+    .string()
+    .trim()
+    .max(100)
+    .optional()
+    .transform((texto) => texto || undefined),
+  observacoes: z
+    .string()
+    .trim()
+    .max(300)
+    .optional()
+    .transform((texto) => texto || undefined),
 });
 
 // Duplicar: o corpo é opcional; `data` é a data do novo lançamento (sem ela, vale o momento da chamada).
@@ -121,6 +152,7 @@ export type UpdateTransactionDto = z.infer<typeof updateTransactionSchema>;
 export type BulkUpdateDto = z.infer<typeof bulkUpdateSchema>;
 export type DuplicateTransactionDto = z.infer<typeof duplicateTransactionSchema>;
 export type CreateTransactionDto = z.infer<typeof createTransactionSchema>;
+export type CreateTransferDto = z.infer<typeof createTransferSchema>;
 
 // Mensagens trocadas com o Servidor Java (Servidor/src/main/java/com/financeai/transactions/): os nomes dos campos
 // são exatamente os do JSON de PedidoCategorizarTransacao e de RespostaCategorizarTransacao.
@@ -136,7 +168,7 @@ export type TransactionFiltersDto = z.infer<typeof transactionFiltersSchema>;
 // O que o Frontend recebe: `id` no lugar de `_id`, sem `userId` nem campos internos do Mongo.
 export interface TransactionResponseDto {
   id: string;
-  tipo: "receita" | "despesa";
+  tipo: "receita" | "despesa" | "transferencia";
   valor: number;
   categoria: string;
   data: string; // ISO 8601
@@ -144,8 +176,13 @@ export interface TransactionResponseDto {
   observacoes?: string; // só aparece quando foi informada
   formaPagamento: FormaPagamento;
   origem: "manual" | "pluggy";
+  contaId?: string; // a conta do lançamento (a de origem, na transferência)
+  conta?: AccountResumoDto; // a mesma conta, com nome e banco para a tela
+  contaDestinoId?: string; // só em transferência
+  contaDestino?: AccountResumoDto; // só em transferência
   metaId?: string; // só aparece quando a transação foi vinculada a uma meta
   cartaoId?: string; // só aparece quando a compra no crédito foi ligada a um cartão (sem ele, conta para o cartão mais antigo)
+  cartao?: { id: string; nome: string }; // o mesmo cartão, com o nome para a tela
   parcelas?: number; // só aparece em compras no crédito (1 = à vista)
   parcelamentoId?: string; // só aparece quando parcelas > 1: o parcelamento criado no cartão (seção 6)
 }
@@ -154,9 +191,10 @@ export interface TransactionResponseDto {
 export interface BulkResultDto {
   afetadas: number;
   naoEncontradas: string[];
+  desfazerId?: string; // só na exclusão em lote: POST /v1/undo/:id traz os lançamentos de volta
 }
 
-// Entradas, saídas e saldo de TODAS as transações que passam nos filtros (não só da página).
+// Entradas, saídas e saldo de TODAS (transferências não entram: não são receita nem despesa, RN6) as transações que passam nos filtros (não só da página).
 export interface TransactionSummaryDto {
   receitas: number;
   despesas: number;

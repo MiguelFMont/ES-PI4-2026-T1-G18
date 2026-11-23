@@ -1,4 +1,7 @@
 // src/modules/investments/investments.service.ts
+import { aparenciaNaResposta } from "../../shared/aparencia/aparencia";
+import { guardarParaDesfazer } from "../../shared/lixeira/lixeira";
+import { accountsService } from "../accounts/accounts.service";
 import { investmentsRepository } from "./investments.repository";
 import { CardDocument, DIAS_DO_FECHAMENTO_AO_VENCIMENTO, InstallmentDocument, InvestmentDocument, MAX_CARTOES } from "./investments.model";
 import {
@@ -131,7 +134,7 @@ async function contextoDeParcelamentos(userId: string, ids: string[]): Promise<C
     investmentsRepository.transacoesDosParcelamentos(userId, ids),
     investmentsRepository.datasDasCompras(userId, ids),
   ]);
-  return { padraoId: comId<CardDocument>(padrao)._id.toString(), transacoes, datas };
+  return { padraoId: padrao ? comId<CardDocument>(padrao)._id.toString() : "", transacoes, datas };
 }
 
 async function calcularParcelamentos(
@@ -185,19 +188,30 @@ const cartaoNaoEncontrado = () => new AppError("Cartão não encontrado", 404, "
 const parcelamentoNaoEncontrado = () => new AppError("Parcelamento não encontrado", 404, "INSTALLMENT_NOT_FOUND");
 const nomeEmUso = () => new AppError("Você já tem um cartão com esse nome", 409, "CARD_NAME_TAKEN");
 
-// Os cartões do usuário, do mais antigo (o padrão, primeiro da lista) para o mais novo. Quem não tem nenhum recebe o padrão.
+// Os cartões do usuário, do mais antigo (o padrão, primeiro da lista) para o mais novo. Pode não haver nenhum: ter cartão é opcional.
 async function carregarCartoes(userId: string): Promise<Item<CardDocument>[]> {
-  await investmentsRepository.ensureDefaultCard(userId);
   return (await investmentsRepository.findCards(userId)).map((c) => comoItem<CardDocument>(c));
 }
 
 // A fatura e o limite de cada cartão (ou só do `apenasId`) são calculados só com as compras e os parcelamentos dele.
 // Compras no crédito sem cartão indicado, e parcelamentos antigos, contam para o cartão mais antigo.
+// O cartão precisa de uma conta do próprio usuário (404 ACCOUNT_NOT_FOUND) e ela tem de ser MANUAL: numa conta Open Finance os cartões vêm
+// do banco (criarCartoesDaConexao), o usuário não cria nem move cartão para ela (422 CARD_ACCOUNT_NOT_ALLOWED).
+async function contaParaCartao(userId: string, contaId: string) {
+  const conta = await accountsService.obterDoUsuario(userId, contaId);
+  if (conta.tipo === "open_finance") {
+    throw new AppError("Cartões só podem ser vinculados a contas manuais", 422, "CARD_ACCOUNT_NOT_ALLOWED");
+  }
+  return conta;
+}
+
 async function montarCartoes(userId: string, apenasId?: string): Promise<CardResponseDto[]> {
   const cartoes = await carregarCartoes(userId);
   const alvo = apenasId ? cartoes.filter((c) => c.id === apenasId) : cartoes;
   if (apenasId && alvo.length === 0) throw cartaoNaoEncontrado();
+  if (cartoes.length === 0) return [];
 
+  const contas = await accountsService.resumos(userId);
   const padraoId = cartoes[0].id;
   const agora = new Date();
   const [compras, parcelamentos] = await Promise.all([
@@ -228,6 +242,10 @@ async function montarCartoes(userId: string, apenasId?: string): Promise<CardRes
         padrao: ehPadrao,
         limite: doc.limite,
         diaFechamento: doc.diaFechamento,
+        ...(doc.contaId ? { contaId: doc.contaId } : {}),
+        ...(doc.pluggyAccountId ? { openFinance: true as const } : {}),
+        ...aparenciaNaResposta(doc),
+        ...(doc.contaId && contas.get(doc.contaId) ? { conta: contas.get(doc.contaId) } : {}),
         limiteDisponivel: emReais(doc.limite - comprasNoCredito - parc.totalSaldoDevedor),
         saldoDevedor: parc.totalSaldoDevedor,
         parcelamentosAtivos: parc.parcelamentos.filter((p) => !p.quitado).length,
@@ -302,6 +320,7 @@ export const investmentsService = {
   // Até MAX_CARTOES por usuário e nome único (sem diferenciar maiúsculas). O nome é conferido antes e o índice único
   // do banco pega a corrida entre duas criações juntas.
   async createCard(userId: string, dados: CreateCardDto): Promise<CardResponseDto> {
+    await contaParaCartao(userId, dados.contaId);
     if ((await investmentsRepository.countCards(userId)) >= MAX_CARTOES) {
       throw new AppError(`Você já tem o máximo de ${MAX_CARTOES} cartões`, 409, "CARD_LIMIT_REACHED");
     }
@@ -324,7 +343,13 @@ export const investmentsService = {
   },
 
   async updateCardById(userId: string, id: string, alteracoes: UpdateCardDto): Promise<CardResponseDto> {
-    if (!(await investmentsRepository.findCard(userId, id))) throw cartaoNaoEncontrado();
+    const existente = await investmentsRepository.findCard(userId, id);
+    if (!existente) throw cartaoNaoEncontrado();
+    // cartão do Open Finance: só o ícone e a cor mudam
+    if (existente.pluggyAccountId && Object.keys(alteracoes).some((campo) => campo !== "icone" && campo !== "cor")) {
+      throw new AppError("Um cartão do Open Finance só pode mudar o ícone e a cor", 422, "CARD_READ_ONLY");
+    }
+    if (alteracoes.contaId !== undefined) await contaParaCartao(userId, alteracoes.contaId);
     if (alteracoes.nome !== undefined && (await investmentsRepository.findCardByName(userId, alteracoes.nome, id))) {
       throw nomeEmUso();
     }
@@ -336,34 +361,31 @@ export const investmentsService = {
     return (await montarCartoes(userId, id))[0];
   },
 
-  // Com parcelamento ainda ativo: 409 CARD_HAS_INSTALLMENTS e nada muda. Sem ele, o cartão e os parcelamentos quitados
-  // saem e as transações dele são desvinculadas (ver o repository).
-  async removeCardById(userId: string, id: string): Promise<void> {
+  // Excluir um cartão exclui o que é dele: os lançamentos no cartão e os parcelamentos (em andamento ou não). A tela avisa antes. A resposta traz um id
+  // para desfazer (POST /v1/undo/:id).
+  async removeCardById(userId: string, id: string): Promise<{ desfazerId: string; lancamentos: number }> {
     const cartoes = await carregarCartoes(userId);
-    if (!cartoes.some((c) => c.id === id)) throw cartaoNaoEncontrado();
-
-    const ehPadrao = cartoes[0].id === id;
-    const agora = new Date();
-    const itens = (await investmentsRepository.findInstallments(userId)).map((p) => comoItem<InstallmentDocument>(p));
-    const doCartao = itens.filter((p) => (p.doc.cartaoId ?? cartoes[0].id) === id);
-    const datas = await investmentsRepository.datasDasCompras(userId, doCartao.map((p) => p.id));
-    if (doCartao.some((p) => parcelasPagasPelaData(p, datas, agora) < p.doc.parcelas)) {
-      throw new AppError(
-        "Este cartão tem parcelamentos em andamento: quite ou exclua os parcelamentos antes de excluir o cartão",
-        409,
-        "CARD_HAS_INSTALLMENTS"
-      );
+    const alvo = cartoes.find((c) => c.id === id);
+    if (!alvo) throw cartaoNaoEncontrado();
+    if (alvo.doc.pluggyAccountId) {
+      throw new AppError("Um cartão do Open Finance não pode ser excluído. Desconecte a conta", 409, "CARD_IS_OPEN_FINANCE");
     }
-    if (!(await investmentsRepository.removeCard(userId, id, ehPadrao))) throw cartaoNaoEncontrado();
+
+    const saida = await investmentsRepository.excluirCartoesComTudo(userId, [{ id, ehPadrao: cartoes[0].id === id }]);
+    const desfazerId = guardarParaDesfazer(userId, () => investmentsRepository.restaurarCartoes(saida));
+    return { desfazerId, lancamentos: saida.transacoes.length };
   },
 
   // Rotas antigas (/card): o "cartão padrão" é o mais antigo do usuário.
   async getCard(userId: string): Promise<CardResponseDto> {
-    return (await montarCartoes(userId))[0];
+    const [padrao] = await montarCartoes(userId);
+    if (!padrao) throw cartaoNaoEncontrado();
+    return padrao;
   },
 
   async updateCard(userId: string, alteracoes: UpdateCardDto): Promise<CardResponseDto> {
     const [padrao] = await carregarCartoes(userId);
+    if (!padrao) throw cartaoNaoEncontrado();
     return investmentsService.updateCardById(userId, padrao.id, alteracoes);
   },
 
@@ -387,7 +409,9 @@ export const investmentsService = {
       if (!(await investmentsRepository.findCard(userId, cartaoPedido))) throw cartaoNaoEncontrado();
       cartaoId = cartaoPedido;
     } else {
-      cartaoId = comId<CardDocument>(await investmentsRepository.findOldestCard(userId))._id.toString();
+      const maisAntigo = await investmentsRepository.findOldestCard(userId);
+      if (!maisAntigo) throw new AppError("Cadastre um cartão antes de criar um parcelamento", 422, "CARD_REQUIRED");
+      cartaoId = comId<CardDocument>(maisAntigo)._id.toString();
     }
 
     const novo: InstallmentDocument = { userId, cartaoId, ...contrato };

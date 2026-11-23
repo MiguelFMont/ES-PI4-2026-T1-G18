@@ -2,13 +2,14 @@
 // Vários cartões de crédito por usuário (/v1/investments/cards): CRUD e limite de 5, nome único, isolamento entre usuários,
 // fatura e limite de cada cartão, parcelamentos ligados a um cartão, exclusão, rotas antigas (/card = cartão padrão) e a
 // migração dos dados do tempo de "um cartão por usuário". O Servidor Java é simulado (calculos em goals/__tests__/apoio.ts).
-import { ANA, BETO, ID_INEXISTENTE, inserir, json, prepararApi, simularServidorGrupo5, textoDe } from "../../goals/__tests__/apoio";
-import { describe, test } from "node:test";
+import { ANA, BETO, CONTAS, ID_INEXISTENTE, criarCartoesPadrao, inserir, json, prepararApi, simularServidorGrupo5, textoDe } from "../../goals/__tests__/apoio";
+import { beforeEach, describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { Types } from "mongoose";
 import { CardInstallmentModel, CardModel, MAX_CARTOES } from "../investments.model";
 import { investmentsRepository } from "../investments.repository";
 import { TransactionModel } from "../../transactions/transactions.model";
+import { AccountModel } from "../../accounts/accounts.model";
 
 const { chamar } = prepararApi();
 
@@ -24,8 +25,18 @@ const criarParcelamento = async (corpo: Record<string, unknown>, token: string |
 // ------------------------------------------------------------------------------------------------ listar
 
 describe("GET /v1/investments/cards: listar os cartões", () => {
-  test("quem não tem cartão recebe o padrão chamado Cartão (limite 5000, vence dia 10), uma vez só", async () => {
+  test("quem não tem cartão recebe a lista vazia: ter cartão é opcional e nenhum é criado sozinho", async () => {
     simularServidorGrupo5();
+    const r = await listar();
+    assert.deepEqual(r.cartoes, []);
+    assert.equal(r.maximo, MAX_CARTOES);
+    assert.deepEqual(r.totais, { limite: 0, limiteDisponivel: 0, saldoDevedor: 0, faturaDoMes: 0 });
+    assert.equal(await CardModel.countDocuments(), 0);
+  });
+
+  test("um cartão criado só com o nome e a conta assume os valores padrão (limite 5000, fecha dia 3, vence dia 10)", async () => {
+    simularServidorGrupo5();
+    await criarCartao({ nome: "Cartão" });
     const primeira = await listar();
     await listar();
 
@@ -67,6 +78,7 @@ describe("GET /v1/investments/cards: listar os cartões", () => {
   });
 
   test("Servidor Java fora do ar: 503", async () => {
+    await criarCartoesPadrao(); // sem cartão a lista é vazia e o Servidor nem é chamado
     simularServidorGrupo5({ indisponivel: true });
     const resposta = await api("GET", "/cards");
     assert.equal(resposta.status, 503);
@@ -125,7 +137,7 @@ describe("POST /v1/investments/cards: criar cartão", () => {
     simularServidorGrupo5();
     const criados = [];
     for (let i = 1; i <= MAX_CARTOES; i++) criados.push(await criarCartao({ nome: `Cartão ${i}` }));
-    assert.equal((await api("DELETE", `/cards/${criados[4].id}`)).status, 204);
+    assert.equal((await api("DELETE", `/cards/${criados[4].id}`)).status, 200);
     assert.equal((await api("POST", "/cards", { nome: "Novo" })).status, 201);
   });
 
@@ -268,17 +280,17 @@ describe("fatura e limite de cada cartão", () => {
     await inserir("ana", { tipo: "despesa", valor: 100, formaPagamento: "credito", data: agora });
     await inserir("ana", { tipo: "despesa", valor: 50, formaPagamento: "credito", data: agora, cartaoId: a.id });
     await inserir("ana", { tipo: "despesa", valor: 999, formaPagamento: "debito", data: agora });
-    await inserir("ana", { tipo: "receita", valor: 777, formaPagamento: "credito", data: agora, cartaoId: b.id });
+    await inserir("ana", { tipo: "receita", valor: 70, formaPagamento: "credito", data: agora, cartaoId: b.id }); // estorno: abate a fatura do B
     await inserir("beto", { tipo: "despesa", valor: 444, formaPagamento: "credito", data: agora });
 
     const { cartoes, totais } = await listar();
     const [ca, cb] = cartoes;
     assert.equal(ca.fatura.comprasNoCredito, 150, "50 do A + 100 sem cartão");
     assert.equal(ca.limiteDisponivel, 4850);
-    assert.equal(cb.fatura.comprasNoCredito, 300);
-    assert.equal(cb.limiteDisponivel, 1700);
-    assert.equal(totais.faturaDoMes, 450);
-    assert.equal(totais.limiteDisponivel, 6550);
+    assert.equal(cb.fatura.comprasNoCredito, 230, "300 de compra menos 70 de estorno");
+    assert.equal(cb.limiteDisponivel, 1770);
+    assert.equal(totais.faturaDoMes, 380);
+    assert.equal(totais.limiteDisponivel, 6620);
   });
 
   test("parcelamentos pertencem a um cartão: as parcelas e o saldo devedor entram só na fatura e no limite dele", async () => {
@@ -357,54 +369,44 @@ describe("fatura e limite de cada cartão", () => {
 // ------------------------------------------------------------------------------------------------ excluir
 
 describe("DELETE /v1/investments/cards/:id", () => {
-  test("exclui (204) um cartão sem parcelamentos", async () => {
+  test("exclui (200) um cartão sem parcelamentos", async () => {
     simularServidorGrupo5();
     await criarCartao({ nome: "A" });
     const b = await criarCartao({ nome: "B" });
-    assert.equal((await api("DELETE", `/cards/${b.id}`)).status, 204);
+    assert.equal((await api("DELETE", `/cards/${b.id}`)).status, 200);
     assert.deepEqual((await listar()).cartoes.map((c: any) => c.nome), ["A"]);
   });
 
-  test("com parcelamento ainda ativo: 409 CARD_HAS_INSTALLMENTS e o cartão continua", async () => {
-    simularServidorGrupo5();
-    const b = await criarCartao({ nome: "B" });
-    await criarParcelamento({ cartaoId: b.id, descricao: "Sofá", valorTotal: 1200, parcelas: 12, parcelasPagas: 2 });
-
-    const resposta = await api("DELETE", `/cards/${b.id}`);
-    assert.equal(resposta.status, 409);
-    assert.equal((await json(resposta)).error.code, "CARD_HAS_INSTALLMENTS");
-    assert.equal(await CardModel.countDocuments(), 1);
-    assert.equal(await CardInstallmentModel.countDocuments(), 1);
-  });
-
-  test("com parcelamento quitado: exclui o cartão e o parcelamento; as transações dele são desvinculadas", async () => {
+  test("excluir o cartão exclui parcelamentos e lançamentos dele; o desfazer traz tudo de volta", async () => {
     simularServidorGrupo5();
     const a = await criarCartao({ nome: "A" });
     const b = await criarCartao({ nome: "B" });
-    const quitado = await criarParcelamento({ cartaoId: b.id, descricao: "Quitado", valorTotal: 600, parcelas: 3, parcelasPagas: 3 });
+    const doB = await criarParcelamento({ cartaoId: b.id, descricao: "Sofá", valorTotal: 1200, parcelas: 12, parcelasPagas: 2 });
     const doA = await criarParcelamento({ cartaoId: a.id, descricao: "Ativo do A", valorTotal: 100, parcelas: 2 });
     const idCompra = await inserir("ana", { formaPagamento: "credito", cartaoId: b.id });
-    const idParcelada = await inserir("ana", { formaPagamento: "credito", cartaoId: b.id, parcelas: 3, parcelamentoId: quitado.id });
     const idDoA = await inserir("ana", { formaPagamento: "credito", cartaoId: a.id });
 
-    assert.equal((await api("DELETE", `/cards/${b.id}`)).status, 204);
-
-    assert.equal(await CardInstallmentModel.findById(quitado.id).lean(), null, "o parcelamento quitado saiu junto");
+    const resposta = await api("DELETE", `/cards/${b.id}`);
+    assert.equal(resposta.status, 200);
+    const corpo = await json(resposta);
+    assert.equal(corpo.lancamentos, 1);
+    assert.equal(await CardInstallmentModel.findById(doB.id).lean(), null);
+    assert.equal(await TransactionModel.findById(idCompra).lean(), null);
     assert.ok(await CardInstallmentModel.findById(doA.id).lean(), "o parcelamento do outro cartão ficou");
-    const compra = await TransactionModel.findById(idCompra).lean();
-    assert.equal(compra?.cartaoId, undefined);
-    const parcelada = await TransactionModel.findById(idParcelada).lean();
-    assert.equal(parcelada?.cartaoId, undefined);
-    assert.equal(parcelada?.parcelamentoId, undefined);
-    assert.equal(parcelada?.parcelas, 1, "a compra parcelada vira uma compra comum");
-    assert.equal((await TransactionModel.findById(idDoA).lean())?.cartaoId, a.id);
+    assert.ok(await TransactionModel.findById(idDoA).lean(), "a compra do outro cartão ficou");
+
+    assert.equal((await chamar("POST", `/undo/${corpo.desfazerId}`, ANA)).status, 200);
+    assert.ok(await CardModel.findById(b.id).lean());
+    assert.ok(await CardInstallmentModel.findById(doB.id).lean());
+    assert.ok(await TransactionModel.findById(idCompra).lean());
   });
 
-  test("excluir o último cartão: a próxima leitura volta a criar o padrão 'Cartão'", async () => {
+  test("excluir o último cartão é permitido: a lista fica vazia e nenhum cartão volta sozinho", async () => {
     simularServidorGrupo5();
     const a = await criarCartao({ nome: "A" });
-    assert.equal((await api("DELETE", `/cards/${a.id}`)).status, 204);
-    assert.deepEqual((await listar()).cartoes.map((c: any) => c.nome), ["Cartão"]);
+    assert.equal((await api("DELETE", `/cards/${a.id}`)).status, 200);
+    assert.deepEqual((await listar()).cartoes, []);
+    assert.equal(await CardModel.countDocuments(), 0);
   });
 
   test("não excluiu nada de outro usuário (404) e o cartão do dono continua", async () => {
@@ -439,11 +441,13 @@ describe("/v1/investments/card: o cartão padrão (o mais antigo)", () => {
     assert.equal((await CardModel.findById(b.id).lean())?.limite, 4000);
   });
 
-  test("sem nenhum cartão, GET /card cria o padrão (comportamento de antes)", async () => {
+  test("sem nenhum cartão, GET e PATCH /card respondem 404 CARD_NOT_FOUND (nenhum cartão é criado sozinho)", async () => {
     simularServidorGrupo5();
-    const cartao = await json(await api("GET", "/card"));
-    assert.equal(cartao.nome, "Cartão");
-    assert.equal(cartao.limite, 5000);
+    for (const resposta of [await api("GET", "/card"), await api("PATCH", "/card", { limite: 2000 })]) {
+      assert.equal(resposta.status, 404);
+      assert.equal((await json(resposta)).error.code, "CARD_NOT_FOUND");
+    }
+    assert.equal(await CardModel.countDocuments(), 0);
   });
 });
 
@@ -508,6 +512,8 @@ describe("autenticação", () => {
 // ------------------------------------------------------------------------------------------------ parcelas avançam pela data
 
 describe("as parcelas avançam sozinhas, mês a mês", () => {
+  beforeEach(() => criarCartoesPadrao());
+
   const mesesAtras = (n: number) => {
     const agora = new Date();
     return new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth() - n, 15));
@@ -562,8 +568,146 @@ describe("as parcelas avançam sozinhas, mês a mês", () => {
     await criarCartao({ nome: "Primeiro" });
     const b = await criarCartao({ nome: "B" });
     const p = await criarParcelamento({ cartaoId: b.id, descricao: "Curso", valorTotal: 600, parcelas: 3 });
-    assert.equal((await api("DELETE", `/cards/${b.id}`)).status, 409);
-    await recuarCriacao(p.id, mesesAtras(5));
-    assert.equal((await api("DELETE", `/cards/${b.id}`)).status, 204);
+    assert.equal((await api("DELETE", `/cards/${b.id}`)).status, 200);
+  });
+});
+
+// ------------------------------------------------------------------------------------------------ conta do cartão
+
+describe("o cartão é vinculado a uma conta", () => {
+  test("a conta é obrigatória ao criar: sem contaId (ou mal formado), 400", async () => {
+    simularServidorGrupo5();
+    for (const contaId of [null, "abc"]) {
+      const corpo: Record<string, unknown> = { nome: "Nubank" };
+      corpo.contaId = contaId;
+      const resposta = await api("POST", "/cards", corpo);
+      assert.equal(resposta.status, 400, String(contaId));
+    }
+    assert.equal(await CardModel.countDocuments(), 0);
+  });
+
+  test("a conta precisa ser do próprio usuário: inexistente ou de outro, 404 ACCOUNT_NOT_FOUND e nada é salvo", async () => {
+    simularServidorGrupo5();
+    for (const contaId of [ID_INEXISTENTE, CONTAS.beto]) {
+      const resposta = await api("POST", "/cards", { nome: "Nubank", contaId });
+      assert.equal(resposta.status, 404);
+      assert.equal((await json(resposta)).error.code, "ACCOUNT_NOT_FOUND");
+    }
+    assert.equal(await CardModel.countDocuments(), 0);
+  });
+
+  test("a resposta traz contaId e a conta { id, nome, banco, bancoNome }; trocar a conta pelo PATCH vale só para contas do usuário", async () => {
+    simularServidorGrupo5();
+    const cartao = await criarCartao({ nome: "Nubank" });
+    assert.equal(cartao.contaId, CONTAS.ana);
+    assert.deepEqual(cartao.conta, { id: CONTAS.ana, nome: "Conta corrente", banco: "nubank", bancoNome: "Nubank" });
+
+    assert.equal((await api("PATCH", `/cards/${cartao.id}`, { contaId: CONTAS.beto })).status, 404);
+    const mesma = await json(await api("PATCH", `/cards/${cartao.id}`, { nome: "Nubank Ultravioleta" }));
+    assert.equal(mesma.contaId, CONTAS.ana, "editar outro campo não mexe na conta");
+  });
+
+  test("excluir a conta exclui os cartões dela (e só os dela)", async () => {
+    simularServidorGrupo5();
+    await criarCartao({ nome: "Nubank" });
+    await criarCartao({ nome: "Do Beto" }, BETO);
+    assert.equal((await chamar("DELETE", `/accounts/${CONTAS.ana}`, ANA)).status, 200);
+    assert.equal(await CardModel.countDocuments({ userId: "ana" }), 0);
+    assert.equal(await CardModel.countDocuments({ userId: "beto" }), 1);
+  });
+
+  test("excluir a conta exclui o cartão com parcelamentos e lançamentos; o desfazer devolve tudo", async () => {
+    simularServidorGrupo5();
+    const cartao = await criarCartao({ nome: "Nubank" });
+    const parc = await criarParcelamento({ descricao: "TV", valorTotal: 1200, parcelas: 6, cartaoId: cartao.id });
+    const idCompra = await inserir("ana", { formaPagamento: "credito", cartaoId: cartao.id, contaId: CONTAS.ana });
+    const resposta = await chamar("DELETE", `/accounts/${CONTAS.ana}`, ANA);
+    assert.equal(resposta.status, 200);
+    const corpo = await json(resposta);
+    assert.equal(await CardModel.countDocuments({ userId: "ana" }), 0);
+    assert.equal(await CardInstallmentModel.findById(parc.id).lean(), null);
+    assert.equal(await TransactionModel.findById(idCompra).lean(), null);
+
+    assert.equal((await chamar("POST", `/undo/${corpo.desfazerId}`, ANA)).status, 200);
+    assert.equal(await CardModel.countDocuments({ userId: "ana" }), 1);
+    assert.ok(await CardInstallmentModel.findById(parc.id).lean());
+    assert.ok(await TransactionModel.findById(idCompra).lean());
+  });
+});
+
+describe("cartão do Open Finance", () => {
+  const criarDaPluggy = () =>
+    CardModel.create({ userId: "ana", nome: "Cartão do banco", nomeChave: "cartao do banco", limite: 3000, diaFechamento: 10, contaId: CONTAS.ana, pluggyAccountId: "c2" });
+
+  test("vem marcado com openFinance, só muda ícone e cor (422 CARD_READ_ONLY no resto) e não se exclui (409 CARD_IS_OPEN_FINANCE)", async () => {
+    simularServidorGrupo5();
+    const cartao = await criarDaPluggy();
+    const id = String(cartao._id);
+    assert.equal((await listar()).cartoes.find((c: any) => c.id === id).openFinance, true);
+
+    const recusada = await api("PATCH", `/cards/${id}`, { nome: "Outro nome" });
+    assert.equal(recusada.status, 422);
+    assert.equal((await json(recusada)).error.code, "CARD_READ_ONLY");
+
+    const aparencia = await api("PATCH", `/cards/${id}`, { icone: "estrela", cor: "laranja" });
+    assert.equal(aparencia.status, 200);
+    assert.equal((await json(aparencia)).icone, "estrela");
+
+    const exclusao = await api("DELETE", `/cards/${id}`);
+    assert.equal(exclusao.status, 409);
+    assert.equal((await json(exclusao)).error.code, "CARD_IS_OPEN_FINANCE");
+    assert.equal(await CardModel.countDocuments({ _id: id }), 1);
+  });
+});
+
+describe("ícone e cor do cartão (aparência)", () => {
+  test("cria com ícone e cor e devolve os dois; sem eles, os campos não aparecem", async () => {
+    simularServidorGrupo5();
+    const com = await criarCartao({ nome: "Viagens", icone: "mala", cor: "turquesa" });
+    assert.equal(com.icone, "mala");
+    assert.equal(com.cor, "turquesa");
+    const sem = await criarCartao({ nome: "Comum" });
+    assert.ok(!("icone" in sem) && !("cor" in sem));
+    const lista = await listar();
+    assert.equal(lista.cartoes.find((c: any) => c.nome === "Viagens").icone, "mala");
+  });
+
+  test("ícone ou cor fora da lista: 400 e nada é salvo", async () => {
+    simularServidorGrupo5();
+    for (const extra of [{ icone: "foguete" }, { cor: "dourado" }]) {
+      assert.equal((await api("POST", "/cards", { nome: "Ruim", ...extra })).status, 400, JSON.stringify(extra));
+    }
+    assert.equal(await CardModel.countDocuments({ nome: "Ruim" }), 0);
+  });
+
+  test("PATCH muda o ícone e a cor e null os tira", async () => {
+    simularServidorGrupo5();
+    const { id } = await criarCartao({ nome: "Mudavel", icone: "cartao", cor: "azul" });
+    const mudou = await json(await api("PATCH", `/cards/${id}`, { icone: "estrela", cor: "ambar" }));
+    assert.equal(mudou.icone, "estrela");
+    assert.equal(mudou.cor, "ambar");
+    const limpou = await json(await api("PATCH", `/cards/${id}`, { icone: null, cor: null }));
+    assert.ok(!("icone" in limpou) && !("cor" in limpou));
+  });
+});
+
+describe("cartão só em conta manual", () => {
+  const contaOpenFinance = (userId = "ana") =>
+    AccountModel.create({ userId, nome: "Pluggy", nomeChave: "pluggy", banco: "outro", tipo: "open_finance", saldoInicial: 0, conectadaId: "a".repeat(24) });
+
+  test("criar cartão numa conta Open Finance: 422 CARD_ACCOUNT_NOT_ALLOWED e nada é salvo", async () => {
+    simularServidorGrupo5();
+    const conta = await contaOpenFinance();
+    const resposta = await api("POST", "/cards", { nome: "Do banco", contaId: String(conta._id) });
+    assert.equal(resposta.status, 422);
+    assert.equal((await json(resposta)).error.code, "CARD_ACCOUNT_NOT_ALLOWED");
+    assert.equal(await CardModel.countDocuments({ nome: "Do banco" }), 0);
+  });
+
+  test("mudar um cartão para uma conta Open Finance também é recusado", async () => {
+    simularServidorGrupo5();
+    const { id } = await criarCartao({ nome: "Manual" });
+    const conta = await contaOpenFinance();
+    assert.equal((await api("PATCH", `/cards/${id}`, { contaId: String(conta._id) })).status, 422);
   });
 });

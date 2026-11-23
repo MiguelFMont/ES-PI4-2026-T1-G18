@@ -1,7 +1,7 @@
 // src/modules/transactions/__tests__/cadastrar.routes.test.ts
 // POST /v1/transactions de ponta a ponta no Backend (issue #59): cadastro com e sem categoria, categorização pelo
 // Servidor Java (simulado), Servidor fora do ar e validação dos campos.
-import { ANA, TRANSACAO_VALIDA, json, prepararApi, textoDe } from "./apoio";
+import { ANA, CONTAS, TRANSACAO_VALIDA, criarCartoesPadrao, json, prepararApi, textoDe } from "./apoio";
 import { describe, mock, test } from "node:test";
 import assert from "node:assert/strict";
 import { javaServerClient } from "../../../java-client/java-server.client";
@@ -23,7 +23,13 @@ describe("POST /v1/transactions: cadastro", () => {
     assert.equal(resposta.status, 201);
     assert.match(criada.id, /^[a-f\d]{24}$/);
     const { id: _id, ...semId } = criada;
-    assert.deepEqual(semId, { ...TRANSACAO_VALIDA, observacoes: "compra do mês", origem: "manual" });
+    assert.deepEqual(semId, {
+      ...TRANSACAO_VALIDA,
+      observacoes: "compra do mês",
+      origem: "manual",
+      contaId: CONTAS.ana,
+      conta: { id: CONTAS.ana, nome: "Conta corrente", banco: "nubank", bancoNome: "Nubank" },
+    });
     assert.equal(pedidos.length, 0, "com categoria informada, o Servidor não é consultado");
     for (const interno of ["userId", "_id", "__v", "createdAt", "updatedAt"]) {
       assert.ok(!(interno in criada), `${interno} não pode aparecer na resposta`);
@@ -116,7 +122,8 @@ describe("POST /v1/transactions: cadastro", () => {
     assert.equal(resposta.status, 201);
   });
 
-  test("cada forma de pagamento da lista é aceita", async () => {
+  test("cada forma de pagamento da lista é aceita (a compra no crédito é ligada ao cartão da conta)", async () => {
+    await criarCartoesPadrao();
     for (const forma of ["dinheiro", "pix", "debito", "credito", "boleto", "outro"]) {
       const resposta = await cadastrar({ ...TRANSACAO_VALIDA, formaPagamento: forma });
       assert.equal(resposta.status, 201, forma);

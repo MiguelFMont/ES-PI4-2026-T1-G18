@@ -33,9 +33,11 @@ export const mentorIaRepository = {
   // Transações do usuário no período [inicio, fim), só com os campos que as regras de alerta usam.
   // O Mentor só lê a coleção do Grupo 2, nunca altera transações.
   async findTransacoesParaAlertas(userId: string, inicio: Date, fim: Date): Promise<TransacaoParaAlerta[]> {
-    return TransactionModel.find({ userId, data: { $gte: inicio, $lt: fim } })
+    // transferências entre contas não são receita nem despesa: ficam de fora
+    const docs = await TransactionModel.find({ userId, tipo: { $in: ["receita", "despesa"] }, data: { $gte: inicio, $lt: fim } })
       .select({ _id: 0, tipo: 1, valor: 1, categoria: 1, data: 1, formaPagamento: 1 })
       .lean();
+    return docs as TransacaoParaAlerta[];
   },
 
   // Grava os alertas que valem agora (upsert pela chave: não duplica nem desfaz o "lido") e apaga

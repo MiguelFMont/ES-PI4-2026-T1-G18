@@ -2,8 +2,8 @@
 // /v1/investments de ponta a ponta no Backend (issues #54, #55, #64, #65, #75, #76, #77, #90, #66): portfólio e patrimônio
 // simulados, cartão (fatura com as transações REAIS no crédito, limite e vencimento) e parcelamentos. O Servidor Java é
 // simulado aqui; a conta de verdade dele tem testes próprios e o teste de integração (grupo5.integracao.test.ts).
-import { ANA, BETO, ID_INEXISTENTE, diasAtras, inicioDoDiaUtc, inserir, json, prepararApi, simularServidorGrupo5, textoDe } from "../../goals/__tests__/apoio";
-import { describe, test } from "node:test";
+import { ANA, BETO, ID_INEXISTENTE, criarCartoesPadrao, diasAtras, inicioDoDiaUtc, inserir, json, prepararApi, simularServidorGrupo5, textoDe } from "../../goals/__tests__/apoio";
+import { beforeEach, describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { CardInstallmentModel, CardModel, InvestmentModel } from "../investments.model";
 
@@ -187,7 +187,9 @@ describe("DELETE /v1/investments/:id", () => {
 // ------------------------------------------------------------------------------------------------ cartão
 
 describe("GET e PATCH /v1/investments/card: cartão, limite e fatura", () => {
-  test("primeira leitura cria o cartão com os valores padrão (limite 5000, fecha dia 3), uma vez só", async () => {
+  beforeEach(() => criarCartoesPadrao());
+
+  test("o cartão com os valores padrão (limite 5000, fecha dia 3) aparece uma vez só", async () => {
     simularServidorGrupo5();
     const cartao = await json(await api("GET", "/card"));
     await api("GET", "/card");
@@ -198,7 +200,7 @@ describe("GET e PATCH /v1/investments/card: cartão, limite e fatura", () => {
     assert.equal(cartao.fatura.valor, 0);
     assert.equal(cartao.fatura.comprasNoCredito, 0);
     assert.equal(cartao.fatura.parcelasDoMes, 0);
-    assert.equal(await CardModel.countDocuments(), 1);
+    assert.equal(await CardModel.countDocuments({ userId: "ana" }), 1);
   });
 
   test("a fatura é o mês corrente: fecha no próximo dia 3 (deste mês, ou do seguinte se já passou) e vence 7 dias depois", async () => {
@@ -216,20 +218,20 @@ describe("GET e PATCH /v1/investments/card: cartão, limite e fatura", () => {
     assert.ok(fatura.diasParaVencer >= 7 && fatura.diasParaVencer <= 38);
   });
 
-  test("a fatura soma as despesas REAIS no crédito deste mês (e só elas)", async () => {
+  test("a fatura soma as despesas REAIS no crédito deste mês e a receita no cartão (estorno) abate", async () => {
     simularServidorGrupo5();
     const agora = new Date();
     await inserir("ana", { tipo: "despesa", valor: 300, formaPagamento: "credito", data: agora });
     await inserir("ana", { tipo: "despesa", valor: 200, formaPagamento: "credito", data: inicioDoDiaUtc(agora) });
     await inserir("ana", { tipo: "despesa", valor: 999, formaPagamento: "debito", data: agora });
-    await inserir("ana", { tipo: "receita", valor: 777, formaPagamento: "credito", data: agora });
+    await inserir("ana", { tipo: "receita", valor: 100, formaPagamento: "credito", data: agora }); // estorno: abate
     await inserir("ana", { tipo: "despesa", valor: 555, formaPagamento: "credito", data: diasAtras(45) });
     await inserir("beto", { tipo: "despesa", valor: 444, formaPagamento: "credito", data: agora });
 
     const cartao = await json(await api("GET", "/card"));
-    assert.equal(cartao.fatura.comprasNoCredito, 500);
-    assert.equal(cartao.fatura.valor, 500);
-    assert.equal(cartao.limiteDisponivel, 4500);
+    assert.equal(cartao.fatura.comprasNoCredito, 400);
+    assert.equal(cartao.fatura.valor, 400);
+    assert.equal(cartao.limiteDisponivel, 4600);
   });
 
   test("as parcelas do mês entram na fatura e o saldo devedor reduz o limite disponível", async () => {
@@ -258,12 +260,12 @@ describe("GET e PATCH /v1/investments/card: cartão, limite e fatura", () => {
     assert.match(cartao.fatura.fechamento, /^\d{4}-\d{2}-25$/);
   });
 
-  test("PATCH antes de qualquer leitura cria o cartão e altera só o que veio (o resto fica no padrão)", async () => {
+  test("PATCH altera só o que veio (o resto fica no padrão)", async () => {
     simularServidorGrupo5();
     const cartao = await json(await api("PATCH", "/card", { limite: 2000 }));
     assert.equal(cartao.limite, 2000);
     assert.equal(cartao.diaFechamento, 3);
-    assert.equal(await CardModel.countDocuments(), 1);
+    assert.equal(await CardModel.countDocuments({ userId: "ana" }), 1);
   });
 
   test("cada usuário tem o próprio cartão", async () => {
@@ -300,6 +302,8 @@ describe("GET e PATCH /v1/investments/card: cartão, limite e fatura", () => {
 // ------------------------------------------------------------------------------------------------ parcelamentos
 
 describe("/v1/investments/card/installments: parcelamentos ativos", () => {
+  beforeEach(() => criarCartoesPadrao());
+
   test("sem parcelamentos: lista vazia e totais zerados", async () => {
     simularServidorGrupo5();
     assert.deepEqual(await json(await api("GET", "/card/installments")), {

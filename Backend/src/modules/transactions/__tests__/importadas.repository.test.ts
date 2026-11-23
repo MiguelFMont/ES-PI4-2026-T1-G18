@@ -75,7 +75,7 @@ describe("transactionsRepository.inserirImportadas", () => {
   // em vez de lançar erro, e ele não entra na contagem. Hoje isso não acontece na prática porque o mapeador da Pluggy
   // valida antes (e conta em `ignoradas.invalidas`). Se um dia o repositório passar a lançar, este teste avisa.
   test("documento que o schema recusa é pulado sem derrubar os válidos (e não entra na contagem)", async () => {
-    const invalida = { ...importada("ana", "z"), tipo: "transferencia" } as unknown as TransactionDocument;
+    const invalida = { ...importada("ana", "z"), tipo: "estorno" } as unknown as TransactionDocument;
     const entraram = await transactionsRepository.inserirImportadas([importada("ana", "a"), invalida, importada("ana", "b")]);
 
     assert.equal(entraram, 2);

@@ -24,6 +24,22 @@ async function montarCenario() {
   await inserir(base.userId, { descricao: "Freela", tipo: "receita", valor: 150, categoria: "Outros", formaPagamento: "pix", origem: "pluggy", externalId: "ext-2", data: new Date("2026-10-15T10:00:00Z") });
 }
 
+describe("GET /v1/transactions?todos=true", () => {
+  test("devolve tudo numa página só, ignorando limite e pagina", async () => {
+    for (let i = 0; i < 25; i++) await inserir("ana", { descricao: `Item ${i}` });
+    const { itens, total, totalPaginas, pagina } = await json(await chamar("GET", "/transactions?todos=true&limite=5&pagina=3", ANA));
+    assert.equal(itens.length, 25);
+    assert.equal(total, 25);
+    assert.equal(totalPaginas, 1);
+    assert.equal(pagina, 1);
+  });
+
+  test("sem itens: totalPaginas 0; todos inválido: 400", async () => {
+    assert.equal((await json(await chamar("GET", "/transactions?todos=true", ANA))).totalPaginas, 0);
+    assert.equal((await chamar("GET", "/transactions?todos=talvez", ANA)).status, 400);
+  });
+});
+
 describe("GET /v1/transactions: o que volta", () => {
   test("sem nenhuma transação: lista vazia, totalPaginas 0 e resumo zerado", async () => {
     const resposta = await listar();
@@ -262,7 +278,7 @@ describe("GET /v1/transactions: resumo (entradas, saídas e saldo)", () => {
 describe("GET /v1/transactions: parâmetros inválidos (400 VALIDATION_ERROR)", () => {
   const busca101 = textoDe(101);
   const casos: { nome: string; consulta: string; campo: string }[] = [
-    { nome: "tipo desconhecido", consulta: "tipo=transferencia", campo: "tipo" },
+    { nome: "tipo desconhecido", consulta: "tipo=estorno", campo: "tipo" },
     { nome: "forma de pagamento desconhecida", consulta: "formaPagamento=cheque", campo: "formaPagamento" },
     { nome: "origem desconhecida", consulta: "origem=robo", campo: "origem" },
     { nome: "busca vazia", consulta: "busca=", campo: "busca" },

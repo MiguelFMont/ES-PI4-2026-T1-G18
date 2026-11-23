@@ -1,6 +1,9 @@
 // src/modules/dashboard/dashboard.repository.ts
 import { TransactionModel } from "../transactions/transactions.model";
 
+// Transferências entre contas não são receita nem despesa: não entram nos totais do painel (RN6).
+const TIPOS_DO_PAINEL = ["receita", "despesa"];
+
 export interface GrupoMensalMongo {
     _id: {
         rotulo: string;
@@ -14,7 +17,7 @@ export const dashboardRepository = {
         const incioDoMes = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
         const grupos = await TransactionModel.aggregate([
-            { $match: { userId, data: { $gte: incioDoMes } } },
+            { $match: { userId, tipo: { $in: TIPOS_DO_PAINEL }, data: { $gte: incioDoMes } } },
             {
                 $group: {
                     _id: "$tipo",
@@ -37,7 +40,7 @@ export const dashboardRepository = {
 
     async getTotaisPorMes(userId: string, dataInicio: Date): Promise<GrupoMensalMongo[]> {
         return TransactionModel.aggregate([
-            { $match: { userId, data: { $gte: dataInicio } } },
+            { $match: { userId, tipo: { $in: TIPOS_DO_PAINEL }, data: { $gte: dataInicio } } },
             {
                 $group: {
                     _id: {

@@ -1,5 +1,6 @@
 // src/modules/goals/goals.dto.ts
 import { z } from "zod";
+import { aparenciaNaCriacao, aparenciaNaEdicao } from "../../shared/aparencia/aparencia";
 
 const titulo = z.string().trim().min(1).max(100);
 const valorObjetivo = z.number().positive();
@@ -10,6 +11,7 @@ export const createGoalSchema = z.object({
   valorObjetivo,
   valorInicial: valorInicial.default(0),
   prazo: z.coerce.date().optional(), // opcional: sem ele a meta não tem prazo
+  ...aparenciaNaCriacao, // ícone e cor da meta (opcionais)
 });
 
 // Edição: parcial, só o que muda (sem valores padrão, para um campo ausente não voltar ao padrão).
@@ -19,6 +21,7 @@ export const updateGoalSchema = z
     valorObjetivo: valorObjetivo.optional(),
     valorInicial: valorInicial.optional(),
     prazo: z.union([z.null(), z.coerce.date()]).optional(), // null tira o prazo da meta
+    ...aparenciaNaEdicao, // null tira o ícone ou a cor
   })
   .refine((d) => Object.keys(d).length > 0, { message: "Informe ao menos um campo para alterar" });
 
@@ -52,6 +55,8 @@ export interface GoalResponseDto extends Omit<RespostaProgressoMeta, "diasRestan
   valorObjetivo: number;
   valorInicial: number;
   prazo?: string; // ISO 8601
+  icone?: string; // chave do ícone escolhido (ver src/shared/aparencia)
+  cor?: string;
   diasRestantes?: number;
   mesesRestantes?: number;
   aporteMensalNecessario?: number;

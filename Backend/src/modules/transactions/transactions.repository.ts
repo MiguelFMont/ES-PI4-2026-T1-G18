@@ -52,6 +52,8 @@ export const transactionsRepository = {
     if (filtros.categoria) query.categoria = filtros.categoria;
     if (filtros.formaPagamento) query.formaPagamento = filtros.formaPagamento;
     if (filtros.origem) query.origem = filtros.origem;
+    // as de uma conta: as lançadas nela e as transferências que chegaram a ela
+    if (filtros.contaId) query.$and = [{ $or: [{ contaId: filtros.contaId }, { contaDestinoId: filtros.contaId }] }];
     if (filtros.metaId) query.metaId = filtros.metaId === "nenhuma" ? { $exists: false } : filtros.metaId;
     if (filtros.busca) query.descricao = { $regex: escaparRegex(filtros.busca), $options: "i" };
     if (filtros.cartaoId) {
@@ -83,11 +85,13 @@ export const transactionsRepository = {
 
     // `_id` desempata transações da mesma data, para a ordem (e as páginas) ficarem estáveis
     const [docs, total, agrupado] = await Promise.all([
-      TransactionModel.find(query)
-        .sort({ data: -1, _id: -1 })
-        .skip((filtros.pagina - 1) * filtros.limite)
-        .limit(filtros.limite)
-        .lean(),
+      (filtros.todos
+        ? TransactionModel.find(query).sort({ data: -1, _id: -1 })
+        : TransactionModel.find(query)
+            .sort({ data: -1, _id: -1 })
+            .skip((filtros.pagina - 1) * filtros.limite)
+            .limit(filtros.limite)
+      ).lean(),
       TransactionModel.countDocuments(query),
       // soma por tipo de tudo o que passa nos filtros (não só da página), para o resumo do extrato
       TransactionModel.aggregate<{ _id: string; total: number }>([
@@ -100,7 +104,17 @@ export const transactionsRepository = {
     return { docs, total, totais: { receitas: soma("receita"), despesas: soma("despesa") } };
   },
 
-  async create(dados: Omit<CreateTransactionDto, "parcelas"> & { userId: string; categoria: string; parcelas?: number; parcelamentoId?: string }) {
+  async create(
+    dados: Omit<CreateTransactionDto, "parcelas" | "tipo" | "contaId"> & {
+      contaId?: string;
+      tipo: TransactionDocument["tipo"];
+      userId: string;
+      categoria: string;
+      parcelas?: number;
+      parcelamentoId?: string;
+      contaDestinoId?: string;
+    }
+  ) {
     const transacao = await TransactionModel.create(dados);
     return transacao.toObject();
   },
@@ -157,5 +171,58 @@ export const transactionsRepository = {
     if (ids.length === 0) return 0;
     const resultado = await TransactionModel.deleteMany({ _id: { $in: ids }, userId });
     return resultado.deletedCount;
+  },
+
+  // ---- compras no crédito sem cartão (dados antigos) ----
+
+  // As contas que têm compras no crédito sem cartão vinculado.
+  async contasComCreditoSemCartao(userId: string): Promise<string[]> {
+    return TransactionModel.distinct("contaId", { userId, formaPagamento: "credito", cartaoId: { $exists: false }, contaId: { $exists: true } });
+  },
+
+  async vincularCreditoSemCartao(userId: string, contaId: string, cartaoId: string) {
+    const resultado = await TransactionModel.updateMany(
+      { userId, contaId, formaPagamento: "credito", cartaoId: { $exists: false } },
+      { $set: { cartaoId } }
+    );
+    return resultado.modifiedCount;
+  },
+
+  // ---- contas e transferências ----
+
+  // Os movimentos que mexem no saldo das contas dadas: lançados nelas ou (transferências) recebidos por elas.
+  async movimentosDasContas(userId: string, contaIds: string[]) {
+    if (contaIds.length === 0) return [];
+    return TransactionModel.find({ userId, $or: [{ contaId: { $in: contaIds } }, { contaDestinoId: { $in: contaIds } }] })
+      .select("tipo valor contaId contaDestinoId")
+      .lean();
+  },
+
+  // Excluir uma conta exclui os lançamentos dela (inclusive as transferências em que ela é origem ou destino). Devolve o que saiu, para o desfazer.
+  async excluirDaConta(userId: string, contaId: string) {
+    const filtro = { userId, $or: [{ contaId }, { contaDestinoId: contaId }] };
+    const docs = await TransactionModel.find(filtro).lean();
+    if (docs.length > 0) await TransactionModel.deleteMany({ _id: { $in: docs.map((d) => d._id) } });
+    return docs;
+  },
+
+  // Desfazer: os lançamentos voltam com os mesmos ids.
+  async restaurar(docs: unknown[]) {
+    if (docs.length > 0) await TransactionModel.collection.insertMany(docs as never[]);
+  },
+
+  // Quantos lançamentos usam a conta (como origem ou como destino).
+  async countByConta(userId: string, contaId: string) {
+    return TransactionModel.countDocuments({ userId, $or: [{ contaId }, { contaDestinoId: contaId }] });
+  },
+
+  // Migração (RN10): lançamentos antigos, sem conta.
+  async countSemConta(userId: string) {
+    return TransactionModel.countDocuments({ userId, contaId: { $exists: false } });
+  },
+
+  async ligarSemContaA(userId: string, contaId: string, filtro: Record<string, unknown> = {}) {
+    const resultado = await TransactionModel.updateMany({ userId, contaId: { $exists: false }, ...filtro }, { $set: { contaId } });
+    return resultado.modifiedCount;
   },
 };

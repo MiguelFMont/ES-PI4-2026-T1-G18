@@ -13,11 +13,15 @@ import goalsRouter from "./goals/goals.routes";
 import investmentsRouter from "./investments/investments.routes";
 import { authRouter } from "./auth/auth.routes";
 import suporteRouter from "./suporte/suporte.routes";
+import accountsRouter from "./accounts/accounts.routes";
+import desfazerRouter from "./desfazer/desfazer.routes";
 
 const router = Router();
 
 router.use("/transactions", transactionsRouter);
 router.use("/connected-accounts", connectedAccountsRouter);
+router.use("/accounts", accountsRouter);
+router.use("/undo", desfazerRouter);
 router.use("/dashboard", dashboardRouter);
 router.use("/mentor-ia", mentorIaRouter);
 router.use("/goals", goalsRouter);

@@ -1,5 +1,6 @@
 // src/modules/investments/investments.dto.ts
 import { z } from "zod";
+import { aparenciaNaCriacao, aparenciaNaEdicao } from "../../shared/aparencia/aparencia";
 import { CARTAO_PADRAO, TIPOS_DE_ATIVO, TipoDeAtivo } from "./investments.model";
 
 export const idSchema = z.string().regex(/^[a-f\d]{24}$/i, "Id inválido");
@@ -19,15 +20,20 @@ const nomeDoCartao = z.string().trim().min(1).max(40);
 // Cartão novo: só o nome é obrigatório; limite e dia do fechamento assumem os valores padrão.
 export const createCardSchema = z.object({
   nome: nomeDoCartao,
+  // o cartão é vinculado a uma conta do próprio usuário (obrigatório)
+  contaId: idSchema,
   limite: z.number().positive().default(CARTAO_PADRAO.limite),
   diaFechamento: z.number().int().min(1).max(28).default(CARTAO_PADRAO.diaFechamento),
+  ...aparenciaNaCriacao, // ícone e cor do cartão (opcionais)
 });
 
 export const updateCardSchema = z
   .object({
     nome: nomeDoCartao.optional(),
+    contaId: idSchema.optional(),
     limite: z.number().positive().optional(),
     diaFechamento: z.number().int().min(1).max(28).optional(),
+    ...aparenciaNaEdicao, // null tira o ícone ou a cor
   })
   .refine((d) => Object.keys(d).length > 0, { message: "Informe ao menos um campo para alterar" });
 
@@ -165,6 +171,11 @@ export interface CardResponseDto {
   padrao: boolean;
   limite: number;
   diaFechamento: number;
+  contaId?: string; // a conta a que o cartão está vinculado (cartões antigos podem não ter)
+  conta?: { id: string; nome: string; banco: string; bancoNome: string; icone?: string; cor?: string };
+  openFinance?: true; // cartão que vem do Open Finance: só o ícone e a cor mudam, e ele não se exclui (desconecte a conta)
+  icone?: string; // chave do ícone escolhido para o cartão (ver src/shared/aparencia); sem ela, vale o logo do banco da conta
+  cor?: string;
   // limite - compras no crédito do mês - saldo devedor dos parcelamentos (pode ficar negativo se o limite estourar)
   limiteDisponivel: number;
   saldoDevedor: number; // dos parcelamentos ainda ativos deste cartão

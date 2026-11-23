@@ -2,6 +2,7 @@
 // Investimentos e cartão SIMULADOS do Grupo 5. Três coleções: o portfólio (investments), os cartões do usuário (cards, até
 // MAX_CARTOES por usuário) e os parcelamentos dele (card_installments, cada um ligado a um cartão). Valores derivados
 // (valor atual, parcela, saldo devedor, fatura) não são guardados: são calculados pelo Servidor Java a cada leitura.
+import { CORES, ICONES } from "../../shared/aparencia/aparencia";
 import { Schema, model } from "mongoose";
 
 export const TIPOS_DE_ATIVO = ["renda_fixa", "renda_variavel", "fundo", "cripto", "outro"] as const;
@@ -46,7 +47,7 @@ export const DIAS_DO_FECHAMENTO_AO_VENCIMENTO = 7;
 export const chaveDoNome = (nome: string) => nome.trim().toLocaleLowerCase("pt-BR");
 
 // Um cartão de crédito simulado do usuário. O mais antigo (createdAt) é o "cartão padrão": recebe as compras no crédito
-// que não indicam cartão.
+// que não indicam cartão (se o usuário não tem nenhum cartão, as compras no crédito simplesmente não entram em fatura).
 export interface CardDocument {
   userId: string;
   nome: string;
@@ -55,6 +56,13 @@ export interface CardDocument {
   limite: number;
   // dia do mês em que a fatura fecha (1 a 28, para existir em todos os meses); o vencimento é 7 dias depois
   diaFechamento: number;
+  // A conta (coleção accounts) a que o cartão está vinculado: obrigatória ao criar. Só faltam nos cartões antigos, de antes do vínculo.
+  contaId?: string;
+  // Cartões criados ao conectar o Open Finance: o id da conta CREDIT na Pluggy (evita criar o mesmo cartão duas vezes).
+  pluggyAccountId?: string;
+  // Aparência opcional (shared/aparencia): sem ela o Frontend mostra o logo do banco da conta.
+  icone?: string | null; // null: sem ícone
+  cor?: string | null;
 }
 
 const CardSchema = new Schema<CardDocument>(
@@ -64,6 +72,10 @@ const CardSchema = new Schema<CardDocument>(
     nomeChave: { type: String, required: true },
     limite: { type: Number, required: true, min: 0 },
     diaFechamento: { type: Number, required: true, min: 1, max: 28 },
+    contaId: { type: String },
+    pluggyAccountId: { type: String },
+    icone: { type: String, enum: ICONES },
+    cor: { type: String, enum: CORES },
   },
   { timestamps: true }
 );

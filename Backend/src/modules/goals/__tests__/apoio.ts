@@ -6,8 +6,9 @@ import "../../transactions/__tests__/ambiente"; // ANTES de tudo: o config/env v
 import { mock } from "node:test";
 import { javaServerClient } from "../../../java-client/java-server.client";
 import { AppError } from "../../../shared/errors/app-error";
+import { calcularSaldoContas } from "../../transactions/__tests__/saldo-simulado";
 
-export { ANA, BETO, ID_INEXISTENTE, inserir, json, prepararApi, textoDe } from "../../transactions/__tests__/apoio";
+export { ANA, BETO, CONTAS, ID_INEXISTENTE, criarCartoesPadrao, inserir, json, prepararApi, textoDe } from "../../transactions/__tests__/apoio";
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -16,6 +17,8 @@ const soData = (d: Date) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(
 
 // Contas do Servidor Java, em JavaScript, só para o Backend ter uma resposta realista nos testes de rota.
 const calculos: Record<string, (dados: any) => any> = {
+  PedidoCalcularSaldoContas: calcularSaldoContas,
+
   PedidoProgressoMeta: ({ valorAtual, valorObjetivo, prazo }) => {
     const atual = Math.max(0, valorAtual);
     const concluida = atual >= valorObjetivo;

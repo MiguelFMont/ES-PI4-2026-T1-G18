@@ -40,10 +40,14 @@ async function montarContexto(userId: string): Promise<string> {
     dataInicio: inicio,
     pagina: 1,
     limite: TRANSACOES_DO_MES,
+    todos: false,
   });
 
   // só o necessário para o contexto: sem userId nem dados da conta
-  const transacoes: TransacaoResumida[] = docs.map((t) => ({
+  // (transferências entre contas não são receita nem despesa: ficam de fora)
+  const transacoes: TransacaoResumida[] = docs
+    .filter((t): t is typeof t & { tipo: "receita" | "despesa" } => t.tipo !== "transferencia")
+    .map((t) => ({
     tipo: t.tipo,
     valor: t.valor,
     categoria: t.categoria,

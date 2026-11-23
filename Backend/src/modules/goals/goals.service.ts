@@ -1,4 +1,5 @@
 // src/modules/goals/goals.service.ts
+import { aparenciaNaResposta } from "../../shared/aparencia/aparencia";
 import { Aportes, goalsRepository } from "./goals.repository";
 import { GoalDocument } from "./goals.model";
 import {
@@ -62,6 +63,7 @@ function paraDto(meta: MetaLida, progresso: Awaited<ReturnType<typeof calcularPr
     valorObjetivo: meta.valorObjetivo,
     valorInicial: meta.valorInicial,
     ...(meta.prazo ? { prazo: meta.prazo.toISOString() } : {}),
+    ...aparenciaNaResposta(meta),
     criadaEm: meta.createdAt.toISOString(),
     ...progresso,
   };
@@ -87,7 +89,13 @@ export const goalsService = {
     const campos: CamposDaMeta = { valorObjetivo: dados.valorObjetivo, valorInicial: dados.valorInicial, prazo: dados.prazo };
     const progresso = await calcularProgresso(campos, SEM_APORTES); // meta nova: ainda sem transações vinculadas
 
-    const meta = await goalsRepository.create({ userId, titulo: dados.titulo, ...campos });
+    const meta = await goalsRepository.create({
+      userId,
+      titulo: dados.titulo,
+      ...campos,
+      ...(dados.icone ? { icone: dados.icone } : {}),
+      ...(dados.cor ? { cor: dados.cor } : {}),
+    });
     return paraDto(comoLida(meta), progresso);
   },
 

@@ -12,6 +12,7 @@ import { app } from "../../../http/app";
 import { env } from "../../../config/env";
 import { TransactionModel } from "../transactions.model";
 import { encerrarBanco, iniciarBanco, limparBanco } from "../../connected-accounts/__tests__/banco";
+import { comContaDoToken, criarCartoesPadrao, criarContasDeTeste } from "./contas-de-teste";
 
 let servidor: Server;
 let base: string;
@@ -24,7 +25,7 @@ function chamar(metodo: string, caminho: string, token?: string, corpo?: unknown
   return fetch(`${base}/v1${caminho}`, {
     method: metodo,
     headers: { "Content-Type": "application/json", ...(token && { Authorization: `Bearer ${token}` }) },
-    body: corpo === undefined ? undefined : JSON.stringify(corpo),
+    body: corpo === undefined ? undefined : JSON.stringify(comContaDoToken(metodo, caminho, token, corpo)),
   });
 }
 const json = (r: Response): Promise<any> => r.json();
@@ -56,6 +57,10 @@ after(async () => {
 });
 
 beforeEach(limparBanco);
+beforeEach(async () => {
+  await criarContasDeTeste();
+  await criarCartoesPadrao(); // a ORIGINAL é no crédito: toda compra no crédito precisa de um cartão
+});
 
 describe("POST /v1/transactions/:id/duplicate", () => {
   test("cria uma transação nova com os mesmos dados, menos o id e a data (que vira a de agora)", async () => {

@@ -9,7 +9,7 @@ import type { TransactionDocument } from "../../transactions/transactions.model"
 
 const MEIO_DIA_MS = 12 * 60 * 60 * 1000;
 
-export type TransacaoDoSeed = Omit<TransactionDocument, "userId" | "origem">;
+export type TransacaoDoSeed = Omit<TransactionDocument, "userId" | "origem" | "tipo"> & { tipo: "receita" | "despesa" };
 
 export function seedEm(hoje: Date): TransacaoDoSeed[] {
   const { ano, mes, dia } = diaEmBrasilia(hoje);

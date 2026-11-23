@@ -8,6 +8,7 @@ import path from "node:path";
 import { env } from "../../../config/env";
 import { javaServerClient } from "../../../java-client/java-server.client";
 import { AppError } from "../../../shared/errors/app-error";
+import { calcularSaldoContas } from "../../transactions/__tests__/saldo-simulado";
 import { PluggyItem, PluggyTransaction } from "../../../integrations/pluggy/pluggy.types";
 
 export interface FixtureConta {
@@ -153,8 +154,11 @@ export function simularPluggy() {
 export function simularCategorizacao(opcoes: { indisponivel?: boolean } = {}) {
   const pedidos: { descricao: string; valor: number }[] = [];
   mock.method(javaServerClient, "enviarPedido", async (tipo: string, _resposta: string, dados: any) => {
-    if (tipo !== "PedidoCategorizarTransacao") throw new Error(`Pedido inesperado ao Servidor Java: ${tipo}`);
+    if (tipo !== "PedidoCategorizarTransacao" && tipo !== "PedidoCalcularSaldoContas") {
+      throw new Error(`Pedido inesperado ao Servidor Java: ${tipo}`);
+    }
     if (opcoes.indisponivel) throw new AppError("Servidor indisponível", 503, "JAVA_SERVER_UNAVAILABLE");
+    if (tipo === "PedidoCalcularSaldoContas") return calcularSaldoContas(dados);
     pedidos.push({ descricao: dados.descricao, valor: dados.valor });
     const d = String(dados.descricao).toUpperCase();
     const categoria = /SPOTIFY|NETFLIX/.test(d) ? "Lazer" : /CONDOMINIO/.test(d) ? "Moradia" : /SALARIO/.test(d) ? "Salario" : "Outros";
