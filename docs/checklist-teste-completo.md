@@ -132,9 +132,9 @@ Roteiro para testar o FinanceAI de ponta a ponta na branch de integração, ante
 - [ ] `cd Servidor && mvn test`: todos passam (130 testes).
 - [ ] Console do navegador sem erros em nenhuma das telas acima.
 
-## 13. Contas e transferências (PLANEJADA)
+## 13. Contas e transferências
 
-> **Planejado:** ainda não implementado. Testar só depois que as issues #101 a #113 forem entregues (regras RN1 a RN10 em `especificacao-contas-e-transferencias.md`). Use um usuário do plano **Free** e outro do plano **Pro**.
+> Implementada (issues #101 a #113; regras RN1 a RN10 em `especificacao-contas-e-transferencias.md`). Use um usuário do plano **Free** e outro do plano **Pro**.
 
 **Contas manuais (Contas conectadas)**
 - [ ] Criar conta manual (Nova conta) com nome, banco e saldo inicial: ela aparece na lista com o saldo atual igual ao saldo inicial.

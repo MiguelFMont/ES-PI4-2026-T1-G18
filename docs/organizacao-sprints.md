@@ -33,7 +33,7 @@ Cada grupo cria seus próprios tipos de mensagem (`PedidoXxx`/`RespostaXxx`, est
 | Grupo | Tipos de mensagem que ele registra no Servidor Java (operações específicas; o CRUD e o banco ficam no Backend) |
 |---|---|
 | Autenticação & Conta | `PedidoHashSenha`, `PedidoValidarSenha`, `PedidoGerarSegredoMFA`, `PedidoValidarMFA` |
-| Transações (receitas/despesas) | `PedidoCategorizarTransacao`, `PedidoCalcularSaldoContas` (Planejado) |
+| Transações (receitas/despesas) | `PedidoCategorizarTransacao`, `PedidoCalcularSaldoContas` |
 | Painel Financeiro & Análise | `PedidoCalcularIndicadores`, `PedidoCompararPeriodos` |
 | Mentor Financeiro (IA) | `PedidoMontarContextoIA`, `PedidoFiltrarResposta` |
 | Metas & Investimentos | `PedidoProgressoMeta`, `PedidoRentabilidadeSimulada`, `PedidoCalcularParcelamentos` |
@@ -50,7 +50,7 @@ Cada grupo é uma **fatia vertical completa** (Frontend + Backend + Servidor Jav
 - MFA opcional
 - Perfil e preferências (modo claro/escuro, ocultar valores sensíveis)
 - Plano da conta (Free/Pro) e tela de upgrade
-- **Planejado:** regra do plano Pro para contas Open Finance — só o plano Pro cria conta Open Finance; no Free a API responde `403 PLAN_REQUIRED` e a tela mostra a opção bloqueada com o convite para o upgrade (RN3 de `especificacao-contas-e-transferencias.md`)
+- **Entregue:** regra do plano Pro para contas Open Finance — só o plano Pro cria conta Open Finance; no Free a API responde `403 PLAN_REQUIRED` e a tela mostra a opção bloqueada com o convite para o upgrade (RN3 de `especificacao-contas-e-transferencias.md`)
 - Canal de suporte / reportar problema
 
 ### Grupo 2 — Transações (Receitas e Despesas)
@@ -60,11 +60,11 @@ Cada grupo é uma **fatia vertical completa** (Frontend + Backend + Servidor Jav
 - Categorização automática, com edição manual
 - Listagem e filtros (categoria, período, valor, origem)
 - Editar, excluir e duplicar lançamento
-- **Planejado:** contas (criar, editar e excluir, com nome, banco e saldo inicial), manuais e Open Finance (esta só no plano Pro), em Contas Conectadas
-- **Planejado:** lançamento manual vinculado a uma conta (`contaId` obrigatório; sem conta, o usuário é levado a criar uma)
-- **Planejado:** transferências entre contas (contas manuais), com a opção "Nova transferência" no menu Lançamento junto de despesa e receita (atalho T)
-- **Planejado:** coluna Origem mostrando a conta, filtro por conta e tipo Transferência na lista
-- **Planejado:** `PedidoCalcularSaldoContas` no Servidor Java (saldo atual de cada conta)
+- **Entregue:** contas (criar, editar e excluir, com nome, banco e saldo inicial), manuais e Open Finance (esta só no plano Pro), em Contas Conectadas
+- **Entregue:** lançamento manual vinculado a uma conta (`contaId` obrigatório; sem conta, o usuário é levado a criar uma)
+- **Entregue:** transferências entre contas (contas manuais), com a opção "Nova transferência" no menu Lançamento junto de despesa e receita (atalho T)
+- **Entregue:** coluna Origem mostrando a conta, filtro por conta e tipo Transferência na lista
+- **Entregue:** `PedidoCalcularSaldoContas` no Servidor Java (saldo atual de cada conta)
 - Detalhes em `especificacao-contas-e-transferencias.md`
 
 ### Grupo 3 — Painel Financeiro & Análise de Gastos
@@ -72,7 +72,7 @@ Cada grupo é uma **fatia vertical completa** (Frontend + Backend + Servidor Jav
 - Distribuição de gastos por categoria, com visão agregada por grupos de categoria
 - Comparação entre períodos (mensal, últimos 6 meses, YTD)
 - Resumo do período (total, categoria de maior peso, média diária)
-- **Planejado:** painel e resumo do período ignoram transferências nos totais de receitas, despesas e saldo (RN6)
+- **Entregue:** painel e resumo do período ignoram transferências nos totais de receitas, despesas e saldo (RN6)
 
 ### Grupo 4 — Mentor Financeiro (IA Generativa)
 - Chat com IA sobre a situação financeira do usuário
@@ -185,7 +185,7 @@ Servidor/src/main/java/com/financeai/
   transactions/
     TransactionsHandler.java
     PedidoCategorizarTransacao (+ Resposta)
-    PedidoCalcularSaldoContas (+ Resposta)   // Planejado
+    PedidoCalcularSaldoContas (+ Resposta)
   dashboard/
     DashboardHandler.java
     PedidoCalcularIndicadores, PedidoCompararPeriodos (+ Respostas)
@@ -277,9 +277,9 @@ Cada grupo segue a mesma sequência (CRUD básico → regra de negócio própria
 - Ensaio da apresentação
 - Tag `1.0.0-final`
 
-#### Contas e transferências — trabalho planejado na Sprint 5
+#### Contas e transferências — Sprint 5
 
-Issues #101 a #115, descritas em `especificacao-contas-e-transferencias.md`. Todas **Planejado** (nada implementado ainda).
+Issues #101 a #115, descritas em `especificacao-contas-e-transferencias.md`. Todas **Entregue** (implementadas em Servidor, Backend e Frontend, com testes).
 
 | Issue | Título | Camada | Grupo | Estimativa |
 |---|---|---|---|---|
