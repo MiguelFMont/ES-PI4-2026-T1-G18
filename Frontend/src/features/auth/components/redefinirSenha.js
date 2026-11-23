@@ -1,5 +1,9 @@
 
 import { notificar } from "../../../shared/components/notificacao.js";
+import { api, ApiError } from "../../../core/http/api.js";
+import { traduzirValidacaoNativa } from "../../../shared/utils/validacaoEmPortugues.js";
+
+traduzirValidacaoNativa();
 
 // Tempo (ms) entre "senha redefinida" e a volta ao login (também a duração da linha de carregamento da notificação).
 const ESPERA_REDIRECIONAMENTO_MS = 3000;
@@ -29,25 +33,13 @@ redefinirForm.addEventListener("submit", async function (event) {
 
     redefinirBotao.disabled = true;
     try {
-        const resposta = await fetch("/v1/auth/reset-password", {
+        await api("/auth/reset-password", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
             body: JSON.stringify({
                 token: token,
                 senha: novaSenha.value
             })
         });
-        if (!resposta.ok) {
-            notificar(
-                resposta.status === 400
-                    ? "Link inválido ou expirado."
-                    : "Não foi possível redefinir a senha.",
-                "erro"
-            );
-            return;
-        }
 
         redefinirForm.reset();
         redirecionando = true;
@@ -58,9 +50,18 @@ redefinirForm.addEventListener("submit", async function (event) {
         setTimeout(function () {
             window.location.href = "/src/features/auth/components/inicio.html";
         }, ESPERA_REDIRECIONAMENTO_MS);
-    } catch (error) {
-        notificar("Não foi possível conectar ao servidor.", "erro");
-        console.error("Erro ao redefinir senha:", error);
+    } catch (erro) {
+        if (!(erro instanceof ApiError) || erro.status === 0) {
+            notificar("Não foi possível conectar ao servidor.", "erro");
+            console.error("Erro ao redefinir senha:", erro);
+        } else if (erro.details?.senha?.[0]) {
+            // a nova senha não segue as regras (mínimo de 8 caracteres, minúscula, maiúscula, número e caractere especial)
+            notificar(erro.details.senha[0], "aviso");
+        } else if (erro.code === "INVALID_RESET_TOKEN" || erro.code === "VALIDATION_ERROR") {
+            notificar("Link inválido ou expirado.", "erro");
+        } else {
+            notificar("Não foi possível redefinir a senha.", "erro");
+        }
     } finally {
         if (!redirecionando) redefinirBotao.disabled = false;
     }

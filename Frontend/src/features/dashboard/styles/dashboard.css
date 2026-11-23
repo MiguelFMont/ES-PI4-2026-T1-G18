@@ -1,12 +1,98 @@
-/* src/features/dashboard/styles/dashboard.css */
-.dashboard-container {
-    display: flex;
-    flex-direction: column;
+.dashboard-page {
+    display: grid;
     gap: 1.5rem;
+    max-width: 100rem;
+    margin: 0 auto;
+    padding: 1.5rem 1rem 3rem;
 }
 
-@media (max-width: 767px) {
-    .dashboard-container {
-        gap: 1rem;
-    }
+.dashboard-page [hidden] {
+    display: none !important;
+}
+
+.dashboard-secao-topo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.dashboard-secao-subtitulo {
+    font-size: 0.88rem;
+    color: var(--texto-suave);
+    margin-top: 0.2rem;
+}
+
+.dashboard-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    padding: 0.3rem;
+    border-radius: 0.75rem;
+    background: var(--fundo-campo);
+    border: var(--borda-elemento, 0);
+}
+
+.dashboard-pill {
+    padding: 0.4rem 0.85rem;
+    border: 0;
+    border-radius: 0.55rem;
+    background: transparent;
+    color: var(--texto-suave);
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--duracao-cor) ease, color var(--duracao-cor) ease, scale 0.1s ease;
+}
+
+.dashboard-pill:hover {
+    color: var(--texto);
+}
+
+.dashboard-pill.ativo {
+    background: var(--destaque);
+    color: var(--destaque-texto);
+    font-weight: 700;
+    box-shadow: var(--sombra);
+}
+
+.dashboard-barra-trilha {
+    width: 100%;
+    height: 0.48rem;
+    border-radius: 999px;
+    background: var(--fundo-celula);
+    overflow: hidden;
+}
+
+.dashboard-barra-preenchimento {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.35s ease;
+}
+
+.dashboard-badge {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    padding: 0.2rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.76rem;
+    font-weight: 700;
+}
+
+.dashboard-badge--alta {
+    background: color-mix(in srgb, var(--negativo) 18%, var(--fundo-campo));
+    color: var(--negativo);
+}
+
+.dashboard-badge--queda {
+    background: color-mix(in srgb, var(--positivo) 18%, var(--fundo-campo));
+    color: var(--positivo);
+}
+
+.dashboard-badge--neutra {
+    background: var(--fundo-campo);
+    color: var(--texto-suave);
 }

@@ -12,6 +12,19 @@ export const dashboardController = {
         }
     },
 
+    async periodSummary(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+        try {
+            const dataInicio = typeof req.query.dataInicio === "string" ? req.query.dataInicio : undefined;
+            const dataFim = typeof req.query.dataFim === "string" ? req.query.dataFim : undefined;
+
+            res.status(200).json(
+                await dashboardService.getPeriodSummary(req.user!.id, dataInicio, dataFim)
+            );
+        } catch (error) {
+            next(error);
+        }
+    },
+
     async byCategory(req: AuthenticatedRequest, res: Response, next: NextFunction) {
         try {
             res.status(200).json(await dashboardService.getByCategory(req.user!.id));

@@ -1,0 +1,89 @@
+<!-- Componente Central: Coluna Esquerda (Gastos por Categoria) + Coluna Direita (Evolução Mensal e Insights do Mentor) -->
+<div class="dashboard-meio-grid">
+    <!-- COLUNA ESQUERDA: Gastos por categoria (Issue #50) -->
+    <section class="transactions-cartao dashboard-card-gastos" aria-labelledby="dash-distribuicao-titulo">
+        <div class="dashboard-card-gastos__topo">
+        <div>
+            <h2 id="dash-distribuicao-titulo">Gastos por categoria</h2>
+            <p id="dash-gastos-subtitulo" class="dashboard-secao-subtitulo">Este mês</p>
+        </div>
+
+        <div class="dashboard-pills" role="tablist" aria-label="Alternar entre categorias e destinos">
+            <button type="button" id="btn-visao-categoria" class="dashboard-pill ativo" role="tab" aria-selected="true">
+            Categorias
+            </button>
+            <button type="button" id="btn-visao-grupo" class="dashboard-pill" role="tab" aria-selected="false">
+            Por Destino
+            </button>
+        </div>
+        </div>
+
+        <p id="dash-categorias-vazio" class="dashboard-vazio" hidden>
+        Nenhuma despesa registrada neste período. Cadastre uma despesa em "Transações".
+        </p>
+
+        <div id="dash-gastos-corpo" class="dashboard-gastos-corpo">
+        <!-- Donut à esquerda + Lista de categorias à direita (igual à foto) -->
+        <div class="dashboard-donut-e-legenda">
+            <div class="dashboard-donut-wrapper">
+            <svg id="dash-donut-svg" class="dashboard-donut-svg" viewBox="0 0 220 220" role="img" aria-label="Gráfico de rosca de gastos por categoria"></svg>
+            <div class="dashboard-donut-centro">
+                <strong id="dash-donut-valor" class="dashboard-donut-centro__valor valor-financeiro">R$ 0,00</strong>
+                <span id="dash-donut-rotulo" class="dashboard-donut-centro__rotulo">Total</span>
+            </div>
+            </div>
+
+            <ul id="dash-legenda-lista" class="dashboard-legenda-lista" aria-label="Percentual e valor por categoria"></ul>
+        </div>
+
+        <!-- Link "Ver todas as categorias" igual ao da foto (expande/recolhe as transações) -->
+        <div class="dashboard-gastos-rodape">
+            <button type="button" id="btn-ver-todas-categorias" class="dashboard-link-acao">
+            Ver todas as categorias e transações
+            </button>
+        </div>
+
+        <!-- Gaveta expansível que mostra as transações da categoria clicada (Métrica 3 da Issue #50) -->
+        <div id="dash-gaveta-transacoes" class="dashboard-gaveta-transacoes" hidden></div>
+        </div>
+    </section>
+
+    <!-- COLUNA DIREITA: Evolução mensal (gráfico de linhas) + Insights do Mentor -->
+    <div class="dashboard-coluna-direita">
+        <section class="transactions-cartao dashboard-card-evolucao" aria-labelledby="dash-evolucao-titulo">
+        <div class="dashboard-card-evolucao__topo">
+            <div>
+            <h2 id="dash-evolucao-titulo">Evolução mensal</h2>
+            <p class="dashboard-secao-subtitulo">Últimos 6 meses</p>
+            </div>
+
+            <div class="dashboard-evolucao-legenda" aria-hidden="true">
+            <span class="dashboard-evolucao-legenda__item">
+                <span class="dashboard-evolucao-legenda__ponto dashboard-evolucao-legenda__ponto--receita"></span>
+                Receitas
+            </span>
+            <span class="dashboard-evolucao-legenda__item">
+                <span class="dashboard-evolucao-legenda__ponto dashboard-evolucao-legenda__ponto--despesa"></span>
+                Despesas
+            </span>
+            </div>
+        </div>
+
+        <div class="dashboard-linha-wrapper">
+            <svg id="dash-evolucao-svg" class="dashboard-evolucao-svg" viewBox="0 0 520 215" role="img" aria-label="Gráfico de linha de receitas e despesas nos últimos 6 meses"></svg>
+        </div>
+        </section>
+
+        <!-- Card Insights do Mentor igual ao da foto -->
+        <aside class="transactions-cartao dashboard-card-mentor" aria-labelledby="dash-mentor-titulo">
+        <div class="dashboard-card-mentor__icone" aria-hidden="true">🤖</div>
+        <div class="dashboard-card-mentor__conteudo">
+            <h3 id="dash-mentor-titulo">Insights do Mentor</h3>
+            <p id="dash-mentor-texto" class="dashboard-card-mentor__texto">
+            Analisando o comportamento dos seus gastos neste período...
+            </p>
+            <a href="#mentor-ia" class="dashboard-link-acao">Ver análise completa</a>
+        </div>
+        </aside>
+    </div>
+</div>

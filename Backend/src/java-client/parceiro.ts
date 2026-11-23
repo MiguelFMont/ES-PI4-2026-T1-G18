@@ -1,5 +1,6 @@
 // src/java-client/parceiro.ts
 import net from "net";
+import { StringDecoder } from "node:string_decoder";
 import { Comunicado } from "./comunicado";
 
 interface Aguardando {
@@ -9,6 +10,9 @@ interface Aguardando {
 
 export class Parceiro {
   private buffer = "";
+  // O TCP pode cortar um caractere de vários bytes (ç, é, ã...) entre dois pedaços: o decoder guarda os bytes do
+  // caractere incompleto até o pedaço seguinte chegar. Um chunk.toString() por pedaço viraria "�" nesses cortes.
+  private readonly decoder = new StringDecoder("utf8");
   private fila: Comunicado[] = [];
   private aguardando: Aguardando[] = [];
   private fechado = false;
@@ -20,8 +24,8 @@ export class Parceiro {
     this.conexao.on("error", () => this.aoEncerrar());
   }
 
-  private aoReceberDados(chunk: Buffer) {
-    this.buffer += chunk.toString("utf-8");
+  private aoReceberDados(chunk: Buffer | string) {
+    this.buffer += typeof chunk === "string" ? chunk : this.decoder.write(chunk);
     const linhas = this.buffer.split("\n");
     this.buffer = linhas.pop() ?? "";
 

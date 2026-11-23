@@ -1,3 +1,4 @@
+
 # FinanceAI — Backend
 
 Backend em **arquitetura limpa por feature**, seguindo a divisão de grupos e a arquitetura de componentes do README principal do repositório (`../README.md`).
@@ -20,13 +21,13 @@ O navegador não consegue abrir um socket TCP puro, por isso o Backend fica no m
 
 ### O que é do Backend e o que é do Servidor
 
-| Backend | Servidor Java |
-|---|---|
-| Rotas HTTP, validação do corpo (`zod`), CORS, JWT | Hash e conferência de senha (PBKDF2) |
-| CRUD no MongoDB (usuários, transações, metas, chat...) | Categorização de transações |
-| Orquestração: lê os dados, pede a operação ao Servidor e grava o resultado | Cálculo dos indicadores do painel e comparação entre períodos |
-| Chamadas externas que precisam de internet e chave: API de IA generativa e Pluggy | Contexto e filtro de segurança do Mentor IA |
-| Tradução dos erros do Servidor em status HTTP | Progresso de meta, rentabilidade com juros compostos e cálculo de parcelamentos |
+| Backend                                                                           | Servidor Java                                                                    |
+| --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Rotas HTTP, validação do corpo (`zod`), CORS, JWT                             | Hash e conferência de senha (PBKDF2)                                            |
+| CRUD no MongoDB (usuários, transações, metas, chat...)                         | Categorização de transações                                                  |
+| Orquestração: lê os dados, pede a operação ao Servidor e grava o resultado   | Cálculo dos indicadores do painel e comparação entre períodos                |
+| Chamadas externas que precisam de internet e chave: API de IA generativa e Pluggy | Contexto e filtro de segurança do Mentor IA                                     |
+| Tradução dos erros do Servidor em status HTTP                                   | Progresso de meta, rentabilidade com juros compostos e cálculo de parcelamentos |
 
 O Servidor **não acessa o banco**: o Backend manda os dados no pedido e recebe o resultado. Isso deixa cada operação do Servidor pura (entrada → saída), fácil de testar e de repetir.
 
@@ -48,16 +49,16 @@ Quando uma operação falha, o Servidor responde `{"tipo":"Erro","dados":{"code"
 
 ## Comparação com o material do professor
 
-| Ponto | Professor | Nosso Backend |
-|---|---|---|
-| Cliente | `Cliente.java`, console com menu | `javaServerClient`, chamado pelos `services`; pool de conexões duradouras |
-| Serialização | `ObjectOutputStream`/`ObjectInputStream` | JSON em linhas |
-| Tipo da mensagem | Subclasses de `Comunicado`, `instanceof` | Envelope `{ tipo, dados }`, string |
-| `Parceiro` | `receba` / `envie` / `espie` / `adeus`, com `Semaphore` | Mesmos métodos e semântica, sobre `net.Socket`, sem `Semaphore` (event loop do Node) |
-| Concorrência | Threads bloqueantes | Assíncrono (`Promise`), várias conexões simultâneas |
-| Thread do `ComunicadoDeDesligamento` | Uma por cliente | Um laço de leitura por conexão do pool |
-| Saída do cliente | `PedidoParaSair` | Enviado em cada conexão ao encerrar o Backend |
-| Camadas extras | Nenhuma | API REST com o Frontend e MongoDB (o professor só tem console) |
+| Ponto                                  | Professor                                                         | Nosso Backend                                                                              |
+| -------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Cliente                                | `Cliente.java`, console com menu                                | `javaServerClient`, chamado pelos `services`; pool de conexões duradouras             |
+| Serialização                         | `ObjectOutputStream`/`ObjectInputStream`                      | JSON em linhas                                                                             |
+| Tipo da mensagem                       | Subclasses de `Comunicado`, `instanceof`                      | Envelope `{ tipo, dados }`, string                                                       |
+| `Parceiro`                           | `receba` / `envie` / `espie` / `adeus`, com `Semaphore` | Mesmos métodos e semântica, sobre `net.Socket`, sem `Semaphore` (event loop do Node) |
+| Concorrência                          | Threads bloqueantes                                               | Assíncrono (`Promise`), várias conexões simultâneas                                  |
+| Thread do `ComunicadoDeDesligamento` | Uma por cliente                                                   | Um laço de leitura por conexão do pool                                                   |
+| Saída do cliente                      | `PedidoParaSair`                                                | Enviado em cada conexão ao encerrar o Backend                                             |
+| Camadas extras                         | Nenhuma                                                           | API REST com o Frontend e MongoDB (o professor só tem console)                            |
 
 ## `exemplo/`: documentação de cada arquivo
 
@@ -90,14 +91,14 @@ src/
 
 ## Camadas de cada módulo (`modules/<feature>/`)
 
-| Arquivo | Responsabilidade |
-|---|---|
-| `*.routes.ts` | Define as rotas HTTP do módulo (método + caminho) e quais usam o `authMiddleware`. |
-| `*.controller.ts` | Camada HTTP: lê `req`, valida com o DTO, chama o service e monta a resposta. Erros vão para `next(error)`. |
-| `*.service.ts` | Casos de uso: aplica as regras do Backend, usa o repository e, quando precisa, pede uma operação ao Servidor Java pelo `javaServerClient`. |
-| `*.repository.ts` | Único arquivo do módulo que fala com o MongoDB (via o model). Sem regra de negócio. |
-| `*.model.ts` | Schema Mongoose da coleção. |
-| `*.dto.ts` | Schemas de validação (`zod`) e tipos de entrada/saída das rotas. |
+| Arquivo             | Responsabilidade                                                                                                                               |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `*.routes.ts`     | Define as rotas HTTP do módulo (método + caminho) e quais usam o `authMiddleware`.                                                         |
+| `*.controller.ts` | Camada HTTP: lê `req`, valida com o DTO, chama o service e monta a resposta. Erros vão para `next(error)`.                               |
+| `*.service.ts`    | Casos de uso: aplica as regras do Backend, usa o repository e, quando precisa, pede uma operação ao Servidor Java pelo `javaServerClient`. |
+| `*.repository.ts` | Único arquivo do módulo que fala com o MongoDB (via o model). Sem regra de negócio.                                                         |
+| `*.model.ts`      | Schema Mongoose da coleção.                                                                                                                  |
+| `*.dto.ts`        | Schemas de validação (`zod`) e tipos de entrada/saída das rotas.                                                                          |
 
 Cada grupo só mexe no seu módulo e, em `http/app.ts`, adiciona a linha do `app.use` do seu router. Se precisar de uma operação nova no Servidor, cria o par `PedidoXxx`/`RespostaXxx` junto com quem implementa o lado Java (`../Servidor`).
 
@@ -139,19 +140,19 @@ O chat do Mentor (`POST /v1/mentor-ia/chat`, contrato na seção 3 de `../docs/c
 cp .env.example .env   # ajuste JWT_SECRET e MONGO_URI
 ```
 
-| Variável | Para quê |
-|---|---|
-| `PORT` | Porta da API (padrão 3001) |
-| `JWT_SECRET` | Segredo para assinar o JWT |
-| `MONGO_URI`, `MONGO_DB` | MongoDB Atlas. Sem `MONGO_URI` o Backend sobe sem banco (só `/v1/health` e `/v1/eco`) |
-| `JAVA_SERVER_HOST`, `JAVA_SERVER_PORT` | Onde está o Servidor Java (padrão `localhost:3000`) |
-| `JAVA_SERVER_TIMEOUT_MS`, `JAVA_SERVER_POOL_SIZE` | Timeout por pedido (5000) e máximo de conexões simultâneas (5) |
-| `GENAI_API_KEY` | Chave da API de IA generativa (Mentor IA; ver "Mentor IA" acima). Sem ela, só o chat responde `503` |
-| `GENAI_BASE_URL`, `GENAI_MODEL` | Provedor e modelo da IA (padrão Groq, `https://api.groq.com/openai/v1` e `openai/gpt-oss-120b`) |
-| `GENAI_TIMEOUT_MS` | Tempo máximo de espera pela IA (20000) |
-| `PLUGGY_CLIENT_ID`, `PLUGGY_CLIENT_SECRET` | Credenciais da aplicação no Dashboard da Pluggy (contas conectadas e importação; ver "Pluggy" abaixo). Sem elas, o Backend sobe e só as rotas de contas conectadas respondem `503 PLUGGY_NOT_CONFIGURED` |
-| `PLUGGY_BASE_URL`, `PLUGGY_TIMEOUT_MS` | Endereço da API da Pluggy (padrão `https://api.pluggy.ai`) e tempo máximo de espera por chamada (20000) |
-| `PLUGGY_ESPERA_ITEM_MS`, `PLUGGY_INTERVALO_MS` | Quanto tempo esperar uma conexão terminar de sincronizar (60000) e de quanto em quanto tempo consultar (2000) |
+| Variável                                             | Para quê                                                                                                                                                                                                       |
+| ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PORT`                                              | Porta da API (padrão 3001)                                                                                                                                                                                     |
+| `JWT_SECRET`                                        | Segredo para assinar o JWT                                                                                                                                                                                      |
+| `MONGO_URI`, `MONGO_DB`                           | MongoDB Atlas. Sem `MONGO_URI` o Backend sobe sem banco (só `/v1/health` e `/v1/eco`)                                                                                                                    |
+| `JAVA_SERVER_HOST`, `JAVA_SERVER_PORT`            | Onde está o Servidor Java (padrão `localhost:3000`)                                                                                                                                                         |
+| `JAVA_SERVER_TIMEOUT_MS`, `JAVA_SERVER_POOL_SIZE` | Timeout por pedido (5000) e máximo de conexões simultâneas (5)                                                                                                                                               |
+| `GENAI_API_KEY`                                     | Chave da API de IA generativa (Mentor IA; ver "Mentor IA" acima). Sem ela, só o chat responde `503`                                                                                                          |
+| `GENAI_BASE_URL`, `GENAI_MODEL`                   | Provedor e modelo da IA (padrão Groq, `https://api.groq.com/openai/v1` e `openai/gpt-oss-120b`)                                                                                                            |
+| `GENAI_TIMEOUT_MS`                                  | Tempo máximo de espera pela IA (20000)                                                                                                                                                                         |
+| `PLUGGY_CLIENT_ID`, `PLUGGY_CLIENT_SECRET`        | Credenciais da aplicação no Dashboard da Pluggy (contas conectadas e importação; ver "Pluggy" abaixo). Sem elas, o Backend sobe e só as rotas de contas conectadas respondem `503 PLUGGY_NOT_CONFIGURED` |
+| `PLUGGY_BASE_URL`, `PLUGGY_TIMEOUT_MS`            | Endereço da API da Pluggy (padrão `https://api.pluggy.ai`) e tempo máximo de espera por chamada (20000)                                                                                                    |
+| `PLUGGY_ESPERA_ITEM_MS`, `PLUGGY_INTERVALO_MS`    | Quanto tempo esperar uma conexão terminar de sincronizar (60000) e de quanto em quanto tempo consultar (2000)                                                                                                  |
 
 O `.env` está no `.gitignore` e nunca deve ser commitado.
 
@@ -206,12 +207,12 @@ npx tsc --noEmit -p .       # confere os tipos (inclusive dos testes)
 
 O `npm test` **não precisa** de `.env`, do Atlas, da chave da IA nem do Servidor Java: o arquivo `__tests__/ambiente.ts` define as variáveis de ambiente dos testes antes de qualquer import, e o resto é simulado:
 
-| Peça | Nos testes |
-|---|---|
-| MongoDB | Em memória (`mongodb-memory-server`). Na **primeira** execução o pacote baixa o binário do MongoDB (cerca de 800 MB, fica em cache em `~/.cache/mongodb-binaries`) |
-| API de IA | `fetch` simulado só para `GENAI_BASE_URL` (`__tests__/apoio.ts`) |
-| Servidor Java | `javaServerClient.enviarPedido` simulado; o teste de integração (abaixo) usa o de verdade |
-| Rotas | O `app` Express sobe numa porta livre e é chamado com `fetch` |
+| Peça         | Nos testes                                                                                                                                                                       |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| MongoDB       | Em memória (`mongodb-memory-server`). Na **primeira** execução o pacote baixa o binário do MongoDB (cerca de 800 MB, fica em cache em `~/.cache/mongodb-binaries`) |
+| API de IA     | `fetch` simulado só para `GENAI_BASE_URL` (`__tests__/apoio.ts`)                                                                                                          |
+| Servidor Java | `javaServerClient.enviarPedido` simulado; o teste de integração (abaixo) usa o de verdade                                                                                    |
+| Rotas         | O `app` Express sobe numa porta livre e é chamado com `fetch`                                                                                                               |
 
 O que está coberto no Mentor IA (Grupo 4):
 
@@ -236,14 +237,14 @@ node --import tsx --test "src/modules/transactions/__tests__/*.test.ts"
 
 Usam o MongoDB em memória e o ambiente `transactions/__tests__/ambiente.ts`, que reaproveita as variáveis falsas de `connected-accounts` e aponta o **Servidor Java para uma porta fechada** (`127.0.0.1:1`, espera de 300 ms). Assim nenhum teste fala com o Atlas, com a Pluggy nem com o Servidor Java de verdade, mesmo que você o tenha rodando na porta 3000: quem precisa de categorização usa `simularCategorizacao()` (`connected-accounts/__tests__/apoio.ts`), e quem esquecer o dublê falha na hora em vez de ficar esperando.
 
-| Arquivo | O que cobre |
-|---|---|
-| `cadastrar.routes.test.ts` | `POST /v1/transactions`: cadastro completo e mínimo (forma `outro`, origem `manual`), categoria pelo Servidor Java (simulado) só quando falta, Servidor fora do ar ou desligando → `Outros` sem falhar, erro inesperado do Servidor **não** vira `Outros`, espaços e observação em branco, limites (300 caracteres), 14 casos de `400 VALIDATION_ERROR` com o campo em `details`, `401`, e o dono vem do token e não do corpo |
-| `listar.routes.test.ts` | `GET /v1/transactions`: lista vazia (`totalPaginas` 0), isolamento entre usuários, ordem (mais recente primeiro, desempate estável), paginação (padrão, última página, além da última, limite 100), cada filtro (tipo, categoria, forma, origem, busca literal sem regex, período com `dataFim` até o fim do dia, faixa de valor) e combinados, resumo de **todas** as páginas com arredondamento em 2 casas, 16 parâmetros inválidos |
-| `lote.routes.test.ts` | `PATCH /v1/transactions/bulk` e `POST /v1/transactions/bulk-delete`: o lote **não é tudo ou nada** (`afetadas` e `naoEncontradas`), `observacoes: ""` apaga o campo, a origem e o dono não mudam, transação de outro usuário conta como não encontrada, limite de 100, e um item inválido recusa o lote inteiro sem alterar nada |
-| `duplicar.routes.test.ts` | `POST /v1/transactions/:id/duplicate` (issue #49): copia tudo menos a data, só lançamentos manuais, 404 e 422 |
-| `transactions.unidade.test.ts` | Sem HTTP nem banco: os esquemas zod (valores padrão, `trim`, intervalos, ids, limites dos lotes, campos desconhecidos descartados) e `sugerirCategoria` |
-| `importadas.repository.test.ts` | Base da importação da Pluggy: índice único `{ userId, externalId }`, a inserção não para no primeiro duplicado, o mesmo `externalId` em usuários diferentes, manuais não colidem (índice parcial). O fluxo completo da importação está em `connected-accounts/__tests__/` |
+| Arquivo                           | O que cobre                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cadastrar.routes.test.ts`      | `POST /v1/transactions`: cadastro completo e mínimo (forma `outro`, origem `manual`), categoria pelo Servidor Java (simulado) só quando falta, Servidor fora do ar ou desligando → `Outros` sem falhar, erro inesperado do Servidor **não** vira `Outros`, espaços e observação em branco, limites (300 caracteres), 14 casos de `400 VALIDATION_ERROR` com o campo em `details`, `401`, e o dono vem do token e não do corpo     |
+| `listar.routes.test.ts`         | `GET /v1/transactions`: lista vazia (`totalPaginas` 0), isolamento entre usuários, ordem (mais recente primeiro, desempate estável), paginação (padrão, última página, além da última, limite 100), cada filtro (tipo, categoria, forma, origem, busca literal sem regex, período com `dataFim` até o fim do dia, faixa de valor) e combinados, resumo de **todas** as páginas com arredondamento em 2 casas, 16 parâmetros inválidos |
+| `lote.routes.test.ts`           | `PATCH /v1/transactions/bulk` e `POST /v1/transactions/bulk-delete`: o lote **não é tudo ou nada** (`afetadas` e `naoEncontradas`), `observacoes: ""` apaga o campo, a origem e o dono não mudam, transação de outro usuário conta como não encontrada, limite de 100, e um item inválido recusa o lote inteiro sem alterar nada                                                                                                        |
+| `duplicar.routes.test.ts`       | `POST /v1/transactions/:id/duplicate` (issue #49): copia tudo menos a data, só lançamentos manuais, 404 e 422                                                                                                                                                                                                                                                                                                                                               |
+| `transactions.unidade.test.ts`  | Sem HTTP nem banco: os esquemas zod (valores padrão, `trim`, intervalos, ids, limites dos lotes, campos desconhecidos descartados) e `sugerirCategoria`                                                                                                                                                                                                                                                                                                    |
+| `importadas.repository.test.ts` | Base da importação da Pluggy: índice único `{ userId, externalId }`, a inserção não para no primeiro duplicado, o mesmo `externalId` em usuários diferentes, manuais não colidem (índice parcial). O fluxo completo da importação está em `connected-accounts/__tests__/`                                                                                                                                                                    |
 
 Como a edição em lote usa `bulkWrite`, que **não roda os validadores do schema do Mongoose**, quem garante os valores é o zod: por isso os casos de `400` do lote conferem também que nada foi alterado.
 
@@ -264,13 +265,13 @@ node --import tsx --test "src/modules/goals/__tests__/*.test.ts" "src/modules/in
 
 Reaproveitam o ambiente e o ajudante dos testes de transações (MongoDB em memória, Servidor Java **inalcançável de propósito**, dois usuários) e acrescentam `simularServidorGrupo5()` (`goals/__tests__/apoio.ts`), um Servidor Java simulado para os três pedidos do grupo que também guarda o que o Backend enviou. As contas de verdade do Servidor têm os próprios testes (`mvn test`, ver `../Servidor/README.md`).
 
-| Arquivo | O que cobre |
-|---|---|
-| `goals.routes.test.ts` | CRUD de `/v1/goals`: o progresso soma só as transações **vinculadas a cada meta** (cada meta tem o seu total; sem vínculo, de outro usuário ou com data futura não contam), meta atingida e prazo vencido, ordem pelo prazo, recálculo a cada leitura, prazo opcional (meta sem prazo não tem aporte mensal nem vence; `prazo: null` tira o prazo), prazo no passado recusado (e meta vencida editável sem mudar o prazo), edição parcial, exclusão que **desvincula** as transações sem apagá-las, isolamento entre usuários, 9 casos de validação, Servidor Java fora do ar (503 e nada salvo), `401` |
-| `vinculo.routes.test.ts` | Vincular a transação à meta pela API de transações: `POST /v1/transactions` com `metaId` (despesa soma e receita subtrai do progresso, meta de outro usuário ou inexistente = `404 GOAL_NOT_FOUND` sem salvar, id mal formado = `400`), duplicar copia o vínculo, `PATCH /bulk` vincula, troca de meta e desvincula com `null` (o lote inteiro é recusado se alguma meta não for do usuário), excluir a meta ou a transação |
-| `investments.routes.test.ts` | `/v1/investments`: portfólio e patrimônio (meses completos, juros compostos, percentual da carteira real no ativo novo), cartão (cartão padrão criado uma vez, fatura só com despesas reais no **crédito** do mês, parcelas do mês, limite disponível e estourado, vencimento), parcelamentos (tabela Price, totais só dos ativos, quitar, limite de parcelas; as parcelas pagas avançam sozinhas, uma por mês desde a compra, e um cartão cujo parcelamento o tempo quitou pode ser excluído), isolamento, validação, `503` e `401` |
-| `investments.unidade.test.ts` | Sem HTTP nem banco: `mesesCompletos` (o mês só fecha no mesmo dia, virada de ano, dia 31) e `proximoVencimento` (hoje, mês seguinte, virada de ano, dia 28) |
-| `grupo5.integracao.test.ts` | Backend + Servidor Java **de verdade**: prova que os nomes e tipos dos campos dos três pedidos batem dos dois lados, com os mesmos números do `mvn test` |
+| Arquivo                         | O que cobre                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `goals.routes.test.ts`        | CRUD de `/v1/goals`: o progresso soma só as transações **vinculadas a cada meta** (cada meta tem o seu total; sem vínculo, de outro usuário ou com data futura não contam), meta atingida e prazo vencido, ordem pelo prazo, recálculo a cada leitura, prazo opcional (meta sem prazo não tem aporte mensal nem vence; `prazo: null` tira o prazo), prazo no passado recusado (e meta vencida editável sem mudar o prazo), edição parcial, exclusão que **desvincula** as transações sem apagá-las, isolamento entre usuários, 9 casos de validação, Servidor Java fora do ar (503 e nada salvo), `401` |
+| `vinculo.routes.test.ts`      | Vincular a transação à meta pela API de transações: `POST /v1/transactions` com `metaId` (despesa soma e receita subtrai do progresso, meta de outro usuário ou inexistente = `404 GOAL_NOT_FOUND` sem salvar, id mal formado = `400`), duplicar copia o vínculo, `PATCH /bulk` vincula, troca de meta e desvincula com `null` (o lote inteiro é recusado se alguma meta não for do usuário), excluir a meta ou a transação                                                                                                                                                                                         |
+| `investments.routes.test.ts`  | `/v1/investments`: portfólio e patrimônio (meses completos, juros compostos, percentual da carteira real no ativo novo), cartão (cartão padrão criado uma vez, fatura só com despesas reais no **crédito** do mês, parcelas do mês, limite disponível e estourado, vencimento), parcelamentos (tabela Price, totais só dos ativos, quitar, limite de parcelas; as parcelas pagas avançam sozinhas, uma por mês desde a compra, e um cartão cujo parcelamento o tempo quitou pode ser excluído), isolamento, validação, `503` e `401`                                                                           |
+| `investments.unidade.test.ts` | Sem HTTP nem banco: `mesesCompletos` (o mês só fecha no mesmo dia, virada de ano, dia 31) e `proximoVencimento` (hoje, mês seguinte, virada de ano, dia 28)                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `grupo5.integracao.test.ts`   | Backend + Servidor Java **de verdade**: prova que os nomes e tipos dos campos dos três pedidos batem dos dois lados, com os mesmos números do `mvn test`                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 
 O teste de integração fica **pulado** no `npm test` comum. Para rodar, suba o Servidor (`mvn exec:java -Dexec.mainClass=com.financeai.Main`, com a porta como argumento se quiser outra) e defina `JAVA_SERVER_INTEGRACAO=1` (o endereço vem de `JAVA_SERVER_HOST` e `JAVA_SERVER_PORT`):
 
@@ -301,4 +302,28 @@ Ainda não há CI configurado no repositório: os testes rodam localmente.
 npm run seed:transacoes                        # usuário "usuario-demo"
 npm run seed:transacoes -- <userId>            # usuário específico (use o id que está no seu token)
 npm run seed:transacoes -- <userId> --limpar   # apaga antes as transações desse usuário
+```
+
+### Testes do Painel Financeiro (Dashboard — Grupo 3)
+
+Os testes do módulo `dashboard` ficam em `Backend/src/modules/dashboard/__tests__/` e cobrem unidade (service), repositório (agregações no MongoDB), rotas HTTP (`/v1/dashboard/*`) e integração opcional com o Servidor Java.
+
+| Arquivo                               | O que cobre                                                                                                                                                                                                            |
+| :------------------------------------ | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dashboard.service.unidade.test.ts` | Regras de cálculo do `dashboardService` (`getSummary`, `getPeriodSummary`, `comparePeriods`), arredondamentos, preenchimento de meses zerados e validações de período/data.                                |
+| `dashboard.repository.test.ts`      | Agregações do MongoDB (`getTotaisDoMes`, `getResumoDoPeriodo`, `getTotaisPorCategoria`, `getTotaisPorMes`) e isolamento por `userId`.                                                                      |
+| `dashboard.routes.test.ts`          | Endpoints `GET /v1/dashboard/summary`, `/period-summary`, `/by-category` e `/compare` ponta a ponta, incluindo autenticação (`401`), validação (`400`) e indisponibilidade do Servidor Java (`503`). |
+| `dashboard.integracao.test.ts`      | Integração real com o Servidor Java (`PedidoCalcularIndicadores` e `PedidoCompararPeriodos`). Executado apenas com `JAVA_SERVER_INTEGRACAO=1`.                                                                 |
+
+**Como rodar:**
+
+```bash
+# Dentro da pasta Backend/
+npm test
+
+# Rodar apenas os testes do Dashboard
+npx tsx --test src/modules/dashboard/__tests__/*.test.ts
+
+# Rodar incluindo a integração com o Servidor Java (com o Servidor rodando na porta configurada)
+JAVA_SERVER_INTEGRACAO=1 npx tsx --test src/modules/dashboard/__tests__/dashboard.integracao.test.ts
 ```

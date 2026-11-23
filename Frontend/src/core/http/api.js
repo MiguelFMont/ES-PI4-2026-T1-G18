@@ -56,11 +56,6 @@ export async function apiFetch(path, options = {}) {
     throw new ApiError('Não foi possível conectar ao servidor. Verifique sua conexão.', { data: cause });
   }
 
-  if (response.status === 401) {
-    clearSession();
-    irParaLogin();
-  }
-
   const contentType = response.headers.get('content-type') || '';
   let data = null;
   if (response.status !== 204) {
@@ -73,6 +68,12 @@ export async function apiFetch(path, options = {}) {
 
   if (!response.ok) {
     const { message, code, details } = lerErro(data, response.status);
+    // Só a sessão inválida (token ausente, expirado ou adulterado: code UNAUTHENTICATED) leva ao login. Os outros 401
+    // respondem ao próprio pedido (senha ou código MFA errado) e ficam com a tela, que mostra a mensagem.
+    if (response.status === 401 && (code === 'UNAUTHENTICATED' || code === null)) {
+      clearSession();
+      irParaLogin();
+    }
     throw new ApiError(message, { status: response.status, data, code, details });
   }
 

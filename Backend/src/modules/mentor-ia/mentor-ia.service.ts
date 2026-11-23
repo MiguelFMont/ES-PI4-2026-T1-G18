@@ -8,8 +8,6 @@ import { transactionsRepository } from "../transactions/transactions.repository"
 import { javaServerClient } from "../../java-client/java-server.client";
 import { mesAtualEmBrasilia } from "./datas";
 
-// 100 é o máximo por página da listagem de transações.
-const TRANSACOES_DO_MES = 100;
 // mensagens anteriores no prompt: o limite gratuito do Groq é por tokens/minuto
 const MENSAGENS_ANTERIORES = 6;
 const MENSAGENS_NO_HISTORICO = 50;
@@ -33,14 +31,11 @@ function paraDto(m: ChatMessageDocument & { _id: { toString(): string } }): Chat
 }
 
 // Resumo do mês atual montado pelo Servidor Java (totais, % por categoria...): as transações
-// não vão cruas para a IA.
+// não vão cruas para a IA. Vão TODAS as do mês (antes eram só as 100 mais recentes, e os totais
+// de quem tinha mais que isso saíam errados).
 async function montarContexto(userId: string): Promise<string> {
   const { inicio, diaDoMes } = mesAtualEmBrasilia();
-  const { docs } = await transactionsRepository.findByUser(userId, {
-    dataInicio: inicio,
-    pagina: 1,
-    limite: TRANSACOES_DO_MES,
-  });
+  const docs = await transactionsRepository.findParaResumo(userId, inicio);
 
   // só o necessário para o contexto: sem userId nem dados da conta
   const transacoes: TransacaoResumida[] = docs.map((t) => ({
