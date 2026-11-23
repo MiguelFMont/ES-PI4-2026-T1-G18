@@ -128,7 +128,7 @@ Roteiro para testar o FinanceAI de ponta a ponta na branch de integração, ante
 ## 12. Testes automatizados e build
 
 - [ ] `cd Backend && npx tsc --noEmit`: sem erro.
-- [ ] `cd Backend && npm test`: todos passam (hoje são 720 testes).
+- [ ] `cd Backend && npm test`: todos passam (hoje são 724 testes).
 - [ ] `cd Servidor && mvn test`: todos passam (188 testes).
 - [ ] Console do navegador sem erros em nenhuma das telas acima.
 

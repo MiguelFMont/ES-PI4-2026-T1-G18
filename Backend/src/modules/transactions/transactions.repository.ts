@@ -208,7 +208,7 @@ export const transactionsRepository = {
   async movimentosDasContas(userId: string, contaIds: string[]) {
     if (contaIds.length === 0) return [];
     return TransactionModel.find({ userId, $or: [{ contaId: { $in: contaIds } }, { contaDestinoId: { $in: contaIds } }] })
-      .select("tipo valor contaId contaDestinoId")
+      .select("tipo valor data formaPagamento parcelas cartaoId contaId contaDestinoId")
       .lean();
   },
 

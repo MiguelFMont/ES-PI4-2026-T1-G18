@@ -1190,6 +1190,8 @@ Exemplo de requisição:
 
 O `saldoAtual` de cada conta é calculado pelo **Servidor de cálculos**, com a mensagem `PedidoCalcularSaldoContas` / `RespostaCalcularSaldoContas` (Grupo 2): o Backend envia as contas (com `saldoInicial`) e os movimentos (receitas, despesas e transferências), e o Servidor devolve o saldo atual de cada uma. É uma operação pura, sem banco. Só as contas **manuais** vão no pedido; o saldo de uma conta Open Finance é a soma das contas bancárias (`BANK`) da conexão, lida de `connected_accounts`. Com o Servidor fora do ar, `GET /v1/accounts` responde `503 JAVA_SERVER_UNAVAILABLE`. Excluir ou editar uma transferência recalcula o saldo das duas contas, porque o saldo nunca é gravado.
 
+**Quando a despesa sai do saldo:** a despesa só desconta quando a **data dela chega** (`data` até hoje); uma despesa com data futura não altera o saldo. A **compra no cartão de crédito** só desconta quando a **fatura vence** (fechamento + 7 dias; regras em `shared/fatura`); numa compra parcelada em *n* vezes, sai 1/*n* a cada vencimento. Compra no crédito sem cartão gravado vale para o cartão mais antigo da conta. Receitas e transferências valem pela data do lançamento. O Backend filtra os movimentos antes de enviá-los ao Servidor, que continua só somando.
+
 ### 8.5 Erros
 
 | Status | `code` | Quando |

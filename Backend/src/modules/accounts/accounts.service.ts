@@ -19,6 +19,7 @@ import { authRepository } from "../auth/auth.repository";
 import { connectedAccountsRepository } from "../connected-accounts/connected-accounts.repository";
 import { transactionsRepository } from "../transactions/transactions.repository";
 import { investmentsRepository } from "../investments/investments.repository";
+import { valorJaDescontado } from "../../shared/fatura/fatura";
 import { CARTAO_PADRAO, MAX_CARTOES } from "../investments/investments.model";
 import { accountsRepository } from "./accounts.repository";
 import { AccountDocument, BANCOS, nomeDoBanco } from "./accounts.model";
@@ -137,12 +138,30 @@ export const accountsService = {
     if (manuais.length > 0) {
       const ids = manuais.map((c) => c._id.toString());
       const movimentos = await transactionsRepository.movimentosDasContas(userId, ids);
+      // Uma despesa só sai do saldo quando chega a data dela; a compra no cartão, só quando a fatura vence (ver shared/fatura).
+      // Compra no crédito sem cartão gravado vale para o cartão mais antigo da conta (como na fatura).
+      const cartoes = (await investmentsRepository.findCards(userId)).map((c) => ({
+        id: String((c as { _id: unknown })._id),
+        contaId: c.contaId,
+        diaFechamento: c.diaFechamento,
+      }));
+      const diaDoCartao = (m: { cartaoId?: string; contaId?: string; formaPagamento?: string }) => {
+        if (m.formaPagamento !== "credito") return undefined;
+        const cartao = m.cartaoId
+          ? cartoes.find((c) => c.id === m.cartaoId)
+          : (cartoes.find((c) => c.contaId === m.contaId) ?? cartoes.find((c) => !c.contaId));
+        return cartao?.diaFechamento;
+      };
+      const hoje = new Date();
+      const efetivos = movimentos
+        .map((m) => ({ ...m, valor: m.tipo === "despesa" ? valorJaDescontado(m, diaDoCartao(m), hoje) : m.valor }))
+        .filter((m) => m.valor > 0); // o Servidor Java recusa valor zero: a despesa que ainda não saiu fica de fora
       const resposta = await javaServerClient.enviarPedido<PedidoCalcularSaldoContas, RespostaCalcularSaldoContas>(
         "PedidoCalcularSaldoContas",
         "RespostaCalcularSaldoContas",
         {
           contas: manuais.map((c) => ({ id: c._id.toString(), saldoInicial: c.saldoInicial })),
-          movimentos: movimentos.map((m) => ({
+          movimentos: efetivos.map((m) => ({
             tipo: m.tipo,
             valor: m.valor,
             contaId: m.contaId as string,

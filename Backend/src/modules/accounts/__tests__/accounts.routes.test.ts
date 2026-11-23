@@ -15,6 +15,7 @@ import { ConnectedAccountModel } from "../../connected-accounts/connected-accoun
 import { UserModel } from "../../auth/auth.model";
 import { TransactionModel } from "../../transactions/transactions.model";
 import { AccountModel } from "../accounts.model";
+import { CardModel } from "../../investments/investments.model";
 
 const { chamar, chamarCru } = prepararApi();
 
@@ -410,6 +411,26 @@ describe("RN10: migração dos dados antigos", () => {
     assert.equal(resposta.status, 422);
     assert.equal((await json(resposta)).error.code, "OPEN_FINANCE_READ_ONLY");
     assert.ok(await TransactionModel.findById(t._id).lean());
+  });
+
+  test("a despesa só sai do saldo quando a data chega; a compra no cartão, só quando a fatura vence", async () => {
+    simularCategorizacao();
+    await AccountModel.deleteMany({});
+    await CardModel.deleteMany({});
+    const conta = await AccountModel.create({ userId: "ana", nome: "Corrente", nomeChave: "corrente", banco: "bb", tipo: "manual", saldoInicial: 1000 });
+    const contaId = String(conta._id);
+    // fechamento no dia 15: a fatura que recebe a compra de hoje vence daqui a 7 a 38 dias, depois de hoje
+    const cartao = await CardModel.create({ userId: "ana", nome: "Roxo", nomeChave: "roxo", limite: 5000, diaFechamento: 15, contaId });
+    const hoje = new Date();
+    const dia = (dias: number) => new Date(Date.UTC(hoje.getUTCFullYear(), hoje.getUTCMonth(), hoje.getUTCDate() + dias));
+    const base = { userId: "ana", tipo: "despesa", categoria: "Outros", descricao: "x", contaId };
+    await TransactionModel.create({ ...base, valor: 100, data: dia(-1) }); // já chegou: sai
+    await TransactionModel.create({ ...base, valor: 200, data: dia(5) }); // data futura: ainda não sai
+    await TransactionModel.create({ ...base, valor: 300, data: dia(0), formaPagamento: "credito", cartaoId: String(cartao._id) }); // fatura ainda não venceu
+    await TransactionModel.create({ ...base, valor: 400, data: dia(0), formaPagamento: "credito" }); // sem cartão gravado: vale o cartão da conta
+    await TransactionModel.create({ ...base, valor: 500, data: dia(-120), formaPagamento: "credito", cartaoId: String(cartao._id) }); // fatura antiga já venceu
+    const lista = await json(await chamar("GET", "/accounts", ANA));
+    assert.equal(lista[0].saldoAtual, 400); // 1000 - 100 - 500
   });
 
   test("a 'Conta principal' reaproveita uma conta com esse nome que o usuário já criou", async () => {

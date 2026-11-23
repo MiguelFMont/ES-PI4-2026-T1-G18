@@ -200,7 +200,7 @@ curl -X POST localhost:3001/v1/eco -H "content-type: application/json" -d '{"oi"
 
 ## Testes
 
-Os testes usam o executor nativo do Node (`node:test`) com o `tsx`, sem framework extra. Ficam em `__tests__/` dentro do módulo (hoje são 720 testes, em todos os módulos com lógica) e seguem o padrão `*.test.ts`.
+Os testes usam o executor nativo do Node (`node:test`) com o `tsx`, sem framework extra. Ficam em `__tests__/` dentro do módulo (hoje são 724 testes, em todos os módulos com lógica) e seguem o padrão `*.test.ts`.
 
 ```bash
 npm test                    # todos os *.test.ts de src/
