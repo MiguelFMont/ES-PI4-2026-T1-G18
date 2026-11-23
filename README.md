@@ -113,7 +113,7 @@ cd Servidor && mvn test     # JUnit 5 (188 testes), inclusive os testes OO intra
 Backend/     # API REST em TypeScript/Node.js (Express), MongoDB e cliente do Servidor Java
 Servidor/    # Servidor Java por sockets (JSON) que executa as operações específicas, build com Maven
 Frontend/    # Telas em HTML/CSS/JS
-docs/        # Documento de visão, organização de sprints, contrato da API, dicionário de dados, checklist de teste, palavras-chave das categorias e UML do Servidor (docs/uml)
+docs/        # Documento de visão, organização de sprints, contrato da API, dicionário de dados, checklist de teste e UML do Servidor (docs/uml)
 ```
 
 ## Fluxo de trabalho

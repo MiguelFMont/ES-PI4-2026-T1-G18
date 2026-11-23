@@ -102,7 +102,7 @@ Pontos em que a documentação existente e o código não coincidem. Os diagrama
 6. `Teclado` (core) não aparece na árvore de pastas do documento.
 7. A árvore do Backend em `organizacao-sprints.md` omite `modules/connected-accounts`, `modules/suporte` e `integrations/pluggy`; o módulo dashboard não tem `dashboard.model.ts` (só `dashboard.model.md`), pois o repository lê a coleção `transactions`.
 8. A árvore do Frontend no documento não corresponde à real: existem `app/`, `core/` (http, layout, session, theme, views, privacy), `shared/` e as features `Perfil` (com P maiúsculo) e `contas-conectadas`.
-9. Em `contrato-api.md`, `/v1/auth` e `/v1/dashboard` estão "A documentar"; esses diagramas saem do código.
+9. `/v1/auth` e `/v1/dashboard` já estão documentados no contrato (seções 10 e 11); os diagramas saem do código.
 10. Portas: Servidor Java na 3000 (`PORTA_PADRAO "3000"`, `JAVA_SERVER_PORT=3000`, só loopback) e Backend na 3001.
 11. `Parceiro` herdou nomes invertidos do exemplo do professor: `receba(x)` envia ao outro lado e `envie()` lê. Mantido e explicado em nota.
 12. A especificação de contas diz que os filtros saíram da barra e foram para o cabeçalho das colunas, mas `TransactionFilters.js` ainda existe e é importado por `transactions/index.js`. Modelado com nota; conferir se ainda é usado ou só reaproveitado.

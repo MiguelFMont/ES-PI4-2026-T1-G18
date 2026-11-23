@@ -18,6 +18,7 @@ export const dashboardRepository = {
             {
                 $match: {
                     userId, // string, igual ao TransactionSchema
+                    tipo: { $in: TIPOS_DO_PAINEL }, // transferência não é receita nem despesa: fica fora do resumo e da contagem
                     data: { $gte: inicio, $lte: fim },
                 },
             },

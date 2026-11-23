@@ -10,8 +10,8 @@ Documento vivo que descreve **o que o Backend aceita e devolve**. É a referênc
 |---|---|---|---|
 | Sistema | `/v1/health`, `/v1/eco` | Todos | Documentado (seção 1.6) |
 | Transações | `/v1/transactions` | 2 | **Cadastro, listagem (com filtros e paginação), edição e exclusão em lote documentados** (seção 2); contas conectadas e importação da Pluggy documentadas (2.8); duplicação (2.9) |
-| Autenticação e conta | `/v1/auth` | 1 | A documentar |
-| Painel e análise | `/v1/dashboard` | 3 | A documentar. As transferências não entram nos totais (seção 9) |
+| Autenticação e conta | `/v1/auth` | 1 | **Cadastro com confirmação de e-mail, login, MFA, recuperação de senha, perfil e plano documentados** (seção 10) |
+| Painel e análise | `/v1/dashboard` | 3 | **Resumo do mês, resumo de um período, despesas por categoria e comparação de períodos documentados** (seção 11). As transferências não entram nos totais (seção 9) |
 | Contas | `/v1/accounts` | 2 | Seção 8: CRUD de contas, lista de bancos, saldo calculado; transferências em 2.11 |
 | Mentor financeiro (IA) | `/v1/mentor-ia` | 4 | **Chat (enviar mensagem, histórico e mensagem proativa) e alertas (listar e marcar como lido) documentados** (seção 3) |
 | Metas | `/v1/goals` | 5 | **CRUD das metas, com o progresso calculado a partir das transações vinculadas a cada meta, documentado** (seção 5; o vínculo é o `metaId` das transações, 2.4 e 2.6) |
@@ -65,6 +65,7 @@ Todo erro tem o mesmo formato, e o Frontend decide o que fazer pelo `code`, nunc
 | 400 | `VALIDATION_ERROR` | Corpo ou parâmetros inválidos (campo ausente, tipo errado, valor fora da regra, filtros incoerentes) |
 | 401 | `UNAUTHENTICATED` | Token ausente, inválido ou expirado |
 | 404 | `NOT_FOUND` | Rota inexistente |
+| 429 | `TOO_MANY_REQUESTS` | Limite de tentativas no login, código MFA, cadastro ou recuperação de senha (seção 10.6) |
 | 500 | `INTERNAL_ERROR` | Falha inesperada no servidor |
 | 502 | `JAVA_SERVER_ERROR` | O Servidor de cálculos respondeu algo inesperado |
 | 503 | `JAVA_SERVER_UNAVAILABLE` | O Servidor de cálculos está fora do ar (só afeta as rotas que dependem dele) |
@@ -1226,9 +1227,197 @@ O `saldoAtual` de cada conta é calculado pelo **Servidor de cálculos**, com a 
 
 ## 9. Painel e resumo do período — transferências (Grupo 3)
 
-> O módulo do painel (`/v1/dashboard`) continua "a documentar"; esta seção registra só esta regra. O Mentor IA também ignora as transferências.
+> O módulo do painel está na seção 11; esta seção registra a regra das transferências. O Mentor IA também ignora as transferências.
 
 As **transferências** entre contas (2.11) **não entram** nos totais de receitas, despesas e saldo do painel nem no `resumo` da listagem de transações (2.5): mover dinheiro entre duas contas do próprio usuário não é ganho nem gasto. As transferências também não entram nas somas por categoria.
 
 
 **Cartão do Open Finance:** a resposta de GET/POST/PATCH de cartão traz `openFinance: true`. Um `PATCH` só aceita `icone` e `cor` (`422 CARD_READ_ONLY` para o resto). Ao desconectar a conta, os cartões dela viram manuais. Uma `receita` no crédito com `cartaoId` (estorno) abate a fatura e devolve limite.
+
+---
+
+## 10. Autenticação e conta — `/v1/auth` (Grupo 1)
+
+Cadastro com confirmação por e-mail, login com JWT (e verificação em duas etapas opcional), recuperação de senha e perfil. As rotas marcadas **sem token** são públicas; as demais exigem `Authorization: Bearer <token>` (`401 UNAUTHENTICATED` sem ele). O hash da senha e a validação do código MFA são feitos pelo Servidor de cálculos (`PedidoHashSenha`, `PedidoValidarSenha`, `PedidoGerarSegredoMFA`, `PedidoValidarMFA`). Os exemplos abaixo mostram o formato; os valores são ilustrativos.
+
+| Método e rota | Token | Para quê |
+|---|---|---|
+| `POST /v1/auth/register` | não | Pede o cadastro e envia o link de confirmação por e-mail |
+| `POST /v1/auth/verify-email` | não | Confirma o e-mail e cria o usuário |
+| `POST /v1/auth/login` | não | Entra com e-mail e senha |
+| `POST /v1/auth/login/mfa` | não (token temporário) | Segunda etapa do login com MFA |
+| `POST /v1/auth/forgot-password` | não | Pede o e-mail de recuperação de senha |
+| `POST /v1/auth/reset-password` | não | Define a nova senha com o token do e-mail |
+| `GET /v1/auth/me` | sim | Dados do usuário logado |
+| `PATCH /v1/auth/me` | sim | Altera o nome e as preferências |
+| `PATCH /v1/auth/me/plano` | sim | Troca o plano (`free` ou `pro`) |
+| `POST /v1/auth/mfa/enable` | sim | Começa a ativar o MFA (gera o segredo e a `uri` do QR Code) |
+| `POST /v1/auth/mfa/validate` | sim | Confirma a ativação com o primeiro código |
+| `POST /v1/auth/mfa/disable` | sim | Desativa o MFA com um código válido |
+
+### 10.1 Cadastro e confirmação do e-mail
+
+`POST /v1/auth/register`, corpo:
+
+| Campo | Regra |
+|---|---|
+| `nome` | Texto, sem espaços nas pontas, obrigatório |
+| `email` | E-mail válido; vai para minúsculas e sem espaços nas pontas |
+| `cpf` | 11 dígitos, só números, com os dígitos verificadores corretos (CPF com todos os dígitos iguais é recusado) |
+| `senha` | Pelo menos 8 caracteres, uma letra minúscula, uma maiúscula, um número e um caractere especial (letras acentuadas contam como letra; espaço não conta como especial). Cada regra falha com a própria mensagem |
+
+Resposta `201`: `{ "mensagem": "Enviamos um link de confirmação para seu e-mail." }`. **Nenhum usuário é criado ainda:** o Backend guarda um cadastro pendente (coleção `pendingregistrations`, expira em **30 minutos**) e manda o e-mail com o link `.../confirmarEmail.html?token=<token>`. Erros: `400 VALIDATION_ERROR` (com `details` por campo), `409 EMAIL_IN_USE`, `409 CPF_IN_USE`, `429 TOO_MANY_REQUESTS` (limite de 10 cadastros por hora por IP).
+
+`POST /v1/auth/verify-email`, corpo `{ "token": "<token do link>" }` → `200 { "mensagem": "E-mail confirmado com sucesso!" }` e o usuário passa a existir (plano `free`, MFA desligado). `400 INVALID_VERIFICATION_TOKEN` se o link é inválido ou expirou; `409 EMAIL_IN_USE`/`CPF_IN_USE` se, entretanto, outro cadastro com o mesmo e-mail ou CPF foi confirmado primeiro. Sem `token` no corpo a resposta é `400 { "message": "Token obrigatório." }` (formato antigo, sem o envelope `error`).
+
+### 10.2 Login
+
+`POST /v1/auth/login`, corpo `{ "email": "ana@exemplo.com", "senha": "Senha@123" }`.
+
+- **Sem MFA** → `200`:
+
+```json
+{
+  "usuario": { "id": "6ad3fd7c273f8f0946dd77e5", "nome": "Ana", "email": "ana@exemplo.com", "mfaEnabled": false },
+  "token": "<JWT, vale 7 dias>"
+}
+```
+
+- **Com MFA ligado** → `200 { "mfaRequired": true, "mfaToken": "<token temporário, vale 3 minutos>" }`. O Frontend pede o código e chama `login/mfa`.
+
+Erros: `401 INVALID_CREDENTIALS` (e-mail inexistente ou senha errada, sem dizer qual), `403 EMAIL_NOT_VERIFIED`, `429 TOO_MANY_REQUESTS` (10 falhas por IP e e-mail, e 50 falhas por IP, em 15 minutos; um login certo não consome o limite). A resposta traz o cabeçalho `Retry-After` (segundos).
+
+`POST /v1/auth/login/mfa`, corpo `{ "mfaToken": "<o token temporário>", "codigo": "123456" }` → `200` com o mesmo corpo do login sem MFA (`usuario` e `token`). Erros: `400 INVALID_MFA_REQUEST` (token ausente ou código que não tem 6 dígitos), `401 INVALID_MFA_TOKEN` (token temporário inválido ou expirado), `401 MFA_NOT_AUTHORIZED`, `400 MFA_NOT_CONFIGURED`, `401 INVALID_MFA_CODE` (código errado), `401 MFA_CODE_ALREADY_USED` (o mesmo código não vale duas vezes), `429 TOO_MANY_REQUESTS` (10 falhas por IP em 15 minutos).
+
+### 10.3 Recuperar a senha
+
+`POST /v1/auth/forgot-password`, corpo `{ "email": "ana@exemplo.com" }` → sempre `200 { "message": "você receberá uma solicitação por email." }`, exista ou não o e-mail (não revela quem tem conta). Se existir, é enviado um link `.../redefinirSenha.html?token=<token>` que vale **15 minutos**. Limites: 3 pedidos por e-mail a cada 15 minutos e 10 por IP por hora (`429 TOO_MANY_REQUESTS`).
+
+`POST /v1/auth/reset-password`, corpo `{ "token": "<token do e-mail>", "senha": "NovaSenha@1" }` (mesmas regras de senha do cadastro) → `200 { "message": "Senha redefinida com sucesso." }`. `400 INVALID_RESET_TOKEN` se o link é inválido, já foi usado ou expirou; `400 VALIDATION_ERROR` se a senha não cumpre as regras.
+
+### 10.4 Perfil e plano
+
+`GET /v1/auth/me` → `200`:
+
+```json
+{
+  "id": "6ad3fd7c273f8f0946dd77e5",
+  "nome": "Ana",
+  "email": "ana@exemplo.com",
+  "plano": "free",
+  "preferencias": { "tema": "claro", "estilo": "sombras", "ocultarValores": false },
+  "mfaEnabled": false
+}
+```
+
+`PATCH /v1/auth/me`, corpo com `nome` (texto não vazio) e/ou `preferencias` (`tema`: `"claro"` ou `"escuro"`; `estilo`: `"sombras"` ou `"bordas"`; `ocultarValores`: booleano; todos opcionais, só os enviados mudam). Campo desconhecido, corpo vazio ou nome vazio: `400 VALIDATION_ERROR`. Resposta `200`: `{ id, nome, email, plano, preferencias }`. O e-mail e o CPF não mudam por aqui.
+
+`PATCH /v1/auth/me/plano`, corpo `{ "plano": "free" | "pro" }` → `200 { id, nome, email, plano }`. É uma troca **simulada** (não há pagamento): o plano `pro` libera contas Open Finance (`PLAN_REQUIRED`, seção 8). Plano diferente de `free`/`pro`: `400 { "message": "Plano inválido." }` (formato antigo, sem o envelope `error`).
+
+### 10.5 MFA (verificação em duas etapas)
+
+TOTP de 6 dígitos a cada 30 segundos, compatível com o Google Authenticator. Todas as rotas exigem o token de acesso.
+
+1. `POST /v1/auth/mfa/enable` (sem corpo) → `200 { "mensagem": "Escaneie o QR Code no aplicativo autenticador.", "uri": "otpauth://totp/FinanceAI%3Aana%40exemplo.com?secret=...&issuer=FinanceAI&algorithm=SHA1&digits=6&period=30" }`. A `uri` vira o QR Code no Frontend. O segredo fica guardado no usuário, **ainda desligado**. `409 MFA_ALREADY_ENABLED` se já está ativo.
+2. `POST /v1/auth/mfa/validate`, corpo `{ "codigo": "123456" }` → `200 { "mensagem": "MFA validado com sucesso", "mfaEnabled": true }`. Só agora o MFA passa a valer no login. `400 INVALID_MFA_CODE` se o código não tem 6 dígitos, `400 MFA_NOT_CONFIGURED` se `enable` não foi chamado, `401 INVALID_MFA_CODE` se o código está errado.
+3. `POST /v1/auth/mfa/disable`, corpo `{ "codigo": "123456" }` (um código válido do aplicativo) → `200 { "mensagem": "MFA desativado com sucesso", "mfaEnabled": false }`. `400 MFA_NOT_ENABLED`, `400 MFA_NOT_CONFIGURED`, `401 INVALID_MFA_CODE`.
+
+`404 USER_NOT_FOUND` vale para qualquer rota de perfil ou MFA se o usuário do token já não existe.
+
+### 10.6 Erros do módulo
+
+| Status | `code` | Quando |
+|---|---|---|
+| 400 | `VALIDATION_ERROR` | Corpo inválido (com `details` por campo) |
+| 400 | `INVALID_VERIFICATION_TOKEN` | Link de confirmação de e-mail inválido ou expirado |
+| 400 | `INVALID_RESET_TOKEN` | Link de recuperação de senha inválido, usado ou expirado |
+| 400 | `INVALID_MFA_REQUEST` | `login/mfa` sem token temporário ou com código fora do formato |
+| 400 | `INVALID_MFA_CODE` | Código MFA fora do formato (não tem 6 dígitos) |
+| 400 | `MFA_NOT_CONFIGURED` / `MFA_NOT_ENABLED` | MFA sem segredo, ou desativar quando não está ativo |
+| 401 | `UNAUTHENTICATED` | Token ausente, inválido ou expirado |
+| 401 | `INVALID_CREDENTIALS` | E-mail ou senha errados |
+| 401 | `INVALID_MFA_TOKEN` / `MFA_NOT_AUTHORIZED` | Token temporário inválido, expirado ou de usuário sem MFA |
+| 401 | `INVALID_MFA_CODE` | Código MFA errado |
+| 401 | `MFA_CODE_ALREADY_USED` | O código já foi usado (cada passo de 30 s vale uma vez) |
+| 403 | `EMAIL_NOT_VERIFIED` | Login antes de confirmar o e-mail |
+| 404 | `USER_NOT_FOUND` | O usuário do token não existe |
+| 409 | `EMAIL_IN_USE` / `CPF_IN_USE` | E-mail ou CPF já cadastrado |
+| 409 | `MFA_ALREADY_ENABLED` | Ativar o MFA quando já está ativo |
+| 429 | `TOO_MANY_REQUESTS` | Passou do limite de tentativas (login, código MFA, cadastro, recuperação de senha); veja o cabeçalho `Retry-After`. As contagens ficam na memória do Backend e zeram ao reiniciar |
+
+---
+
+## 11. Painel e análise — `/v1/dashboard` (Grupo 3)
+
+Todas as rotas exigem o token e são `GET`. Só `receita` e `despesa` entram nas contas: as **transferências ficam de fora** (seção 9). Os indicadores (saldo, economia, fluxo de caixa e a comparação de períodos) são calculados pelo Servidor de cálculos (`PedidoCalcularIndicadores` e `PedidoCompararPeriodos`); sem ele, `summary` e `compare` respondem `503 JAVA_SERVER_UNAVAILABLE`. Os exemplos mostram o formato; os valores são ilustrativos.
+
+| Rota | Para quê |
+|---|---|
+| `GET /v1/dashboard/summary` | Receitas, despesas e indicadores do **mês atual** |
+| `GET /v1/dashboard/period-summary` | Resumo de um período escolhido (padrão: o mês atual) |
+| `GET /v1/dashboard/by-category` | Despesas somadas por categoria |
+| `GET /v1/dashboard/compare` | Comparação de meses (variação percentual e tendência das despesas) |
+
+### 11.1 Resumo do mês
+
+`GET /v1/dashboard/summary` → `200`:
+
+```json
+{ "receitas": 4500, "despesas": 1897.85, "saldo": 2602.15, "economia": 57.83, "fluxoDeCaixa": 2602.15 }
+```
+
+`receitas` e `despesas` somam as transações do **mês atual** (do dia 1 em diante). `saldo`, `economia` (percentual das receitas que sobrou; 0 sem receitas) e `fluxoDeCaixa` vêm do Servidor. Valores em reais com 2 casas.
+
+### 11.2 Resumo de um período
+
+`GET /v1/dashboard/period-summary?dataInicio=2026-11-01&dataFim=2026-11-30` (as duas datas são opcionais, no formato `AAAA-MM-DD`; sem elas vale o mês atual) → `200`:
+
+```json
+{
+  "periodo": { "dataInicio": "2026-11-01", "dataFim": "2026-11-30", "dias": 30 },
+  "totalGasto": 1897.85,
+  "totalReceitas": 4500,
+  "saldo": 2602.15,
+  "numeroTransacoes": 12,
+  "numeroDespesas": 9,
+  "mediaDiaria": 63.26,
+  "categoriaMaiorPeso": { "categoria": "Moradia", "total": 1400, "percentual": 73.77 }
+}
+```
+
+`dias` conta os dois extremos (mínimo 1). `mediaDiaria` = `totalGasto` ÷ `dias`. `numeroTransacoes` conta receitas e despesas (não as transferências). `categoriaMaiorPeso` é a categoria com mais despesas e a fatia dela no `totalGasto`, ou `null` se não houve gasto. Erros: `400 VALIDATION` se uma data não está no formato, não existe (por exemplo `2026-02-31`) ou `dataInicio` é maior que `dataFim`.
+
+### 11.3 Despesas por categoria
+
+`GET /v1/dashboard/by-category` → `200`, lista ordenada da maior para a menor despesa, **sem filtro de data** (todas as despesas do usuário). O nome da categoria vem em `_id`:
+
+```json
+[
+  { "_id": "Moradia", "total": 1400 },
+  { "_id": "Alimentacao", "total": 320.5 }
+]
+```
+
+### 11.4 Comparação de períodos
+
+`GET /v1/dashboard/compare?periodo=mes` (o parâmetro também pode se chamar `tipo`). O período aceita `mes` (ou `mensal`): este mês e o anterior; `6meses` (ou `semestral`): os últimos 6 meses; `ytd` (ou `ano`): de janeiro até o mês atual. Sem o parâmetro vale `mes`. → `200`:
+
+```json
+{
+  "periodos": [
+    { "rotulo": "2026-10", "receitas": 4500, "despesas": 3100, "saldo": 1400, "variacaoReceitas": 0, "variacaoDespesas": 0, "variacaoSaldo": 0 },
+    { "rotulo": "2026-11", "receitas": 4500, "despesas": 1897.85, "saldo": 2602.15, "variacaoReceitas": 0, "variacaoDespesas": -38.78, "variacaoSaldo": 85.87 }
+  ],
+  "tendenciaDespesas": "queda"
+}
+```
+
+`rotulo` é o mês (`AAAA-MM`). Os meses sem transação aparecem zerados. As variações são percentuais em relação ao período anterior (o primeiro da lista fica em 0, e quando o anterior é 0 a variação também é 0) e `tendenciaDespesas` é `"alta"`, `"queda"` ou `"estavel"`; tudo calculado pelo Servidor. `periodo` desconhecido: `400 VALIDATION`.
+
+### 11.5 Erros do módulo
+
+| Status | `code` | Quando |
+|---|---|---|
+| 400 | `VALIDATION` | Data fora do formato ou inexistente, `dataInicio` maior que `dataFim`, `periodo` inválido |
+| 401 | `UNAUTHENTICATED` | Token ausente, inválido ou expirado |
+| 503 | `JAVA_SERVER_UNAVAILABLE` | Servidor de cálculos fora do ar (`summary` e `compare`) |

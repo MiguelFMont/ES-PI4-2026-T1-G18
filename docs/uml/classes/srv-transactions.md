@@ -203,7 +203,7 @@ TransactionsHandler ..> RespostaCategorizarTransacao
 
 - **Tipo / estereótipo:** classe «handler»
 - **Arquivo:** `Servidor/src/main/java/com/financeai/transactions/TransactionsHandler.java`
-- **Descrição:** handler puro que sugere a categoria por palavras-chave normalizadas da descrição. Só usa os dados do pedido (o Servidor não acessa o banco). As regras são avaliadas em ordem, e vale o primeiro grupo que casar; sem correspondência, devolve `"Outros"`. A lista `RUIDO` sai da descrição antes da comparação (ver `docs/palavras-chave-categorias.md`).
+- **Descrição:** handler puro que sugere a categoria por palavras-chave normalizadas da descrição. Só usa os dados do pedido (o Servidor não acessa o banco). As regras são avaliadas em ordem, e vale o primeiro grupo que casar; sem correspondência, devolve `"Outros"`. A lista `RUIDO` sai da descrição antes da comparação.
 
 ### Atributos
 

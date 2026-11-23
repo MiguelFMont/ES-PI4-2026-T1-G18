@@ -30,6 +30,8 @@ describe("dashboardRepository", () => {
         await inserir("ana", { tipo: "despesa", valor: 550, categoria: "Lazer", data: new Date("2026-11-01T00:00:00.000Z") });
         await inserir("ana", { tipo: "despesa", valor: 250, categoria: "Alimentacao", data: new Date("2026-11-30T23:59:59.000Z") });
         await inserir("ana", { tipo: "receita", valor: 1000, categoria: "Salario", data: new Date("2026-11-15T12:00:00.000Z") });
+        // transferência no período não conta (nem no valor nem em numeroTransacoes)
+        await inserir("ana", { tipo: "transferencia", valor: 700, categoria: "Outros", data: new Date("2026-11-10T12:00:00.000Z") });
         // fora do intervalo e de outro usuário
         await inserir("ana", { tipo: "despesa", valor: 5000, categoria: "Moradia", data: new Date("2026-10-31T23:59:59.999Z") });
         await inserir("beto", { tipo: "despesa", valor: 8000, categoria: "Transporte", data: new Date("2026-11-10T12:00:00.000Z") });
