@@ -1,19 +1,16 @@
-export function mostrarEstadoDashboard({ tipo = 'oculto', mensagem = '', aoTentarNovamente = null } = {}) {
-    const box = document.querySelector('#dashboard-estado');
-    const texto = document.querySelector('#dashboard-estado-msg');
-    const botao = document.querySelector('#dashboard-estado-btn');
-    const resumo = document.querySelector('#dashboard-resumo');
-
-    if (!box || !texto || !botao) return;
+// src/features/dashboard/components/DashboardEstado/DashboardEstado.js
+export function mostrarEstadoDashboard(raiz, { tipo = 'oculto', mensagem = '', aoTentarNovamente = null } = {}) {
+    const box = raiz.querySelector('#dashboard-estado-box');
+    const texto = raiz.querySelector('#dashboard-estado-texto');
+    const botao = raiz.querySelector('#dashboard-tentar-novamente');
+    if (!box) return;
 
     if (tipo === 'oculto') {
         box.hidden = true;
         return;
     }
 
-    if (resumo) resumo.hidden = true;
     box.hidden = false;
-    box.classList.toggle('dashboard-estado--erro', tipo === 'erro');
     texto.textContent = mensagem;
 
     if (tipo === 'erro' && typeof aoTentarNovamente === 'function') {

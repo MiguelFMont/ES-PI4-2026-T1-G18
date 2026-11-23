@@ -1,4 +1,3 @@
-import jwt from "jsonwebtoken";
 import { authRepository } from "./auth.repository";
 import { javaServerClient } from "../../java-client/java-server.client";
 import { env } from "../../config/env";
@@ -6,13 +5,52 @@ import { AppError } from "../../shared/errors/app-error";
 import { atualizarPerfilSchema, type AtualizarPerfilDto, RegisterDto, LoginDto, ForgotPasswordDto, ResetPasswordDto } from "./auth.dto";
 import { randomBytes, createHash } from "node:crypto";
 import { emailService } from "../../shared/email/email.service";
+import jwt, { type JwtPayload } from "jsonwebtoken";
+
+const emailEmUso = () => new AppError("E-mail já cadastrado", 409, "EMAIL_IN_USE");
+const cpfEmUso = () => new AppError("CPF já cadastrado", 409, "CPF_IN_USE");
+
+function gerarTokenAcesso(id: string, email: string) {
+    return jwt.sign(
+        { id, email },
+        env.JWT_SECRET,
+        { expiresIn: "7d" }
+    );
+}
+
+function gerarRespostaLogin(usuario: {
+    _id: { toString(): string };
+    nome: string;
+    email: string;
+    mfaEnabled: boolean;
+}) {
+    const id = usuario._id.toString();
+
+    return {
+        usuario: {
+            id,
+            nome: usuario.nome,
+            email: usuario.email,
+            mfaEnabled: usuario.mfaEnabled
+        },
+        token: gerarTokenAcesso(id, usuario.email)
+    };
+}
 
 export const authService = {
     async register(dados: RegisterDto) {
-        const existente = await authRepository.findByEmail(dados.email);
+        // O CPF também é único: sem esta checagem o cadastro pendente era criado e a confirmação do e-mail quebrava
+        // no índice único do banco (erro 500).
+        const [existente, cpfExistente] = await Promise.all([
+            authRepository.findByEmail(dados.email),
+            authRepository.findByCpf(dados.cpf),
+        ]);
 
         if (existente) {
-            throw new AppError("E-mail já cadastrado", 409, "EMAIL_IN_USE");
+            throw emailEmUso();
+        }
+        if (cpfExistente) {
+            throw cpfEmUso();
         }
 
         const { hash } = await javaServerClient.enviarPedido<
@@ -79,21 +117,127 @@ export const authService = {
         }
 
         const id = usuario._id.toString();
-        const token = jwt.sign(
-            { id, email: usuario.email },
-            env.JWT_SECRET,
-            { expiresIn: "7d" }
+
+        if (usuario.mfaEnabled) {
+            const mfaToken = jwt.sign(
+            {
+                id,
+                tipo: "mfa_pending"
+            },
+             env.MFA_JWT_SECRET,
+            { expiresIn: "3m" }
         );
 
         return {
-            usuario: {
-                id,
-                nome: usuario.nome,
-                email: usuario.email,
-                mfaEnabled: usuario.mfaEnabled
-            },
-            token
+            mfaRequired: true,
+            mfaToken
         };
+    }
+
+    return gerarRespostaLogin(usuario);
+    },
+        async loginMfa(mfaToken: string, codigo: string) {
+        if (
+            typeof mfaToken !== "string" ||
+            !mfaToken ||
+            typeof codigo !== "string" ||
+            !/^\d{6}$/.test(codigo)
+        ) {
+            throw new AppError(
+                "Token temporário ou código MFA inválido",
+                400,
+                "INVALID_MFA_REQUEST"
+            );
+        }
+
+        let payload: JwtPayload;
+
+        try {
+            const verificado = jwt.verify(
+                mfaToken,
+                env.MFA_JWT_SECRET,
+                { algorithms: ["HS256"] }
+            );
+
+            if (
+                typeof verificado === "string" ||
+                verificado.tipo !== "mfa_pending" ||
+                typeof verificado.id !== "string"
+            ) {
+                throw new Error("Token MFA inválido");
+            }
+
+            payload = verificado;
+        } catch {
+            throw new AppError(
+                "Verificação MFA inválida ou expirada",
+                401,
+                "INVALID_MFA_TOKEN"
+            );
+        }
+
+        const usuario = await authRepository.findById(payload.id);
+
+        if (!usuario || !usuario.mfaEnabled || !usuario.emailVerificado) {
+            throw new AppError(
+                "Verificação MFA não autorizada",
+                401,
+                "MFA_NOT_AUTHORIZED"
+            );
+        }
+
+        const segredo = await authRepository.findMfaSecret(
+            usuario._id.toString()
+        );
+
+        if (!segredo) {
+            throw new AppError(
+                "MFA não configurado",
+                400,
+                "MFA_NOT_CONFIGURED"
+            );
+        }
+        const { valido, contador} = await javaServerClient.enviarPedido<
+            { segredo: string; codigo: string },
+            { valido: boolean; contador: number | null  }
+        >(
+            "PedidoValidarMFA",
+            "RespostaValidarMFA",
+            { segredo, codigo }
+        );
+
+        if (!valido) {
+            throw new AppError(
+                "Código MFA incorreto",
+                401,
+                "INVALID_MFA_CODE"
+            );
+        }
+        if (
+            !Number.isSafeInteger(contador) ||
+            contador === null ||
+            contador < 0
+        ) {
+            throw new AppError(
+            "Resposta de validação MFA inválida",
+            500,
+            "INVALID_MFA_RESPONSE"
+        );
+    }
+
+    const registrado = await authRepository.registrarContadorMfa(
+        usuario._id.toString(),
+        contador
+    );
+
+    if (!registrado) {
+        throw new AppError(
+            "Código MFA já utilizado ou expirado. Aguarde um novo código.",
+            401,
+            "MFA_CODE_ALREADY_USED"
+        );
+    }
+        return gerarRespostaLogin(usuario);
     },
 
     async getProfile(id: string) {
@@ -223,10 +367,17 @@ export const authService = {
                 "INVALID_VERIFICATION_TOKEN"
             );
         }
-    const existente = await authRepository.findByEmail(pendente.email);
+    // Dois cadastros pendentes podem ter o mesmo e-mail ou CPF: só o primeiro confirmado vale.
+    const [existente, cpfExistente] = await Promise.all([
+        authRepository.findByEmail(pendente.email),
+        authRepository.findByCpf(pendente.cpf),
+    ]);
 
     if (existente) {
-        throw new AppError("E-mail já cadastrado", 409, "EMAIL_IN_USE");
+        throw emailEmUso();
+    }
+    if (cpfExistente) {
+        throw cpfEmUso();
     }
 
     await authRepository.create({

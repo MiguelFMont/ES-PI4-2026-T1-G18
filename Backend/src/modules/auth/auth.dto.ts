@@ -28,27 +28,33 @@ function validarCPF(cpf: string): boolean {
 
     return true;
 }
-const senhaSchema = z.string()
+// Regras da senha (o cadastro no Frontend, em inicio.js, mostra as mesmas): pelo menos 8 caracteres, uma letra
+// minúscula, uma maiúscula, um número e um caractere especial. Letras acentuadas contam como letras e qualquer símbolo
+// (! @ # $ % - _ . ...) conta como caractere especial; espaço não conta. Cada regra tem a própria mensagem, para o
+// usuário saber exatamente o que falta.
+export const senhaSchema = z.string()
     .min(8, { message: "A senha deve ter no mínimo 8 caracteres" })
-    .regex(
-        //obrigatorio conter na senha
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/,
-        "A senha deve conter pelo menos uma letra maiúscula, numeros e caracteres especiais",
-    )
+    .regex(/\p{Ll}/u, "A senha deve ter pelo menos uma letra minúscula")
+    .regex(/\p{Lu}/u, "A senha deve ter pelo menos uma letra maiúscula")
+    .regex(/\p{Nd}/u, "A senha deve ter pelo menos um número")
+    .regex(/[^\p{L}\p{N}\s]/u, "A senha deve ter pelo menos um caractere especial (ex.: ! @ # $ % - _)");
+
+// E-mail sem espaços nas pontas e em minúsculas: "Ana@X.com " e "ana@x.com" são a mesma conta.
+const emailSchema = z.string().trim().toLowerCase().email({ message: "E-mail inválido" });
 
 export const registerSchema = z.object({
-    nome: z.string().min(1),
-    email: z.string().email(),
-    cpf: z.string().length(11).refine(validarCPF, { message: "CPF inválido" }),
+    nome: z.string().trim().min(1, "Informe o nome"),
+    email: emailSchema,
+    cpf: z.string().length(11, "O CPF deve ter 11 dígitos").refine(validarCPF, { message: "CPF inválido" }),
     senha: senhaSchema,
 });
 
 export const loginSchema = z.object({
-    email: z.string().email(),
+    email: emailSchema,
     senha: z.string().min(1),
 });
 export const forgotPasswordSchema = z.object({
-    email: z.string().email(),
+    email: emailSchema,
 });
 
 export const resetPasswordSchema = z.object({

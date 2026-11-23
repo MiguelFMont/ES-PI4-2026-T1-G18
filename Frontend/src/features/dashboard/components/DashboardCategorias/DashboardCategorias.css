@@ -1,0 +1,375 @@
+/* Componente DashboardCategorias: Grid duplo estilo imagem de referência */
+.dashboard-meio-grid {
+    display: grid;
+    grid-template-columns: 1.05fr 1fr;
+    gap: 1.25rem;
+    align-items: start;
+}
+
+.dashboard-coluna-direita {
+    display: grid;
+    gap: 1.25rem;
+}
+
+.dashboard-card-gastos,
+.dashboard-card-evolucao {
+    gap: 1.15rem;
+}
+
+.dashboard-card-gastos__topo,
+.dashboard-card-evolucao__topo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+/* Donut + Legenda lado a lado igual à foto */
+.dashboard-gastos-corpo {
+    display: grid;
+    gap: 1rem;
+}
+
+.dashboard-donut-e-legenda {
+    display: grid;
+    grid-template-columns: 12.5rem 1fr;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.dashboard-donut-wrapper {
+    position: relative;
+    width: 12.5rem;
+    height: 12.5rem;
+    margin: 0 auto;
+    display: grid;
+    place-items: center;
+}
+
+.dashboard-donut-svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+    overflow: visible;
+}
+
+.dashboard-donut-fatia {
+    fill: none;
+    cursor: pointer;
+    transition: stroke-width 0.2s ease, opacity 0.2s ease;
+}
+
+.dashboard-donut-fatia:hover,
+.dashboard-donut-fatia.ativa {
+    stroke-width: 32 !important;
+}
+
+.dashboard-donut-centro {
+    position: absolute;
+    inset: 23%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    pointer-events: none;
+}
+
+.dashboard-donut-centro__valor {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--texto);
+}
+
+.dashboard-donut-centro__rotulo {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--texto-suave);
+    margin-top: 0.1rem;
+}
+
+/* Lista de legenda lateral: ● Nome | 35% | R$ 542,50 */
+.dashboard-legenda-lista {
+    list-style: none;
+    display: grid;
+    gap: 0.45rem;
+}
+
+.dashboard-legenda-item {
+    width: 100%;
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0.65rem;
+    border: 1px solid transparent;
+    border-radius: 0.6rem;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 0.88rem;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.dashboard-legenda-item:hover,
+.dashboard-legenda-item.ativo {
+    background: var(--fundo-linha);
+    border-color: var(--destaque);
+}
+
+.dashboard-legenda-item__bolinha {
+    width: 0.65rem;
+    height: 0.65rem;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.dashboard-legenda-item__nome {
+    font-weight: 700;
+    color: var(--texto);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dashboard-legenda-item__pct {
+    font-weight: 700;
+    color: var(--texto-suave);
+    font-size: 0.82rem;
+}
+
+.dashboard-legenda-item__valor {
+    font-weight: 700;
+    color: var(--texto);
+    min-width: 5.5rem;
+    text-align: right;
+}
+
+.dashboard-gastos-rodape {
+    padding-top: 0.35rem;
+    border-top: 1px solid var(--borda);
+}
+
+.dashboard-link-acao {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border: 0;
+    background: none;
+    padding: 0;
+    color: var(--destaque);
+    font: inherit;
+    font-size: 0.86rem;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.dashboard-link-acao:hover {
+    text-decoration: underline;
+}
+
+/* Gaveta de transações expandidas */
+.dashboard-gaveta-transacoes {
+    display: grid;
+    gap: 0.6rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--borda);
+}
+
+.dashboard-gaveta-grupo {
+    display: grid;
+    gap: 0.45rem;
+    padding: 0.75rem;
+    border-radius: 0.75rem;
+    background: var(--fundo-linha);
+}
+
+.dashboard-gaveta-grupo__titulo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.86rem;
+    font-weight: 800;
+}
+
+.dashboard-subtransacao {
+    display: grid;
+    grid-template-columns: 5.2rem 1fr auto auto;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.45rem 0.65rem;
+    border-radius: 0.5rem;
+    background: var(--fundo-celula);
+    font-size: 0.82rem;
+}
+
+.dashboard-subtransacao__data {
+    color: var(--texto-suave);
+}
+
+.dashboard-subtransacao__desc {
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dashboard-subtransacao__tag {
+    font-size: 0.73rem;
+    color: var(--texto-suave);
+}
+
+.dashboard-subtransacao__valor {
+    font-weight: 700;
+    color: var(--negativo);
+}
+
+/* Gráfico de Linha: Evolução Mensal */
+.dashboard-evolucao-legenda {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--texto-suave);
+}
+
+.dashboard-evolucao-legenda__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.dashboard-evolucao-legenda__ponto {
+    width: 0.65rem;
+    height: 0.65rem;
+    border-radius: 50%;
+}
+
+.dashboard-evolucao-legenda__ponto--receita {
+    background: var(--positivo);
+}
+
+.dashboard-evolucao-legenda__ponto--despesa {
+    background: var(--negativo);
+}
+
+.dashboard-linha-wrapper {
+    width: 100%;
+    overflow: hidden;
+}
+
+.dashboard-evolucao-svg {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* Card Insights do Mentor */
+.dashboard-card-mentor {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: start;
+    gap: 1rem;
+    padding: 1.15rem 1.25rem;
+}
+
+.dashboard-card-mentor__icone {
+    width: 2.8rem;
+    height: 2.8rem;
+    border-radius: 0.8rem;
+    background: color-mix(in srgb, var(--destaque) 16%, var(--fundo-campo));
+    display: grid;
+    place-items: center;
+    font-size: 1.4rem;
+}
+
+.dashboard-card-mentor__conteudo {
+    display: grid;
+    gap: 0.35rem;
+}
+
+.dashboard-card-mentor__conteudo h3 {
+    font-size: 0.98rem;
+    font-weight: 800;
+}
+
+.dashboard-card-mentor__texto {
+    font-size: 0.86rem;
+    color: var(--texto-suave);
+    line-height: 1.4;
+}
+
+.dashboard-vazio {
+    padding: 1.5rem;
+    border-radius: 0.85rem;
+    background: var(--fundo-linha);
+    color: var(--texto-suave);
+    text-align: center;
+}
+
+/* Tooltip flutuante do gráfico de evolução (Estilo Bolsa de Valores) */
+.dashboard-linha-wrapper {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+}
+
+.dashboard-grafico-tooltip {
+    position: absolute;
+    z-index: 10;
+    padding: 0.65rem 0.85rem;
+    border-radius: 0.6rem;
+    background: var(--fundo-card);
+    box-shadow: var(--sombra-flutuante);
+    border: 1px solid var(--borda);
+    font-size: 0.82rem;
+    pointer-events: none;
+    display: grid;
+    gap: 0.2rem;
+    min-width: 11rem;
+}
+
+.dashboard-tooltip-titulo {
+    font-weight: 800;
+    font-size: 0.88rem;
+    margin-bottom: 0.1rem;
+    color: var(--texto);
+    border-bottom: 1px solid var(--borda);
+    padding-bottom: 0.15rem;
+}
+
+.dashboard-tooltip-linha {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    color: var(--texto-suave);
+}
+
+.dashboard-tooltip-linha strong {
+    color: var(--texto);
+}
+
+@media (max-width: 980px) {
+    .dashboard-meio-grid {
+        grid-template-columns: 1fr;
+    }
+    }
+
+@media (max-width: 600px) {
+    .dashboard-donut-e-legenda {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-subtransacao {
+        grid-template-columns: 1fr auto;
+    }
+
+    .dashboard-subtransacao__tag {
+        display: none;
+    }
+}

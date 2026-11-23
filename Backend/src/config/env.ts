@@ -5,6 +5,7 @@ import { z } from "zod";
 const envSchema = z.object({
   PORT: z.coerce.number().default(3001),
   JWT_SECRET: z.string().min(1, "JWT_SECRET é obrigatório"),
+  MFA_JWT_SECRET: z.string().min(32, "MFA_JWT_SECRET deve ter pelo menos 32 caracteres"),
   // Banco (MongoDB Atlas). Sem MONGO_URI o Backend sobe sem banco, só para testar o
   // caminho Backend -> Servidor Java (/v1/health e /v1/eco).
   MONGO_URI: z.string().optional(),

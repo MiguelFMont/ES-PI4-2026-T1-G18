@@ -2,9 +2,22 @@ import { UserModel } from "./auth.model";
 import type { RegisterDto, AtualizarPerfilDto } from "./auth.dto";
 import { PendingRegistrationModel } from "./pending-registration.model";
 
+// O e-mail é gravado sem espaços nas pontas e em minúsculas ("Ana@X.com" e "ana@x.com" são a mesma conta).
+export function normalizarEmail(email: string) {
+    return email.trim().toLowerCase();
+}
+
+// Comparação sem diferenciar maiúsculas de minúsculas (strength 2): contas antigas, gravadas antes da normalização com
+// letras maiúsculas no e-mail, continuam sendo encontradas no login, na recuperação de senha e na checagem de duplicado.
+const SEM_CAIXA = { locale: "pt", strength: 2 } as const;
+
 export const authRepository = {
     async findByEmail(email: string) {
-        return UserModel.findOne({ email }).lean();
+        return UserModel.findOne({ email: normalizarEmail(email) }).collation(SEM_CAIXA).lean();
+    },
+
+    async findByCpf(cpf: string) {
+        return UserModel.findOne({ cpf }).lean();
     },
 
     async findById(id: string) {
@@ -21,7 +34,7 @@ export const authRepository = {
     async create(dados: { nome: string; email: string; cpf: string; senhaHash: string }) {
         const usuario = await UserModel.create({
             nome: dados.nome,
-            email: dados.email,
+            email: normalizarEmail(dados.email),
             cpf: dados.cpf,
             senhaHash: dados.senhaHash,
             emailVerificado: true
@@ -58,7 +71,7 @@ export const authRepository = {
     async setMfaSecret(userId: string, mfaSecret: string) {
         return UserModel.findByIdAndUpdate(
             userId,
-            { mfaSecret, mfaEnabled: true },
+            { $set: { mfaSecret } },
             { new: true }
         ).lean();
     },
@@ -69,6 +82,44 @@ export const authRepository = {
             .lean();
 
         return usuario?.mfaSecret ?? null;
+    },
+    async registrarContadorMfa(userId: string, contador: number) {
+        return UserModel.findOneAndUpdate(
+            {
+                _id: userId,
+                mfaEnabled: true,
+                $or: [
+                    { mfaUltimoContador: { $exists: false } },
+                    { mfaUltimoContador: { $lt: contador } }
+                ]
+            },
+            {
+                $set: { mfaUltimoContador: contador }
+            },
+            { new: true }
+        ).lean();
+    },
+
+    async enableMfa(userId: string) {
+        return UserModel.findOneAndUpdate(
+            {
+                _id: userId,
+                mfaEnabled: false,
+                mfaSecret: { $exists: true, $ne: null }
+            },
+            { $set: { mfaEnabled: true } },
+            { new: true }
+        ).lean();
+    },
+    async disableMfa(userId: string) {
+        return UserModel.findByIdAndUpdate(
+            userId,
+            {
+                $set: { mfaEnabled: false },
+                $unset: { mfaSecret: "", mfaUltimoContador: ""}
+            },
+            { new: true }
+        ).lean();
     },
 
     async savePasswordResetToken(
@@ -140,7 +191,7 @@ export const authRepository = {
         tokenHash: string;
         expiresAt: Date;
     }) {
-        return PendingRegistrationModel.create(dados);
+        return PendingRegistrationModel.create({ ...dados, email: normalizarEmail(dados.email) });
     },
 
     async findPendingRegistration(tokenHash: string) {

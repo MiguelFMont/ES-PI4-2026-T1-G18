@@ -1,4 +1,7 @@
 import { notificar } from "../../../shared/components/notificacao.js";
+import { api, ApiError } from "../../../core/http/api.js";
+import { hasToken } from "../../../core/session/storage.js";
+import { irParaLogin } from "../../../core/session/login.js";
 
 const btnFree = document.querySelector("#btn-free");
 const btnPro = document.querySelector("#btn-pro");
@@ -12,7 +15,6 @@ const valor = document.querySelector("#valor");
 const periodo = document.querySelector("#periodo");
 const listaBeneficios = document.querySelector("#lista-beneficios");
 
-const token = localStorage.getItem("@FinanceAI:token");
 let planoAtual = null;
 let planoSelecionado = "free";
 
@@ -73,35 +75,28 @@ btnPro.addEventListener("click", function () {
     mostrarPlano("pro");
 });
 
+// Sem resposta do Backend (rede, servidor fora do ar): o api.js devolve ApiError com status 0.
+const semConexao = (erro) => !(erro instanceof ApiError) || erro.status === 0;
+
 async function carregarPlano() {
-    if (!token) {
-        notificar("Não foi possível identificar o usuário.", "erro");
-        btnUpgrade.disabled = true;
+    // Sem sessão não há plano para mostrar: vai para o login (com sessão vencida, o api.js faz o mesmo).
+    if (!hasToken()) {
+        irParaLogin({ substituir: true });
         return;
     }
 
     try {
-        // Faz a requisição para obter os dados do usuário
-        const resposta = await fetch("/v1/auth/me", {
-            headers: {
-                //adiciona o token no cabeçalho da requisição
-                Authorization: `Bearer ${token}`
-            }
-        });
-
-        const usuario = await resposta.json();
-        if (!resposta.ok) {
-            notificar("Não foi possível carregar seu plano.", "erro");
-            btnUpgrade.disabled = true;
-            return;
-        }
+        const usuario = await api("/auth/me");
         planoAtual = usuario.plano;
         mostrarPlano(planoAtual);
-    } catch (error) {
+    } catch (erro) {
         //se ocorrer algum erro na requisição, exibe a mensagem de erro e desabilita o botão de upgrade
-        notificar("Não foi possível conectar ao servidor.", "erro");
+        notificar(
+            semConexao(erro) ? "Não foi possível conectar ao servidor." : "Não foi possível carregar seu plano.",
+            "erro"
+        );
         btnUpgrade.disabled = true;
-        console.error("Erro ao carregar plano:", error);
+        if (semConexao(erro)) console.error("Erro ao carregar plano:", erro);
     }
 }
 // Adiciona o evento de clique ao botão de upgrade
@@ -111,33 +106,21 @@ btnUpgrade.addEventListener("click", async function () {
     }
     btnUpgrade.disabled = true;
     try {
-        const resposta = await fetch("/v1/auth/me/plano", {
+        const usuario = await api("/auth/me/plano", {
             method: "PATCH",
-            headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json"
-            },
             body: JSON.stringify({ plano: planoSelecionado })
         });
-
-        const usuario = await resposta.json();
-        console.log("Plano solicitado:", planoSelecionado);
-        console.log("Status da resposta:", resposta.status);
-        console.log("Resposta do backend:", usuario);
-        if (!resposta.ok) {
-            //se a requisição falhar, exibe a mensagem de erro e habilita o botão de upgrade novamente
-            notificar("Não foi possível atualizar o plano.", "erro");
-            btnUpgrade.disabled = false;
-            return;
-        }
         planoAtual = usuario.plano;
         mostrarPlano(planoAtual);
         notificar(`Plano alterado para ${planoAtual === "pro" ? "Pro" : "Free"}.`, "sucesso");
-    } catch (error) {
-        //se ocorrer algum erro na requisição, exibe a mensagem de erro e habilita o botão de upgrade novamente
-        notificar("Não foi possível conectar ao servidor.", "erro");
+    } catch (erro) {
+        //se a requisição falhar, exibe a mensagem de erro e habilita o botão de upgrade novamente
+        notificar(
+            semConexao(erro) ? "Não foi possível conectar ao servidor." : "Não foi possível atualizar o plano.",
+            "erro"
+        );
         btnUpgrade.disabled = false;
-        console.error("Erro ao atualizar plano:", error);
+        if (semConexao(erro)) console.error("Erro ao atualizar plano:", erro);
     }
 });
 

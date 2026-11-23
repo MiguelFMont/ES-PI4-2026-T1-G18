@@ -4,10 +4,69 @@ import {
     ComparePeriodsResponseDto,
     DashboardSummaryDto,
     PeriodoBrutoDto,
+    PeriodSummaryResponseDto,
     TipoPeriodoComparacao,
 } from "./dashboard.dto";
 import { javaServerClient } from "../../java-client/java-server.client";
 import { AppError } from "../../shared/errors/app-error";
+
+const DATA_ISO_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const UM_DIA_MS = 24 * 60 * 60 * 1000;
+
+const emReais = (valor: number) => Math.round(valor * 100) / 100;
+
+function parseDataIso(texto: string, fimDoDia: boolean): Date {
+    if (!DATA_ISO_REGEX.test(texto)) {
+        throw new AppError(
+            "Data inválida. Use o formato YYYY-MM-DD.",
+            400,
+            "VALIDATION"
+        );
+    }
+
+    const sufixo = fimDoDia ? "T23:59:59.999Z" : "T00:00:00.000Z";
+    const data = new Date(`${texto}${sufixo}`);
+
+    // Garante que datas impossíveis como 2026-02-31 não virem 2026-03-03
+    if (Number.isNaN(data.getTime()) || data.toISOString().slice(0, 10) !== texto) {
+        throw new AppError(
+            `Data inexistente: ${texto}.`,
+            400,
+            "VALIDATION"
+        );
+    }
+
+    return data;
+}
+
+function resolverPeriodo(dataInicioStr?: string, dataFimStr?: string) {
+    const agora = new Date();
+    const inicioPadrao = new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), 1, 0, 0, 0, 0));
+    const fimPadrao = new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth() + 1, 0, 23, 59, 59, 999));
+
+    const inicio = dataInicioStr ? parseDataIso(dataInicioStr, false) : inicioPadrao;
+    const fim = dataFimStr ? parseDataIso(dataFimStr, true) : fimPadrao;
+
+    if (inicio > fim) {
+        throw new AppError(
+            "dataInicio não pode ser maior que dataFim.",
+            400,
+            "VALIDATION"
+        );
+    }
+
+    const inicioDia = Date.UTC(inicio.getUTCFullYear(), inicio.getUTCMonth(), inicio.getUTCDate());
+    const fimDia = Date.UTC(fim.getUTCFullYear(), fim.getUTCMonth(), fim.getUTCDate());
+    const dias = Math.max(1, Math.floor((fimDia - inicioDia) / UM_DIA_MS) + 1);
+
+    return {
+        inicio,
+        fim,
+        dias,
+        dataInicioIso: inicio.toISOString().slice(0, 10),
+        dataFimIso: fim.toISOString().slice(0, 10),
+    };
+}
 
 function formatarRotuloMes(ano: number, mesIndex: number): string {
     const data = new Date(ano, mesIndex, 1);
@@ -61,6 +120,44 @@ export const dashboardService = {
             saldo: Number(indicadores.saldo.toFixed(2)),
             economia: Number(indicadores.economia.toFixed(2)),
             fluxoDeCaixa: Number(indicadores.fluxoDeCaixa.toFixed(2)),
+        };
+    },
+
+    async getPeriodSummary(
+        userId: string,
+        dataInicio?: string,
+        dataFim?: string
+    ): Promise<PeriodSummaryResponseDto> {
+        const { inicio, fim, dias, dataInicioIso, dataFimIso } = resolverPeriodo(dataInicio, dataFim);
+        const { totais, topCategoria } = await dashboardRepository.getResumoDoPeriodo(userId, inicio, fim);
+
+        const totalGasto = emReais(totais.totalGasto);
+        const totalReceitas = emReais(totais.totalReceitas);
+        const saldo = emReais(totalReceitas - totalGasto);
+        const mediaDiaria = emReais(totalGasto / dias);
+
+        const categoriaMaiorPeso =
+            topCategoria && totalGasto > 0
+                ? {
+                    categoria: topCategoria.categoria,
+                    total: emReais(topCategoria.total),
+                    percentual: emReais((topCategoria.total / totalGasto) * 100),
+                }
+                : null;
+
+        return {
+            periodo: {
+                dataInicio: dataInicioIso,
+                dataFim: dataFimIso,
+                dias,
+            },
+            totalGasto,
+            totalReceitas,
+            saldo,
+            numeroTransacoes: totais.numeroTransacoes,
+            numeroDespesas: totais.numeroDespesas,
+            mediaDiaria,
+            categoriaMaiorPeso,
         };
     },
 

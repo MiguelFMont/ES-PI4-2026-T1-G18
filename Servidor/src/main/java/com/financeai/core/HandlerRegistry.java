@@ -3,6 +3,7 @@ package com.financeai.core;
 import java.util.HashMap;
 import java.util.Map;
 import com.financeai.auth.AuthHandler;
+import com.financeai.auth.MFAHandler;
 import com.financeai.dashboard.DashboardHandler;
 import com.financeai.goals.GoalsHandler;
 import com.financeai.investments.InvestmentsHandler;
@@ -37,6 +38,7 @@ public class HandlerRegistry
         new MentorHandler().registrarEm (registry);
         new TransactionsHandler().registrarEm(registry);
         new DashboardHandler().registrarEm(registry);
+        new MFAHandler().registrarEm(registry);
         new GoalsHandler().registrarEm(registry);
         new InvestmentsHandler().registrarEm(registry);
 

@@ -104,6 +104,16 @@ export const transactionsRepository = {
     return { docs, total, totais: { receitas: soma("receita"), despesas: soma("despesa") } };
   },
 
+  // Todas as transações do usuário desde `dataInicio`, só com os campos do resumo do Mentor IA. Sem paginação: o Servidor
+  // Java soma a lista inteira (totais, categorias, maiores despesas), então qualquer transação que faltasse deixaria os
+  // números do resumo errados. O tamanho do prompt não cresce com a lista: o Java devolve sempre um resumo curto.
+  async findParaResumo(userId: string, dataInicio: Date) {
+    return TransactionModel.find({ userId, data: { $gte: dataInicio } })
+      .select({ _id: 0, tipo: 1, valor: 1, categoria: 1, descricao: 1, data: 1 })
+      .sort({ data: -1, _id: -1 })
+      .lean();
+  },
+
   async create(
     dados: Omit<CreateTransactionDto, "parcelas" | "tipo" | "contaId"> & {
       contaId?: string;

@@ -44,11 +44,7 @@ let salvarTroca: Chamadas;
 beforeEach(() => {
   anteriores = [mensagem("usuario", "Quanto gastei?"), mensagem("ia", "Você gastou R$ 1.400,00.")];
 
-  buscarTransacoes = mock.method(transactionsRepository, "findByUser", async () => ({
-    docs: [transacaoDoBanco],
-    total: 1,
-    totais: { receitas: 0, despesas: 1400 },
-  })).mock;
+  buscarTransacoes = mock.method(transactionsRepository, "findParaResumo", async () => [transacaoDoBanco]).mock;
   buscarRecentes = mock.method(mentorIaRepository, "findRecent", async () => anteriores).mock;
   salvarTroca = mock.method(mentorIaRepository, "saveExchange", async (_u: string, pergunta: string, resposta: string) => [
     mensagem("usuario", pergunta),
@@ -118,10 +114,23 @@ describe("mentorIaService.sendMessage", () => {
       await mentorIaService.sendMessage(USUARIO, "Oi");
       t.mock.timers.reset();
 
-      const filtros = buscarTransacoes.calls.at(-1)!.arguments[1] as Record<string, unknown>;
-      assert.deepEqual(filtros, { dataInicio: new Date(caso.inicio), pagina: 1, limite: 100, todos: false });
+      assert.deepEqual(buscarTransacoes.calls.at(-1)!.arguments, [USUARIO, new Date(caso.inicio)]);
       assert.equal(pedidos.at(-2)!.dados.diaDoMes, caso.dia);
     }
+  });
+
+  test("manda TODAS as transações do mês ao Servidor Java, mesmo mais de 100 (os totais dependem de todas)", async () => {
+    const doMes = Array.from({ length: 250 }, (_, i) => ({ ...transacaoDoBanco, valor: i + 1, descricao: `gasto ${i + 1}` }));
+    mock.method(transactionsRepository, "findParaResumo", async () => doMes);
+    const pedidos = simularServidorJava();
+    simularApiDeIa(() => respostaDaIa("ok"));
+
+    await mentorIaService.sendMessage(USUARIO, "Quanto gastei?");
+
+    const { transacoes } = pedidos[0].dados;
+    assert.equal(transacoes.length, 250);
+    const soma = transacoes.reduce((total: number, t: { valor: number }) => total + t.valor, 0);
+    assert.equal(soma, (250 * 251) / 2);
   });
 
   test("a resposta salva e devolvida é a FILTRADA, nunca a recomendação crua da IA", async () => {
