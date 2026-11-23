@@ -2,7 +2,7 @@
 
 Índice da modelagem do FinanceAI (Frontend, Backend TypeScript e Servidor Java), em padrão Astah / UML 2. O pedido original cita a pasta "doc"; a pasta real do repositório é `docs/`, então tudo fica em `docs/uml`.
 
-Elementos marcados com «planejado» ainda não existem no código (contas e transferências, ver `../especificacao-contas-e-transferencias.md`). Elementos marcados com «futuro» são funcionalidades previstas sem código ou sem interface (RF04 MFA, RF08 recorrência, RF25/RF26 portfólio na interface).
+Elementos marcados com «planejado» ainda não existem no código (contas e transferências, que já foram implementadas depois: a marca fica até os diagramas serem atualizados). Elementos marcados com «futuro» são funcionalidades previstas sem código ou sem interface (RF04 MFA, RF08 recorrência, RF25/RF26 portfólio na interface).
 
 ## Arquivos
 
@@ -64,7 +64,6 @@ Planejado
 
 | Arquivo | Conteúdo |
 |---|---|
-| [classes/planejado-contas-e-transferencias.md](classes/planejado-contas-e-transferencias.md) | Tudo o que a funcionalidade de contas e transferências acrescenta, em todas as camadas, marcado «planejado». |
 
 ## Como usar os diagramas
 
@@ -151,4 +150,4 @@ Pontos em que a documentação existente e o código não coincidem. Os diagrama
 
 ## Atualização (22/11/2026)
 
-Os diagramas acima descrevem o planejamento de contas e transferências. Desde então foram implementados, além do planejado: ícone e cor em contas, cartões e metas (`Backend/src/shared/aparencia`), logos dos bancos (`Frontend/assets/bancos`), exclusão em cascata de conta e cartão com desfazer (`Backend/src/shared/lixeira` e `POST /v1/undo/:id`), cartões do Open Finance somente leitura (`openFinance: true`), bloqueio de exclusão de lançamentos de contas Open Finance e a lista de lançamentos do cartão na aba Cartão (as mesmas peças das Transações, com `escopo`). Os diagramas de classes ainda não trazem esses itens; o contrato da API (`docs/contrato-api.md`) é a referência atual.
+Contas, transferências, ícone e cor, logos dos bancos, exclusão em cascata com desfazer (`Backend/src/shared/lixeira` e `POST /v1/undo/:id`), cartões do Open Finance somente leitura e a lista de lançamentos do cartão na aba Cartão já existem no código. Os diagramas de classes do Backend e do Frontend, os casos de uso e as sequências ainda não trazem esses itens, e as marcas «planejado» das contas e transferências continuam nos diagramas até a atualização. O contrato da API (`docs/contrato-api.md`) é a referência atual.
