@@ -5,7 +5,7 @@ Diagramas de classes (UML 2, padrão Astah) do Servidor Java do FinanceAI. Cada 
 ## Legenda
 
 - Visibilidade: `+` público, `-` privado, `#` protegido, `~` pacote. Atributo: `- nome: Tipo`. Operação: `+ nome(param: Tipo): Retorno`.
-- Estereótipos: «interface», «handler» (classe que registra e trata mensagens), «dto» (mensagem de pedido/resposta com constante `TIPO`), «planejado» (elemento que ainda não existe no código; ver `docs/especificacao-contas-e-transferencias.md`).
+- Estereótipos: «interface», «handler» (classe que registra e trata mensagens), «dto» (mensagem de pedido/resposta com constante `TIPO`), (elemento que ainda não existe no código; ver `docs/especificacao-contas-e-transferencias.md`).
 - Relações: generalização (seta com triângulo cheio), realização, associação, agregação (losango vazio), composição (losango cheio), dependência (tracejada).
 - Multiplicidade: `1`, `0..1`, `*`, `1..*`.
 
@@ -258,7 +258,7 @@ Handler ..> Comunicado
 
 ## 2. Servidor — registro dos handlers dos grupos
 
-Visão de pacotes. Cada handler expõe `registrarEm(registry)` e registra seus métodos privados de tratamento no `HandlerRegistry` como method reference, que cumpre o contrato da interface `Handler` (por isso não há seta de realização). `TransactionsHandler.calcularSaldoContas` é «planejado».
+Visão de pacotes. Cada handler expõe `registrarEm(registry)` e registra seus métodos privados de tratamento no `HandlerRegistry` como method reference, que cumpre o contrato da interface `Handler` (por isso não há seta de realização). `TransactionsHandler.calcularSaldoContas` é.
 
 ```mermaid
 classDiagram
@@ -314,7 +314,6 @@ classDiagram
         -calcularParcelamentos(pedido: Comunicado) Comunicado
     }
     note for Handler "Pacote srv-core. Os handlers registram method references (Comunicado -> Comunicado), que realizam Handler."
-    note for TransactionsHandler "calcularSaldoContas e PLANEJADO: ainda nao existe no codigo."
 
     HandlerRegistry "1" o--> "*" Handler : por tipo
     HandlerRegistry ..> EcoHandler : criarPadrao
@@ -364,7 +363,7 @@ package "srv-transactions" {
   class TransactionsHandler <<handler>> {
     +registrarEm(registry: HandlerRegistry): void
     -categorizar(pedido: Comunicado): Comunicado
-    -calcularSaldoContas(pedido: Comunicado): Comunicado <<planejado>>
+    -calcularSaldoContas(pedido: Comunicado): Comunicado
   }
 }
 package "srv-dashboard" {
@@ -400,8 +399,6 @@ note top of Handler
   (Comunicado -> Comunicado), que realizam Handler.
 end note
 note right of TransactionsHandler
-  calcularSaldoContas e PLANEJADO:
-  ainda nao existe no codigo.
 end note
 
 HandlerRegistry "1" o--> "*" Handler : por tipo
@@ -426,7 +423,7 @@ InvestmentsHandler ..> HandlerRegistry : <<registra>>
 
 ## 3. Servidor — Autenticação e Transações (mensagens)
 
-`PedidoCalcularSaldoContas` e `RespostaCalcularSaldoContas` são «planejado» (contas e transferências).
+`PedidoCalcularSaldoContas` e `RespostaCalcularSaldoContas` são (contas e transferências).
 
 ```mermaid
 classDiagram
@@ -493,12 +490,10 @@ classDiagram
         +getCategoria() String
     }
     class PedidoCalcularSaldoContas {
-        <<planejado>>
         -contas: List
         -movimentos: List
     }
     class RespostaCalcularSaldoContas {
-        <<planejado>>
         -saldos: List
     }
     class Comunicado {
@@ -519,8 +514,8 @@ classDiagram
     TransactionsHandler ..> ErroDeNegocio
     TransactionsHandler ..> PedidoCategorizarTransacao
     TransactionsHandler ..> RespostaCategorizarTransacao
-    TransactionsHandler ..> PedidoCalcularSaldoContas : planejado
-    TransactionsHandler ..> RespostaCalcularSaldoContas : planejado
+    TransactionsHandler ..> PedidoCalcularSaldoContas
+    TransactionsHandler ..> RespostaCalcularSaldoContas
     Comunicado ..> PedidoHashSenha : dadosComo cria
     Comunicado ..> PedidoValidarSenha : dadosComo cria
     Comunicado ..> PedidoCategorizarTransacao : dadosComo cria
@@ -586,11 +581,11 @@ class RespostaCategorizarTransacao <<dto>> {
   +RespostaCategorizarTransacao(String categoria)
   +getCategoria(): String
 }
-class PedidoCalcularSaldoContas <<dto>> <<planejado>> {
+class PedidoCalcularSaldoContas <<dto>> {
   -contas: List
   -movimentos: List
 }
-class RespostaCalcularSaldoContas <<dto>> <<planejado>> {
+class RespostaCalcularSaldoContas <<dto>> {
   -saldos: List
 }
 class Comunicado {
@@ -611,8 +606,8 @@ TransactionsHandler ..> Comunicado
 TransactionsHandler ..> ErroDeNegocio
 TransactionsHandler ..> PedidoCategorizarTransacao
 TransactionsHandler ..> RespostaCategorizarTransacao
-TransactionsHandler ..> PedidoCalcularSaldoContas : planejado
-TransactionsHandler ..> RespostaCalcularSaldoContas : planejado
+TransactionsHandler ..> PedidoCalcularSaldoContas
+TransactionsHandler ..> RespostaCalcularSaldoContas
 Comunicado ..> PedidoHashSenha : dadosComo cria
 Comunicado ..> PedidoValidarSenha : dadosComo cria
 Comunicado ..> PedidoCategorizarTransacao : dadosComo cria

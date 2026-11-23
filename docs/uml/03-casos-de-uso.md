@@ -5,10 +5,9 @@ Modelagem de casos de uso (UML 2, padrão Astah) do FinanceAI. Fontes: `docs/doc
 Legenda de estado:
 
 - sem marca: caso de uso já existente no código;
-- «planejado»: ainda não existe no código (contas e transferências, Sprint 5);
 - «futuro»: feature futura, sem código ou sem interface (RF04, RF08, RF25 e RF26).
 
-> O Mermaid não possui diagrama de casos de uso. Cada diagrama abaixo aparece em dois blocos: um `flowchart` Mermaid (renderiza no GitHub, com atores em losango arredondado e casos de uso em elipse) e o PlantUML equivalente, que serve para recriar o diagrama no Astah. Nos blocos Mermaid e PlantUML os estereótipos aparecem sem as aspas angulares (include, extend, planejado, futuro) por limitação de sintaxe.
+> O Mermaid não possui diagrama de casos de uso. Cada diagrama abaixo aparece em dois blocos: um `flowchart` Mermaid (renderiza no GitHub, com atores em losango arredondado e casos de uso em elipse) e o PlantUML equivalente, que serve para recriar o diagrama no Astah. Nos blocos Mermaid e PlantUML os estereótipos aparecem sem as aspas angulares (include, extend, futuro) por limitação de sintaxe.
 
 ## 1. Atores
 
@@ -16,9 +15,9 @@ Legenda de estado:
 |---|---|---|
 | Visitante | Primário | Pessoa ainda não autenticada. Cria a conta (RF01), confirma o e-mail, faz login (RF02) e recupera a senha (RF03). Depois do login passa a ser Usuário do plano Free ou Pro. |
 | Usuário do plano Free | Primário (ator-base) | Usuário autenticado com plano `free` (`UserModel.plano`). Usa os casos de uso do núcleo: transações, painel, Mentor, metas, cartões, perfil, suporte e, quando implementado, contas manuais e transferências. |
-| Usuário do plano Pro | Primário (especialização) | Generalização do Usuário do plano Free: herda todos os casos de uso e é o único que pode criar uma conta Open Finance pela Pluggy (RF39, RN3; «planejado»). No Astah: seta de generalização Usuário do plano Pro -> Usuário do plano Free. |
-| Servidor Java | Secundário (sistema) | Processo separado que recebe pedidos JSON por socket e devolve o resultado de operações puras: hash e validação de senha, categorização, indicadores e comparação de períodos, contexto e filtro da IA, progresso de meta, rentabilidade simulada, parcelamentos e, «planejado», saldo das contas (`PedidoCalcularSaldoContas`). Não acessa banco. |
-| Pluggy (Open Finance sandbox) | Secundário (externo) | Provedor de Open Finance em sandbox (instituições fictícias). Fornece o widget de conexão, os itens, as contas e as transações importadas (RF09, RF34) e, «planejado», o saldo somente leitura das contas Open Finance (RN3). |
+| Usuário do plano Pro | Primário (especialização) | Generalização do Usuário do plano Free: herda todos os casos de uso e é o único que pode criar uma conta Open Finance pela Pluggy (RF39, RN3;). No Astah: seta de generalização Usuário do plano Pro -> Usuário do plano Free. |
+| Servidor Java | Secundário (sistema) | Processo separado que recebe pedidos JSON por socket e devolve o resultado de operações puras: hash e validação de senha, categorização, indicadores e comparação de períodos, contexto e filtro da IA, progresso de meta, rentabilidade simulada, parcelamentos e,, saldo das contas (`PedidoCalcularSaldoContas`). Não acessa banco. |
+| Pluggy (Open Finance sandbox) | Secundário (externo) | Provedor de Open Finance em sandbox (instituições fictícias). Fornece o widget de conexão, os itens, as contas e as transações importadas (RF09, RF34) e,, o saldo somente leitura das contas Open Finance (RN3). |
 | API de IA generativa | Secundário (externo) | Acessada pelo `genai.client` do Backend. Gera as respostas do chat do Mentor (RF19) e as mensagens proativas (RF20), sempre filtradas depois pelo Servidor Java para não recomendar ativos (RF22). |
 | Serviço de e-mail | Secundário (externo) | SMTP usado pelo `emailService`. Envia o e-mail de confirmação do cadastro (`PendingRegistrationModel` / `verifyEmail`) e o de recuperação de senha (RF01, RF03). |
 
@@ -111,8 +110,8 @@ flowchart LR
     F --- UC15(("UC15 Importar transações da Pluggy"))
     UC08 -->|"include"| UC10(("UC10 Categorizar transação automaticamente"))
     UC15 -->|"include"| UC10
-    UC08 -.->|"include - planejado"| UC30(("UC30 Vincular lançamento a uma conta - planejado"))
-    UC32(("UC32 Ver e filtrar por conta - planejado")) -->|"extend - planejado"| UC12
+    UC08 -.->|"include"| UC30(("UC30 Vincular lançamento a uma conta"))
+    UC32(("UC32 Ver e filtrar por conta")) -->|"extend"| UC12
     UC10 --- J
     UC14 --- PL
     UC15 --- PL
@@ -136,8 +135,8 @@ rectangle "Transações e contas conectadas" {
   usecase "UC13 Duplicar lançamento" as UC13
   usecase "UC14 Gerenciar contas conectadas (Pluggy)" as UC14
   usecase "UC15 Importar transações da Pluggy" as UC15
-  usecase "UC30 Vincular lançamento a uma conta\n<<planejado>>" as UC30
-  usecase "UC32 Ver e filtrar lançamentos por conta\n<<planejado>>" as UC32
+  usecase "UC30 Vincular lançamento a uma conta\n" as UC30
+  usecase "UC32 Ver e filtrar lançamentos por conta\n" as UC32
 }
 F --> UC08
 F --> UC09
@@ -148,8 +147,8 @@ F --> UC14
 F --> UC15
 UC08 .> UC10 : <<include>>
 UC15 .> UC10 : <<include>>
-UC08 .> UC30 : <<include>> <<planejado>>
-UC32 .> UC12 : <<extend>> <<planejado>>
+UC08 .> UC30 : <<include>>
+UC32 .> UC12 : <<extend>>
 UC10 --> J
 UC14 --> PL
 UC15 --> PL
@@ -241,9 +240,9 @@ end note
 @enduml
 ```
 
-### 2.4 Grupo D — Contas e transferências «planejado» (UC28 a UC33)
+### 2.4 Grupo D — Contas e transferências (UC28 a UC33)
 
-Todo o grupo é «planejado» (ver `especificacao-contas-e-transferencias.md`).
+Todo o grupo é (ver `especificacao-contas-e-transferencias.md`).
 
 ```mermaid
 flowchart LR
@@ -252,12 +251,12 @@ flowchart LR
     J(["Servidor Java"])
     PL(["Pluggy (Open Finance sandbox)"])
     P -->|"generalização"| F
-    F --- UC28(("UC28 Gerenciar contas manuais - planejado"))
-    P --- UC29(("UC29 Criar conta Open Finance - planejado"))
-    F --- UC31(("UC31 Transferir entre contas - planejado"))
-    F --- UC32(("UC32 Ver e filtrar lançamentos por conta - planejado"))
-    UC08(("UC08 Lançar receita ou despesa manual")) -->|"include"| UC30(("UC30 Vincular lançamento a uma conta - planejado"))
-    UC28 -->|"include"| UC33(("UC33 Calcular saldo das contas - planejado"))
+    F --- UC28(("UC28 Gerenciar contas manuais"))
+    P --- UC29(("UC29 Criar conta Open Finance"))
+    F --- UC31(("UC31 Transferir entre contas"))
+    F --- UC32(("UC32 Ver e filtrar lançamentos por conta"))
+    UC08(("UC08 Lançar receita ou despesa manual")) -->|"include"| UC30(("UC30 Vincular lançamento a uma conta"))
+    UC28 -->|"include"| UC33(("UC33 Calcular saldo das contas"))
     UC31 -->|"include"| UC33
     UC29 -->|"extend: Free tenta e é levado ao upgrade"| UC06(("UC06 Consultar plano e fazer upgrade"))
     UC29 -->|"include"| UC14(("UC14 Gerenciar contas conectadas Pluggy"))
@@ -275,13 +274,13 @@ actor "Usuário do plano Pro" as P
 actor "Servidor Java" as J <<sistema>>
 actor "Pluggy (Open Finance sandbox)" as PL <<externo>>
 P --|> F
-rectangle "Contas e transferências <<planejado>>" {
-  usecase "UC28 Gerenciar contas manuais\n<<planejado>>" as UC28
-  usecase "UC29 Criar conta Open Finance\n<<planejado>>" as UC29
-  usecase "UC30 Vincular lançamento a uma conta\n<<planejado>>" as UC30
-  usecase "UC31 Transferir entre contas\n<<planejado>>" as UC31
-  usecase "UC32 Ver e filtrar lançamentos por conta\n<<planejado>>" as UC32
-  usecase "UC33 Calcular saldo das contas\n<<planejado>>" as UC33
+rectangle "Contas e transferências" {
+  usecase "UC28 Gerenciar contas manuais\n" as UC28
+  usecase "UC29 Criar conta Open Finance\n" as UC29
+  usecase "UC30 Vincular lançamento a uma conta\n" as UC30
+  usecase "UC31 Transferir entre contas\n" as UC31
+  usecase "UC32 Ver e filtrar lançamentos por conta\n" as UC32
+  usecase "UC33 Calcular saldo das contas\n" as UC33
 }
 usecase "UC08 Lançar receita ou despesa manual" as UC08
 usecase "UC06 Consultar plano e fazer upgrade" as UC06
@@ -340,12 +339,12 @@ end note
 | UC25 | RF25, RF26 | «futuro» |
 | UC26 | RF27 | existente |
 | UC27 | RF36 | existente |
-| UC28 | RF37, RF38, RF39 | «planejado» |
-| UC29 | RF39, RN3 | «planejado» |
-| UC30 | RF40, RN4, RN5 | «planejado» |
-| UC31 | RF41, RN6, RN7, RN9 | «planejado» |
-| UC32 | RF42 | «planejado» |
-| UC33 | RF38, RN2, RN9 | «planejado» |
+| UC28 | RF37, RF38, RF39 | |
+| UC29 | RF39, RN3 | |
+| UC30 | RF40, RN4, RN5 | |
+| UC31 | RF41, RN6, RN7, RN9 | |
+| UC32 | RF42 | |
+| UC33 | RF38, RN2, RN9 | |
 
 ## 4. Descrições textuais (formato Astah)
 
@@ -447,7 +446,7 @@ Convenção: RN refere-se às regras de negócio da `especificacao-contas-e-tran
 | Atores secundários | — |
 | Pré-condições | Usuário autenticado. |
 | Fluxo principal | 1. O usuário abre a tela PlanoConta e vê o plano atual (Free ou Pro).<br>2. Escolhe trocar de plano.<br>3. O Frontend chama `authService.atualizarPlano` e o Backend grava o novo plano.<br>4. A tela mostra o plano atualizado. |
-| Fluxos alternativos | A1. Falha na troca: a tela mostra o erro e o plano não muda.<br>A2. Ponto de extensão: UC29 leva a este caso de uso quando o Free tenta criar conta Open Finance «planejado». |
+| Fluxos alternativos | A1. Falha na troca: a tela mostra o erro e o plano não muda.<br>A2. Ponto de extensão: UC29 leva a este caso de uso quando o Free tenta criar conta Open Finance. |
 | Pós-condições | O plano do usuário (`UserModel.plano`) reflete a escolha. |
 | Requisitos relacionados | RF31 |
 
@@ -475,9 +474,9 @@ Convenção: RN refere-se às regras de negócio da `especificacao-contas-e-tran
 | Nome | Lançar receita ou despesa manual |
 | Ator principal | Usuário do plano Free |
 | Atores secundários | Servidor Java (via UC10) |
-| Pré-condições | Usuário autenticado. «planejado»: ter pelo menos uma conta (UC30, RN4). |
-| Fluxo principal | 1. O usuário abre Lançamento e escolhe Nova receita ou Nova despesa.<br>2. Receita: informa descrição, valor, data e categoria. Despesa: acrescenta forma de pagamento, observações, meta, cartão e parcelas.<br>3. O formulário valida no cliente (`formValidation`).<br>4. O Frontend envia `POST /v1/transactions`; o Backend valida (`createTransactionSchema`).<br>5. Se a categoria está em branco, «include» UC10.<br>6. Para crédito parcelado, o Backend monta as parcelas e o vínculo com o cartão.<br>7. O Backend grava e responde 201; a lista e o resumo são atualizados e uma notificação é exibida.<br>8. «planejado»: «include» UC30 exige a conta (`contaId`). |
-| Fluxos alternativos | A1. Dados inválidos: 400 `VALIDATION_ERROR`.<br>A2. Token inválido: 401 `UNAUTHENTICATED`.<br>A3. Servidor Java indisponível na categorização: a categoria fica "Outros" (RNF05).<br>A4. «planejado»: sem nenhuma conta, o botão Lançamento leva a UC28 e a API responde 422 `ACCOUNT_REQUIRED`. |
+| Pré-condições | Usuário autenticado.: ter pelo menos uma conta (UC30, RN4). |
+| Fluxo principal | 1. O usuário abre Lançamento e escolhe Nova receita ou Nova despesa.<br>2. Receita: informa descrição, valor, data e categoria. Despesa: acrescenta forma de pagamento, observações, meta, cartão e parcelas.<br>3. O formulário valida no cliente (`formValidation`).<br>4. O Frontend envia `POST /v1/transactions`; o Backend valida (`createTransactionSchema`).<br>5. Se a categoria está em branco, «include» UC10.<br>6. Para crédito parcelado, o Backend monta as parcelas e o vínculo com o cartão.<br>7. O Backend grava e responde 201; a lista e o resumo são atualizados e uma notificação é exibida.<br>8.: «include» UC30 exige a conta (`contaId`). |
+| Fluxos alternativos | A1. Dados inválidos: 400 `VALIDATION_ERROR`.<br>A2. Token inválido: 401 `UNAUTHENTICATED`.<br>A3. Servidor Java indisponível na categorização: a categoria fica "Outros" (RNF05).<br>A4.: sem nenhuma conta, o botão Lançamento leva a UC28 e a API responde 422 `ACCOUNT_REQUIRED`. |
 | Pós-condições | A transação existe no MongoDB com origem `manual` e aparece na lista. |
 | Requisitos relacionados | RF06, RF07 |
 
@@ -560,7 +559,7 @@ Convenção: RN refere-se às regras de negócio da `especificacao-contas-e-tran
 | Ator principal | Usuário do plano Free |
 | Atores secundários | Pluggy (Open Finance sandbox) |
 | Pré-condições | Usuário autenticado. |
-| Fluxo principal | 1. O usuário abre Contas Conectadas e vê a lista.<br>2. Para conectar, abre o widget `pluggyConnect`, escolhe a instituição fictícia e conclui.<br>3. O Backend grava a conta conectada (`connected_accounts`).<br>4. Para desconectar, o usuário confirma e o Backend remove a conexão. «planejado»: passa a ser o fluxo de UC29 e fica restrito ao plano Pro para contas novas. |
+| Fluxo principal | 1. O usuário abre Contas Conectadas e vê a lista.<br>2. Para conectar, abre o widget `pluggyConnect`, escolhe a instituição fictícia e conclui.<br>3. O Backend grava a conta conectada (`connected_accounts`).<br>4. Para desconectar, o usuário confirma e o Backend remove a conexão.: passa a ser o fluxo de UC29 e fica restrito ao plano Pro para contas novas. |
 | Fluxos alternativos | A1. Falha na Pluggy: a tela mostra o erro (`erros`).<br>A2. Usuário cancela o widget: nada é gravado. |
 | Pós-condições | A lista de contas conectadas reflete a conexão ou a desconexão. |
 | Requisitos relacionados | RF34 |
@@ -590,7 +589,7 @@ Convenção: RN refere-se às regras de negócio da `especificacao-contas-e-tran
 | Ator principal | Usuário do plano Free |
 | Atores secundários | Servidor Java |
 | Pré-condições | Usuário autenticado. |
-| Fluxo principal | 1. O usuário abre a tela inicial.<br>2. O Backend lê as transações e envia `PedidoCalcularIndicadores` ao Servidor Java.<br>3. O painel mostra saldo em contas, gastos do mês, economia acumulada, fluxo de caixa e as transações recentes. «planejado»: transferências ficam fora dos totais (RN6, issue #107). |
+| Fluxo principal | 1. O usuário abre a tela inicial.<br>2. O Backend lê as transações e envia `PedidoCalcularIndicadores` ao Servidor Java.<br>3. O painel mostra saldo em contas, gastos do mês, economia acumulada, fluxo de caixa e as transações recentes.: transferências ficam fora dos totais (RN6, issue #107). |
 | Fluxos alternativos | A1. Servidor Java indisponível: 503 e o painel mostra o erro.<br>A2. Sem transações: o painel mostra valores zerados. |
 | Pós-condições | Nenhuma alteração de dados. |
 | Requisitos relacionados | RF13, RF14 |
@@ -632,7 +631,7 @@ Convenção: RN refere-se às regras de negócio da `especificacao-contas-e-tran
 | Ator principal | Usuário do plano Free |
 | Atores secundários | — |
 | Pré-condições | Usuário autenticado. |
-| Fluxo principal | 1. O usuário seleciona o período.<br>2. O sistema mostra total gasto, categoria de maior peso, número de transações e média diária (`TransactionSummaryDto` / `DashboardSummaryDto`). «planejado»: ignora transferências. |
+| Fluxo principal | 1. O usuário seleciona o período.<br>2. O sistema mostra total gasto, categoria de maior peso, número de transações e média diária (`TransactionSummaryDto` / `DashboardSummaryDto`).: ignora transferências. |
 | Fluxos alternativos | A1. Sem transações no período: valores zerados. |
 | Pós-condições | Nenhuma alteração de dados. |
 | Requisitos relacionados | RF18 |
@@ -749,9 +748,9 @@ Convenção: RN refere-se às regras de negócio da `especificacao-contas-e-tran
 | Pós-condições | Nenhuma alteração de dados. |
 | Requisitos relacionados | RF36 |
 
-### Grupo D — Contas e transferências «planejado»
+### Grupo D — Contas e transferências
 
-#### UC28 — Gerenciar contas manuais «planejado»
+#### UC28 — Gerenciar contas manuais
 
 | Campo | Conteúdo |
 |---|---|
@@ -765,7 +764,7 @@ Convenção: RN refere-se às regras de negócio da `especificacao-contas-e-tran
 | Pós-condições | A conta criada, editada ou excluída é refletida na lista com o saldo atual calculado. |
 | Requisitos relacionados | RF37, RF38, RF39 |
 
-#### UC29 — Criar conta Open Finance «planejado»
+#### UC29 — Criar conta Open Finance
 
 | Campo | Conteúdo |
 |---|---|
@@ -779,7 +778,7 @@ Convenção: RN refere-se às regras de negócio da `especificacao-contas-e-tran
 | Pós-condições | Existe uma conta Open Finance com saldo somente leitura. |
 | Requisitos relacionados | RF39, RN3 |
 
-#### UC30 — Vincular lançamento a uma conta «planejado»
+#### UC30 — Vincular lançamento a uma conta
 
 | Campo | Conteúdo |
 |---|---|
@@ -793,7 +792,7 @@ Convenção: RN refere-se às regras de negócio da `especificacao-contas-e-tran
 | Pós-condições | O lançamento fica vinculado a uma conta do usuário. |
 | Requisitos relacionados | RF40, RN4, RN5 |
 
-#### UC31 — Transferir entre contas «planejado»
+#### UC31 — Transferir entre contas
 
 | Campo | Conteúdo |
 |---|---|
@@ -807,7 +806,7 @@ Convenção: RN refere-se às regras de negócio da `especificacao-contas-e-tran
 | Pós-condições | A transferência fica registrada e os saldos das duas contas refletem o movimento. |
 | Requisitos relacionados | RF41, RN6, RN7, RN9 |
 
-#### UC32 — Ver e filtrar lançamentos por conta «planejado»
+#### UC32 — Ver e filtrar lançamentos por conta
 
 | Campo | Conteúdo |
 |---|---|
@@ -821,7 +820,7 @@ Convenção: RN refere-se às regras de negócio da `especificacao-contas-e-tran
 | Pós-condições | Nenhuma alteração de dados. |
 | Requisitos relacionados | RF42 |
 
-#### UC33 — Calcular saldo das contas «planejado»
+#### UC33 — Calcular saldo das contas
 
 | Campo | Conteúdo |
 |---|---|

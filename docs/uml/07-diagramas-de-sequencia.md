@@ -6,8 +6,6 @@ Convenções:
 
 - Linhas de vida usam os nomes reais de arquivos e funções do código.
 - `Parceiro.receba(x)` envia ao outro lado e `Parceiro.envie()` lê (nomes herdados do exemplo do professor, ver `00-README.md`).
-- O fluxo da seção 5 é «planejado»: ainda não existe no código (ver `../especificacao-contas-e-transferencias.md`).
-- Mermaid não aceita « » em rótulos de forma confiável, então o estereótipo aparece como "(planejado)".
 
 ---
 
@@ -127,7 +125,7 @@ FE --> U : redireciona para o painel
 
 Participantes: Usuário, `TransactionForm`, `transactionsService` (Frontend), `api`, `authMiddleware`, `transactionsController`, `transactionsService` (Backend), `javaServerClient`, `Supervisora`, `TransactionsHandler`, `transactionsRepository`, MongoDB.
 
-Nota «planejado»: depois da validação do corpo, `accountsRepository` confirma `contaId` (422 `ACCOUNT_REQUIRED` ou 404 `ACCOUNT_NOT_FOUND`). Esse passo aparece no diagrama marcado como planejado.
+Nota: depois da validação do corpo, `accountsRepository` confirma `contaId` (422 `ACCOUNT_REQUIRED` ou 404 `ACCOUNT_NOT_FOUND`).
 
 ```mermaid
 sequenceDiagram
@@ -138,7 +136,7 @@ sequenceDiagram
     participant AM as authMiddleware
     participant CT as transactionsController
     participant SV as transactionsService (Backend)
-    participant AR as accountsRepository (planejado)
+    participant AR as accountsRepository
     participant JC as javaServerClient
     participant SU as Supervisora
     participant TH as TransactionsHandler
@@ -156,9 +154,9 @@ sequenceDiagram
     end
     AM->>CT: create(req, res)
     CT->>CT: createTransactionSchema.parse gera CreateTransactionDto
-    Note over CT,AR: planejado - confirma contaId do usuário
-    CT->>AR: (planejado) buscar conta por contaId e userId
-    AR-->>CT: (planejado) conta, ou 422 ACCOUNT_REQUIRED / 404 ACCOUNT_NOT_FOUND
+    Note over CT,AR: confirma contaId do usuário
+    CT->>AR: buscar conta por contaId e userId
+    AR-->>CT: conta, ou 422 ACCOUNT_REQUIRED / 404 ACCOUNT_NOT_FOUND
     CT->>SV: create(userId, dto)
     opt categoria vazia
         SV->>SV: sugerirCategoria(descricao, valor)
@@ -199,7 +197,7 @@ participant "api" as API
 participant "authMiddleware" as AM
 participant "transactionsController" as CT
 participant "transactionsService\n(Backend)" as SV
-participant "accountsRepository\n<<planejado>>" as AR
+participant "accountsRepository\n" as AR
 participant "javaServerClient" as JC
 participant "Supervisora" as SU
 participant "TransactionsHandler" as TH
@@ -217,9 +215,9 @@ alt token inválido
 end
 AM -> CT : create(req, res)
 CT -> CT : createTransactionSchema.parse gera CreateTransactionDto
-note over CT, AR : planejado - confirma contaId do usuário
-CT -> AR : (planejado) buscar conta por contaId e userId
-AR --> CT : (planejado) conta, ou 422 ACCOUNT_REQUIRED / 404 ACCOUNT_NOT_FOUND
+note over CT, AR : confirma contaId do usuário
+CT -> AR : buscar conta por contaId e userId
+AR --> CT : conta, ou 422 ACCOUNT_REQUIRED / 404 ACCOUNT_NOT_FOUND
 CT -> SV : create(userId, dto)
 opt categoria vazia
   SV -> SV : sugerirCategoria(descricao, valor)
@@ -483,29 +481,28 @@ PG --> U : CartaoCompras lista as compras
 
 ---
 
-## 5. Transferência entre contas (UC31) «planejado»
+## 5. Transferência entre contas (UC31)
 
-**Todo este diagrama é «planejado»**: `accountsRepository`, `accountsService`, `TransferenciaForm`, `createTransferSchema`, a rota `POST /v1/transactions/transfers`, o tipo `transferencia` e `TransactionsHandler.calcularSaldoContas` (`PedidoCalcularSaldoContas`/`RespostaCalcularSaldoContas`) ainda não existem no código. Referências: `../especificacao-contas-e-transferencias.md` e `../contrato-api.md` (seção 2.11).
 
-Participantes: Usuário, `TransactionBarra` (menu Lançamento), `TransferenciaForm` «planejado», `transactionsService` (Frontend), `api`, `transactionsController`, `transactionsService` (Backend), `accountsRepository` «planejado», `transactionsRepository`, MongoDB, `javaServerClient`, `TransactionsHandler`.
+Participantes: Usuário, `TransactionBarra` (menu Lançamento), `TransferenciaForm`, `transactionsService` (Frontend), `api`, `transactionsController`, `transactionsService` (Backend), `accountsRepository`, `transactionsRepository`, MongoDB, `javaServerClient`, `TransactionsHandler`.
 
 ```mermaid
 sequenceDiagram
     actor U as Usuário
     participant TB as TransactionBarra (menu Lançamento)
-    participant TFM as TransferenciaForm (planejado)
+    participant TFM as TransferenciaForm
     participant FS as transactionsService (Frontend)
     participant API as api
     participant CT as transactionsController
     participant SV as transactionsService (Backend)
-    participant AR as accountsRepository (planejado)
-    participant AS as accountsService (planejado)
+    participant AR as accountsRepository
+    participant AS as accountsService
     participant RP as transactionsRepository
     participant DB as MongoDB
     participant JC as javaServerClient
     participant TH as TransactionsHandler
 
-    Note over U,TH: Fluxo PLANEJADO - ainda não implementado
+    Note over U,TH: Transferência entre contas
     U->>TB: Lançamento > Nova transferência (ou atalho T)
     TB->>TFM: abre o modal
     opt menos de duas contas manuais
@@ -514,14 +511,14 @@ sequenceDiagram
     U->>TFM: conta de origem, destino, valor, data, descrição e observação
     TFM->>FS: criar transferência
     FS->>API: POST /v1/transactions/transfers {contaId, contaDestinoId, valor, data, descricao?, observacoes?}
-    API->>CT: createTransfer (planejado)
-    CT->>CT: createTransferSchema.parse (planejado) - contas diferentes e valor maior que 0
+    API->>CT: createTransfer
+    CT->>CT: createTransferSchema.parse - contas diferentes e valor maior que 0
     alt validação falha
         CT-->>API: 400 VALIDATION_ERROR
     end
-    CT->>SV: createTransfer(userId, dto) (planejado)
+    CT->>SV: createTransfer(userId, dto)
     SV->>AR: busca as duas contas do userId
-    AR->>DB: consulta AccountModel (planejado)
+    AR->>DB: consulta AccountModel
     DB-->>AR: contas
     AR-->>SV: contas
     alt conta não encontrada
@@ -535,7 +532,7 @@ sequenceDiagram
     RP-->>SV: transferência
     SV->>AS: recalcular saldos
     AS->>JC: enviarPedido(PedidoCalcularSaldoContas, RespostaCalcularSaldoContas, {contas, movimentos})
-    JC->>TH: via Supervisora e HandlerRegistry - calcularSaldoContas (planejado)
+    JC->>TH: via Supervisora e HandlerRegistry - calcularSaldoContas
     TH-->>JC: RespostaCalcularSaldoContas {saldos}
     JC-->>AS: saldos
     AS-->>SV: saldos
@@ -549,22 +546,22 @@ sequenceDiagram
 
 ```plantuml
 @startuml
-title Transferência entre contas (UC31) <<planejado>>
+title Transferência entre contas (UC31)
 actor "Usuário" as U
 participant "TransactionBarra\n(menu Lançamento)" as TB
-participant "TransferenciaForm\n<<planejado>>" as TFM
+participant "TransferenciaForm\n" as TFM
 participant "transactionsService\n(Frontend)" as FS
 participant "api" as API
 participant "transactionsController" as CT
 participant "transactionsService\n(Backend)" as SV
-participant "accountsRepository\n<<planejado>>" as AR
-participant "accountsService\n<<planejado>>" as AS
+participant "accountsRepository\n" as AR
+participant "accountsService\n" as AS
 participant "transactionsRepository" as RP
 database "MongoDB" as DB
 participant "javaServerClient" as JC
 participant "TransactionsHandler" as TH
 
-note over U, TH : Fluxo PLANEJADO - ainda não implementado
+note over U, TH : Transferência entre contas
 U -> TB : Lançamento > Nova transferência (ou atalho T)
 TB -> TFM : abre o modal
 opt menos de duas contas manuais
@@ -573,14 +570,14 @@ end
 U -> TFM : conta de origem, destino, valor, data, descrição e observação
 TFM -> FS : criar transferência
 FS -> API : POST /v1/transactions/transfers {contaId, contaDestinoId, valor, data, descricao?, observacoes?}
-API -> CT : createTransfer (planejado)
-CT -> CT : createTransferSchema.parse (planejado) - contas diferentes e valor maior que 0
+API -> CT : createTransfer
+CT -> CT : createTransferSchema.parse - contas diferentes e valor maior que 0
 alt validação falha
   CT --> API : 400 VALIDATION_ERROR
 end
-CT -> SV : createTransfer(userId, dto) (planejado)
+CT -> SV : createTransfer(userId, dto)
 SV -> AR : busca as duas contas do userId
-AR -> DB : consulta AccountModel (planejado)
+AR -> DB : consulta AccountModel
 DB --> AR : contas
 AR --> SV : contas
 alt conta não encontrada
@@ -594,7 +591,7 @@ DB --> RP : documento
 RP --> SV : transferência
 SV -> AS : recalcular saldos
 AS -> JC : enviarPedido(PedidoCalcularSaldoContas, RespostaCalcularSaldoContas, {contas, movimentos})
-JC -> TH : via Supervisora e HandlerRegistry - calcularSaldoContas (planejado)
+JC -> TH : via Supervisora e HandlerRegistry - calcularSaldoContas
 TH --> JC : RespostaCalcularSaldoContas {saldos}
 JC --> AS : saldos
 AS --> SV : saldos

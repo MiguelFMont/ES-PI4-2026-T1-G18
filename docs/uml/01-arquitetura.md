@@ -2,7 +2,6 @@
 
 Documento de arquitetura do FinanceAI (ES-PI4-2026-T1-G18), em notação UML 2 (padrão Astah). Cada diagrama aparece em dois blocos: `mermaid` (renderiza no GitHub) e `plantuml` (mesma informação, serve para recriar o diagrama no Astah).
 
-Legenda de estereótipos: «planejado» = elemento que ainda não existe no código (ver [`../especificacao-contas-e-transferencias.md`](../especificacao-contas-e-transferencias.md)). Nos blocos de código os estereótipos aparecem como `<<planejado>>`, pois Mermaid e PlantUML não aceitam « » no identificador.
 
 Fontes: seção 1 de [`../organizacao-sprints.md`](../organizacao-sprints.md) e [`../../README.md`](../../README.md).
 
@@ -83,7 +82,6 @@ BE --> SMTP : SMTP
 
 Interfaces entre os componentes: HTTP com JWT (Frontend para Backend), sockets com mensagens JSON em linha (Backend para Servidor Java), Mongoose (Backend para MongoDB) e HTTP externo (Backend para Pluggy e IA).
 
-Componentes marcados `<<planejado>>`: o módulo `accounts` do Backend (rotas `/v1/accounts` e `POST /v1/transactions/transfers`), a coleção `accounts` e o método `TransactionsHandler.calcularSaldoContas` do Servidor.
 
 ```mermaid
 flowchart LR
@@ -98,7 +96,7 @@ flowchart LR
         BE_http["http/app + http/frontend"]
         BE_mw["middlewares:<br/>authMiddleware, errorHandler"]
         BE_mod["modules: auth, suporte, transactions,<br/>connected-accounts, dashboard, mentor-ia,<br/>goals, investments, sistema"]
-        BE_acc["modules/accounts<br/>&lt;&lt;planejado&gt;&gt;"]
+        BE_acc["modules/accounts"]
         BE_repo["repository + Model Mongoose"]
         BE_int["integrations: pluggy, genai.client,<br/>emailService"]
         BE_jc["java-client: javaServerClient<br/>(pool de Conexao)"]
@@ -107,7 +105,7 @@ flowchart LR
     subgraph SJ["Servidor Java"]
         SJ_core["core: Aceitadora, Supervisora,<br/>HandlerRegistry"]
         SJ_h["handlers: Auth, Transactions,<br/>Dashboard, Mentor, Goals, Investments"]
-        SJ_pl["TransactionsHandler.calcularSaldoContas<br/>&lt;&lt;planejado&gt;&gt;"]
+        SJ_pl["TransactionsHandler.calcularSaldoContas"]
     end
 
     DB[("MongoDB Atlas")]
@@ -151,7 +149,7 @@ package "Backend (TypeScript / Express)" {
   [http/app + http/frontend] as BE_http
   [middlewares:\nauthMiddleware, errorHandler] as BE_mw
   [modules: auth, suporte, transactions,\nconnected-accounts, dashboard, mentor-ia,\ngoals, investments, sistema] as BE_mod
-  [modules/accounts <<planejado>>] as BE_acc
+  [modules/accounts] as BE_acc
   [repository + Model Mongoose] as BE_repo
   [integrations: pluggy, genai.client,\nemailService] as BE_int
   [java-client: javaServerClient\n(pool de Conexao)] as BE_jc
@@ -160,7 +158,7 @@ package "Backend (TypeScript / Express)" {
 package "Servidor Java" {
   [core: Aceitadora, Supervisora,\nHandlerRegistry] as SJ_core
   [handlers: Auth, Transactions, Dashboard,\nMentor, Goals, Investments] as SJ_h
-  [TransactionsHandler.calcularSaldoContas <<planejado>>] as SJ_pl
+  [TransactionsHandler.calcularSaldoContas] as SJ_pl
 }
 
 database "MongoDB Atlas" as DB
@@ -278,15 +276,15 @@ Ordem de subida: Servidor Java (porta 3000), depois o Backend (porta 3001). Test
 - Chama serviços externos: Pluggy (`pluggyClient`, `pluggy.mapper`), IA (`genai.client`), e-mail (`emailService`).
 - Único cliente do Servidor Java (`javaServerClient`, pool de conexões) e tradutor dos `code` de erro em status HTTP (`error-codes`, `errorHandler`).
 - Serve o Frontend (`http/frontend`).
-- «planejado»: módulo `accounts` (`/v1/accounts`, `POST /v1/transactions/transfers`), regra `PLAN_REQUIRED` para conta Open Finance.
+-: módulo `accounts` (`/v1/accounts`, `POST /v1/transactions/transfers`), regra `PLAN_REQUIRED` para conta Open Finance.
 
 **Servidor Java (porta 3000)**
 - Operações puras sobre os dados recebidos no pedido: hash e validação de senha (PBKDF2), categorização, indicadores e comparação de períodos, contexto e filtro da IA, progresso de meta, rentabilidade simulada, parcelamentos.
 - Não acessa banco, não conhece HTTP, aceita só `127.0.0.1`.
-- «planejado»: cálculo do saldo das contas (`PedidoCalcularSaldoContas`, `TransactionsHandler.calcularSaldoContas`).
+-: cálculo do saldo das contas (`PedidoCalcularSaldoContas`, `TransactionsHandler.calcularSaldoContas`).
 
 **MongoDB Atlas**
-- Coleções isoladas por feature: users, pending registrations, transactions, connected_accounts, goals, investments, cards, card installments, chat messages, alerts, suporte; «planejado»: accounts.
+- Coleções isoladas por feature: users, pending registrations, transactions, connected_accounts, goals, investments, cards, card installments, chat messages, alerts, suporte;: accounts.
 - Acessado só pelo Backend.
 
 **Serviços externos**
@@ -429,7 +427,7 @@ modules/                index.ts (monta os routers sob /v1)
   sistema/              /v1/health e /v1/eco
   auth/  suporte/  transactions/  connected-accounts/
   dashboard/  mentor-ia/  goals/  investments/
-  accounts/             «planejado»
+  accounts/            
 ```
 Cada módulo: `routes`, `controller`, `service`, `repository`, `model`, `dto`.
 
@@ -440,7 +438,7 @@ core/                   Comunicado, Parceiro, Aceitadora, Supervisora,
                         HandlerRegistry, Handler, ErroDeNegocio, EcoHandler, Teclado
 auth/                   AuthHandler, PedidoHashSenha, PedidoValidarSenha (+ Respostas)
 transactions/           TransactionsHandler, PedidoCategorizarTransacao (+ Resposta);
-                        PedidoCalcularSaldoContas (+ Resposta) «planejado»
+                        PedidoCalcularSaldoContas (+ Resposta)
 dashboard/              DashboardHandler, PedidoCalcularIndicadores, PedidoCompararPeriodos
 mentoria/               MentorHandler, FiltroDeAtivos, FiltroDeEscopo,
                         PedidoMontarContextoIA, PedidoFiltrarResposta
@@ -449,16 +447,4 @@ investments/            InvestmentsHandler, PedidoRentabilidadeSimulada,
                         PedidoCalcularParcelamentos
 ```
 
-**Banco de dados (MongoDB Atlas)**: coleções users, pending registrations, transactions, connected_accounts, goals, investments, cards, card installments, chat messages, alerts, suporte e, «planejado», accounts.
-
-## 8. Elementos «planejado»
-
-| Elemento | Camada | Descrição |
-|---|---|---|
-| `modules/accounts` | Backend | Rotas `/v1/accounts` e `POST /v1/transactions/transfers`; regra `PLAN_REQUIRED` (conta Open Finance só no plano Pro) |
-| Coleção `accounts` | MongoDB | Contas manuais e Open Finance do usuário |
-| `contaId` e `contaDestinoId` em transações; tipo `transferencia` | Backend / MongoDB | Conta obrigatória em lançamentos; transferência entre contas manuais |
-| `PedidoCalcularSaldoContas` / `RespostaCalcularSaldoContas`, `TransactionsHandler.calcularSaldoContas` | Servidor Java | Saldo atual de cada conta a partir do saldo inicial e dos movimentos |
-| `ContaForm`, `TransferenciaForm`, `accountsService` | Frontend | Modal Nova conta (em Contas Conectadas) e Nova transferência (menu Lançamento) |
-
-Features futuras sem código (MFA, despesa recorrente, tela do portfólio) não fazem parte desta arquitetura entregue.
+**Banco de dados (MongoDB Atlas)**: coleções users, pending registrations, transactions, connected_accounts, goals, investments, cards, card installments, chat messages, alerts, suporte e,, accounts.

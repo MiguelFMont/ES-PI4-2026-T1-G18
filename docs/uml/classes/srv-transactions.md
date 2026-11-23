@@ -1,6 +1,6 @@
 # Modelo UML — Servidor Java: transações
 
-Pacote `com.financeai.transactions` (`Servidor/src/main/java/com/financeai/transactions/`). Notação Astah / UML 2. Visibilidade: `+` público, `-` privado, `#` protegido, `~` pacote. Elementos marcados com «planejado» ainda não existem no código (ver `docs/especificacao-contas-e-transferencias.md`).
+Pacote `com.financeai.transactions` (`Servidor/src/main/java/com/financeai/transactions/`). Notação Astah / UML 2. Visibilidade: `+` público, `-` privado, `#` protegido, `~` pacote. Elementos marcados com ainda não existem no código (ver `docs/especificacao-contas-e-transferencias.md`).
 
 ## Diagrama do grupo
 
@@ -35,11 +35,9 @@ classDiagram
     class Comunicado
     class ErroDeNegocio
     class PedidoCalcularSaldoContas {
-        <<planejado>>
         <<dto>>
     }
     class RespostaCalcularSaldoContas {
-        <<planejado>>
         <<dto>>
     }
     TransactionsHandler ..> HandlerRegistry : registra operações
@@ -47,8 +45,8 @@ classDiagram
     TransactionsHandler ..> ErroDeNegocio : lança
     TransactionsHandler ..> PedidoCategorizarTransacao
     TransactionsHandler ..> RespostaCategorizarTransacao
-    TransactionsHandler ..> PedidoCalcularSaldoContas : planejado
-    TransactionsHandler ..> RespostaCalcularSaldoContas : planejado
+    TransactionsHandler ..> PedidoCalcularSaldoContas
+    TransactionsHandler ..> RespostaCalcularSaldoContas
 ```
 
 ```plantuml
@@ -78,15 +76,15 @@ class TransactionsHandler <<handler>> {
 class HandlerRegistry
 class Comunicado
 class ErroDeNegocio
-class PedidoCalcularSaldoContas <<planejado>> <<dto>>
-class RespostaCalcularSaldoContas <<planejado>> <<dto>>
+class PedidoCalcularSaldoContas <<dto>>
+class RespostaCalcularSaldoContas <<dto>>
 TransactionsHandler ..> HandlerRegistry : registra operações
 TransactionsHandler ..> Comunicado
 TransactionsHandler ..> ErroDeNegocio : lança
 TransactionsHandler ..> PedidoCategorizarTransacao
 TransactionsHandler ..> RespostaCategorizarTransacao
-TransactionsHandler ..> PedidoCalcularSaldoContas : planejado
-TransactionsHandler ..> RespostaCalcularSaldoContas : planejado
+TransactionsHandler ..> PedidoCalcularSaldoContas
+TransactionsHandler ..> RespostaCalcularSaldoContas
 @enduml
 ```
 
@@ -233,8 +231,8 @@ TransactionsHandler ..> RespostaCategorizarTransacao
 | dependência | ErroDeNegocio | * | lança |
 | dependência | PedidoCategorizarTransacao | 1 | lê |
 | dependência | RespostaCategorizarTransacao | 1 | cria |
-| dependência | PedidoCalcularSaldoContas «planejado» | 1 | tratará (ainda não existe) |
-| dependência | RespostaCalcularSaldoContas «planejado» | 1 | devolverá (ainda não existe) |
+| dependência | PedidoCalcularSaldoContas | 1 | trata  |
+| dependência | RespostaCalcularSaldoContas | 1 | devolve  |
 
 ```mermaid
 classDiagram
@@ -278,21 +276,22 @@ TransactionsHandler ..> RespostaCategorizarTransacao
 
 ## PedidoCalcularSaldoContas
 
-- **Tipo / estereótipo:** classe «planejado» «dto» (não existe no código)
-- **Arquivo:** a definir (pacote `com.financeai.transactions`, issue #106)
-- **Descrição:** pedido planejado em que o Backend envia as contas (com `saldoInicial`) e os movimentos (receitas, despesas e transferências) para o Servidor calcular o saldo atual de cada conta.
+- **Tipo / estereótipo:** classe «dto»
+- **Arquivo:** `PedidoCalcularSaldoContas.java` / `RespostaCalcularSaldoContas.java` (pacote `com.financeai.transactions`, issue #106)
+- **Descrição:** pedido em que o Backend envia as contas (com `saldoInicial`) e os movimentos (receitas, despesas e transferências) para o Servidor calcular o saldo atual de cada conta.
 
 ### Atributos
 
 | Visibilidade | Nome | Tipo | Descrição |
 |---|---|---|---|
-| — | a definir | — | Campos ainda não especificados; a especificação só cita contas e movimentos. |
+| - | contas | `List<Conta>` | Cada conta leva `id` e `saldoInicial`. |
+| - | movimentos | `List<Movimento>` | Cada movimento leva `tipo` (receita, despesa ou transferência), `valor`, `contaId` e, na transferência, o destino. |
 
 ### Operações
 
 | Visibilidade | Assinatura | Retorno | Descrição |
 |---|---|---|---|
-| — | a definir | — | Sem operações definidas. |
+| + | getContas(), getMovimentos() | `List` | Leitura dos campos (a mensagem só carrega dados). |
 
 ### Relações
 
@@ -303,17 +302,16 @@ TransactionsHandler ..> RespostaCategorizarTransacao
 ```mermaid
 classDiagram
     class PedidoCalcularSaldoContas {
-        <<planejado>>
         <<dto>>
     }
-    TransactionsHandler ..> PedidoCalcularSaldoContas : planejado
+    TransactionsHandler ..> PedidoCalcularSaldoContas
 ```
 
 ```plantuml
 @startuml
-class PedidoCalcularSaldoContas <<planejado>> <<dto>>
+class PedidoCalcularSaldoContas <<dto>>
 class TransactionsHandler
-TransactionsHandler ..> PedidoCalcularSaldoContas : planejado
+TransactionsHandler ..> PedidoCalcularSaldoContas
 @enduml
 ```
 
@@ -321,21 +319,21 @@ TransactionsHandler ..> PedidoCalcularSaldoContas : planejado
 
 ## RespostaCalcularSaldoContas
 
-- **Tipo / estereótipo:** classe «planejado» «dto» (não existe no código)
-- **Arquivo:** a definir (pacote `com.financeai.transactions`, issue #106)
-- **Descrição:** resposta planejada com o saldo atual de cada conta, calculado de forma pura, sem banco.
+- **Tipo / estereótipo:** classe «dto»
+- **Arquivo:** `PedidoCalcularSaldoContas.java` / `RespostaCalcularSaldoContas.java` (pacote `com.financeai.transactions`, issue #106)
+- **Descrição:** resposta com o saldo atual de cada conta, calculado de forma pura, sem banco.
 
 ### Atributos
 
 | Visibilidade | Nome | Tipo | Descrição |
 |---|---|---|---|
-| — | a definir | — | Campos ainda não especificados; a especificação só cita o saldo atual por conta. |
+| - | saldos | `List<Saldo>` | Cada saldo leva `contaId` e `saldoAtual`. |
 
 ### Operações
 
 | Visibilidade | Assinatura | Retorno | Descrição |
 |---|---|---|---|
-| — | a definir | — | Sem operações definidas. |
+| + | getSaldos() | `List<Saldo>` | Leitura dos saldos calculados. |
 
 ### Relações
 
@@ -346,16 +344,15 @@ TransactionsHandler ..> PedidoCalcularSaldoContas : planejado
 ```mermaid
 classDiagram
     class RespostaCalcularSaldoContas {
-        <<planejado>>
         <<dto>>
     }
-    TransactionsHandler ..> RespostaCalcularSaldoContas : planejado
+    TransactionsHandler ..> RespostaCalcularSaldoContas
 ```
 
 ```plantuml
 @startuml
-class RespostaCalcularSaldoContas <<planejado>> <<dto>>
+class RespostaCalcularSaldoContas <<dto>>
 class TransactionsHandler
-TransactionsHandler ..> RespostaCalcularSaldoContas : planejado
+TransactionsHandler ..> RespostaCalcularSaldoContas
 @enduml
 ```

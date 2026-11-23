@@ -1,6 +1,6 @@
 # Estrutura do Servidor Java
 
-Notação UML 2 (padrão Astah). Visibilidade: `+` público, `-` privado, `#` protegido, `~` pacote. Estereótipos em «aspas angulares» no texto; nos blocos Mermaid e PlantUML aparecem como `<<estereótipo>>`. Elementos «planejado» ainda não existem no código. Cada diagrama aparece em dois blocos (Mermaid, que renderiza no GitHub, e PlantUML, que serve para recriá-lo no Astah).
+Notação UML 2 (padrão Astah). Visibilidade: `+` público, `-` privado, `#` protegido, `~` pacote. Estereótipos em «aspas angulares» no texto; nos blocos Mermaid e PlantUML aparecem como `<<estereótipo>>`. Elementos ainda não existem no código. Cada diagrama aparece em dois blocos (Mermaid, que renderiza no GitHub, e PlantUML, que serve para recriá-lo no Astah).
 
 Fontes: `Servidor/src/main/java/com/financeai` e `Servidor/README.md`.
 
@@ -22,7 +22,7 @@ Pacote raiz `com.financeai` (`Servidor/src/main/java`), um subpacote por grupo. 
 | `com.financeai` | `Main` | `PORTA_PADRAO = "3000"`. Cria `ArrayList<Parceiro> usuarios`, monta `HandlerRegistry.criarPadrao()`, inicia a `Aceitadora` e lê o console com `Teclado`. O comando `desativar` envia `ComunicadoDeDesligamento` a cada `Parceiro` e encerra. |
 | `com.financeai.core` | `Comunicado`, `Parceiro`, `Aceitadora`, `Supervisora`, `Handler` «interface», `HandlerRegistry`, `ErroDeNegocio`, `EcoHandler`, `Teclado` | Infraestrutura do professor adaptada para JSON: envelope, conexão, threads e despacho. |
 | `com.financeai.auth` | `AuthHandler`, `PedidoHashSenha`, `RespostaHashSenha`, `PedidoValidarSenha`, `RespostaValidarSenha` | Hash e validação de senha (PBKDF2-HMAC-SHA256, 120.000 iterações). MFA (`PedidoGerarSegredoMFA`, `PedidoValidarMFA`) só documentado em `exemplo/`, sem classe. |
-| `com.financeai.transactions` | `TransactionsHandler`, `PedidoCategorizarTransacao`, `RespostaCategorizarTransacao` | Categorização por palavras-chave. «planejado»: `PedidoCalcularSaldoContas`, `RespostaCalcularSaldoContas` e o método `calcularSaldoContas`. |
+| `com.financeai.transactions` | `TransactionsHandler`, `PedidoCategorizarTransacao`, `RespostaCategorizarTransacao` | Categorização por palavras-chave.: `PedidoCalcularSaldoContas`, `RespostaCalcularSaldoContas` e o método `calcularSaldoContas`. |
 | `com.financeai.dashboard` | `DashboardHandler` + 4 mensagens | Indicadores (saldo, economia, fluxo de caixa) e comparação de períodos. |
 | `com.financeai.mentoria` | `MentorHandler`, `FiltroDeAtivos`, `FiltroDeEscopo`, 4 mensagens (`PedidoMontarContextoIA` com a classe aninhada `Transacao`) | Contexto da IA em texto e filtro da resposta (sem recomendação de ativo, sem fora de escopo). |
 | `com.financeai.goals` | `GoalsHandler`, `PedidoProgressoMeta`, `RespostaProgressoMeta` | Progresso de meta. |
@@ -94,7 +94,7 @@ O Servidor não envia status HTTP: o Backend deduz o status a partir do `code` (
 | 1 Autenticação | `PedidoValidarSenha` -> `RespostaValidarSenha` | `AuthHandler.validarSenha` | implementado |
 | 1 Autenticação | `PedidoGerarSegredoMFA` -> `RespostaGerarSegredoMFA`; `PedidoValidarMFA` -> `RespostaValidarMFA` | (nenhum) | só documentado (`exemplo/`) |
 | 2 Transações | `PedidoCategorizarTransacao` -> `RespostaCategorizarTransacao` | `TransactionsHandler.categorizar` | implementado |
-| 2 Transações | `PedidoCalcularSaldoContas` -> `RespostaCalcularSaldoContas` | `TransactionsHandler.calcularSaldoContas` | «planejado» (issue #106) |
+| 2 Transações | `PedidoCalcularSaldoContas` -> `RespostaCalcularSaldoContas` | `TransactionsHandler.calcularSaldoContas` | (issue #106) |
 | 3 Painel | `PedidoCalcularIndicadores` -> `RespostaCalcularIndicadores` | `DashboardHandler.calcularIndicadores` | implementado |
 | 3 Painel | `PedidoCompararPeriodos` -> `RespostaCompararPeriodos` | `DashboardHandler.compararPeriodos` | implementado |
 | 4 Mentor IA | `PedidoMontarContextoIA` -> `RespostaMontarContextoIA` | `MentorHandler.montarContexto` | implementado |
@@ -113,8 +113,8 @@ Campos principais das mensagens (conforme os `.java`):
 | `RespostaValidarSenha` | `valido: boolean` |
 | `PedidoCategorizarTransacao` | `descricao: String`, `valor: double` |
 | `RespostaCategorizarTransacao` | `categoria: String` |
-| `PedidoCalcularSaldoContas` «planejado» | contas (com `saldoInicial`) e movimentos; nomes exatos a definir com o Backend |
-| `RespostaCalcularSaldoContas` «planejado» | saldo atual de cada conta |
+| `PedidoCalcularSaldoContas` | contas (com `saldoInicial`) e movimentos |
+| `RespostaCalcularSaldoContas` | saldo atual de cada conta |
 | `PedidoCalcularIndicadores` | `receitas: double`, `despesas: double` |
 | `RespostaCalcularIndicadores` | `saldo`, `economia`, `fluxoDeCaixa` (`double`) |
 | `PedidoCompararPeriodos` | `periodos: List<Map<String,Object>>` |
@@ -443,10 +443,6 @@ classDiagram
     }
     class ErroDeNegocio
     class Comunicado
-    class Planejado_nota {
-        <<planejado>>
-        calcularSaldoContas ainda nao existe no codigo
-    }
 
     HandlerRegistry o-- "0..*" Handler
     HandlerRegistry ..> EcoHandler : criarPadrao
@@ -470,7 +466,6 @@ classDiagram
     GoalsHandler ..> ErroDeNegocio
     InvestmentsHandler ..> ErroDeNegocio
     AuthHandler ..> Comunicado
-    Planejado_nota .. TransactionsHandler
 ```
 
 ```plantuml
@@ -506,7 +501,7 @@ class TransactionsHandler <<handler>> {
   - categorizar(pedido: Comunicado): Comunicado
   - {static} categoriaDe(descricao: String): String
   - {static} normalizar(texto: String): String
-  - calcularSaldoContas(pedido: Comunicado): Comunicado <<planejado>>
+  - calcularSaldoContas(pedido: Comunicado): Comunicado
 }
 class DashboardHandler <<handler>> {
   - LIMITE_TENDENCIA: double
@@ -537,10 +532,6 @@ class InvestmentsHandler <<handler>> {
 }
 class ErroDeNegocio
 class Comunicado
-note bottom of TransactionsHandler
-  <<planejado>>: calcularSaldoContas ainda nao
-  existe no codigo (issue #106).
-end note
 
 HandlerRegistry o-- "0..*" Handler
 HandlerRegistry ..> EcoHandler : criarPadrao
@@ -649,15 +640,15 @@ S -> S : remove Parceiro de usuarios e adeus()
 @enduml
 ```
 
-## 9. Planejado: `PedidoCalcularSaldoContas` «planejado»
+## 9. `PedidoCalcularSaldoContas`
 
-Ainda não existe como `.java` (issue #106; ver `docs/especificacao-contas-e-transferencias.md`, seção 5). Operação pura, como as demais: o Backend lê contas e movimentos no MongoDB e manda tudo no pedido; o Servidor devolve o saldo atual de cada conta.
+Implementado em `PedidoCalcularSaldoContas.java` (issue #106). Operação pura, como as demais: o Backend lê contas e movimentos no MongoDB e manda tudo no pedido; o Servidor devolve o saldo atual de cada conta.
 
 | Item | Descrição |
 |---|---|
 | Pedido | `PedidoCalcularSaldoContas`: contas (cada uma com `saldoInicial`) e movimentos (receitas, despesas e transferências). Nomes exatos a definir com o Backend. |
 | Resposta | `RespostaCalcularSaldoContas`: saldo atual de cada conta. |
-| Handler | `TransactionsHandler.calcularSaldoContas` «planejado». |
+| Handler | `TransactionsHandler.calcularSaldoContas`. |
 | Regra (RN2, RN6, RN9) | `saldoAtual = saldoInicial + receitas - despesas ± transferências`; a transferência subtrai da conta de origem e soma na de destino. O saldo é sempre calculado, nunca gravado. |
 | Chamador | Backend (`GET /accounts` e a criação de transferência). |
 
@@ -682,14 +673,12 @@ classDiagram
         -categoria: String
     }
     class PedidoCalcularSaldoContas {
-        <<planejado>>
         <<dto>>
         +TIPO: String
         -contas: lista
         -movimentos: lista
     }
     class RespostaCalcularSaldoContas {
-        <<planejado>>
         <<dto>>
         +TIPO: String
         -saldos: lista
@@ -707,7 +696,7 @@ skinparam classAttributeIconSize 0
 class TransactionsHandler <<handler>> {
   + registrarEm(registry: HandlerRegistry)
   - categorizar(pedido: Comunicado): Comunicado
-  - calcularSaldoContas(pedido: Comunicado): Comunicado <<planejado>>
+  - calcularSaldoContas(pedido: Comunicado): Comunicado
 }
 class PedidoCategorizarTransacao <<dto>> {
   + {static} TIPO: String
@@ -718,12 +707,12 @@ class RespostaCategorizarTransacao <<dto>> {
   + {static} TIPO: String
   - categoria: String
 }
-class PedidoCalcularSaldoContas <<planejado>> <<dto>> {
+class PedidoCalcularSaldoContas <<dto>> {
   + {static} TIPO: String
   - contas: lista
   - movimentos: lista
 }
-class RespostaCalcularSaldoContas <<planejado>> <<dto>> {
+class RespostaCalcularSaldoContas <<dto>> {
   + {static} TIPO: String
   - saldos: lista
 }
