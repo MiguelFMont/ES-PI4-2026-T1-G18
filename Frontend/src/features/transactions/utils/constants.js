@@ -6,6 +6,10 @@ export const TIPOS = [
   { valor: 'receita', rotulo: 'Receita', cor: 'verde' },
 ];
 
+/** Transferência entre contas: não é receita nem despesa. Só aparece na lista e no filtro Tipo (não se cria nem se edita como tipo). */
+export const TRANSFERENCIA = { valor: 'transferencia', rotulo: 'Transferência', cor: 'azul' };
+export const TIPOS_FILTRO = [...TIPOS, TRANSFERENCIA];
+
 export const CATEGORIAS = [
   { valor: 'Alimentacao', rotulo: 'Alimentação', cor: 'laranja' },
   { valor: 'Transporte', rotulo: 'Transporte', cor: 'azul' },

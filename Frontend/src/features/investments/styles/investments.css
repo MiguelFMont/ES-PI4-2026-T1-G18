@@ -288,6 +288,10 @@
   display: flex;
   align-items: stretch;
   gap: 1.25rem;
+  /* a faixa de fundo mais escuro (a cor da página dentro do cartão da seção, como em Contas conectadas) contorna os cards e o botão Novo cartão */
+  padding: 1rem;
+  border-radius: 1.4rem;
+  background: var(--fundo);
 }
 
 .investments-cartoes {
@@ -303,9 +307,9 @@
   list-style: none;
 }
 
-/* três cartões à vista, mesmo que haja mais (o resto se vê rolando) */
+/* dois cartões e meio à vista, mesmo que haja mais (o resto se vê rolando) */
 .investments-cartoes > * {
-  flex: 0 0 max(15rem, calc((100% - 2.5rem) / 3));
+  flex: 0 0 max(21rem, calc((100% - 2.5rem) / 2.4));
   scroll-snap-align: start;
 }
 
@@ -322,69 +326,237 @@
 
 .investments-cartao-card {
   display: grid;
-  gap: 1.25rem;
-  align-content: start;
-  padding: 1.5rem;
+  gap: 1rem;
+  align-content: space-between;
+  padding: 1.25rem 1.4rem;
   border: var(--borda-elemento, 0);
   border-radius: 1.1rem;
   background: var(--fundo-card);
   box-shadow: var(--sombra);
-  cursor: pointer; /* o card inteiro seleciona o cartão (o botão Ver compras é o caminho do teclado) */
+  cursor: pointer; /* o card inteiro escolhe o cartão; só os botões Editar e Excluir fazem outra coisa */
   transition: scale 0.1s ease, box-shadow 0.15s ease;
 }
 
-/* ao passar o mouse o card cresce um pouco */
 .investments-cartao-card:hover {
-  scale: 1.02;
+  scale: 1.01;
 }
 
-/* o cartão escolhido não tem contorno: quem marca é o botão Ver compras, que fica na cor principal */
-.investments-cartao-card--selecionado [data-acao='selecionar'] {
-  background: var(--destaque);
-  color: var(--destaque-texto);
+/* o cartão escolhido ganha um anel na cor principal */
+.investments-cartao-card--selecionado {
+  box-shadow: 0 0 0 2px var(--destaque), var(--sombra);
 }
 
-.investments-cartao-card:focus {
+.investments-cartao-card:focus-visible {
   outline: none;
+  box-shadow: var(--sombra-foco);
 }
 
 .investments-cartao-card__topo {
-  display: grid;
-  gap: 0.75rem; /* o nome em cima e os botões sempre embaixo dele */
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--texto) 12%, transparent);
 }
 
-.investments-cartao-card__nome {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
+.investments-cartao-card__texto {
+  display: grid;
+  gap: 0.05rem;
+  flex: 1 1 0;
   min-width: 0;
 }
 
 .investments-cartao-card h3 {
-  font-size: 1.25rem;
-  overflow-wrap: anywhere;
+  font-size: 1.1rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* etiqueta pequena: o texto sempre aparece, a cor só reforça */
-.investments-etiqueta {
-  padding: 0.15rem 0.6rem;
+.investments-cartao-card__texto p {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8rem;
+}
+
+.investments-cartao-card__acoes {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.investments-cartao-card__rodape {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+}
+
+.investments-cartao-card__rodape p {
+  font-size: 0.8rem;
+}
+
+.investments-cartao-card__valor {
+  font-size: 1.5rem !important;
+  font-weight: 600;
+  color: var(--texto);
+}
+
+.investments-cartao-card__limite {
+  text-align: right;
+}
+
+/* o "logo" do cartão: um quadrado arredondado na cor do banco da conta, com as iniciais do nome (ver utils/logo.js) */
+.cartao-logo {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 3.2rem;
+  height: 3.2rem;
+  border-radius: 0.75rem;
+  background: var(--logo-fundo, #4b4d4b);
+  color: var(--logo-texto, #fff);
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.cartao-logo--pequeno {
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 0.6rem;
+  font-size: 0.95rem;
+}
+
+/* a fatura do cartão escolhido (CartaoCompras) */
+.fatura {
+  display: grid;
+  gap: 1.25rem;
+  padding: 1.5rem 1.75rem;
+}
+
+.fatura__topo {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--texto) 12%, transparent);
+}
+
+.fatura__nome {
+  font-size: 1.2rem;
+}
+
+.fatura__selo {
+  padding: 0.2rem 0.7rem;
   border-radius: 999px;
   background: var(--fundo-campo);
-  font-size: 0.75rem;
-  font-weight: 700;
   color: var(--texto-suave);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
-/* os totais dentro do card: três colunas que se ajustam à largura */
-.investments-cartao-card .investments-detalhes {
-  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+.fatura__selo[data-situacao='atual'] {
+  background: var(--destaque);
+  color: var(--destaque-texto);
+}
+
+.fatura__mes {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.fatura__nav {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.fatura__seta {
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border: var(--borda-elemento, 0);
+  border-radius: 0.8rem;
+  background: var(--fundo-campo);
+  color: var(--texto);
+  cursor: pointer;
+  transition: scale 0.1s ease;
+}
+
+.fatura__seta:hover,
+.fatura__seta:focus-visible {
+  scale: 1.05;
+  outline: none;
+}
+
+.fatura__titulo {
+  font-size: 1.4rem;
+  font-weight: 300;
+}
+
+.fatura__titulo strong {
+  font-weight: 700;
+}
+
+.fatura__total {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin-left: auto;
+}
+
+.fatura__total strong {
+  font-size: 1.4rem;
+}
+
+.fatura__quadros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.9rem;
+}
+
+.fatura__quadro {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--texto) 10%, transparent);
+  border-radius: 1rem;
+}
+
+.fatura__quadro p:first-child {
+  font-size: 0.8rem;
+}
+
+.fatura__quadro p:last-child {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.fatura__icone {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.8rem;
+  height: 2.8rem;
+  border-radius: 0.8rem;
+  background: var(--fundo-campo);
+  color: var(--texto);
 }
 
 /* o card que adiciona um cartão: ocupa o lugar de mais um card, com a mesma altura dos outros */
 .investments-cartao-novo {
   display: grid;
-  min-height: 12rem;
+  min-height: 9.5rem;
 }
 
 .investments-cartao-novo__botao {
@@ -480,7 +652,7 @@
 
 .investments-modal .investments-cartao {
   width: 100%;
-  max-width: 28rem;
+  max-width: 34rem; /* largo o bastante para "Dia do fechamento (1 a 28) *" caber em uma linha */
   padding: 1.5rem;
   border: 0;
   border-radius: 1.75rem;
@@ -543,4 +715,46 @@
   .investments-modal .investments-form {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* o esqueleto de um card de cartão */
+.esqueleto--cartao {
+  height: 9.5rem;
+}
+
+/* sem nenhum cartão: o botão Novo cartão ocupa a largura toda da faixa */
+.investments-cartoes-faixa--vazia .investments-cartao-novo-area {
+  flex: 1 1 auto;
+  padding: 0;
+}
+
+.investments-cartoes-faixa--vazia .investments-cartao-novo {
+  min-height: 7.5rem;
+}
+
+/* o cartão da seção "Meus cartões": o título em cima e, dentro, a faixa escura com os cards */
+.investments-cartoes-secao {
+  display: grid;
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
+/* o logo do banco dentro do quadrado do cartão: fundo branco e o logo encaixado */
+.cartao-logo.com-logo {
+  padding: 0.3rem 0.4rem;
+  background: #ffffff;
+}
+
+/* Os lançamentos do cartão usam as peças da tela de Transações (barra, lista, formulário, detalhes): aqui elas só encaixam na fatura. */
+.transactions-page--embutida {
+  display: block;
+}
+
+/* formulário, detalhes e janela de cartão são painéis fixos: o contêiner deles não ocupa lugar (nem o espaço entre os blocos da página) */
+.transactions-page--modais {
+  display: contents;
+}
+
+.barra__novo-area[hidden] {
+  display: none;
 }

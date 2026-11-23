@@ -2,19 +2,14 @@ import { ligarCalendario } from '../../../../shared/components/Calendario.js';
 import { isoParaBr } from '../../../../shared/utils/dateRange.js';
 import { aplicarMascaraMoeda } from '../../../../shared/components/campos.js';
 import { lerValor } from '../../../../shared/utils/moeda.js';
-import { CATEGORIAS, FORMAS_PAGAMENTO, TIPOS } from '../../utils/constants.js';
-
-const ORIGENS = [
-  { valor: 'manual', rotulo: 'Manual', cor: 'cinza' },
-  { valor: 'pluggy', rotulo: 'Open Finance', cor: 'destaque' },
-];
+import { CATEGORIAS, FORMAS_PAGAMENTO, TIPOS_FILTRO } from '../../utils/constants.js';
 
 const PILULAS = [
-  { chave: 'tipo', rotulo: 'Tipo', todas: 'Todos', opcoes: TIPOS },
+  { chave: 'tipo', rotulo: 'Tipo', todas: 'Todos', opcoes: TIPOS_FILTRO },
   { chave: 'categoria', rotulo: 'Categorias', todas: 'Todas', opcoes: CATEGORIAS },
   { chave: 'formaPagamento', rotulo: 'Pagamento', todas: 'Todos', opcoes: FORMAS_PAGAMENTO },
   { chave: 'metaId', rotulo: 'Meta', todas: 'Todas', opcoes: [] }, // as metas chegam depois (definirMetas)
-  { chave: 'origem', rotulo: 'Origem', todas: 'Todas', opcoes: ORIGENS },
+  { chave: 'contaId', rotulo: 'Origem', todas: 'Todas', opcoes: [] }, // a origem de um lançamento é a conta: as contas chegam depois (definirContas)
 ];
 
 const ESPERA_BUSCA_MS = 300;
@@ -36,12 +31,18 @@ const ISO_DO_MES = (ano, mes) => {
  * "Tudo"), a lista passa a mostrar esse período; as setas voltam a andar de mês em mês.
  * Chama `aoMudar(parametros)` com os parâmetros da API (período do mês mais os filtros) na primeira vez e a cada mudança, e
  * `aoSelecionar(ativo)` ao ligar ou desligar o modo de seleção. `aoNovo(tipo)` é chamado pelo menu do botão Lançamento
- * (Nova despesa, Nova receita) e pelas letras D e R. Devolve { definirMetas(metas), sairDaSelecao() }.
+ * (Nova despesa, Nova receita, Nova transferência) e pelas letras D, R e T. Devolve { definirMetas(metas), definirContas(contas), sairDaSelecao() }.
  */
-export function iniciarBarra(raiz, { aoMudar, aoSelecionar, aoNovo, signal }) {
+export function iniciarBarra(raiz, { aoMudar, aoSelecionar, aoNovo, signal, escopoDoCartao = false }) {
+  // Na aba Cartão (escopoDoCartao): o período é a fatura (some o mês da barra), o pagamento e a conta já são os do cartão (sem esses filtros) e não há transferência.
+  if (escopoDoCartao) {
+    raiz.querySelector('.barra__mes').hidden = true;
+    raiz.querySelector('[data-tipo="transferencia"]')?.remove();
+  }
   const hoje = new Date();
   // `periodo`: null (o mês das setas), { dataInicio, dataFim } (período escolhido no calendário) ou { tudo: true } (sem datas)
-  const estado = { ano: hoje.getFullYear(), mes: hoje.getMonth(), periodo: null, filtros: {}, faixa: { min: null, max: null }, busca: '', selecionando: false };
+  // começa em "Todo o período" (sem datas): a lista é paginada (quantidade por página no rodapé), então não precisa começar pelo mês
+  const estado = { ano: hoje.getFullYear(), mes: hoje.getMonth(), periodo: { tudo: true }, filtros: {}, faixa: { min: null, max: null }, busca: '', selecionando: false };
 
   const titulo = raiz.querySelector('#barra-mes');
   const caixaPilulas = raiz.querySelector('#barra-pilulas');
@@ -61,6 +62,16 @@ export function iniciarBarra(raiz, { aoMudar, aoSelecionar, aoNovo, signal }) {
   rotuloBusca.append(campoBusca);
   rotuloBusca.insertAdjacentHTML('beforeend', '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 16l4.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>');
   celulaBusca?.replaceChildren(rotuloBusca);
+  // "Limpar filtros": fica acima do campo de busca e só abre (com animação) quando há filtro ligado
+  const botaoLimpar = raiz.querySelector('#barra-limpar-filtros');
+  const areaLimpar = document.createElement('div');
+  areaLimpar.className = 'barra__limpar-area';
+  areaLimpar.inert = true; // fechado, o botão não recebe foco nem clique
+  const internoLimpar = document.createElement('div');
+  internoLimpar.className = 'barra__limpar-interno';
+  internoLimpar.append(botaoLimpar);
+  areaLimpar.append(internoLimpar);
+  celulaBusca?.prepend(areaLimpar);
   let temporizadorBusca;
 
   function parametros() {
@@ -190,10 +201,10 @@ export function iniciarBarra(raiz, { aoMudar, aoSelecionar, aoNovo, signal }) {
   }, { signal });
   signal?.addEventListener('abort', () => clearTimeout(temporizadorMenu));
 
-  // as letras D e R abrem o formulário (só fora de campos de texto e sem painel aberto)
+  // as letras D, R e T abrem o formulário (só fora de campos de texto e sem painel aberto)
   document.addEventListener('keydown', (evento) => {
     if (evento.ctrlKey || evento.metaKey || evento.altKey || evento.repeat) return;
-    const tipo = { d: 'despesa', r: 'receita' }[evento.key.toLowerCase()];
+    const tipo = { d: 'despesa', r: 'receita', ...(escopoDoCartao ? {} : { t: 'transferencia' }) }[evento.key.toLowerCase()];
     if (!tipo) return;
     const alvo = evento.target;
     if (alvo instanceof HTMLElement && (alvo.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(alvo.tagName))) return;
@@ -227,18 +238,22 @@ export function iniciarBarra(raiz, { aoMudar, aoSelecionar, aoNovo, signal }) {
   // estreitas, em que as colunas somem). O CSS mostra um ou o outro; os dois leem e escrevem o mesmo estado (`estado`).
   const instancias = new Map(); // chave do filtro ('tipo', 'categoria', ..., 'valor') -> [{ botao, menu, rotuloTexto, base, noCabecalho, campos }]
   const todasInstancias = () => [...instancias.values()].flat();
-  const botaoLimpar = raiz.querySelector('#barra-limpar-filtros');
   const SETA = '<svg class="barra__cab-seta" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   const reais = (n) => new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(n);
   let contador = 0;
+  let cartoesDoUsuario = []; // para o submenu do Pagamento > Cartão de crédito (definirCartoes)
 
   function fecharMenus(exceto) {
-    for (const { botao, menu } of todasInstancias()) {
+    for (const { botao, menu, submenu } of todasInstancias()) {
       if (menu === exceto) continue;
       menu.hidden = true;
+      if (submenu) submenu.hidden = true;
       botao.setAttribute('aria-expanded', 'false');
     }
   }
+
+  /** "Nubank | Conta corrente | Nubank": o cartão, a conta a que ele está vinculado e o banco dela. */
+  const rotuloDoCartao = (cartao) => (cartao.conta ? `${cartao.nome} | ${cartao.conta.nome} | ${cartao.conta.bancoNome}` : `${cartao.nome} | sem conta`);
 
   function desenharOpcoes(config, menu) {
     const itens = [{ valor: '', rotulo: config.todas }, ...config.opcoes].map((opcao) => {
@@ -249,6 +264,7 @@ export function iniciarBarra(raiz, { aoMudar, aoSelecionar, aoNovo, signal }) {
       item.dataset.valor = opcao.valor;
       if (opcao.cor) item.dataset.cor = opcao.cor;
       item.textContent = opcao.rotulo;
+      if (config.chave === 'formaPagamento' && opcao.valor === 'credito') item.dataset.submenu = ''; // a seta: abre a lista dos cartões
       item.setAttribute('aria-selected', String((estado.filtros[config.chave] ?? '') === opcao.valor));
       return item;
     });
@@ -271,10 +287,18 @@ export function iniciarBarra(raiz, { aoMudar, aoSelecionar, aoNovo, signal }) {
   function atualizarFiltro(chave) {
     const config = PILULAS.find((p) => p.chave === chave);
     const ativo = chave === 'valor' ? filtroDeValorAtivo() : Boolean(estado.filtros[chave]);
-    const texto = chave === 'valor' ? textoDoValor() : config?.opcoes.find((o) => o.valor === estado.filtros[chave])?.rotulo;
+    const opcaoAtiva = chave === 'valor' ? null : config?.opcoes.find((o) => o.valor === estado.filtros[chave]);
+    let texto = chave === 'valor' ? textoDoValor() : (opcaoAtiva?.curto ?? opcaoAtiva?.rotulo);
+    // Pagamento > Cartão de crédito > um cartão: o nome da coluna vira o nome do cartão ("Nubank")
+    if (chave === 'formaPagamento' && estado.filtros.cartaoId) {
+      const cartao = cartoesDoUsuario.find((c) => c.id === estado.filtros.cartaoId);
+      if (cartao) texto = cartao.nome;
+    }
     for (const inst of instancias.get(chave) ?? []) {
-      // no cabeçalho o título da coluna não muda (só ganha a cor de destaque); no painel o botão mostra a opção escolhida
-      inst.rotuloTexto.textContent = ativo && texto && !inst.noCabecalho ? texto : inst.base;
+      // com o filtro ligado, o nome da coluna (no cabeçalho e no painel) vira a opção escolhida (Tipo -> Despesa) e ganha a cor de destaque;
+      // sem filtro, volta ao nome da coluna
+      inst.rotuloTexto.textContent = ativo && texto ? texto : inst.base;
+      inst.botao.title = ativo && texto ? `${inst.base}: ${texto}` : '';
       inst.botao.classList.toggle('barra__pilula--ativa', ativo);
       if (chave === 'valor') {
         for (const outra of instancias.get('valor')) {
@@ -361,6 +385,7 @@ export function iniciarBarra(raiz, { aoMudar, aoSelecionar, aoNovo, signal }) {
       menu.addEventListener('click', (evento) => {
         const item = evento.target.closest('.barra__opcao');
         if (!item) return;
+        if (config.chave === 'formaPagamento') delete estado.filtros.cartaoId; // escolher só o pagamento solta o cartão específico
         estado.filtros[config.chave] = item.dataset.valor;
         atualizarFiltro(config.chave);
         fecharMenus();
@@ -369,14 +394,57 @@ export function iniciarBarra(raiz, { aoMudar, aoSelecionar, aoNovo, signal }) {
     }
     menu.hidden = true;
 
+    // Pagamento: passar o mouse em "Cartão de crédito" abre, ao lado, a lista dos cartões do usuário ("nome | conta"); escolher um filtra por ele
+    let submenu = null;
+    if (config.chave === 'formaPagamento') {
+      submenu = document.createElement('div');
+      submenu.className = 'barra__menu barra__submenu';
+      submenu.setAttribute('role', 'listbox');
+      submenu.setAttribute('aria-label', 'Cartões de crédito');
+      submenu.hidden = true;
+
+      const abrirSubmenu = (item) => {
+        submenu.replaceChildren(...cartoesDoUsuario.map((cartao) => {
+          const opcao = document.createElement('button');
+          opcao.type = 'button';
+          opcao.className = 'barra__opcao';
+          opcao.setAttribute('role', 'option');
+          opcao.dataset.cartaoId = cartao.id;
+          opcao.textContent = rotuloDoCartao(cartao);
+          opcao.setAttribute('aria-selected', String(estado.filtros.cartaoId === cartao.id));
+          return opcao;
+        }));
+        submenu.style.top = `${menu.offsetTop + item.offsetTop}px`;
+        submenu.style.left = `${menu.offsetLeft + menu.offsetWidth + 6}px`;
+        submenu.hidden = false;
+      };
+      menu.addEventListener('mouseover', (evento) => {
+        const item = evento.target.closest('.barra__opcao');
+        if (!item) return;
+        if (item.dataset.valor === 'credito' && cartoesDoUsuario.length > 0) abrirSubmenu(item);
+        else submenu.hidden = true;
+      }, { signal });
+      submenu.addEventListener('click', (evento) => {
+        const opcao = evento.target.closest('.barra__opcao');
+        if (!opcao) return;
+        estado.filtros.formaPagamento = 'credito';
+        estado.filtros.cartaoId = opcao.dataset.cartaoId;
+        atualizarFiltro('formaPagamento');
+        fecharMenus();
+        aplicar();
+      }, { signal });
+    }
+
     const abrirMenu = () => {
       fecharMenus(menu);
       if (!ehValor) desenharOpcoes(config, menu);
+      if (submenu) submenu.hidden = true;
       menu.hidden = false;
       botao.setAttribute('aria-expanded', 'true');
     };
     const fecharEste = () => {
       menu.hidden = true;
+      if (submenu) submenu.hidden = true;
       botao.setAttribute('aria-expanded', 'false');
     };
     botao.addEventListener('click', () => (menu.hidden ? abrirMenu() : fecharEste()), { signal });
@@ -395,14 +463,15 @@ export function iniciarBarra(raiz, { aoMudar, aoSelecionar, aoNovo, signal }) {
     signal?.addEventListener('abort', () => clearTimeout(espera));
 
     area.append(botao, menu);
+    if (submenu) area.append(submenu);
     if (noCabecalho) destino.replaceChildren(area);
     else destino.append(area);
     if (!instancias.has(config.chave)) instancias.set(config.chave, []);
-    instancias.get(config.chave).push({ botao, menu, rotuloTexto, base, noCabecalho, campos });
+    instancias.get(config.chave).push({ botao, menu, submenu, rotuloTexto, base, noCabecalho, campos });
   }
 
   // a lista de filtros, na ordem das colunas: Tipo, Categoria, Pagamento, Meta, Origem e Valor
-  const FILTROS = [...PILULAS, { chave: 'valor', rotulo: 'Valor' }];
+  const FILTROS = [...PILULAS.filter((p) => !(escopoDoCartao && ['formaPagamento', 'contaId', 'metaId'].includes(p.chave))), { chave: 'valor', rotulo: 'Valor' }];
   for (const config of FILTROS) {
     criarFiltro(config, caixaPilulas, false);
     const celula = raiz.querySelector(`[data-filtro="${config.chave}"]`);
@@ -412,7 +481,8 @@ export function iniciarBarra(raiz, { aoMudar, aoSelecionar, aoNovo, signal }) {
   // "Limpar filtros" (na primeira linha, só aparece com algum filtro ligado)
   function atualizarLimpar() {
     const ativos = Object.values(estado.filtros).some(Boolean) || filtroDeValorAtivo();
-    botaoLimpar.hidden = !ativos;
+    areaLimpar.classList.toggle('barra__limpar-area--aberta', ativos);
+    areaLimpar.inert = !ativos;
   }
 
   botaoLimpar.addEventListener('click', () => {
@@ -458,6 +528,25 @@ export function iniciarBarra(raiz, { aoMudar, aoSelecionar, aoNovo, signal }) {
     definirMetas(metas) {
       const config = PILULAS.find((p) => p.chave === 'metaId');
       config.opcoes = metas.map((meta) => ({ valor: meta.id, rotulo: meta.titulo }));
+      atualizarFiltro(config.chave);
+    },
+
+ /** Põe os cartões do usuário no submenu de Pagamento > Cartão de crédito (filtro por cartão). */
+    definirCartoes(cartoes) {
+      cartoesDoUsuario = cartoes;
+      atualizarFiltro('formaPagamento');
+    },
+
+    /** Põe as contas do usuário na pílula "Origem" (filtro por conta). */
+    definirContas(contas) {
+      const config = PILULAS.find((p) => p.chave === 'contaId');
+      // a lista diz se a conta é manual ou do Open Finance ("Conta principal · Manual"); o nome da coluna, com o filtro ligado, fica só com o nome da conta
+      config.opcoes = contas.map((conta) => ({
+        valor: conta.id,
+        rotulo: `${conta.nome} · ${conta.tipo === 'open_finance' ? 'Open Finance' : 'Manual'}`,
+        curto: conta.nome,
+        cor: conta.tipo === 'open_finance' ? 'destaque' : 'cinza',
+      }));
       atualizarFiltro(config.chave);
     },
 

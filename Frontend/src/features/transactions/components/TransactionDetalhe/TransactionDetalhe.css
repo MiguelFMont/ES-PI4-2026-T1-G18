@@ -335,3 +335,18 @@
     border-radius: 0;
   }
 }
+
+/* fora do modo "Editar todos os campos" a observação é só para ler: não reage a clique nem a foco (sem contorno, cursor ou aumento) */
+.detalhe__linha textarea:read-only {
+  pointer-events: none;
+  caret-color: transparent;
+  outline: none;
+  resize: none;
+  scale: 1;
+  box-shadow: none;
+}
+
+/* Na aba Cartão não se vincula meta */
+[data-escopo-cartao] .campo:has(> #detalhe-metaId) {
+  display: none;
+}

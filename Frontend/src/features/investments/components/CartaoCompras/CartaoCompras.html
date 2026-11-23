@@ -1,54 +1,63 @@
-<!-- Componente: as compras feitas no cartão escolhido (despesas no crédito, inclusive as parceladas). Lógica em CartaoCompras.js.
-     Aparece quando um card de cartão está selecionado e mostra só um destes estados por vez (carregando, erro, nenhuma
-     compra ou a lista). Cada linha é feita a partir do <template> no fim deste arquivo. -->
-<section id="invest-compras-area" class="investments-cartao" aria-labelledby="invest-compras-titulo" hidden>
-  <div class="investments-secao-topo">
-    <h2 id="invest-compras-titulo">Compras no cartão</h2>
-    <p id="invest-compras-resumo" class="investments-texto-suave"></p>
+<!-- Componente: a fatura do cartão escolhido (aparece logo abaixo da fila de cartões, sem botão: escolher o cartão já mostra a fatura). Lógica em CartaoCompras.js.
+     Cabeçalho com o logo, o nome e o selo da fatura; navegação de mês; a fatura total; quatro quadros (compras à vista, parcelas do mês, fechamento
+     e vencimento); e, abaixo, a barra e a lista dos lançamentos do cartão no mês (as peças da tela de Transações). -->
+<section id="invest-compras-area" class="investments-cartao fatura" aria-labelledby="invest-compras-titulo" hidden>
+  <header class="fatura__topo">
+    <span class="cartao-logo cartao-logo--pequeno" id="invest-fatura-logo" aria-hidden="true"></span>
+    <h2 id="invest-compras-titulo" class="fatura__nome"></h2>
+    <span class="fatura__selo" id="invest-fatura-selo"></span>
+    <span class="tag-open-finance" id="invest-fatura-tag-of" hidden>Open Finance</span>
+  </header>
+
+  <div class="fatura__mes">
+    <div class="fatura__nav" role="group" aria-label="Mês da fatura">
+      <button type="button" id="invest-fatura-anterior" class="fatura__seta" aria-label="Fatura do mês anterior">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button type="button" id="invest-fatura-seguinte" class="fatura__seta" aria-label="Fatura do próximo mês">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+    <p class="fatura__titulo" aria-live="polite">Fatura <strong id="invest-fatura-mes"></strong></p>
+    <p class="fatura__total">
+      <span class="investments-texto-suave">Fatura total</span>
+      <strong class="valor-financeiro" id="invest-fatura-total"></strong>
+    </p>
   </div>
 
-  <div id="invest-compras-carregando" class="esqueleto-grupo" role="status">
-    <span class="esqueleto esqueleto--linha-extrato"></span>
-    <span class="esqueleto esqueleto--linha-extrato"></span>
-    <span class="esqueleto esqueleto--linha-extrato"></span>
-    <span class="so-leitor">Carregando as compras do cartão...</span>
+  <div class="fatura__quadros">
+    <div class="fatura__quadro">
+      <span class="fatura__icone" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7.5v9M14.3 9.4c-.4-.8-1.2-1.2-2.3-1.2-1.3 0-2.2.6-2.2 1.6 0 2 4.5 1 4.5 3.1 0 1-.9 1.6-2.3 1.6-1.1 0-2-.4-2.4-1.3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </span>
+      <div><p class="investments-texto-suave">Compras à vista</p><p class="valor-financeiro" id="invest-fatura-avista"></p></div>
+    </div>
+    <div class="fatura__quadro">
+      <span class="fatura__icone" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="22" height="22"><rect x="6" y="4.5" width="12" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9.5 4.5V3.5h5v1M9.5 10h5M9.5 13.5h5M9.5 17h3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </span>
+      <div><p class="investments-texto-suave">Parcelas do mês</p><p class="valor-financeiro" id="invest-fatura-parcelas"></p></div>
+    </div>
+    <div class="fatura__quadro">
+      <span class="fatura__icone" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="22" height="22"><rect x="3.5" y="6" width="17" height="12" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 10.5h17" stroke="currentColor" stroke-width="1.8"/><path d="M8 14.5h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </span>
+      <div><p class="investments-texto-suave">Fechamento</p><p id="invest-fatura-fechamento"></p></div>
+    </div>
+    <div class="fatura__quadro">
+      <span class="fatura__icone" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="22" height="22"><rect x="3.5" y="5" width="17" height="15.5" rx="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 10h17M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </span>
+      <div><p class="investments-texto-suave">Vencimento</p><p id="invest-fatura-vencimento"></p></div>
+    </div>
   </div>
 
-  <div id="invest-compras-erro" class="investments-estado" hidden>
-    <p id="invest-compras-erro-texto" role="alert"></p>
-    <button type="button" id="invest-compras-tentar-novamente" class="investments-botao">Tentar novamente</button>
+  <!-- Os lançamentos do cartão no mês da fatura: a mesma barra (filtros, busca, seleção) e a mesma lista da tela de Transações. Quem liga é a
+       InvestmentsPage, com o escopo do cartão. -->
+  <div class="transactions-page transactions-page--embutida">
+    <div class="transactions-novo">
+      <div data-incluir="/src/features/transactions/components/TransactionBarra/TransactionBarra.html"></div>
+      <div data-incluir="/src/features/transactions/components/TransactionLista/TransactionLista.html"></div>
+    </div>
   </div>
-
-  <p id="invest-compras-vazio" class="investments-vazio" hidden>
-    Nenhuma compra neste cartão ainda. Para registrar uma, use Nova transação em Transações e escolha Cartão de crédito.
-  </p>
-
-  <div id="invest-compras-conteudo" class="investments-tabela-rolavel" hidden>
-    <table class="investments-compras">
-      <caption class="so-leitor">Compras do cartão, da mais recente para a mais antiga</caption>
-      <thead>
-        <tr>
-          <th scope="col">Data</th>
-          <th scope="col">Descrição</th>
-          <th scope="col">Categoria</th>
-          <th scope="col">Parcelas</th>
-          <th scope="col" class="investments-compras__valor">Valor</th>
-        </tr>
-      </thead>
-      <tbody id="invest-compras-linhas"></tbody>
-    </table>
-  </div>
-
-  <p id="invest-compras-mais" class="investments-ajuda" hidden></p>
 </section>
-
-<!-- Modelo de uma compra: o JS copia este bloco para cada transação e só preenche os textos. -->
-<template id="modelo-compra">
-  <tr>
-    <td data-campo="data"></td>
-    <td data-campo="descricao"></td>
-    <td data-campo="categoria"></td>
-    <td data-campo="parcelas"></td>
-    <td class="investments-compras__valor valor-financeiro" data-campo="valor"></td>
-  </tr>
-</template>

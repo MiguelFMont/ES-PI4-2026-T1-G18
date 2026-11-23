@@ -9,6 +9,18 @@
  *   </div>
  */
 
+/**
+ * Faz o campo "tremer" (uma sacudida curta de lado a lado) para chamar a atenção para um erro. A animação é a `campo-tremer` de
+ * shared/styles/campos.css; com "reduzir movimento" ligado ela não acontece.
+ */
+export function tremer(controle) {
+  if (!controle) return;
+  controle.classList.remove('campo--tremendo');
+  void controle.offsetWidth; // reinicia a animação se o campo já estava tremendo
+  controle.classList.add('campo--tremendo');
+  controle.addEventListener('animationend', () => controle.classList.remove('campo--tremendo'), { once: true });
+}
+
 /** Devolve { controle, ler(), definir(valor), definirErro(mensagem), focar() } do campo com esse id. */
 export function ligarCampo(raiz, id) {
   const controle = raiz.querySelector(`#${id}`);
@@ -25,6 +37,7 @@ export function ligarCampo(raiz, id) {
       erro.hidden = !mensagem;
       erro.textContent = mensagem ?? '';
       if (mensagem) {
+        tremer(controle);
         controle.setAttribute('aria-invalid', 'true');
         controle.setAttribute('aria-describedby', erro.id);
       } else {

@@ -1,25 +1,25 @@
-import { formatarData, formatarMoeda } from '../../../../shared/utils/moeda.js';
+import { formatarMoeda } from '../../../../shared/utils/moeda.js';
 import { MAX_CARTOES } from '../../utils/constants.js';
-
-const MES_EM_TEXTO = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+import { aplicarLogo } from '../../utils/logo.js';
 
 /**
- * Liga a lista de cartões (HTML em CartoesLista.html): um card grande para cada cartão, com a fatura do mês, o vencimento,
- * o limite (e a barra de uso) e os totais, mais o card de adicionar outro (desligado no limite de 5 cartões). A tela
- * decide o que fazer em cada ação: `selecionar(cartao)`, `editar(cartao)`, `excluir(cartao)` e `novo()`. Clicar em qualquer
- * lugar do card (ou no botão Ver compras, para o teclado) o seleciona. Todo texto entra com textContent (vem da API).
+ * Liga a fila de cartões (HTML em CartoesLista.html): um card para cada cartão (logo, nome, tipo e conta, fechamento e vencimento, Editar e
+ * Excluir, fatura atual e limite disponível) numa fila horizontal com barra de rolagem, mais o card de adicionar outro (desligado no limite
+ * de 5 cartões). A tela decide o que fazer em `selecionar(cartao)`, `editar(cartao)`, `excluir(cartao)` e `novo()`. Clicar no card, ou Enter e
+ * Espaço nele, escolhe o cartão (e a fatura dele aparece abaixo). Todo texto entra com textContent (vem da API).
  * Devolve { mostrar(cartoes, idSelecionado) }, com a lista de GET /investments/cards.
  */
 export function iniciarCartoes(raiz, { signal, selecionar, editar, excluir, novo }) {
   const lista = raiz.querySelector('#invest-cartoes-lista');
   const faixa = raiz.querySelector('#invest-cartoes-faixa');
   const areaNovo = raiz.querySelector('#invest-cartao-novo-area');
+  const semCartao = raiz.querySelector('#invest-sem-cartao');
   const modelo = raiz.querySelector('#modelo-cartao');
   const modeloNovo = raiz.querySelector('#modelo-cartao-novo');
 
   const cartoesPorId = new Map();
 
-  // Um só ouvinte para os botões de todos os cards (delegação): eles são recriados a cada carga.
+  // Um só ouvinte para todos os cards (delegação): eles são recriados a cada carga.
   faixa.addEventListener('click', (evento) => {
     const botao = evento.target.closest('button');
     if (botao?.disabled) return;
@@ -29,60 +29,44 @@ export function iniciarCartoes(raiz, { signal, selecionar, editar, excluir, novo
     }
     const cartao = cartoesPorId.get(evento.target.closest('li[data-id]')?.dataset.id);
     if (!cartao) return;
-    // um botão de ação faz a ação dele; qualquer outro ponto do card (ou o Ver compras) seleciona o cartão
+    // um botão de ação faz a ação dele; qualquer outro ponto do card escolhe o cartão
     if (botao?.dataset.acao === 'editar') editar(cartao);
     else if (botao?.dataset.acao === 'excluir') excluir(cartao);
     else selecionar(cartao);
   }, { signal });
 
+  faixa.addEventListener('keydown', (evento) => {
+    if (evento.key !== 'Enter' && evento.key !== ' ') return;
+    const card = evento.target.closest('li[data-id]');
+    if (!card || evento.target !== card) return;
+    evento.preventDefault();
+    const cartao = cartoesPorId.get(card.dataset.id);
+    if (cartao) selecionar(cartao);
+  }, { signal });
+
   const campo = (card, nome) => card.querySelector(`[data-campo="${nome}"]`);
 
-  function criarCard(cartao, idSelecionado, unico) {
+  function criarCard(cartao, idSelecionado) {
     const card = modelo.content.firstElementChild.cloneNode(true);
     card.dataset.id = cartao.id;
     const selecionado = cartao.id === idSelecionado;
     card.classList.toggle('investments-cartao-card--selecionado', selecionado);
-    const botaoVer = card.querySelector('[data-acao="selecionar"]');
-    botaoVer.setAttribute('aria-pressed', String(selecionado));
-    botaoVer.setAttribute('aria-label', `Ver as compras do cartão ${cartao.nome}`);
-    const { fatura } = cartao;
+    card.setAttribute('aria-pressed', String(selecionado));
+    card.setAttribute('aria-label', `Cartão ${cartao.nome}`);
 
+    aplicarLogo(campo(card, 'logo'), cartao);
     campo(card, 'nome').textContent = cartao.nome;
-    campo(card, 'padrao').hidden = !cartao.padrao;
-    card.querySelector('[data-acao="editar"]').setAttribute('aria-label', `Editar o cartão ${cartao.nome}`);
-    const botaoExcluir = card.querySelector('[data-acao="excluir"]');
-    botaoExcluir.setAttribute('aria-label', `Excluir o cartão ${cartao.nome}`);
-    // o último cartão não se exclui: o Backend cria um cartão padrão sempre que o usuário fica sem nenhum, então ele voltaria na hora
-    if (unico) {
-      botaoExcluir.disabled = true;
-      botaoExcluir.title = 'Você precisa ter pelo menos um cartão. Crie outro para poder excluir este.';
-    }
-
-    campo(card, 'mes').textContent = MES_EM_TEXTO.format(new Date(`${fatura.mes}-01T00:00:00Z`));
-    campo(card, 'faturaValor').textContent = formatarMoeda(fatura.valor);
-    const emDias = (dias) => (dias === 0 ? 'hoje' : `em ${dias} ${dias === 1 ? 'dia' : 'dias'}`);
-    campo(card, 'fechamento').textContent = `Fecha em ${formatarData(`${fatura.fechamento}T00:00:00Z`)} (${emDias(fatura.diasParaFechar)})`;
-    campo(card, 'vencimento').textContent = `Vence em ${formatarData(`${fatura.vencimento}T00:00:00Z`)} (${emDias(fatura.diasParaVencer)})`;
-
+    campo(card, 'tagOpenFinance').hidden = !cartao.openFinance; // a tag: o cartão é de uma conta Open Finance
+    const origem = cartao.openFinance ? 'Cartão Open Finance' : 'Cartão manual';
+    campo(card, 'tipo').textContent = cartao.conta ? `${origem} · ${cartao.conta.nome}` : `${origem} · sem conta vinculada`;
+    campo(card, 'ciclo').textContent = `Fecha dia ${cartao.diaFechamento} · Vence dia ${Number(cartao.fatura.vencimento.slice(8, 10))}`;
+    campo(card, 'faturaValor').textContent = formatarMoeda(cartao.fatura.valor);
     campo(card, 'limiteDisponivel').textContent = formatarMoeda(cartao.limiteDisponivel);
-    campo(card, 'limiteTotal').textContent = formatarMoeda(cartao.limite);
-
-    // a barra mostra quanto do limite está em uso: compras do mês e o saldo devedor dos parcelamentos
-    const usado = cartao.limite - cartao.limiteDisponivel;
-    const percentual = Math.min(100, Math.max(0, (usado / cartao.limite) * 100));
-    const barra = campo(card, 'barra');
-    barra.setAttribute('aria-valuenow', String(Math.round(percentual)));
-    barra.style.setProperty('--uso', `${percentual}%`);
-    barra.classList.toggle('investments-barra--alerta', percentual >= 80);
-
-    const excedido = cartao.limiteDisponivel < 0;
-    const aviso = campo(card, 'aviso');
-    aviso.hidden = !excedido;
-    aviso.textContent = excedido ? `Limite excedido em ${formatarMoeda(-cartao.limiteDisponivel)}.` : '';
-
-    campo(card, 'compras').textContent = formatarMoeda(fatura.comprasNoCredito);
-    campo(card, 'parcelas').textContent = formatarMoeda(fatura.parcelasDoMes);
-    campo(card, 'saldoDevedor').textContent = formatarMoeda(cartao.saldoDevedor);
+    card.querySelector('[data-acao="editar"]').setAttribute('aria-label', `Editar o cartão ${cartao.nome}`);
+    // cartão Open Finance: só o ícone e a cor mudam e ele não se exclui (desconectando a conta, ele vira manual)
+    const excluir = card.querySelector('[data-acao="excluir"]');
+    if (cartao.openFinance) excluir.remove();
+    else excluir.setAttribute('aria-label', `Excluir o cartão ${cartao.nome}`);
     return card;
   }
 
@@ -97,7 +81,10 @@ export function iniciarCartoes(raiz, { signal, selecionar, editar, excluir, novo
       botaoNovo.disabled = cheio;
       if (cheio) botaoNovo.title = `Você chegou ao limite de ${MAX_CARTOES} cartões.`;
 
-      lista.replaceChildren(...cartoes.map((c) => criarCard(c, idSelecionado, cartoes.length === 1)));
+      lista.replaceChildren(...cartoes.map((c) => criarCard(c, idSelecionado)));
+      lista.hidden = cartoes.length === 0;
+      faixa.classList.toggle('investments-cartoes-faixa--vazia', cartoes.length === 0); // sem cartão, o botão Novo cartão ocupa a largura toda
+      semCartao.hidden = cartoes.length > 0;
       areaNovo.replaceChildren(cardNovo);
     },
   };

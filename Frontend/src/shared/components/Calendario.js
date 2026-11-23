@@ -1,5 +1,6 @@
 import { isoDeData, isoParaBr, lerData, lerPeriodo, mascararData, periodoPredefinido } from '../utils/dateRange.js';
 import { entradaPorTeclado } from '../utils/entrada.js';
+import { tremer } from './campos.js';
 
 const MESES_EM_TEXTO = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' });
 const DATA_EM_TEXTO = new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -254,7 +255,10 @@ export function ligarCalendario(area, { signal } = {}) {
     mensagemErro.hidden = !mensagem;
     mensagemErro.textContent = mensagem ?? '';
     for (const caixa of caixas) {
-      if (mensagem) caixa.setAttribute('aria-invalid', 'true');
+      if (mensagem) {
+        tremer(caixa);
+        caixa.setAttribute('aria-invalid', 'true');
+      } 
       else caixa.removeAttribute('aria-invalid');
     }
   }

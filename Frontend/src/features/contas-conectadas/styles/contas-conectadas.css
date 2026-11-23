@@ -116,3 +116,41 @@
     flex: 1 1 100%; /* no celular os botões ocupam a linha toda, mais fáceis de tocar */
   }
 }
+
+/* o botão que está conectando mostra uma rodinha (a mesma do carregamento no alto da tela, de giro irregular) e o texto de andamento
+   fica só para leitor de tela: quem avisa é o indicador no alto da tela (carregando() em shared/components/notificacao.js) */
+.contas-botao--carregando::before {
+  content: '';
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-inline-end: 0.55em;
+  vertical-align: -0.15em;
+  border: 0.2em solid color-mix(in srgb, currentColor 25%, transparent);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: contas-girar 1.15s cubic-bezier(0.5, 0.05, 0.3, 1) infinite;
+}
+
+@keyframes contas-girar {
+  0% { rotate: 0deg; }
+  35% { rotate: 230deg; }
+  55% { rotate: 250deg; }
+  100% { rotate: 360deg; }
+}
+
+.contas-andamento:not([hidden]) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .contas-botao--carregando::before {
+    animation-duration: 2.4s;
+  }
+}

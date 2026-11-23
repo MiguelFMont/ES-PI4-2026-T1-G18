@@ -345,3 +345,28 @@
 @keyframes meta-fundo-entrar {
   from { opacity: 0; }
 }
+
+/* o ícone da meta (escolhido no formulário): um círculo suave na cor escolhida, antes do título */
+.goals-item__icone {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--icone-cor, var(--destaque)) 18%, transparent);
+  color: var(--icone-cor, var(--destaque));
+}
+
+.goals-item__icone[hidden] {
+  display: none;
+}
+
+.goals-item__topo:has(.goals-item__icone:not([hidden])) {
+  justify-content: flex-start;
+  gap: 0.75rem;
+}
+
+.goals-item__topo:has(.goals-item__icone:not([hidden])) .goals-status {
+  margin-left: auto;
+}

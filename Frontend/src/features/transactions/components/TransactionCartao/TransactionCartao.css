@@ -1,0 +1,14 @@
+/* Componente TransactionCartao: a janela "Novo cartão" por cima do formulário de lançamento. A janela e os campos vêm de TransactionForm.css e de
+   shared/styles/campos.css; aqui fica só o que é próprio dela: ficar acima da janela do lançamento (z-index 50). */
+
+.cartao-rapido-fundo {
+  z-index: 70;
+}
+
+.transactions-painel.cartao-rapido {
+  z-index: 75;
+}
+
+.transactions-painel .cartao-rapido__cartao {
+  max-width: 30rem;
+}

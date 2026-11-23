@@ -293,8 +293,8 @@ export function iniciarExtrato(raiz, { irParaPagina, tentarNovamente, mudarLimit
     const quantidade = selecionadas.size;
     const confirmou = await confirmar(
       quantidade === 1
-        ? 'Excluir a transação selecionada? Não dá para desfazer.'
-        : `Excluir as ${quantidade} transações selecionadas? Não dá para desfazer.`,
+        ? 'Excluir a transação selecionada?'
+        : `Excluir as ${quantidade} transações selecionadas?`,
       'erro'
     );
     if (!confirmou) return;

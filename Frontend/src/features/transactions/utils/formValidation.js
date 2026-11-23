@@ -11,6 +11,8 @@ export const MENSAGENS_CAMPO = {
   data: 'Informe uma data válida.',
   categoria: 'Escolha a categoria ou use Sugerir.',
   formaPagamento: 'Escolha o pagamento.',
+  conta: 'Escolha a conta.',
+  contaId: 'Escolha a conta.',
   meta: 'Escolha a meta.',
   metaId: 'Escolha a meta.',
   cartao: 'Escolha o cartão e as parcelas (de 1 a 24).',
@@ -51,6 +53,10 @@ export function validarCampo(nome, texto) {
     case 'formaPagamento': return estaEm(FORMAS_PAGAMENTO, entrada) ? { erro: null, valor: entrada } : falha();
     // meta: vazio desvincula (null); senão, o id da meta. A lista de metas é do Backend, que confere se é do usuário.
     case 'metaId': return !entrada ? { erro: null, valor: null } : /^[a-f\d]{24}$/i.test(entrada) ? { erro: null, valor: entrada } : falha();
+    // conta: o id de uma conta do usuário (a lista é do Backend, que confere se é dele)
+    // cartão: vazio tira o cartão (null); senão, o id de um cartão (o Backend confere se é do usuário e da conta do lançamento)
+    case 'cartaoId': return !entrada ? { erro: null, valor: null } : /^[a-f\d]{24}$/i.test(entrada) ? { erro: null, valor: entrada } : falha('Escolha o cartão.');
+    case 'contaId': return /^[a-f\d]{24}$/i.test(entrada) ? { erro: null, valor: entrada } : falha();
     case 'observacoes': {
       const observacoes = entrada.trim();
       return observacoes.length <= LIMITE_OBSERVACOES ? { erro: null, valor: observacoes } : falha();

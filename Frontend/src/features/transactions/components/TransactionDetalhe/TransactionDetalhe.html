@@ -1,8 +1,8 @@
 <!-- Componente: detalhes de uma transação, num painel que desliza da direita. Lógica em TransactionDetalhe.js.
-     Abre editando a DATA e a OBSERVAÇÃO; o botão "Editar todos os campos" mostra também descrição, valor, tipo, categoria, pagamento e meta
+     Abre só para ler (a data não aparece e a observação fica travada); o botão "Editar todos os campos" liga a edição de data, observação, descrição, valor, tipo, categoria, pagamento, meta e conta
      (que também se editam ao clicar neles na própria lista). O botão "Salvar alterações" só aparece quando algo mudou. "Editar todos os campos" liga os demais (descrição, valor, tipo, categoria, pagamento e meta). Embaixo ficam duplicar e excluir. -->
 <div id="detalhe-fundo" class="detalhe-fundo"></div>
-<aside id="detalhe" class="detalhe" role="dialog" aria-modal="true" aria-labelledby="detalhe-titulo" aria-hidden="true" inert>
+<aside id="detalhe" class="detalhe" data-folha role="dialog" aria-modal="true" aria-labelledby="detalhe-titulo" aria-hidden="true" inert>
   <div class="detalhe__topo">
     <span id="detalhe-tipo" class="detalhe__chip"></span>
     <button type="button" id="detalhe-fechar" class="detalhe__fechar" aria-label="Fechar os detalhes">
@@ -45,7 +45,7 @@
         </div>
         <div class="campo detalhe__linha campo--seletor" data-ao-clicar>
           <label for="detalhe-tipo-campo">Tipo</label>
-          <select id="detalhe-tipo-campo" aria-controls="lista-detalhe-tipo-campo" aria-expanded="false">
+          <select id="detalhe-tipo-campo" data-icones="tipo" aria-controls="lista-detalhe-tipo-campo" aria-expanded="false">
             <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
             <option value="despesa">Despesa</option>
             <option value="receita">Receita</option>
@@ -55,7 +55,7 @@
         </div>
         <div class="campo detalhe__linha campo--seletor" data-ao-clicar>
           <label for="detalhe-categoria">Categoria</label>
-          <select id="detalhe-categoria" aria-controls="lista-detalhe-categoria" aria-expanded="false">
+          <select id="detalhe-categoria" data-icones="categoria" aria-controls="lista-detalhe-categoria" aria-expanded="false">
             <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
             <option value="Alimentacao">Alimentação</option>
             <option value="Transporte">Transporte</option>
@@ -71,7 +71,7 @@
         </div>
         <div class="campo detalhe__linha campo--seletor" data-ao-clicar>
           <label for="detalhe-formaPagamento">Pagamento</label>
-          <select id="detalhe-formaPagamento" aria-controls="lista-detalhe-formaPagamento" aria-expanded="false">
+          <select id="detalhe-formaPagamento" data-icones="pagamento" aria-controls="lista-detalhe-formaPagamento" aria-expanded="false">
             <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
             <option value="dinheiro">Dinheiro</option>
             <option value="pix">Pix</option>
@@ -83,6 +83,18 @@
           <div class="seletor__lista" id="lista-detalhe-formaPagamento" role="listbox" aria-label="Pagamento"></div>
           <p class="campo__erro" id="detalhe-formaPagamento-erro" hidden></p>
         </div>
+        <!-- Cartão: só no pagamento Cartão de crédito, com os cartões da conta escolhida abaixo ("nome | conta") -->
+        <div class="campo detalhe__linha campo--seletor" id="detalhe-cartao-area" data-ao-clicar data-folha-rodape="Criar outro cartão" hidden>
+          <label for="detalhe-cartaoId">Cartão</label>
+          <select id="detalhe-cartaoId" aria-controls="lista-detalhe-cartaoId" aria-expanded="false">
+            <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
+          </select>
+          <div class="seletor__lista" id="lista-detalhe-cartaoId" role="listbox" aria-label="Cartão"></div>
+          <!-- Conta sem cartão: no lugar da lista fica este aviso com o botão que abre a janela "Novo cartão" (toda compra no crédito precisa de um cartão) -->
+          <p class="transactions-parcela-ajuda" id="detalhe-cartao-aviso" role="status" hidden>Esta conta ainda não tem cartão, e toda compra no crédito precisa de um.</p>
+          <button type="button" id="detalhe-cartao-criar" class="transactions-botao transactions-botao--secundario" hidden>Criar cartão para esta conta</button>
+          <p class="campo__erro" id="detalhe-cartaoId-erro" hidden></p>
+        </div>
         <div class="campo detalhe__linha campo--seletor" data-ao-clicar>
           <label for="detalhe-metaId">Meta</label>
           <select id="detalhe-metaId" aria-controls="lista-detalhe-metaId" aria-expanded="false">
@@ -91,6 +103,15 @@
           </select>
           <div class="seletor__lista" id="lista-detalhe-metaId" role="listbox" aria-label="Meta"></div>
           <p class="campo__erro" id="detalhe-metaId-erro" hidden></p>
+        </div>
+        <!-- Conta: mover o lançamento para outra conta (é assim que se libera uma conta para excluir). Só nos manuais. -->
+        <div class="campo detalhe__linha campo--seletor" data-ao-clicar>
+          <label for="detalhe-contaId">Conta</label>
+          <select id="detalhe-contaId" aria-controls="lista-detalhe-contaId" aria-expanded="false">
+            <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
+          </select>
+          <div class="seletor__lista" id="lista-detalhe-contaId" role="listbox" aria-label="Conta"></div>
+          <p class="campo__erro" id="detalhe-contaId-erro" hidden></p>
         </div>
       </div>
 

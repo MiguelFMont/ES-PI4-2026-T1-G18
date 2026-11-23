@@ -7,9 +7,12 @@
 //   index.js                                         este arquivo: montar() liga a tela e desmontar() desliga
 //   components/<Nome>/<Nome>.html + <Nome>.js + .css um componente = uma pasta, com a estrutura, o comportamento e o estilo:
 //     ContasPage/    (só JS)                         coordena a tela: chama a API e conecta os componentes
+//     ContasMinhas/                                  as contas do usuário (manuais e Open Finance): saldo, editar e excluir
+//     ContaForm/                                     janela "Nova conta" / "Editar conta" (Open Finance só no plano Pro)
 //     ContasConectar/                                cartão "Conectar uma conta" (banco de teste e widget da Pluggy)
 //     ContasLista/                                   lista das conexões, com sincronizar e desconectar
 //   services/contasConectadasService.js              chamadas ao Backend (/connected-accounts)
+//   services/contasService.js                        chamadas ao Backend (/accounts, bancos e o plano do usuário)
 //   utils/constants.js                               status, tipos de conta, limite e mensagens de erro
 //   utils/format.js                                  formatação de saldo e de data e hora
 //   utils/erros.js                                   texto de tela para os erros da API

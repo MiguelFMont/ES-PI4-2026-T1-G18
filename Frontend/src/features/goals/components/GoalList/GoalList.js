@@ -1,3 +1,4 @@
+import { svgDoIcone } from '../../../../shared/utils/icones.js';
 import { formatarData, formatarMoeda, formatarPercentual } from '../../../../shared/utils/moeda.js';
 
 /** Etiqueta do estado da meta. O texto sempre aparece; a cor só reforça. */
@@ -66,6 +67,12 @@ export function iniciarLista(raiz, { signal, aoEditar, aoExcluir, tentarNovament
     cartao.dataset.id = meta.id;
 
     campo(cartao, 'titulo').textContent = meta.titulo;
+    // o ícone e a cor que o usuário escolheu para a meta (sem eles, o cartão fica como sempre foi)
+    const icone = campo(cartao, 'icone');
+    const desenho = meta.icone ? svgDoIcone(meta.icone) : null;
+    icone.hidden = !desenho && !meta.cor;
+    if (desenho) icone.innerHTML = desenho; // texto fixo do projeto (shared/utils/icones.js)
+    icone.style.setProperty('--icone-cor', meta.cor ? `var(--matiz-${meta.cor})` : 'var(--destaque)');
     campo(cartao, 'atual').textContent = formatarMoeda(meta.valorAtual);
     campo(cartao, 'objetivo').textContent = formatarMoeda(meta.valorObjetivo);
     campo(cartao, 'percentual').textContent = formatarPercentual(meta.percentual);

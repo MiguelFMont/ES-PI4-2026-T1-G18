@@ -1,22 +1,29 @@
-import { criarTransacao, sugerirCategoria } from '../../services/transactionsService.js';
+import { criarTransacao, criarTransferencia, sugerirCategoria } from '../../services/transactionsService.js';
+import { dataValida } from '../../../../shared/utils/dateRange.js';
 import { aplicarMascaraMoeda, ligarCampo } from '../../../../shared/components/campos.js';
 import { ligarCalendario } from '../../../../shared/components/Calendario.js';
-import { notificar } from '../../../../shared/components/notificacao.js';
+import { comCarregamento, notificar } from '../../../../shared/components/notificacao.js';
 import { liberarRolagem, travarRolagem } from '../../../../shared/utils/rolagem.js';
 import { dataDeHoje } from '../../utils/format.js';
 import { CATEGORIAS, rotuloDe } from '../../utils/constants.js';
 import { LIMITE_OBSERVACOES, MENSAGENS_CAMPO, lerValor, validarFormulario } from '../../utils/formValidation.js';
 import { ligarMeta } from './MetaDoLancamento.js';
 import { ligarCartao } from './CartaoDoLancamento.js';
+import { definirAvatar, iniciais } from '../../../../shared/utils/avatar.js';
 
-const ORDEM_DOS_CAMPOS = ['tipo', 'descricao', 'valor', 'data', 'categoria', 'formaPagamento', 'cartao', 'meta', 'observacoes'];
+const ORDEM_DOS_CAMPOS = ['tipo', 'descricao', 'valor', 'data', 'conta', 'categoria', 'formaPagamento', 'cartao', 'meta', 'observacoes'];
+const ESPERA_DA_TROCA_MS = 320; // quanto o esqueleto de carregamento fica à vista ao trocar entre lançamento e transferência
+// campos do formulário que a validação de utils/formValidation.js não conhece (a conta tem validação própria, abaixo)
+const SEM_VALIDACAO_COMUM = new Set(['conta', 'cartao', 'meta']);
 
 // Campo da API -> campo do formulário, quando os nomes são diferentes (cartaoId e parcelas aparecem juntos, no campo Cartão)
-const CAMPO_DA_API = { metaId: 'meta', cartaoId: 'cartao', parcelas: 'cartao' };
+const CAMPO_DA_API = { metaId: 'meta', cartaoId: 'cartao', parcelas: 'cartao', contaId: 'conta' };
 
 /**
  * Liga a lógica à janela "Novo lançamento" (HTML em TransactionForm.html), que abre no centro da tela. O botão
- * #botao-alternar-form da página (e o menu dele) a abre; ela fecha com o X, com a tecla Esc ou clicando no fundo escuro.
+ * #botao-alternar-form da página (e o menu dele) a abre (o clique direto no botão passa por `aoAbrirPeloBotao`, que a página usa para
+ * levar o usuário a criar uma conta quando ele não tem nenhuma). A aba Transferência troca os campos da própria janela (origem, destino,
+ * valor, data, descrição e observação; uma transferência não é receita nem despesa), passando por um esqueleto de carregamento; ela fecha com o X, com a tecla Esc ou clicando no fundo escuro.
  * A categoria é escolhida na lista ou pelo botão Sugerir, que chama o Servidor Java antes de salvar. Observação e Meta ficam recolhidas atrás de botões redondos. O botão verde salva e fecha; "Salvar e criar outro" salva e
  * deixa a janela aberta, com os campos limpos; a lixeira limpa o formulário.
  * Erros de preenchimento mostram uma mensagem curta no campo e uma notificação geral. Só atualiza a tela depois
@@ -25,7 +32,7 @@ const CAMPO_DA_API = { metaId: 'meta', cartaoId: 'cartao', parcelas: 'cartao' };
  * A opção "Vincular a uma meta" (MetaDoLancamento.js) liga a transação a uma meta: o valor conta no progresso dela. No crédito,
  * o usuário escolhe o cartão e as parcelas (CartaoDoLancamento.js).
  */
-export function iniciarFormulario(raiz, { aoSalvar, signal }) {
+export function iniciarFormulario(raiz, { aoSalvar, aoAbrirPeloBotao, recarregarContas, abrirCartaoRapido, signal }) {
   const formulario = raiz.querySelector('#form-transacao');
   const botaoSalvar = raiz.querySelector('#botao-salvar');
   const contador = raiz.querySelector('#contador-observacoes');
@@ -38,6 +45,8 @@ export function iniciarFormulario(raiz, { aoSalvar, signal }) {
     descricao: ligarCampo(raiz, 'campo-descricao'),
     valor: ligarCampo(raiz, 'campo-valor'),
     data: ligarCalendario(formulario.querySelector('[data-calendario]'), { signal }),
+    conta: ligarCampo(raiz, 'campo-conta'),
+    contaDestino: ligarCampo(raiz, 'campo-conta-destino'),
     categoria: ligarCampo(raiz, 'campo-categoria'),
     formaPagamento: ligarCampo(raiz, 'campo-formaPagamento'),
     meta: ligarMeta(raiz, { signal }),
@@ -48,7 +57,11 @@ export function iniciarFormulario(raiz, { aoSalvar, signal }) {
     formaPagamento: campos.formaPagamento,
     tipo: campos.tipo,
     valor: () => lerValor(campos.valor.ler()),
+    conta: () => campos.conta.ler(),
+    // a janela "Novo cartão" (quem a liga é a página): recebe a conta escolhida e a lista de contas para o campo "Conta do cartão"
+    abrirCartaoRapido: () => abrirCartaoRapido?.({ contaId: campos.conta.ler(), contas: contasAtuais ?? [] }),
   });
+  campos.conta.controle.addEventListener('change', () => campos.cartao.atualizarConta(), { signal }); // a lista de cartões acompanha a conta
 
   campos.data.definir(dataDeHoje());
   aplicarMascaraMoeda(campos.valor.controle); // o valor já aparece formatado (1 -> 0,01; 11 -> 0,11)
@@ -64,7 +77,7 @@ export function iniciarFormulario(raiz, { aoSalvar, signal }) {
 
   // `tipo` ('despesa' ou 'receita') abre o formulário já nele; sem tipo (o clique direto no botão) vale o que estava marcado.
   function abrirPainel(tipo) {
-    if (tipo === 'despesa' || tipo === 'receita') {
+    if (tipo === 'despesa' || tipo === 'receita' || tipo === 'transferencia') {
       const opcao = raiz.querySelector(`input[name="tipo"][value="${tipo}"]`);
       if (opcao && !opcao.checked) {
         opcao.checked = true;
@@ -87,7 +100,79 @@ export function iniciarFormulario(raiz, { aoSalvar, signal }) {
     botaoAbrir.focus(); // devolve o foco a quem abriu
   }
 
-  botaoAbrir.addEventListener('click', abrirPainel);
+  // ---------------------------------------------------------------- lançamento ou transferência (as abas do topo)
+  const tituloForm = raiz.querySelector('#transactions-form-titulo');
+  const esqueleto = raiz.querySelector('#form-esqueleto');
+  const textoSalvar = raiz.querySelector('#botao-salvar-texto');
+  const rotuloConta = raiz.querySelector('#rotulo-conta');
+  const rotuloDescricao = raiz.querySelector('#rotulo-descricao');
+  const botaoOutroRotulo = raiz.querySelector('#botao-salvar-outro');
+  let modo = 'lancamento'; // 'lancamento' (despesa e receita) ou 'transferencia'
+  let tipoAnterior = 'despesa';
+  let temporizadorTroca = 0;
+  let contasAtuais = null; // as contas do usuário (null até chegarem)
+  formulario.dataset.modo = modo;
+
+  const manuais = () => (contasAtuais ?? []).filter((c) => c.tipo === 'manual');
+
+  /** Põe as contas nas listas do formulário: no lançamento, todas; na transferência, só as manuais (origem e destino). */
+  function preencherContas() {
+    const usar = manuais(); // lançamento manual e transferência só em conta manual: o saldo de uma conta Open Finance vem do banco
+    const trocar = (campo, opcoes, padrao) => {
+      const select = campo.controle;
+      const escolhida = select.value;
+      for (const antiga of select.querySelectorAll('option')) antiga.remove();
+      for (const conta of opcoes) { const opcao = new Option(`${conta.nome} (${conta.bancoNome})`, conta.id); definirAvatar(opcao, { banco: conta.banco, sigla: iniciais(conta.nome), titulo: conta.nome, subtitulo: conta.bancoNome, icone: conta.icone, cor: conta.cor }); select.add(opcao); }
+      select.value = opcoes.some((c) => c.id === escolhida) ? escolhida : (padrao ?? opcoes[0]?.id ?? '');
+      select.dispatchEvent(new Event('change', { bubbles: true })); // a lista mostra a opção escolhida
+    };
+    trocar(campos.conta, usar);
+    const origem = campos.conta.ler();
+    trocar(campos.contaDestino, manuais(), manuais().find((c) => c.id !== origem)?.id);
+  }
+
+  function aplicarModo(novo) {
+    modo = novo;
+    formulario.dataset.modo = novo;
+    const transferencia = novo === 'transferencia';
+    tituloForm.textContent = transferencia ? 'Nova transferência' : 'Novo lançamento';
+    textoSalvar.textContent = transferencia ? 'Salvar transferência' : 'Salvar lançamento';
+    rotuloConta.textContent = transferencia ? 'De (conta de origem)' : 'Conta';
+    rotuloDescricao.textContent = transferencia ? 'Descrição (opcional)' : 'Descrição';
+    botaoOutroRotulo.setAttribute('aria-label', transferencia ? 'Salvar e criar outra transferência' : 'Salvar e criar outro lançamento');
+    painel.setAttribute('aria-label', tituloForm.textContent);
+    preencherContas();
+    limparErros();
+  }
+
+  // Troca o modo passando por um esqueleto de carregamento (os campos somem um instante e voltam já no novo modo).
+  function trocarModo(novo) {
+    if (novo === modo) return;
+    if (novo === 'transferencia' && contasAtuais && manuais().length < 2) {
+      notificar('Transferir exige duas contas manuais. Crie outra conta.', 'aviso');
+      raiz.querySelector(`input[name="tipo"][value="${tipoAnterior}"]`).checked = true;
+      return;
+    }
+    clearTimeout(temporizadorTroca);
+    formulario.classList.add('transactions-form--trocando');
+    esqueleto.hidden = false;
+    temporizadorTroca = setTimeout(() => {
+      aplicarModo(novo);
+      esqueleto.hidden = true;
+      formulario.classList.remove('transactions-form--trocando');
+    }, ESPERA_DA_TROCA_MS);
+  }
+  signal?.addEventListener('abort', () => clearTimeout(temporizadorTroca));
+
+  for (const opcao of raiz.querySelectorAll('input[name="tipo"]')) {
+    opcao.addEventListener('change', () => {
+      if (!opcao.checked) return;
+      if (opcao.value !== 'transferencia') tipoAnterior = opcao.value;
+      trocarModo(opcao.value === 'transferencia' ? 'transferencia' : 'lancamento');
+    }, { signal });
+  }
+
+  botaoAbrir.addEventListener('click', () => (aoAbrirPeloBotao ? aoAbrirPeloBotao() : abrirPainel()));
   raiz.querySelector('#botao-fechar-form').addEventListener('click', fecharPainel);
   fundo.addEventListener('click', fecharPainel);
   document.addEventListener('keydown', (evento) => {
@@ -134,6 +219,12 @@ export function iniciarFormulario(raiz, { aoSalvar, signal }) {
     for (const campo of Object.values(campos)) campo.definirErro(null);
   }
 
+  /** Guarda as contas do usuário e as põe nas listas (mantendo a escolha atual; sem escolha, vale a primeira, a mais antiga). */
+  function definirContas(contas) {
+    contasAtuais = contas;
+    preencherContas();
+  }
+
   function mostrarErros(erros) {
     if (erros.observacoes) alternarParte(partes[0], true); // o erro não pode ficar escondido atrás do botão
     if (erros.meta) alternarParte(partes[1], true);
@@ -172,7 +263,7 @@ export function iniciarFormulario(raiz, { aoSalvar, signal }) {
       campos.categoria.definir(categoria);
       if (campos.categoria.ler() !== categoria) throw new Error('A categoria sugerida não está na lista. Escolha uma.');
       campos.categoria.controle.dispatchEvent(new Event('change', { bubbles: true }));
-      notificar(`Categoria sugerida: ${rotuloDe(CATEGORIAS, categoria)}. Se não for essa, escolha outra na lista.`, 'info');
+      notificar(`Categoria sugerida: ${rotuloDe(CATEGORIAS, categoria)}.`, 'info');
     } catch (erro) {
       notificar(erro?.status ? 'Não foi possível sugerir a categoria agora. Escolha na lista.' : (erro?.message ?? 'Erro inesperado.'), 'erro');
     } finally {
@@ -208,16 +299,24 @@ export function iniciarFormulario(raiz, { aoSalvar, signal }) {
     criarOutro = false;
     limparErros();
 
-    const valores = Object.fromEntries(ORDEM_DOS_CAMPOS.map((nome) => [nome, campos[nome].ler()]));
+    if (modo === 'transferencia') {
+      await enviarTransferencia(manterAberto);
+      return;
+    }
+
+    const valores = Object.fromEntries(ORDEM_DOS_CAMPOS.filter((nome) => !SEM_VALIDACAO_COMUM.has(nome)).map((nome) => [nome, campos[nome].ler()]));
     const { erros, dados } = validarFormulario(valores);
+    const contaId = campos.conta.ler();
+    if (!contaId) erros.conta = MENSAGENS_CAMPO.conta; // sem conta (nenhuma criada, ou a lista não carregou)
     const erroDaMeta = campos.meta.validar(); // marcou "Vincular a uma meta" e não escolheu qual
     if (erroDaMeta) erros.meta = erroDaMeta;
     const erroDoCartao = campos.cartao.validar(); // crédito sem cartão escolhido
     if (erroDoCartao) erros.cartao = erroDoCartao;
-    if (!dados || erroDaMeta || erroDoCartao) {
+    if (!dados || erroDaMeta || erroDoCartao || erros.conta) {
       mostrarErros(erros);
       return;
     }
+    dados.contaId = contaId;
 
     const meta = campos.meta.lerMeta();
     if (meta) dados.metaId = meta.id;
@@ -228,7 +327,7 @@ export function iniciarFormulario(raiz, { aoSalvar, signal }) {
     ocupado(true);
     let criada;
     try {
-      criada = await criarTransacao(dados);
+      criada = await comCarregamento('Salvando o lançamento...', () => criarTransacao(dados));
     } catch (erro) {
       ocupado(false);
 
@@ -236,6 +335,18 @@ export function iniciarFormulario(raiz, { aoSalvar, signal }) {
         // a meta foi excluída (em outra aba, por exemplo) depois de escolhida: busca as metas de novo
         notificar('Essa meta não existe mais. Escolha outra.', 'erro');
         await campos.meta.recarregar();
+        return;
+      }
+
+      if (erro?.code === 'MANUAL_ENTRY_NOT_ALLOWED') {
+        notificar('Escolha uma conta manual: Open Finance não aceita lançamento.', 'erro');
+        return;
+      }
+
+      if (erro?.code === 'ACCOUNT_REQUIRED' || erro?.code === 'ACCOUNT_NOT_FOUND') {
+        // a conta foi excluída (em outra aba, por exemplo) depois de escolhida: a página busca as contas de novo
+        notificar(erro.code === 'ACCOUNT_REQUIRED' ? 'Crie uma conta antes de fazer lançamentos.' : 'Essa conta não existe mais. Escolha outra.', 'erro');
+        await recarregarContas?.();
         return;
       }
 
@@ -277,7 +388,75 @@ export function iniciarFormulario(raiz, { aoSalvar, signal }) {
     await aoSalvar();
   });
 
-  return { abrir: abrirPainel, fechar: fecharPainel };
+  // ---------------------------------------------------------------- transferência (POST /transactions/transfers)
+  async function enviarTransferencia(manterAberto) {
+    const erros = {};
+    const origem = campos.conta.ler();
+    const destino = campos.contaDestino.ler();
+    if (!origem) erros.conta = 'Escolha a conta de origem.';
+    if (!destino) erros.contaDestino = 'Escolha a conta de destino.';
+    else if (origem && origem === destino) erros.contaDestino = 'O destino deve ser diferente da origem.';
+
+    const texto = campos.valor.ler().trim();
+    const valor = lerValor(texto);
+    if (!texto) erros.valor = 'Informe o valor.';
+    else if (!(valor > 0)) erros.valor = 'Informe um valor maior que zero.';
+
+    const data = campos.data.ler();
+    if (!dataValida(data)) erros.data = data ? 'Data inválida.' : 'Informe uma data válida.';
+
+    const descricao = campos.descricao.ler().trim();
+    if (descricao.length > 100) erros.descricao = 'Máximo de 100 caracteres.';
+    const observacoes = campos.observacoes.ler().trim();
+    if (observacoes.length > LIMITE_OBSERVACOES) erros.observacoes = MENSAGENS_CAMPO.observacoes;
+
+    const comErro = ['descricao', 'valor', 'data', 'conta', 'contaDestino', 'observacoes'].filter((nome) => erros[nome]);
+    if (comErro.length > 0) {
+      if (erros.observacoes) alternarParte(partes[0], true);
+      for (const nome of comErro) campos[nome].definirErro(erros[nome]);
+      notificar(comErro.length === 1 ? 'Corrija o campo destacado.' : 'Corrija os campos destacados.', 'erro');
+      campos[comErro[0]]?.focar();
+      return;
+    }
+
+    const dados = { contaId: origem, contaDestinoId: destino, valor: Math.round(valor * 100) / 100, data };
+    if (descricao) dados.descricao = descricao;
+    if (observacoes) dados.observacoes = observacoes;
+
+    ocupado(true);
+    try {
+      await comCarregamento('Salvando a transferência...', () => criarTransferencia(dados));
+    } catch (erro) {
+      ocupado(false);
+      if (erro?.code === 'ACCOUNT_NOT_FOUND') {
+        notificar('Uma das contas não existe mais. Escolha de novo.', 'erro');
+        await recarregarContas?.();
+      } else if (erro?.code === 'TRANSFER_NOT_ALLOWED') {
+        notificar('Transferências só envolvem contas manuais.', 'erro');
+      } else {
+        notificar(erro?.status ? 'Não foi possível salvar a transferência. Tente novamente.' : (erro?.message ?? 'Erro inesperado.'), 'erro');
+      }
+      return;
+    }
+
+    ocupado(false);
+    limparParaProximo();
+    if (!manterAberto) fecharPainel();
+    notificar('Transferência registrada.', 'sucesso');
+    await aoSalvar();
+  }
+
+  // Na aba Cartão: abre o lançamento já na conta e no cartão escolhidos, pagando no crédito (esses três campos ficam escondidos pelo CSS).
+  async function abrirNoCartao(tipo, cartao) {
+    abrirPainel(tipo === 'receita' ? 'receita' : 'despesa');
+    campos.conta.definir(cartao.contaId);
+    campos.conta.controle.dispatchEvent(new Event('change', { bubbles: true }));
+    campos.formaPagamento.definir('credito');
+    campos.formaPagamento.controle.dispatchEvent(new Event('change', { bubbles: true }));
+    await campos.cartao.cartaoCriado(cartao); // busca a lista de cartões da conta e escolhe este
+  }
+
+  return { abrir: abrirPainel, abrirNoCartao, fechar: fecharPainel, definirContas, cartaoCriado: (cartao) => campos.cartao.cartaoCriado(cartao) };
 }
 
 /** Escolha entre despesa e receita (botões de opção). Mesma interface dos outros campos. */

@@ -8,8 +8,10 @@ export const MENSAGENS_DE_ERRO = {
   CARD_NOT_FOUND: 'Esse cartão não existe mais (talvez já tenha sido excluído).',
   CARD_LIMIT_REACHED: `Você já tem ${MAX_CARTOES} cartões. Exclua um para adicionar outro.`,
   CARD_NAME_TAKEN: 'Já existe um cartão com esse nome.',
-  CARD_HAS_INSTALLMENTS: 'Este cartão tem parcelamentos em andamento. Quite ou exclua os parcelamentos antes de excluir o cartão.',
-  INSTALLMENT_FROM_TRANSACTION: 'Esse parcelamento veio de uma compra. Para removê-lo, exclua a transação em Transações.',
+  CARD_REQUIRED: 'Para parcelar uma compra, cadastre um cartão na aba Cartão.',
+  ACCOUNT_NOT_FOUND: 'Essa conta não existe mais. Escolha outra.',
+  UNDO_NOT_FOUND: 'Não há mais nada para desfazer: o prazo acabou.',
+  INSTALLMENT_FROM_TRANSACTION: 'Parcelamento de uma compra: exclua a transação para removê-lo.',
   INSTALLMENT_NOT_FOUND: 'Esse parcelamento não existe mais (talvez já tenha sido removido).',
   JAVA_SERVER_UNAVAILABLE: 'O servidor de cálculos está fora do ar. Tente de novo em instantes.',
 };

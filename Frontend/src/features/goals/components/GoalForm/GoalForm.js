@@ -1,3 +1,4 @@
+import { ligarEscolhaIcone } from '../../../../shared/components/escolhaIcone.js';
 import { aplicarMascaraMoeda, ligarCampo } from '../../../../shared/components/campos.js';
 import { ligarCalendario } from '../../../../shared/components/Calendario.js';
 import { isoDeData } from '../../../../shared/utils/dateRange.js';
@@ -30,6 +31,7 @@ export function iniciarFormulario(raiz, { signal, enviar, aoFechar }) {
   const botaoSalvar = raiz.querySelector('#goals-salvar');
   const botaoAbrir = raiz.querySelector('#goals-nova'); // só existe na tela de Metas
 
+  const aparencia = ligarEscolhaIcone(formulario.querySelector('#goals-aparencia'), { signal });
   const campos = {
     titulo: ligarCampo(formulario, 'goals-campo-titulo'),
     objetivo: ligarCampo(formulario, 'goals-campo-objetivo'),
@@ -71,7 +73,14 @@ export function iniciarFormulario(raiz, { signal, enviar, aoFechar }) {
     return {
       erros,
       // sem mudar o prazo ele nem vai para a API; null (campo esvaziado ao editar) tira o prazo da meta
-      dados: { titulo: nome, valorObjetivo: objetivo, valorInicial: inicial, ...(prazo !== prazoOriginal && { prazo }) },
+      dados: {
+        titulo: nome,
+        valorObjetivo: objetivo,
+        valorInicial: inicial,
+        ...(prazo !== prazoOriginal && { prazo }),
+        // ícone e cor: ao criar só vão se escolhidos; ao editar, null tira o que já havia
+        ...(idEmEdicao ? aparencia.ler() : Object.fromEntries(Object.entries(aparencia.ler()).filter(([, valor]) => valor))),
+      },
     };
   }
 
@@ -130,6 +139,7 @@ export function iniciarFormulario(raiz, { signal, enviar, aoFechar }) {
     idEmEdicao = null;
     prazoOriginal = null;
     formulario.reset();
+    aparencia.definir();
     abrir('Nova meta');
   }
 
@@ -147,6 +157,7 @@ export function iniciarFormulario(raiz, { signal, enviar, aoFechar }) {
       campos.objetivo.definir(valorParaCampo(meta.valorObjetivo));
       campos.inicial.definir(meta.valorInicial > 0 ? valorParaCampo(meta.valorInicial) : '');
       campos.prazo.definir(prazoOriginal ?? '');
+      aparencia.definir({ icone: meta.icone, cor: meta.cor });
       abrir('Editar meta');
     },
   };

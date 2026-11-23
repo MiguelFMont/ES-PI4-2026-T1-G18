@@ -1,7 +1,8 @@
+import { notificar } from '../../../../shared/components/notificacao.js';
 import { ligarCalendario } from '../../../../shared/components/Calendario.js';
 import { aplicarMascaraMoeda } from '../../../../shared/components/campos.js';
 import { valorParaCampo } from '../../../../shared/utils/moeda.js';
-import { CATEGORIAS, FORMAS_PAGAMENTO, TIPOS, corDe, rotuloDe } from '../../utils/constants.js';
+import { CATEGORIAS, FORMAS_PAGAMENTO, TIPOS, TIPOS_FILTRO, corDe, rotuloDe } from '../../utils/constants.js';
 import { dataDeHoje, formatarMoeda } from '../../utils/format.js';
 
 const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
@@ -19,22 +20,45 @@ function tituloDoDia(dia) {
   return `${numero} de ${MESES[mes - 1]}${ano === anoAtual ? '' : ` de ${ano}`}`;
 }
 
-/** Valor com sinal e sem o símbolo da moeda: despesa "-1.000,00", receita "+5.000,00". */
+/** Valor com sinal e sem o símbolo da moeda: despesa "-1.000,00", receita "+5.000,00"; a transferência não tem sinal. */
 function valorComSinal(transacao) {
+  if (transacao.tipo === 'transferencia') return numeroBr.format(transacao.valor);
   return `${transacao.tipo === 'despesa' ? '-' : '+'}${numeroBr.format(transacao.valor)}`;
 }
 
-const origemDe = (transacao) => (transacao.origem === 'pluggy' ? 'Open Finance' : 'Manual');
+/** O texto de um cartão nas listas: "Nubank | Conta corrente | Nubank" (o cartão, a conta a que ele está vinculado e o banco dela). */
+export function rotuloDoCartao(cartao, conta) {
+  const dona = cartao.conta ?? conta;
+  return dona ? `${cartao.nome} | ${dona.nome} | ${dona.bancoNome}` : `${cartao.nome} | sem conta`;
+}
+
+const nomeDaConta = (conta) => (conta ? `${conta.bancoNome} · ${conta.nome}` : null);
+
+/** O texto da coluna Origem: "Manual · conta" ou "Open Finance · conta"; na transferência, "origem → destino". `contaAtual` é a conta da linha (a do rascunho, se mudou). */
+function origemDe(transacao, contaAtual = transacao.conta) {
+  if (transacao.tipo === 'transferencia') {
+    return `${transacao.conta?.nome ?? 'Conta'} → ${transacao.contaDestino?.nome ?? 'Conta'}`;
+  }
+  const tipoDaOrigem = transacao.origem === 'pluggy' ? 'Open Finance' : 'Manual';
+  return contaAtual ? `${tipoDaOrigem} · ${contaAtual.nome}` : tipoDaOrigem;
+}
+
+/** Descrição do tipo para o leitor de tela. */
+const tipoParaLeitor = (tipo) => (tipo === 'despesa' ? 'despesa' : tipo === 'transferencia' ? 'transferência' : 'receita');
+
+// numa transferência, estes campos não existem: a célula fica sem edição
+const CAMPOS_FORA_DA_TRANSFERENCIA = ['tipo', 'categoria', 'formaPagamento', 'metaId'];
 
 /**
  * Liga a lista (HTML em TransactionLista.html). Guarda as transações já carregadas (a página pede mais com "Carregar mais"),
- * agrupa por dia e desenha cada linha a partir do <template>. Todo texto da API entra com textContent. Callbacks: `abrirDetalhe(transacao)`, `carregarMais()`, `tentarNovamente()`,
+ * agrupa por dia e desenha cada linha a partir do <template>. Todo texto da API entra com textContent. Callbacks: `abrirDetalhe(transacao)`, `irParaPagina(numero)`, `tentarNovamente()`,
  * `editarCampo(transacao, campo, texto)` (edição ao clicar num campo da linha) e `alterarVarias(transacoes, mudancas)` (a barra escura): os
  * dois só validam e chamam `rascunhar`, que marca a alteração na tela; `confirmarPendentes(lote, inverso)` envia tudo quando o usuário confirma (`inverso` desfaz o lote);
- * `duplicarVarias(transacoes)` e `excluirVarias(transacoes)`. `definirMetas(metas)` dá os títulos da coluna Meta.
- * Devolve { iniciarCarga, mostrarResposta(resposta, { acrescentar }), mostrarErro(erro), definirSelecao(ativo) }.
+ * `mudarLimite(quantidade)` (o "Por página" do rodapé), `duplicarVarias(transacoes)` e `excluirVarias(transacoes)`. `definirMetas(metas)` dá os títulos da coluna Meta.
+ * Devolve { iniciarCarga, mostrarResposta(resposta), mostrarErro(erro), definirSelecao(ativo) }. Só o extrato (as linhas e o rodapé) é trocado pelo
+ * esqueleto de carregamento: o cabeçalho com os filtros e os totais continuam à vista.
  */
-export function iniciarLista(raiz, { abrirDetalhe, carregarMais, tentarNovamente, editarCampo, alterarVarias, confirmarPendentes, duplicarVarias, excluirVarias, signal }) {
+export function iniciarLista(raiz, { abrirDetalhe, irParaPagina, mudarLimite, tentarNovamente, editarCampo, alterarVarias, confirmarPendentes, duplicarVarias, excluirVarias, signal }) {
   const secao = raiz.querySelector('#lista');
   const carregando = raiz.querySelector('#lista-carregando');
   const erro = raiz.querySelector('#lista-erro');
@@ -42,7 +66,10 @@ export function iniciarLista(raiz, { abrirDetalhe, carregarMais, tentarNovamente
   const vazio = raiz.querySelector('#lista-vazio');
   const conteudo = raiz.querySelector('#lista-conteudo');
   const grupos = raiz.querySelector('#lista-grupos');
-  const botaoMais = raiz.querySelector('#lista-mais');
+  const navPaginas = raiz.querySelector('#lista-paginas');
+  const rodapeLista = raiz.querySelector('#lista-rodape');
+  const textoContagem = raiz.querySelector('#lista-contagem');
+  const campoLimite = raiz.querySelector('#lista-limite');
   const barraSelecao = raiz.querySelector('#lista-selecao');
   const textoSelecao = raiz.querySelector('#lista-selecao-texto');
   const totalSelecao = raiz.querySelector('#lista-selecao-total');
@@ -55,17 +82,107 @@ export function iniciarLista(raiz, { abrirDetalhe, carregarMais, tentarNovamente
   let itens = [];
   let selecionando = false;
   let metas = []; // as metas do usuário: título da coluna Meta e opções da edição
+  let contas = []; // as contas do usuário: o texto da coluna Origem acompanha uma conta trocada no rascunho e a edição escolhe entre as manuais (definirContas)
+  let cartoes = []; // os cartões do usuário: a coluna Pagamento mostra "nome | conta" e a edição escolhe o cartão num submenu lateral (definirCartoes)
   // Alterações pendentes: id da transação -> { campo: valor novo }. Aparecem na tela como se já valessem e só vão para a API ao confirmar.
   const rascunho = new Map();
   const efetiva = (t) => ({ ...t, ...rascunho.get(t.id) });
-  const valorOriginal = (t, nome) => (nome === 'metaId' ? (t.metaId ?? null) : nome === 'data' ? t.data.slice(0, 10) : t[nome]);
+  const valorOriginal = (t, nome) => (nome === 'metaId' || nome === 'cartaoId' ? (t[nome] ?? null) : nome === 'data' ? t.data.slice(0, 10) : t[nome]);
+
+  /**
+   * O submenu lateral dos cartões, ao passar o mouse em "Cartão de crédito" numa lista de pagamento (a da célula e a da barra de seleção):
+   * abre ao lado do menu com os cartões ("nome | conta") que valem para o(s) lançamento(s); escolher um chama `aoEscolher(cartao)`.
+   * `cartoesDe()` devolve os cartões possíveis (só os da conta do lançamento). Devolve o elemento do submenu (quem chama o remove).
+   */
+  function ligarSubmenuDeCartoes(host, menu, { classeMenu, classeOpcao, cartoesDe, aoEscolher }) {
+    const submenu = document.createElement('div');
+    submenu.className = `${classeMenu} lista-submenu`;
+    submenu.setAttribute('role', 'listbox');
+    submenu.setAttribute('aria-label', 'Cartões de crédito');
+    submenu.hidden = true;
+    host.append(submenu);
+
+    for (const item of menu.querySelectorAll(`.${classeOpcao}[data-valor="credito"]`)) item.dataset.submenu = ''; // a seta: abre a lista dos cartões
+
+    // passar o mouse ou clicar em "Cartão de crédito" abre a lista dos cartões (sem cartão da conta, o clique escolhe só o pagamento, como antes)
+    const abrir = (evento) => {
+      const item = evento.target.closest(`.${classeOpcao}`);
+      if (!item) return;
+      const lista = cartoesDe();
+      if (item.dataset.valor !== 'credito' || lista.length === 0) {
+        submenu.hidden = true;
+        return;
+      }
+      if (evento.type === 'click') evento.stopPropagation(); // não escolhe o pagamento sozinho: falta escolher o cartão
+      submenu.replaceChildren(...lista.map((cartao) => {
+        const opcao = document.createElement('button');
+        opcao.type = 'button';
+        opcao.className = classeOpcao;
+        opcao.setAttribute('role', 'option');
+        opcao.dataset.cartaoId = cartao.id;
+        opcao.textContent = rotuloDoCartao(cartao);
+        return opcao;
+      }));
+      const caixaHost = host.getBoundingClientRect();
+      const caixaMenu = menu.getBoundingClientRect();
+      const caixaItem = item.getBoundingClientRect();
+      submenu.style.left = `${caixaMenu.right - caixaHost.left + 6}px`;
+      submenu.style.top = `${caixaItem.top - caixaHost.top}px`;
+      submenu.hidden = false;
+    };
+    menu.addEventListener('mouseover', abrir);
+    menu.addEventListener('click', abrir, true);
+    submenu.addEventListener('click', (evento) => {
+      const opcao = evento.target.closest(`.${classeOpcao}`);
+      if (!opcao) return;
+      evento.stopPropagation();
+      const cartao = cartoes.find((c) => c.id === opcao.dataset.cartaoId);
+      if (cartao) aoEscolher(cartao);
+    });
+    return submenu;
+  }
+
+  /** Os cartões que valem para uma conta (cartões antigos, sem conta, valem para qualquer uma). */
+  const cartoesDaConta = (contaId) => cartoes.filter((c) => !c.contaId || c.contaId === contaId);
   const marcadas = new Set();
 
   function estado(qual) {
     carregando.hidden = qual !== 'carregando';
     erro.hidden = qual !== 'erro';
     vazio.hidden = qual !== 'vazio';
-    conteudo.hidden = qual !== 'lista';
+    conteudo.hidden = qual === 'erro'; // carregando e vazio: só o cabeçalho com os filtros fica à mostra
+    grupos.hidden = qual !== 'lista';
+    rodapeLista.hidden = qual !== 'lista';
+  }
+
+  /** Os números das páginas: anterior, primeira, as vizinhas da atual, última e próxima (com reticências nos buracos). */
+  function desenharPaginas(atual, total) {
+    navPaginas.hidden = total <= 1;
+    if (total <= 1) return;
+    const botao = (texto, pagina, { rotulo, desativado = false, atualPagina = false } = {}) => {
+      const el = document.createElement('button');
+      el.type = 'button';
+      el.className = 'lista__pagina';
+      el.textContent = texto;
+      el.disabled = desativado || atualPagina;
+      if (rotulo) el.setAttribute('aria-label', rotulo);
+      if (atualPagina) el.setAttribute('aria-current', 'page');
+      else el.dataset.pagina = String(pagina);
+      return el;
+    };
+    const numeros = [...new Set([1, atual - 1, atual, atual + 1, total])].filter((n) => n >= 1 && n <= total).sort((x, y) => x - y);
+    const itensNav = [botao('‹', atual - 1, { rotulo: 'Página anterior', desativado: atual === 1 })];
+    numeros.forEach((n, i) => {
+      if (i > 0 && n - numeros[i - 1] > 1) {
+        const reticencias = document.createElement('span');
+        reticencias.className = 'lista__reticencias';
+        reticencias.textContent = '…';
+        itensNav.push(reticencias);
+      }
+      itensNav.push(botao(String(n), n, { rotulo: `Página ${n}`, atualPagina: n === atual }));
+    });
+    itensNav.push(botao('›', atual + 1, { rotulo: 'Próxima página', desativado: atual === total }));
+    navPaginas.replaceChildren(...itensNav);
   }
 
   const campo = (linha, nome) => linha.querySelector(`[data-campo="${nome}"]`);
@@ -90,26 +207,62 @@ export function iniciarLista(raiz, { abrirDetalhe, carregarMais, tentarNovamente
       etiqueta.hidden = false;
       etiqueta.textContent = `${t.parcelas}x`;
     }
+    const transferencia = t.tipo === 'transferencia';
     const celulaTipo = campo(linha, 'tipo');
-    celulaTipo.textContent = rotuloDe(TIPOS, t.tipo);
-    celulaTipo.dataset.cor = corDe(TIPOS, t.tipo);
+    celulaTipo.textContent = rotuloDe(TIPOS_FILTRO, t.tipo);
+    celulaTipo.dataset.cor = corDe(TIPOS_FILTRO, t.tipo);
     const celulaCategoria = campo(linha, 'categoria');
-    celulaCategoria.textContent = rotuloDe(CATEGORIAS, t.categoria);
-    celulaCategoria.dataset.cor = corDe(CATEGORIAS, t.categoria);
+    celulaCategoria.textContent = transferencia ? '—' : rotuloDe(CATEGORIAS, t.categoria);
+    celulaCategoria.dataset.cor = transferencia ? 'cinza' : corDe(CATEGORIAS, t.categoria);
     const celulaPagamento = campo(linha, 'pagamento');
-    celulaPagamento.textContent = rotuloDe(FORMAS_PAGAMENTO, t.formaPagamento);
-    celulaPagamento.dataset.cor = corDe(FORMAS_PAGAMENTO, t.formaPagamento);
+    // no crédito, o cartão usado aparece junto ("Crédito · Nubank"): só "Cartão de crédito" não diz qual cartão foi
+    // no crédito o nome é o do cartão, "nome | conta" (como nas listas de escolha); no débito e nas outras formas, o nome da forma de pagamento
+    const cartaoDaLinha = t.cartaoId ? (cartoes.find((c) => c.id === t.cartaoId) ?? t.cartao) : null;
+    const pagamentoTexto = t.formaPagamento === 'credito' && cartaoDaLinha ? rotuloDoCartao(cartaoDaLinha, t.conta) : rotuloDe(FORMAS_PAGAMENTO, t.formaPagamento);
+    celulaPagamento.textContent = transferencia ? '—' : pagamentoTexto;
+    celulaPagamento.title = transferencia ? '' : pagamentoTexto;
+    celulaPagamento.dataset.cor = transferencia ? 'cinza' : corDe(FORMAS_PAGAMENTO, t.formaPagamento);
     const celulaMeta = campo(linha, 'meta');
-    celulaMeta.textContent = t.metaId ? (metas.find((m) => m.id === t.metaId)?.titulo ?? 'Meta') : 'Sem meta';
-    celulaMeta.classList.toggle('celula--vazia', !t.metaId);
-    celulaMeta.dataset.cor = t.metaId ? 'destaque2' : 'cinza';
+    celulaMeta.textContent = transferencia ? '—' : t.metaId ? (metas.find((m) => m.id === t.metaId)?.titulo ?? 'Meta') : 'Sem meta';
+    celulaMeta.classList.toggle('celula--vazia', transferencia || !t.metaId);
+    celulaMeta.dataset.cor = !transferencia && t.metaId ? 'destaque2' : 'cinza';
     const celulaOrigem = campo(linha, 'conta');
-    celulaOrigem.textContent = origemDe(t);
+    const contaDaLinha = contas.find((c) => c.id === t.contaId) ?? t.conta;
+    celulaOrigem.textContent = origemDe(t, contaDaLinha);
+    celulaOrigem.title = origemDe(t, contaDaLinha); // o texto pode ser cortado pela largura da coluna
+    // a conta se edita direto na linha nos lançamentos manuais; no Open Finance (e na compra no cartão, que fica na conta do cartão) o campo é travado
+    if (!transferencia) {
+      celulaOrigem.classList.add('celula');
+      if (t.origem === 'pluggy') {
+        celulaOrigem.classList.add('celula--travada');
+        celulaOrigem.dataset.motivo = 'Não editável: a transação vem de uma conta com conexão Open Finance.';
+      } else {
+        celulaOrigem.dataset.editavel = 'contaId';
+        celulaOrigem.title = 'Clique para editar';
+      }
+    }
     celulaOrigem.dataset.cor = t.origem === 'pluggy' ? 'destaque' : 'cinza';
+    if (transferencia) {
+      // sem tipo, categoria, pagamento e meta para editar: só a descrição e o valor (e, nos detalhes, a data e a observação)
+      for (const nome of CAMPOS_FORA_DA_TRANSFERENCIA) {
+        const celula = linha.querySelector(`[data-editavel="${nome}"]`);
+        celula?.removeAttribute('data-editavel');
+        celula?.removeAttribute('title');
+      }
+    }
+    if (t.origem === 'pluggy') {
+      // o que vem do Open Finance é do banco: na linha só a descrição, a categoria e a meta se editam
+      for (const nome of ['tipo', 'formaPagamento', 'valor']) {
+        const celula = linha.querySelector(`[data-editavel="${nome}"]`);
+        celula?.removeAttribute('data-editavel');
+        celula?.removeAttribute('title');
+        celula?.classList.add('celula--travada'); // fundo cinza; clicar mostra a dica de que não se edita (ver o clique abaixo)
+      }
+    }
     const valor = campo(linha, 'valor');
     valor.textContent = valorComSinal(t);
     valor.classList.toggle('linha__valor--receita', t.tipo === 'receita');
-    linha.setAttribute('aria-label', `${t.descricao}, ${t.tipo === 'despesa' ? 'despesa' : 'receita'} de ${formatarMoeda(t.valor)}`);
+    linha.setAttribute('aria-label', `${t.descricao}, ${tipoParaLeitor(t.tipo)} de ${formatarMoeda(t.valor)}`);
     return linha;
   }
 
@@ -141,7 +294,8 @@ export function iniciarLista(raiz, { abrirDetalhe, carregarMais, tentarNovamente
     textoSelecao.textContent = `${marcadas.size} ${marcadas.size === 1 ? 'selecionado' : 'selecionados'}`;
 
     // a soma das marcadas, com sinal (despesa negativa) e na cor do resultado
-    const soma = itens.filter((t) => marcadas.has(t.id)).map(efetiva).reduce((total, t) => total + (t.tipo === 'despesa' ? -t.valor : t.valor), 0);
+    // (a transferência não é receita nem despesa: não entra na soma)
+    const soma = itens.filter((t) => marcadas.has(t.id)).map(efetiva).reduce((total, t) => total + (t.tipo === 'despesa' ? -t.valor : t.tipo === 'receita' ? t.valor : 0), 0);
     totalSelecao.textContent = `R$ ${numeroBr.format(soma)}`;
     totalSelecao.classList.toggle('selecao__total--positivo', soma >= 0);
   }
@@ -178,6 +332,7 @@ export function iniciarLista(raiz, { abrirDetalhe, carregarMais, tentarNovamente
     if (campoDaApi === 'tipo') return TIPOS;
     if (campoDaApi === 'categoria') return CATEGORIAS;
     if (campoDaApi === 'formaPagamento') return FORMAS_PAGAMENTO;
+    if (campoDaApi === 'contaId') return contas.filter((c) => c.tipo === 'manual').map((c) => ({ valor: c.id, rotulo: `${c.nome} · Manual` }));
     return [{ valor: '', rotulo: 'Sem meta' }, ...metas.map((m) => ({ valor: m.id, rotulo: m.titulo }))];
   }
 
@@ -190,6 +345,12 @@ export function iniciarLista(raiz, { abrirDetalhe, carregarMais, tentarNovamente
     terminarEdicao();
     const transacao = efetiva(original); // o que está na tela (com as alterações pendentes)
     const campoDaApi = celula.dataset.editavel;
+
+    // compra no cartão de crédito: a conta é a do cartão, então a origem só muda trocando o cartão
+    if (campoDaApi === 'contaId' && transacao.formaPagamento === 'credito' && transacao.cartaoId) {
+      notificar('Para mudar a origem de uma compra no crédito, altere o cartão.', 'erro');
+      return;
+    }
 
     if (campoDaApi === 'descricao' || campoDaApi === 'valor') {
       const entrada = document.createElement('input');
@@ -238,7 +399,7 @@ export function iniciarLista(raiz, { abrirDetalhe, carregarMais, tentarNovamente
     const menu = document.createElement('div');
     menu.className = 'celula__menu';
     menu.setAttribute('role', 'listbox');
-    const atual = campoDaApi === 'metaId' ? (transacao.metaId ?? '') : transacao[campoDaApi];
+    const atual = campoDaApi === 'metaId' ? (transacao.metaId ?? '') : transacao[campoDaApi]; // (para contaId, transacao.contaId)
     menu.replaceChildren(...opcoesDe(campoDaApi).map((opcao) => {
       const item = document.createElement('button');
       item.type = 'button';
@@ -265,11 +426,24 @@ export function iniciarLista(raiz, { abrirDetalhe, carregarMais, tentarNovamente
     texto.append(...celula.childNodes);
     celula.classList.add('celula--editando');
     celula.append(texto, menu);
+    // Pagamento > Cartão de crédito: o submenu lateral com os cartões da conta do lançamento
+    const submenu = campoDaApi === 'formaPagamento'
+      ? ligarSubmenuDeCartoes(celula, menu, {
+        classeMenu: 'celula__menu',
+        classeOpcao: 'celula__opcao',
+        cartoesDe: () => cartoesDaConta(transacao.contaId),
+        aoEscolher: (cartao) => {
+          terminarEdicao();
+          alterarVarias([transacao], { formaPagamento: 'credito', cartaoId: cartao.id });
+        },
+      })
+      : null;
     menu.querySelector('[aria-selected="true"]')?.focus();
     editando = {
       celula,
       fechar: () => {
         menu.remove();
+        submenu?.remove();
         texto.replaceWith(...texto.childNodes);
         celula.classList.remove('celula--editando');
       },
@@ -291,9 +465,33 @@ export function iniciarLista(raiz, { abrirDetalhe, carregarMais, tentarNovamente
     else abrirDetalhe(transacao);
   }
 
+  let temporizadorDica = 0;
+  /** A dica de um campo travado: uma frase curta perto da célula, que some sozinha. */
+  function mostrarDicaTravada(celula) {
+    document.querySelector('.dica-travada')?.remove();
+    clearTimeout(temporizadorDica);
+    const dica = document.createElement('div');
+    dica.className = 'dica-travada';
+    dica.setAttribute('role', 'status');
+    dica.textContent = celula.dataset.motivo ?? 'Não editável: a transação vem de uma conta com conexão Open Finance.';
+    document.body.append(dica);
+    const caixa = celula.getBoundingClientRect();
+    const largura = dica.offsetWidth;
+    dica.style.left = `${Math.max(8, Math.min(window.innerWidth - largura - 8, caixa.left + caixa.width / 2 - largura / 2))}px`;
+    dica.style.top = `${Math.max(8, caixa.top - dica.offsetHeight - 8)}px`;
+    temporizadorDica = setTimeout(() => dica.remove(), 3800); // 3,8 s (eram 2,8 s)
+  }
+  signal?.addEventListener('abort', () => { clearTimeout(temporizadorDica); document.querySelector('.dica-travada')?.remove(); });
+
   grupos.addEventListener('click', (evento) => {
     const linha = evento.target.closest('.linha');
     if (!linha) return;
+    // clicar num campo travado (transação do Open Finance) só mostra a dica de que ele não se edita
+    const travada = evento.target.closest('.celula--travada');
+    if (travada && !selecionando) {
+      mostrarDicaTravada(travada);
+      return;
+    }
     // clicar num campo editável edita só ele; clicar no resto da linha abre os detalhes (ou marca, no modo Selecionar)
     const celula = evento.target.closest('[data-editavel]');
     if (celula && !selecionando) {
@@ -312,7 +510,11 @@ export function iniciarLista(raiz, { abrirDetalhe, carregarMais, tentarNovamente
   }, { signal });
 
   raiz.querySelector('#lista-tentar-novamente').addEventListener('click', () => tentarNovamente(), { signal });
-  botaoMais.addEventListener('click', () => carregarMais(), { signal });
+  navPaginas.addEventListener('click', (evento) => {
+    const botao = evento.target.closest('button[data-pagina]');
+    if (botao && !botao.disabled) irParaPagina(Number(botao.dataset.pagina));
+  }, { signal });
+  campoLimite.addEventListener('change', () => mudarLimite(Number(campoLimite.value)), { signal });
 
   const marcadasComoLista = () => itens.filter((t) => marcadas.has(t.id));
   raiz.querySelector('#lista-duplicar').addEventListener('click', () => duplicarVarias(marcadasComoLista()), { signal });
@@ -403,9 +605,10 @@ export function iniciarLista(raiz, { abrirDetalhe, carregarMais, tentarNovamente
     { botao: raiz.querySelector('#lista-pagamento'), menu: raiz.querySelector('#lista-pagamento-menu'), campo: 'formaPagamento', opcoes: FORMAS_PAGAMENTO },
   ];
   const fecharMenus = (exceto) => {
-    for (const { botao, menu } of menus) {
+    for (const { botao, menu, submenu } of menus) {
       if (menu === exceto) continue;
       menu.hidden = true;
+      if (submenu) submenu.hidden = true;
       botao.setAttribute('aria-expanded', 'false');
     }
     fecharEdicoes();
@@ -435,6 +638,24 @@ export function iniciarLista(raiz, { abrirDetalhe, carregarMais, tentarNovamente
       fecharMenus();
       alterarVarias(marcadasComoLista(), { [nomeDoCampo]: item.dataset.valor });
     }, { signal });
+
+    // Pagamento > Cartão de crédito: o submenu lateral com os cartões (só os que valem para a conta de TODAS as marcadas)
+    if (nomeDoCampo === 'formaPagamento') {
+      const submenu = ligarSubmenuDeCartoes(menu.parentElement, menu, {
+        classeMenu: 'selecao__menu',
+        classeOpcao: 'selecao__opcao',
+        cartoesDe: () => {
+          const contas = new Set(marcadasComoLista().map((t) => t.contaId));
+          return contas.size === 1 ? cartoesDaConta([...contas][0]) : [];
+        },
+        aoEscolher: (cartao) => {
+          fecharMenus();
+          alterarVarias(marcadasComoLista(), { formaPagamento: 'credito', cartaoId: cartao.id });
+        },
+      });
+      menu.addEventListener('mouseleave', () => { submenu.hidden = submenu.matches(':hover') ? submenu.hidden : true; });
+      menus.find((m) => m.menu === menu).submenu = submenu;
+    }
   }
   document.addEventListener('click', (evento) => {
     // o caminho do evento: clicar num dia do calendário recria os botões antes de o clique chegar aqui
@@ -511,17 +732,13 @@ export function iniciarLista(raiz, { abrirDetalhe, carregarMais, tentarNovamente
   };
 
   return {
-    /** Mostra o esqueleto cinza (a primeira página); "Carregar mais" não apaga o que já está na tela. */
-    iniciarCarga({ acrescentar = false } = {}) {
-      if (acrescentar) {
-        botaoMais.disabled = true;
-        return;
-      }
+    /** Mostra o esqueleto cinza no lugar das linhas (o cabeçalho com os filtros e os totais ficam). */
+    iniciarCarga() {
       estado('carregando');
     },
 
-    mostrarResposta(resposta, { acrescentar = false, mensagemVazia = 'Nenhuma transação neste período.' } = {}) {
-      itens = acrescentar ? [...itens, ...resposta.itens] : resposta.itens;
+    mostrarResposta(resposta, { mensagemVazia = 'Nenhuma transação neste período.' } = {}) {
+      itens = resposta.itens;
       // as marcadas que continuam na lista continuam marcadas (depois de trocar a descrição, dá para trocar o valor); as que sumiram saem
       for (const id of [...marcadas]) if (!itens.some((t) => t.id === id)) marcadas.delete(id);
       atualizarBarraSelecao();
@@ -531,11 +748,15 @@ export function iniciarLista(raiz, { abrirDetalhe, carregarMais, tentarNovamente
       rodape.saldo.textContent = formatarMoeda(resposta.resumo.saldo);
       rodape.saldo.classList.toggle('lista__saldo--negativo', resposta.resumo.saldo < 0);
 
-      botaoMais.hidden = resposta.pagina >= resposta.totalPaginas;
-      botaoMais.disabled = false;
+      // a escolha "Tudo" não volta como número de itens por página: o campo só acompanha as opções que existem
+      if ([...campoLimite.options].some((o) => o.value === String(resposta.limite))) campoLimite.value = String(resposta.limite);
+      const primeira = (resposta.pagina - 1) * resposta.limite + 1;
+      textoContagem.textContent = `${primeira}–${primeira + itens.length - 1} de ${resposta.total}`;
+      desenharPaginas(resposta.pagina, resposta.totalPaginas);
 
       if (itens.length === 0) {
         vazio.textContent = mensagemVazia;
+        grupos.replaceChildren(); // sem linhas antigas sob o cabeçalho
         estado('vazio');
         return;
       }
@@ -546,7 +767,6 @@ export function iniciarLista(raiz, { abrirDetalhe, carregarMais, tentarNovamente
     mostrarErro(falha) {
       // Falha de rede já vem com mensagem amigável do api.js; os demais erros ganham um texto genérico.
       erroTexto.textContent = falha?.status ? 'Não foi possível carregar as transações.' : (falha?.message ?? 'Erro inesperado.');
-      botaoMais.disabled = false;
       estado('erro');
     },
 
@@ -558,6 +778,18 @@ export function iniciarLista(raiz, { abrirDetalhe, carregarMais, tentarNovamente
     descartarRascunhoDe(ids) {
       for (const id of ids) rascunho.delete(id);
       atualizarPendentes();
+    },
+
+    /** Põe as contas do usuário (a coluna Origem acompanha a conta trocada e a edição escolhe entre as contas manuais). */
+    definirContas(lista) {
+      contas = lista;
+      if (itens.length > 0) desenhar();
+    },
+
+    /** Põe os cartões do usuário (a coluna Pagamento mostra "nome | conta" e a edição escolhe o cartão no submenu lateral). */
+    definirCartoes(lista) {
+      cartoes = lista;
+      if (itens.length > 0) desenhar();
     },
 
     /** Põe as metas do usuário (título da coluna Meta e lista de escolha). */

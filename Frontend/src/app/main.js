@@ -34,6 +34,7 @@ const TELAS = {
       '/src/features/transactions/components/TransactionLista/TransactionLista.css',
       '/src/features/transactions/components/TransactionDetalhe/TransactionDetalhe.css',
       '/src/features/transactions/components/TransactionForm/TransactionForm.css',
+      '/src/features/transactions/components/TransactionCartao/TransactionCartao.css',
       '/src/features/goals/styles/goals.css', // o formulário "Nova meta" da janela de vincular a transação a uma meta
     ],
     modulo: () => import('../features/transactions/index.js'),
@@ -42,7 +43,10 @@ const TELAS = {
     titulo: 'Contas conectadas',
     html: '/src/features/contas-conectadas/views/contas-conectadas.html',
     css: [
+      '/src/shared/styles/campos.css', // os campos da janela de conta
       '/src/features/contas-conectadas/styles/contas-conectadas.css',
+      '/src/features/contas-conectadas/components/ContasMinhas/ContasMinhas.css',
+      '/src/features/contas-conectadas/components/ContaForm/ContaForm.css',
       '/src/features/contas-conectadas/components/ContasConectar/ContasConectar.css',
       '/src/features/contas-conectadas/components/ContasLista/ContasLista.css',
     ],
@@ -65,6 +69,14 @@ const TELAS = {
       '/src/shared/styles/campos.css',
       '/src/shared/styles/calendario.css',
       '/src/features/investments/styles/investments.css',
+      // os lançamentos do cartão usam as peças da tela de Transações
+      '/src/features/transactions/styles/transactions.css',
+      '/src/features/transactions/components/TransactionBarra/TransactionBarra.css',
+      '/src/features/transactions/components/TransactionLista/TransactionLista.css',
+      '/src/features/transactions/components/TransactionDetalhe/TransactionDetalhe.css',
+      '/src/features/transactions/components/TransactionForm/TransactionForm.css',
+      '/src/features/transactions/components/TransactionCartao/TransactionCartao.css',
+      '/src/features/goals/styles/goals.css', // o formulário "Nova meta" da janela de vincular a transação a uma meta
     ],
     modulo: () => import('../features/investments/index.js'),
   },
@@ -166,7 +178,7 @@ async function renderRoute() {
   // Sair de uma tela com alterações não confirmadas pede confirmação; se o usuário desistir, volta para a rota dela.
   if (telaAtual?.modulo.temPendencias?.() && currentRoute() !== rotaAtual) {
     const sair = await confirmar(
-      'Você tem alterações que ainda não foram confirmadas. Se sair agora, elas serão descartadas. Deseja sair?',
+      'Há alterações não confirmadas. Sair e descartá-las?',
       'aviso'
     );
     if (!sair) {

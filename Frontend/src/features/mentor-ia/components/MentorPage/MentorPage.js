@@ -13,10 +13,10 @@ import { iniciarEntrada } from '../MentorEntrada/MentorEntrada.js';
 // Erros de POST /mentor-ia/chat (docs/contrato-api.md, seção 3.2) com um texto para o usuário.
 const MENSAGENS_DE_ERRO = {
   VALIDATION_ERROR: 'A pergunta precisa ter de 1 a 2000 caracteres.',
-  GENAI_RATE_LIMITED: 'O limite de uso do Mentor acabou por agora. Tente de novo em alguns minutos.',
+  GENAI_RATE_LIMITED: 'Limite do Mentor atingido. Tente em alguns minutos.',
   GENAI_ERROR: 'O Mentor não conseguiu responder. Tente de novo.',
   GENAI_UNAVAILABLE: 'O Mentor está indisponível no momento. Tente de novo em instantes.',
-  JAVA_SERVER_UNAVAILABLE: 'O servidor de cálculos está fora do ar, então o Mentor não consegue analisar seus gastos agora.',
+  JAVA_SERVER_UNAVAILABLE: 'Servidor de cálculos fora do ar. Tente mais tarde.',
 };
 
 function mensagemDeErro(erro) {

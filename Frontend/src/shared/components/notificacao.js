@@ -4,6 +4,10 @@
  *   notificar('Transação salva.', 'sucesso')   faixa colorida que desliza pela direita e some em 5 segundos, com uma
  *                                              linha na base que se esvazia mostrando o tempo que falta
  *   notificar('Aguarde...', 'sucesso', { duracao: 3000, pausavel: false })   duração própria; devolve { fechar }
+ *   const carga = carregando('Salvando...'); ... await carga.fechar()   indicador de carregamento no centro do alto da tela (região própria, separada das
+ *                                              notificações), com a rodinha; use depois de um clique que chama a API
+ *   await comCarregamento('Salvando...', () => chamada())   mostra o carregamento, roda a chamada e só devolve o resultado depois que o
+ *                                              carregamento saiu: a notificação de sucesso ou de erro vem sempre depois dele
  *   await confirmar('Excluir?', 'erro')        janela com Cancelar e Confirmar; devolve true ou false
  *
  * `tipo` aceita 'sucesso', 'aviso' ou 'erro' (e os sinônimos 'success', 'warning', 'error', 'info' e 'notificacao').
@@ -41,6 +45,18 @@ function regiao() {
     area.className = 'alertas';
     area.setAttribute('role', 'region');
     area.setAttribute('aria-label', 'Notificações');
+    document.body.append(area);
+  }
+  return area;
+}
+
+// A região do indicador de carregamento: no centro do alto da tela (as notificações ficam à direita).
+function regiaoCarregamento() {
+  let area = document.querySelector('#carregamentos');
+  if (!area) {
+    area = document.createElement('div');
+    area.id = 'carregamentos';
+    area.className = 'carregamentos';
     document.body.append(area);
   }
   return area;
@@ -160,6 +176,54 @@ export function notificar(mensagem, tipo = 'sucesso', { duracao = DURACAO_MS, pa
 
   regiao().append(alerta);
   return { fechar: encerrar };
+}
+
+const CARREGAMENTO_MINIMO_MS = 350; // o indicador fica à vista ao menos esse tempo, para não piscar nas chamadas rápidas
+
+/**
+ * Indicador de carregamento: uma pílula bem escura com a rodinha, no centro do alto da tela, que entra animada.
+ * Devolve { fechar() }: fechar() espera o tempo mínimo, faz a saída animada e devolve uma Promise que termina quando ele já saiu.
+ */
+export function carregando(mensagem = 'Carregando...') {
+  const alerta = document.createElement('div');
+  alerta.className = 'alerta alerta--carregando';
+  alerta.setAttribute('role', 'status');
+  alerta.setAttribute('aria-live', 'polite');
+  const roda = document.createElement('span');
+  roda.className = 'alerta__roda';
+  roda.setAttribute('aria-hidden', 'true');
+  const texto = document.createElement('p');
+  texto.className = 'alerta__mensagem';
+  texto.textContent = mensagem;
+  alerta.append(roda, texto);
+  regiaoCarregamento().append(alerta);
+
+  const inicio = Date.now();
+  let saida = null;
+  return {
+    fechar() {
+      saida ??= new Promise((resolver) => {
+        setTimeout(() => {
+          alerta.classList.add('alerta--saindo');
+          setTimeout(() => {
+            alerta.remove();
+            resolver();
+          }, DURACAO_ANIMACAO_MS);
+        }, Math.max(0, CARREGAMENTO_MINIMO_MS - (Date.now() - inicio)));
+      });
+      return saida;
+    },
+  };
+}
+
+/** Mostra o carregamento enquanto a tarefa roda e o tira (com a animação de saída) ANTES de devolver o resultado ou o erro dela. */
+export async function comCarregamento(mensagem, tarefa) {
+  const carga = carregando(mensagem);
+  try {
+    return await tarefa();
+  } finally {
+    await carga.fechar();
+  }
 }
 
 /**

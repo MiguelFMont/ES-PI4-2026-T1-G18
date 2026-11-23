@@ -28,6 +28,9 @@ export function iniciarConectar(raiz, { signal, aoConectarBancoDeTeste, aoAbrirW
       ocupado = texto !== null;
       andamento.hidden = !ocupado;
       andamento.textContent = texto ?? '';
+      // enquanto conecta, o botão que foi clicado mostra o indicador de carregamento (e o texto de andamento também)
+      botaoTeste.classList.toggle('contas-botao--carregando', ocupado && !botaoWidget.matches(':focus'));
+      botaoTeste.setAttribute('aria-busy', String(ocupado));
       atualizarBotoes();
     },
 

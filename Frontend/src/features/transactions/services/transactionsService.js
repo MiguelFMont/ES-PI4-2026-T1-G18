@@ -27,10 +27,22 @@ export function sugerirCategoria(descricao, valor) {
 
 /**
  * Cadastra uma transação (POST /transactions).
- * `dados`: { tipo, valor, data, descricao, categoria?, formaPagamento? }. Devolve a transação criada.
+ * `dados`: { tipo, valor, data, descricao, contaId, categoria?, formaPagamento? }. O `contaId` é obrigatório (sem nenhuma conta, o
+ * Backend responde 422 ACCOUNT_REQUIRED). Devolve a transação criada, com a `conta` { id, nome, banco, bancoNome }.
  */
 export function criarTransacao(dados) {
   return apiFetch('/transactions', {
+    method: 'POST',
+    body: JSON.stringify(dados),
+  });
+}
+
+/**
+ * Cria uma transferência entre duas contas manuais (POST /transactions/transfers). `dados`: { contaId (origem),
+ * contaDestinoId, valor, data, descricao?, observacoes? }. Devolve a transação criada (tipo "transferencia").
+ */
+export function criarTransferencia(dados) {
+  return apiFetch('/transactions/transfers', {
     method: 'POST',
     body: JSON.stringify(dados),
   });
@@ -40,11 +52,12 @@ export function criarTransacao(dados) {
 const LIMITE_LOTE = 100;
 
 async function emBlocos(lista, enviar) {
-  const total = { afetadas: 0, naoEncontradas: [] };
+  const total = { afetadas: 0, naoEncontradas: [], desfazerIds: [] };
   for (let inicio = 0; inicio < lista.length; inicio += LIMITE_LOTE) {
     const resultado = await enviar(lista.slice(inicio, inicio + LIMITE_LOTE));
     total.afetadas += resultado.afetadas;
     total.naoEncontradas.push(...resultado.naoEncontradas);
+    if (resultado.desfazerId) total.desfazerIds.push(resultado.desfazerId); // só na exclusão: POST /undo/:id traz os lançamentos de volta
   }
   return total;
 }

@@ -10,7 +10,7 @@ export function listarCartoes() {
   return apiFetch('/investments/cards');
 }
 
-/** Cria um cartão (POST /investments/cards). `dados`: { nome, limite?, diaFechamento? }. Devolve o cartão criado. */
+/** Cria um cartão (POST /investments/cards). `dados`: { nome, contaId, limite?, diaFechamento? }: todo cartão é vinculado a uma conta do usuário. Devolve o cartão criado. */
 export function criarCartao(dados) {
   return apiFetch('/investments/cards', { method: 'POST', body: JSON.stringify(dados) });
 }
@@ -20,7 +20,7 @@ export function atualizarCartao(id, alteracoes) {
   return apiFetch(`/investments/cards/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(alteracoes) });
 }
 
-/** Exclui um cartão (DELETE /investments/cards/:id). As transações dele ficam, sem o vínculo. Resposta 204, sem corpo. */
+/** Exclui um cartão com os lançamentos e os parcelamentos dele (DELETE /investments/cards/:id). Resposta 200: { desfazerId, lancamentos }. */
 export function excluirCartao(id) {
   return apiFetch(`/investments/cards/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }

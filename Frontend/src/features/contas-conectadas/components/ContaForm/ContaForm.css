@@ -1,0 +1,215 @@
+/* Componente ContaForm: a janela "Nova conta" / "Editar conta". Cartão e botões vêm de styles/contas-conectadas.css e os campos,
+   de shared/styles/campos.css. Abre no centro da tela, com o fundo escurecido e desfocado (mesmo visual do formulário de lançamento). */
+
+.conta-fundo {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgb(0 0 0 / 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  visibility: hidden; /* fechado, não recebe clique nem foco */
+  transition: opacity 0.15s cubic-bezier(0.7, 0, 0.84, 0), visibility 0s 0.15s;
+}
+
+.conta-fundo--aberto {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s;
+}
+
+.conta-painel {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  overflow-y: auto;
+  padding: 1rem;
+  transform: translateY(-100%);
+  visibility: hidden;
+  transition: transform 0.15s cubic-bezier(0.7, 0, 0.84, 0), visibility 0s 0.15s;
+}
+
+.conta-painel--aberto {
+  transform: translateY(0);
+  visibility: visible;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s;
+}
+
+.conta-painel .conta-cartao {
+  width: 100%;
+  max-width: 30rem;
+  margin: auto; /* centraliza; se a tela for baixa, o painel rola e nada fica cortado */
+  box-shadow: var(--sombra-flutuante);
+}
+
+.conta-painel [hidden] {
+  display: none !important;
+}
+
+.conta-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.conta-fechar {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 0;
+  border-radius: 50%;
+  color: var(--texto-suave);
+  background: transparent;
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.conta-fechar:hover,
+.conta-fechar:focus-visible {
+  color: var(--texto);
+  background: var(--fundo-campo);
+}
+
+.conta-form {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.conta-tipo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.conta-opcao {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.5rem;
+  padding: 0.4rem 0.8rem;
+  border: var(--borda-elemento, 0);
+  border-radius: 0.6rem;
+  background: var(--fundo-campo);
+  box-shadow: var(--sombra);
+  font-weight: 600;
+  cursor: pointer;
+  transition: scale 0.1s ease;
+}
+
+/* o botão de opção continua no HTML (teclado e leitor de tela), só não aparece */
+.conta-opcao input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.conta-opcao:has(input:checked) {
+  box-shadow: 0 0 0 2px var(--destaque);
+}
+
+.conta-opcao:has(input:focus-visible) {
+  scale: 1.03;
+}
+
+.conta-opcao--bloqueada {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* o selo PRO ao lado da opção Open Finance */
+.conta-pro {
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--destaque-texto);
+  background: var(--destaque);
+}
+
+.conta-conectar {
+  display: grid;
+  gap: 0.6rem;
+  padding-top: 0.25rem;
+}
+
+.conta-conectar .contas-conectar {
+  display: grid;
+  gap: 0.75rem;
+}
+
+/* os dois botões de conectar ficam lado a lado (também no celular) */
+.conta-conectar .contas-acoes {
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+}
+
+.conta-conectar .contas-acoes .contas-botao {
+  flex: 1 1 0;
+  min-width: 0;
+  padding-inline: 0.5rem;
+  font-size: 0.88rem;
+}
+
+.conta-conectar h3 {
+  font-size: 1rem;
+}
+
+.conta-ajuda {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+}
+
+.conta-tipo .conta-ajuda {
+  flex-basis: 100%;
+}
+
+.conta-prefixo {
+  position: relative;
+}
+
+.conta-prefixo__texto {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0.75rem;
+  display: flex;
+  align-items: center;
+  color: var(--texto-suave);
+  pointer-events: none;
+}
+
+.conta-prefixo input {
+  padding-inline-start: 2.3rem !important;
+}
+
+.conta-rodape {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+@media (max-width: 767px) {
+  .conta-rodape .contas-botao {
+    flex: 1 1 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .conta-fundo,
+  .conta-painel {
+    transition: none;
+  }
+}

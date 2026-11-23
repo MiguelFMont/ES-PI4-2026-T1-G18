@@ -1,0 +1,52 @@
+<!-- Componente: as contas do usuário (manuais e Open Finance), com o botão "Nova conta". Lógica em ContasMinhas.js.
+     Mostra só um destes estados por vez (carregando, erro, nenhuma conta ou a lista). Cada conta é um cartão feito a partir do
+     <template> no fim deste arquivo. O formulário de criar e editar fica em ContaForm.html (janela). -->
+<section id="minhas-area" class="contas-cartao minhas" aria-labelledby="minhas-titulo">
+  <div class="minhas__topo">
+    <div>
+      <h2 id="minhas-titulo">Minhas contas</h2>
+      <p class="contas-texto-suave">O saldo das contas manuais é calculado dos seus lançamentos e transferências; o das contas Open Finance vem do banco.</p>
+    </div>
+    <button type="button" id="minhas-nova" class="contas-botao minhas__nova">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+      <span>Nova conta</span>
+    </button>
+  </div>
+
+  <div id="minhas-carregando" class="esqueleto-grupo" role="status">
+    <span class="esqueleto esqueleto--bloco"></span>
+    <span class="esqueleto esqueleto--bloco"></span>
+    <span class="so-leitor">Carregando suas contas...</span>
+  </div>
+
+  <div id="minhas-erro" class="contas-estado" hidden>
+    <p id="minhas-erro-texto" role="alert"></p>
+    <button type="button" id="minhas-tentar-novamente" class="contas-botao">Tentar novamente</button>
+  </div>
+
+  <p id="minhas-vazio" class="contas-estado" hidden>
+    Você ainda não tem nenhuma conta. Crie a primeira para fazer lançamentos e transferências.
+  </p>
+
+  <ul id="minhas-itens" class="minhas__itens" aria-labelledby="minhas-titulo" hidden></ul>
+</section>
+
+<!-- Modelo de uma conta: o JS copia este bloco para cada conta e só preenche os textos. -->
+<template id="modelo-minha-conta">
+  <li class="minha">
+    <div class="minha__info">
+      <span class="minha__avatar" data-campo="avatar" aria-hidden="true"></span>
+      <span class="minha__banco" data-campo="banco"></span>
+      <h3 class="minha__nome" data-campo="nome"></h3>
+      <span class="minha__tipo" data-campo="tipo"></span>
+    </div>
+    <div class="minha__saldo">
+      <span class="contas-texto-suave minha__saldo-rotulo">Saldo atual</span>
+      <strong class="valor-financeiro" data-campo="saldo"></strong>
+    </div>
+    <div class="minha__acoes">
+      <button type="button" class="contas-botao contas-botao--secundario" data-acao="editar">Editar</button>
+      <button type="button" class="contas-botao contas-botao--perigo" data-acao="excluir">Excluir</button>
+    </div>
+  </li>
+</template>

@@ -58,7 +58,7 @@ export function iniciarPaginaMetas(raiz, { signal } = {}) {
 
   async function excluir(meta) {
     const confirmado = await confirmar(
-      `Excluir a meta "${meta.titulo}"? As suas transações não são afetadas.`,
+      `Excluir a meta "${meta.titulo}"?`,
       'aviso'
     );
     if (!confirmado) return;

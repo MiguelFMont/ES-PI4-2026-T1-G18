@@ -400,7 +400,7 @@
   cursor: wait;
 }
 
-/* Despesa | Receita: duas abas numa faixa arredondada, sem contorno. Um marcador branco desliza de uma para a outra. */
+/* Despesa | Receita | Transferência: três abas numa faixa arredondada, sem contorno. Um marcador branco desliza de uma para a outra. */
 .transactions-tipo {
   grid-column: 1 / -1;
   gap: 0;
@@ -409,7 +409,7 @@
 .transactions-tipo .transactions-opcoes {
   position: relative;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 0.25rem;
   padding: 0.3rem;
   border-radius: 1rem;
@@ -423,7 +423,7 @@
   top: 0.3rem;
   bottom: 0.3rem;
   left: 0.3rem;
-  width: calc((100% - 0.85rem) / 2);
+  width: calc((100% - 1.1rem) / 3);
   border-radius: 0.8rem;
   background: var(--fundo-card);
   transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
@@ -431,6 +431,10 @@
 
 .transactions-tipo .transactions-opcoes:has(input[value='receita']:checked)::before {
   transform: translateX(calc(100% + 0.25rem));
+}
+
+.transactions-tipo .transactions-opcoes:has(input[value='transferencia']:checked)::before {
+  transform: translateX(calc(200% + 0.5rem));
 }
 
 .transactions-tipo .transactions-opcao,
@@ -450,6 +454,30 @@
 
 .transactions-tipo .transactions-opcao:has(input[value='despesa']:checked) { color: var(--negativo); }
 .transactions-tipo .transactions-opcao:has(input[value='receita']:checked) { color: var(--positivo); }
+.transactions-tipo .transactions-opcao:has(input[value='transferencia']:checked) { color: var(--matiz-azul, #2563eb); }
+
+/* Troca entre lançamento e transferência: cada modo esconde os campos do outro; no meio da troca os campos somem e o esqueleto
+   de carregamento ocupa o lugar deles (as abas continuam à vista). */
+.transactions-form[data-modo='transferencia'] [data-so-lancamento],
+.transactions-form[data-modo='lancamento'] [data-so-transferencia] {
+  display: none;
+}
+
+.transactions-form.transactions-form--trocando > :not(.transactions-tipo):not(#form-esqueleto) {
+  display: none !important;
+}
+
+#form-esqueleto {
+  animation: form-campos-entrar 0.2s ease both;
+}
+
+.transactions-form:not([data-modo]) [data-so-transferencia] {
+  display: none; /* antes de o JS ligar, o formulário é o de lançamento */
+}
+
+@keyframes form-campos-entrar {
+  from { opacity: 0; }
+}
 
 /* os botões redondos de Observação e Meta */
 .form-extras {
@@ -602,4 +630,38 @@
   .transactions-form {
     grid-template-columns: 1fr;
   }
+}
+
+/* conta sem cartão: a lista some e fica só o aviso com o botão Criar cartão */
+.campo-cartao--sem > label,
+.campo-cartao--sem > select,
+.campo-cartao--sem > .seletor__lista {
+  display: none;
+}
+
+/* Na aba Cartão o lançamento já nasce na conta e no cartão escolhidos, pagando no crédito: esses campos não aparecem */
+[data-escopo-cartao] .campo:has(> #campo-conta),
+[data-escopo-cartao] .campo:has(> #campo-formaPagamento),
+[data-escopo-cartao] #campo-cartao-area {
+  display: none !important;
+}
+
+/* ... e não há transferência: a aba some (sobram Despesa e Receita) */
+[data-escopo-cartao] .transactions-opcao:has(input[value="transferencia"]) {
+  display: none;
+}
+
+/* ... e a meta não faz sentido num lançamento do cartão */
+[data-escopo-cartao] #form-alternar-meta,
+[data-escopo-cartao] #form-meta-area {
+  display: none !important;
+}
+
+/* Sem a aba Transferência, o seletor tem duas colunas (Despesa e Receita) e o marcador ocupa metade */
+[data-escopo-cartao] .transactions-tipo .transactions-opcoes {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+[data-escopo-cartao] .transactions-tipo .transactions-opcoes::before {
+  width: calc((100% - 0.85rem) / 2);
 }

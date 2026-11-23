@@ -98,8 +98,8 @@
 }
 
 .barra__novo-menu--aberto {
-  width: 18rem;
-  height: 8.7rem; /* duas opções */
+  width: 20.5rem;
+  height: 12.6rem; /* três opções */
   border-radius: 1.2rem;
   background: #2b2d2a;
   box-shadow: var(--sombra-flutuante);
@@ -125,6 +125,10 @@
 
 .barra__novo-menu--aberto .barra__novo-item + .barra__novo-item {
   transition-delay: 0.16s, 0.16s, 0s; /* a segunda opção chega logo depois da primeira */
+}
+
+.barra__novo-menu--aberto .barra__novo-item + .barra__novo-item + .barra__novo-item {
+  transition-delay: 0.22s, 0.22s, 0s; /* e a terceira, depois da segunda */
 }
 
 .barra__novo-item {
@@ -165,6 +169,10 @@
   color: var(--positivo);
 }
 
+.barra__novo-icone--transferencia {
+  color: #2563eb;
+}
+
 .barra__novo-nome {
   flex: 1;
   white-space: nowrap;
@@ -178,6 +186,8 @@
   font: inherit;
   font-size: 0.85rem;
   font-weight: 500;
+  white-space: nowrap; /* "letra T" não quebra em duas linhas */
+  flex: none;
 }
 
 /* ---------------------------------------------------------------- mês */
@@ -185,6 +195,10 @@
   display: flex;
   align-items: center;
   gap: 1.25rem;
+}
+
+.barra__mes[hidden] {
+  display: none;
 }
 
 .barra__mes-area {
@@ -380,7 +394,6 @@
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  margin-left: auto;
   padding: 0.5rem 0.85rem;
   border: 0;
   border-radius: 999px;
@@ -390,12 +403,44 @@
   font-size: 0.9rem;
   font-weight: 700;
   cursor: pointer;
-  transition: scale 0.1s ease, background-color 0.15s ease;
-  animation: barra-limpar-entrar 0.25s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  transition: scale 0.1s ease, background-color 0.15s ease, opacity 0.2s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  opacity: 0;
+  transform: translateY(0.5rem) scale(0.92);
 }
 
-.barra__limpar[hidden] {
-  display: none;
+/* a área abre e fecha em altura (0fr -> 1fr), então o campo de busca desce e sobe suavemente junto com o botão */
+.barra__limpar-area {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.barra__limpar-area--aberta {
+  grid-template-rows: 1fr;
+}
+
+.barra__limpar-interno {
+  min-height: 0;
+  /* folga nas laterais para o botão crescer (scale no hover/foco) sem ser cortado pelo overflow; a margem negativa devolve o alinhamento */
+  padding: 0 0.4rem;
+  margin-inline: -0.4rem;
+  overflow: hidden;
+}
+
+.barra__limpar-area--aberta .barra__limpar {
+  opacity: 1;
+  transform: none;
+}
+
+.barra__limpar-area--aberta .barra__limpar-interno {
+  padding-block: 0.25rem 0.6rem; /* espaço entre o botão e o campo de busca */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .barra__limpar-area,
+  .barra__limpar {
+    transition: none;
+  }
 }
 
 .barra__limpar:hover,
@@ -403,10 +448,6 @@
   scale: 1.03;
   background: color-mix(in srgb, var(--negativo) 22%, transparent);
   outline: none;
-}
-
-@keyframes barra-limpar-entrar {
-  from { opacity: 0; transform: translateX(-0.5rem) scale(0.9); }
 }
 
 .barra__pilula {
@@ -816,12 +857,18 @@
 }
 
 /* A busca no cabeçalho da coluna Descrição: a mesma pílula de antes, na largura da coluna, com o texto em tamanho normal (o cabeçalho é em caixa alta) */
-.cab--busca {
+.cab.cab--busca {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr); /* o campo nunca passa da largura da coluna */
+  /* sai da coluna Descrição e começa no mesmo ponto da caixa de seleção e do ícone das linhas: o recuo de -0.5rem que o `.cab` já tem
+     (TransactionLista.css, carregado depois, por isso o seletor mais forte aqui) + a coluna da caixa (1.6rem) + o espaço entre colunas (0.9rem) */
+  margin-inline-start: -3rem;
   overflow: visible;
   text-overflow: clip;
 }
 
 .cab--busca .barra__busca {
+  box-sizing: border-box; /* o preenchimento não faz o campo invadir a coluna Tipo */
   width: 100%;
   max-width: 19rem;
   padding: 0.45rem 1rem;
@@ -836,4 +883,25 @@
   .barra__direita {
     padding-right: 19.5rem;
   }
+}
+
+/* o cabeçalho alinha pela base: quando o "Limpar filtros" abre acima da busca, os nomes das colunas não pulam para baixo */
+.lista .lista__cabecalho {
+  align-items: end;
+}
+
+/* a lista lateral dos cartões (Pagamento > Cartão de crédito): fica ao lado da lista de opções, na posição que o JS calcula */
+.barra__submenu {
+  top: auto;
+  z-index: 31;
+  min-width: 12rem;
+}
+
+.barra__submenu[hidden] {
+  display: none;
+}
+
+/* Na aba Cartão o menu do Lançamento tem duas opções (sem Nova transferência): a caixa não deixa o espaço da terceira */
+[data-escopo-cartao] .barra__novo-menu--aberto {
+  height: 8.5rem;
 }

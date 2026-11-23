@@ -1,4 +1,6 @@
 import { entradaPorTeclado } from '../utils/entrada.js';
+import { iconeDaOpcao, svgDoIcone } from '../utils/icones.js';
+import { mostrarLogoDoBanco } from '../utils/avatar.js';
 
 const ESPERA_PARA_ABRIR_MS = 120; // evita a lista piscar quando o mouse só passa pelo campo
 const ESPERA_PARA_FECHAR_MS = 250; // tolera o vão entre o campo e a lista
@@ -15,6 +17,11 @@ const ALTURA_MINIMA_PX = 120; // a lista nunca fica menor que isso
  * - fecha ao tirar o mouse (se o foco não tiver chegado por Tab), ao sair do campo com Tab, com Esc ou ao clicar fora;
  * - clicar numa opção a escolhe; com o campo selecionado por Tab, as setas (e Home/End) trocam a opção e a lista
  *   acompanha. Enter ou Espaço abrem ou fecham a lista, e Esc fecha.
+ *
+ * Dentro de uma janela (um elemento com o atributo data-folha) a lista não abre embaixo do campo: ela surge no MEIO da tela, com a largura da
+ * janela e o fundo escurecido (sem desfoque), um título (o rótulo do campo), o botão de fechar e linhas maiores, com o círculo ou quadrado do banco (ver shared/utils/avatar.js)
+ * ou o ícone da opção (select com data-icones="categoria", "pagamento" ou "tipo"; ver shared/utils/icones.js) e o "visto" na escolhida.
+ * `seletor:rodape` no campo (quem usa o campo decide o que fazer, por exemplo criar um cartão).
  *
  * O clique direto no <select> não abre a lista nativa do navegador (pointer-events: none no CSS) e as teclas Enter,
  * Espaço e as setas são tratadas aqui, para não aparecerem duas listas.
@@ -36,13 +43,95 @@ export function ligarSeletores(raiz, signal) {
 function ligarSeletor(campo, modelo, signal) {
   const select = campo.querySelector('select');
   const lista = campo.querySelector('.seletor__lista');
+  const janela = campo.closest('[data-folha]'); // a janela de que a lista sobe, se o campo estiver numa
+  const emFolha = Boolean(janela);
   let temporizador;
   let limpeza;
 
   const aberta = () => lista.classList.contains('seletor__lista--aberta');
   const focoPorTeclado = () => document.activeElement === select && entradaPorTeclado();
 
+  /** O título da folha: o rótulo do campo, sem o asterisco de obrigatório. */
+  const tituloDaFolha = () => (campo.querySelector('label')?.textContent ?? '').replace('*', '').trim();
+
+  function itemDaFolha(opcao) {
+    const item = modelo.content.firstElementChild.cloneNode(true);
+    item.classList.add('seletor__opcao--folha');
+    item.dataset.valor = opcao.value;
+    item.setAttribute('aria-selected', String(opcao.selected));
+    if (opcao.selected) item.classList.add('seletor__opcao--escolhida');
+    const icone = select.dataset.icones ? iconeDaOpcao(select.dataset.icones, opcao.value) : null;
+    if (icone) {
+      const marca = document.createElement('span');
+      marca.className = 'seletor__icone';
+      marca.style.setProperty('--icone-cor', `var(--matiz-${icone.cor})`);
+      marca.innerHTML = icone.svg; // texto fixo do projeto (shared/utils/icones.js), não vem da API
+      item.append(marca);
+    }
+    if (opcao.dataset.avatarSigla) {
+      const avatar = document.createElement('span');
+      avatar.className = 'seletor__avatar' + (opcao.dataset.avatarForma === 'quadrado' ? ' seletor__avatar--quadrado' : '');
+      const desenho = opcao.dataset.avatarIcone ? svgDoIcone(opcao.dataset.avatarIcone) : null;
+      if (desenho) avatar.innerHTML = desenho; // texto fixo do projeto (shared/utils/icones.js)
+      else if (!(opcao.dataset.avatarLogo && mostrarLogoDoBanco(avatar, opcao.dataset.avatarLogo, opcao.dataset.avatarSigla))) avatar.textContent = opcao.dataset.avatarSigla;
+      avatar.style.setProperty('--avatar-fundo', opcao.dataset.avatarFundo);
+      avatar.style.setProperty('--avatar-texto', opcao.dataset.avatarTexto);
+      avatar.setAttribute('aria-hidden', 'true');
+      item.append(avatar);
+    }
+    const textos = document.createElement('span');
+    textos.className = 'seletor__textos';
+    const titulo = document.createElement('span');
+    titulo.className = 'seletor__titulo';
+    titulo.textContent = opcao.dataset.titulo ?? opcao.textContent;
+    textos.append(titulo);
+    if (opcao.dataset.subtitulo) {
+      const subtitulo = document.createElement('span');
+      subtitulo.className = 'seletor__subtitulo';
+      subtitulo.textContent = opcao.dataset.subtitulo;
+      textos.append(subtitulo);
+    }
+    item.append(textos);
+    if (opcao.selected && opcao.value !== '') item.insertAdjacentHTML('beforeend', '<svg class="seletor__visto" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+    return item;
+  }
+
+  function desenharFolha() {
+    const cabecalho = document.createElement('div');
+    cabecalho.className = 'seletor__cabecalho';
+    const titulo = document.createElement('span');
+    titulo.textContent = tituloDaFolha();
+    const fechar = document.createElement('button');
+    fechar.type = 'button';
+    fechar.className = 'seletor__fechar';
+    fechar.setAttribute('aria-label', 'Fechar a lista');
+    fechar.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>';
+    cabecalho.append(titulo, fechar);
+
+    // o texto-guia ("Selecione...", "Escolha o cartão") não é uma escolha: não entra na lista em folha
+    const guia = (opcao) => opcao.value === '' && /^(selecione|escolha)/i.test(opcao.textContent.trim());
+    const partes = [cabecalho, ...[...select.options].filter((opcao) => !guia(opcao)).map(itemDaFolha)];
+    if (campo.dataset.folhaRodape) {
+      const rodape = document.createElement('div');
+      rodape.className = 'seletor__rodape';
+      const botao = document.createElement('button');
+      botao.type = 'button';
+      botao.className = 'seletor__rodape-botao';
+      botao.textContent = campo.dataset.folhaRodape;
+      rodape.append(botao);
+      partes.push(rodape);
+    }
+    const rolagem = lista.scrollTop;
+    lista.replaceChildren(...partes);
+    lista.scrollTop = rolagem;
+    lista.querySelector('.seletor__opcao--escolhida')?.scrollIntoView({ block: 'nearest' });
+  }
+
   function desenhar() {
+    if (emFolha) {
+      desenharFolha();
+      return;
+    }
     const itens = [...select.options].map((opcao) => {
       const item = modelo.content.firstElementChild.cloneNode(true);
       item.textContent = opcao.textContent;
@@ -70,7 +159,37 @@ function ligarSeletor(campo, modelo, signal) {
 
   // Cabe no espaço livre: embaixo do campo, ou em cima se faltar espaço embaixo e sobrar em cima. Sempre recalcula do
   // zero (altura padrão primeiro), então volta ao tamanho normal quando a página rola para uma região com espaço.
+  // Em folha: fixa a lista no rodapé da janela, com a largura e os cantos de baixo dela (a janela pode ter rolagem própria, então a posição vem
+  // da caixa dela na tela). A altura máxima é uma parte da janela, para sobrar o alto dela à vista.
+  // O fundo escuro que cobre a tela enquanto a lista está aberta (um por janela, criado na primeira vez, dentro dela: no mesmo contexto de
+  // empilhamento da lista, abaixo dela). Só escurece, sem desfocar. Clicar nele fecha a lista.
+  function escurecer(ligado) {
+    let fundo = janela.__folhaFundo;
+    if (!fundo) {
+      fundo = document.createElement('div');
+      fundo.className = 'seletor__escurecer';
+      janela.append(fundo);
+      janela.__folhaFundo = fundo;
+    }
+    if (ligado) fundo.onclick = () => campo.dispatchEvent(new CustomEvent('seletor:fechar'));
+    fundo.classList.toggle('seletor__escurecer--ligado', ligado);
+  }
+
+  // Em folha: a lista abre no MEIO da tela (centralizada na vertical, pelo CSS), com a largura e a posição horizontal da janela. Assim o usuário
+  // vê a lista inteira sem rolar e ela não cola na borda de baixo.
+  function posicionarFolha() {
+    const caixa = janela.getBoundingClientRect();
+    lista.style.setProperty('--folha-esquerda', `${caixa.left}px`);
+    lista.style.setProperty('--folha-largura', `${caixa.width}px`);
+    lista.style.setProperty('--folha-altura', `${Math.floor(window.innerHeight * 0.7)}px`);
+    escurecer(true);
+  }
+
   function posicionar() {
+    if (emFolha) {
+      posicionarFolha();
+      return;
+    }
     const rolagem = lista.scrollTop;
     lista.style.removeProperty('--altura-lista');
     lista.classList.remove('seletor__lista--acima');
@@ -86,6 +205,7 @@ function ligarSeletor(campo, modelo, signal) {
   }
 
   function limpar() {
+    for (const nome of ['--folha-esquerda', '--folha-largura', '--folha-altura']) lista.style.removeProperty(nome);
     lista.style.removeProperty('--altura-lista');
     lista.classList.remove('seletor__lista--acima');
   }
@@ -95,6 +215,7 @@ function ligarSeletor(campo, modelo, signal) {
     if (!aberta()) return;
     lista.classList.remove('seletor__lista--aberta');
     select.setAttribute('aria-expanded', 'false');
+    if (emFolha) escurecer(false);
     // altura e sentido só voltam ao padrão depois do desaparecimento, para a lista não pular durante o fade-out
     limpeza = setTimeout(limpar, DURACAO_FADE_MS);
   }
@@ -115,6 +236,10 @@ function ligarSeletor(campo, modelo, signal) {
     }
     fechar();
   }
+
+  // O rótulo ("Banco", "Conta"...) não ativa o campo: um clique nele repassaria o clique ao select (abrindo a lista nativa do navegador
+  // junto com a nossa). A lista só abre clicando dentro do próprio campo.
+  for (const rotulo of campo.querySelectorAll('label')) rotulo.addEventListener('click', (evento) => evento.preventDefault());
 
   // Mouse: abre depois de uma pequena espera e fecha ao sair, a menos que o campo esteja selecionado por Tab.
   // Campo com o atributo data-ao-clicar (ex.: a janela de novo lançamento) não abre ao passar o mouse: só ao clicar nele.
@@ -149,6 +274,8 @@ function ligarSeletor(campo, modelo, signal) {
   select.addEventListener('blur', fechar);
   select.addEventListener('keydown', (evento) => {
     if (evento.key === 'Escape') {
+      // numa janela, o Esc que fecha a lista não pode fechar também a janela (o ouvinte dela está no document)
+      if (emFolha && aberta()) evento.stopPropagation();
       fechar();
     } else if (evento.key === 'Enter' || evento.key === ' ') {
       evento.preventDefault(); // não abre a lista nativa
@@ -167,6 +294,15 @@ function ligarSeletor(campo, modelo, signal) {
   // Escolher com o mouse. O mousedown não tira o foco do select.
   lista.addEventListener('mousedown', (evento) => evento.preventDefault());
   lista.addEventListener('click', (evento) => {
+    if (evento.target.closest('.seletor__fechar')) {
+      fechar();
+      return;
+    }
+    if (evento.target.closest('.seletor__rodape-botao')) {
+      fechar();
+      campo.dispatchEvent(new CustomEvent('seletor:rodape', { bubbles: true }));
+      return;
+    }
     const opcao = evento.target.closest('.seletor__opcao');
     if (opcao) escolher(opcao.dataset.valor);
   });
