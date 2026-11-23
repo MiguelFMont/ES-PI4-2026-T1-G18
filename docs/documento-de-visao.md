@@ -14,6 +14,7 @@ Campinas — 2026
 | 1.1 | 09/11/2026 | Revisão para refletir a arquitetura e o plano de sprints atuais (ver a seção 1.3) |
 | 1.2 | 16/11/2026 | O portfólio de investimentos simulado (RF25 e RF26) passa a **feature futura**: o Backend e o Servidor estão prontos, mas a interface mostra só o cartão de crédito (RF27 e RF36). Ver a seção 5.8 |
 | 1.3 | 22/11/2026 | **Entregue:** contas (nome, banco e saldo), lançamentos vinculados a uma conta, transferências entre contas e coluna Origem mostrando a conta (RF37 a RF42, issues #101 a #115). |
+| 1.4 | 23/11/2026 | **Revisão para a entrega final:** a Situação de cada requisito passa a refletir o que está implementado (e não o estado das issues); o MFA (RF04) sai das features futuras; entram os RF43 a RF47 (cartão vinculado a uma conta, lançamentos na aba do cartão, ícone e cor, desfazer e regras do Open Finance somente leitura); a tela do cartão e as seções 5.8, 8 e 11 foram atualizadas. |
 
 ---
 
@@ -89,7 +90,7 @@ Ressalta-se que, no contexto acadêmico deste projeto, a conexão com contas ban
 
 ### 4.1. Escopo da entrega e features futuras
 
-Por orientação do(a) professor(a), **não é necessário implementar 100% do projeto**. O núcleo da entrega é o conjunto de requisitos com situação "Entregue", "Em andamento" ou "Planejado" na seção 10. Os requisitos marcados como **feature futura** (seção 9) fazem parte da visão do produto e ficam documentados para as próximas disciplinas, sem compromisso de implementação nesta etapa. Requisitos planejados que não forem concluídos nas Sprints 3 e 4 passam à mesma categoria.
+Por orientação do(a) professor(a), **não é necessário implementar 100% do projeto**. O núcleo da entrega é o conjunto de requisitos com situação "Entregue" na seção 7. Os requisitos marcados como **feature futura** (seção 9) fazem parte da visão do produto e ficam documentados para as próximas disciplinas, sem compromisso de implementação nesta etapa. O RF14 (últimas transações na tela inicial) não foi implementado e o RF18 tem só o Backend.
 
 ---
 
@@ -134,7 +135,7 @@ O usuário poderá criar metas financeiras, definindo um nome, um valor desejado
 
 ### 5.8. Cartão de crédito e investimentos (módulo complementar)
 
-Em caráter complementar, o sistema apresenta a tela **Cartão de crédito**, com a fatura do mês (calculada a partir das despesas reais no crédito e das parcelas), o limite disponível e os parcelamentos ativos (parcela, juros e saldo devedor). Este módulo tem caráter exclusivamente informativo e educacional, sem qualquer recomendação de compra ou venda de ativos.
+Em caráter complementar, o sistema apresenta a tela **Cartão de crédito**: uma fila com até 5 cartões, cada um vinculado a uma conta manual (os cartões do Open Finance aparecem com a tag "Open Finance" e são somente leitura). Para o cartão escolhido ela mostra a **fatura do mês** (calculada a partir das despesas reais no crédito, das parcelas e do ciclo de fechamento; a fatura fecha no dia escolhido e vence 7 dias depois), o limite disponível, os parcelamentos ativos (parcela, juros e saldo devedor) e **os lançamentos do cartão**, com filtros, edição e criação de despesa e receita pelas mesmas peças da tela de Transações. Excluir um cartão apaga também os lançamentos e parcelamentos dele, e a notificação oferece "Desfazer". Este módulo tem caráter exclusivamente informativo e educacional, sem qualquer recomendação de compra ou venda de ativos.
 
 O **portfólio de investimentos simulado** (patrimônio total, ativos, percentual da carteira e rentabilidade) é uma **feature futura**: as rotas do Backend (`/v1/investments`) e o cálculo de rentabilidade no Servidor (`PedidoRentabilidadeSimulada`) já existem e têm testes, mas ele ficou sem tela, para concentrar a entrega nos dados reais de transações e no cartão.
 
@@ -194,19 +195,19 @@ Os ambientes e tecnologias abaixo são considerados como base tecnológica do pr
 
 ## 7. Requisitos Funcionais
 
-A coluna **Grupo** indica o grupo de features responsável (1 a 5, ou "todos"), **Issues** liga o requisito ao GitHub e **Situação** é calculada pelo estado das issues em 09/11/2026: *Entregue* (todas fechadas), *Em andamento* (algumas fechadas), *Planejado* (nenhuma fechada) ou *Feature futura* (sem issue, ver a seção 9). A numeração dos RF não muda entre versões: o RF11 foi removido na versão 1.1 e os RF31 a RF36 são novos.
+A coluna **Grupo** indica o grupo de features responsável (1 a 5, ou "todos"), **Issues** liga o requisito ao GitHub e **Situação** reflete o que está implementado e testado em 23/11/2026: *Entregue* (Frontend, Backend e Servidor, quando houver), *Parcial* (parte da funcionalidade existe), *Backend pronto, sem tela* ou *Feature futura* (ver a seção 9). Várias issues das sprints 0 a 4 ainda constam como abertas no GitHub apesar de o código já estar entregue; elas serão fechadas no encerramento do projeto. A numeração dos RF não muda entre versões: o RF11 foi removido na versão 1.1 e os RF31 a RF36 são novos.
 
 ### 7.1. Autenticação e conta
 
 | RF | Requisito | Grupo | Issues | Situação |
 |---|---|---|---|---|
-| **RF01** | O sistema deve permitir que o usuário crie uma conta informando nome completo, e-mail, CPF e senha. | 1 | #13, #15, #17, #32, #80 | Em andamento |
-| **RF02** | O sistema deve permitir login por e-mail e senha, restringindo o acesso a usuários autenticados. | 1 | #14, #16, #56 | Planejado |
-| **RF03** | O sistema deve permitir a recuperação de senha via e-mail cadastrado. | 1 | #31 | Planejado |
-| **RF04** | O sistema deve permitir, de forma opcional, a habilitação de autenticação multifator (MFA/2FA). | 1 | #33, #42 | Feature futura |
-| **RF05** | O sistema deve permitir a edição de dados de perfil e de preferências (modo claro/escuro e ocultar valores sensíveis). | 1 | #43, #86 | Planejado |
-| **RF31** | O sistema deve permitir ao usuário consultar o plano da conta (Free ou Pro) e acessar uma tela de upgrade. | 1 | #44, #86 | Planejado |
-| **RF32** | O sistema deve oferecer um canal de suporte para o usuário reportar um problema. | 1 | #45, #72, #73, #85 | Em andamento |
+| **RF01** | O sistema deve permitir que o usuário crie uma conta informando nome completo, e-mail, CPF e senha. | 1 | #13, #15, #17, #32, #80 | Entregue |
+| **RF02** | O sistema deve permitir login por e-mail e senha, restringindo o acesso a usuários autenticados. | 1 | #14, #16, #56 | Entregue |
+| **RF03** | O sistema deve permitir a recuperação de senha via e-mail cadastrado. | 1 | #31 | Entregue |
+| **RF04** | O sistema deve permitir, de forma opcional, a habilitação de autenticação multifator (MFA/2FA). | 1 | #33, #42 | Entregue |
+| **RF05** | O sistema deve permitir a edição de dados de perfil e de preferências (modo claro/escuro e ocultar valores sensíveis). | 1 | #43, #86 | Entregue |
+| **RF31** | O sistema deve permitir ao usuário consultar o plano da conta (Free ou Pro) e acessar uma tela de upgrade. | 1 | #44, #86 | Entregue |
+| **RF32** | O sistema deve oferecer um canal de suporte para o usuário reportar um problema. | 1 | #45, #72, #73, #85 | Entregue |
 
 ### 7.2. Contas, receitas e despesas
 
@@ -215,11 +216,11 @@ A coluna **Grupo** indica o grupo de features responsável (1 a 5, ou "todos"), 
 | **RF06** | O sistema deve permitir o cadastro manual de receitas (descrição, valor, data e categoria). | 2 | #18, #20, #22 | Entregue |
 | **RF07** | O sistema deve permitir o cadastro manual de despesas (descrição, valor, data, categoria, forma de pagamento e observações). | 2 | #18, #20, #22 | Entregue |
 | **RF08** | O sistema deve permitir marcar uma despesa como recorrente (fixa mensal). | 2 | — | Feature futura |
-| **RF09** | O sistema deve permitir a importação de transações a partir do sandbox de Open Finance da Pluggy (instituições fictícias). | 2 | #12, #46 | Planejado |
+| **RF09** | O sistema deve permitir a importação de transações a partir do sandbox de Open Finance da Pluggy (instituições fictícias). | 2 | #12, #46 | Entregue |
 | **RF10** | O sistema deve categorizar automaticamente as transações importadas e as lançadas sem categoria, permitindo ao usuário corrigir a categoria e editar ou excluir qualquer transação, seja ela manual ou importada, individualmente ou em lote. | 2 | #34, #35, #91, #92 | Entregue |
-| **RF12** | O sistema deve permitir a listagem e a filtragem de transações por descrição, categoria, período, faixa de valor, forma de pagamento e origem. | 2 | #19, #21, #48, #93, #94 | Em andamento |
-| **RF33** | O sistema deve permitir duplicar um lançamento existente. | 2 | #49 | Backend pronto; falta a ação no Frontend |
-| **RF34** | O sistema deve permitir ao usuário listar, conectar e desconectar contas bancárias do sandbox da Pluggy. | 2 | #47, #74, #87 | Planejado |
+| **RF12** | O sistema deve permitir a listagem e a filtragem de transações por descrição, categoria, período, faixa de valor, forma de pagamento e origem. | 2 | #19, #21, #48, #93, #94 | Entregue |
+| **RF33** | O sistema deve permitir duplicar um lançamento existente. | 2 | #49 | Entregue |
+| **RF34** | O sistema deve permitir ao usuário listar, conectar e desconectar contas bancárias do sandbox da Pluggy. | 2 | #47, #74, #87 | Entregue |
 | **RF37** | O sistema deve permitir ao usuário criar, editar e excluir uma conta, informando nome, banco (lista fixa) e saldo bancário, na tela Contas Conectadas. | 2 | #101, #102, #106, #108, #113 | Entregue |
 | **RF38** | O sistema deve permitir ao usuário ter mais de uma conta, cada uma com o saldo atual calculado. | 2 | #101, #102, #106, #108 | Entregue |
 | **RF39** | O sistema deve permitir criar contas manuais e contas Open Finance (Pluggy); a criação de conta Open Finance só é permitida no plano Pro. | 1, 2 | #102, #103, #108, #113 | Entregue |
@@ -231,29 +232,29 @@ A coluna **Grupo** indica o grupo de features responsável (1 a 5, ou "todos"), 
 
 | RF | Requisito | Grupo | Issues | Situação |
 |---|---|---|---|---|
-| **RF13** | O sistema deve exibir, na tela inicial, um dashboard com saldo em contas, gastos do mês, economia acumulada e fluxo de caixa. | 3 | #24, #25, #36, #37, #82 | Em andamento |
-| **RF14** | O sistema deve exibir a lista das transações mais recentes na tela inicial. | 3 | #24, #58 | Planejado |
-| **RF15** | O sistema deve exibir a distribuição dos gastos por categoria em um período selecionado. | 3 | #50 | Planejado |
-| **RF16** | O sistema deve permitir a expansão de uma categoria para visualizar as transações que a compõem. | 3 | #50 | Planejado |
-| **RF35** | O sistema deve permitir visualizar a distribuição dos gastos também agregada por grupos de categorias. | 3 | #50 | Planejado |
-| **RF17** | O sistema deve permitir a comparação de receitas e despesas entre diferentes períodos (mensal, últimos 6 meses, YTD). | 3 | #51, #89 | Planejado |
-| **RF18** | O sistema deve exibir um resumo do período analisado (total gasto, categoria de maior peso, número de transações e média diária de gasto). | 3 | #60 | Planejado |
+| **RF13** | O sistema deve exibir, na tela inicial, um dashboard com saldo em contas, gastos do mês, economia acumulada e fluxo de caixa. | 3 | #24, #25, #36, #37, #82 | Entregue |
+| **RF14** | O sistema deve exibir a lista das transações mais recentes na tela inicial. | 3 | #24, #58 | Não implementado (a tela inicial não lista as últimas transações; ficam em Transações) |
+| **RF15** | O sistema deve exibir a distribuição dos gastos por categoria em um período selecionado. | 3 | #50 | Entregue |
+| **RF16** | O sistema deve permitir a expansão de uma categoria para visualizar as transações que a compõem. | 3 | #50 | Entregue |
+| **RF35** | O sistema deve permitir visualizar a distribuição dos gastos também agregada por grupos de categorias. | 3 | #50 | Entregue |
+| **RF17** | O sistema deve permitir a comparação de receitas e despesas entre diferentes períodos (mensal, últimos 6 meses, YTD). | 3 | #51, #89 | Entregue |
+| **RF18** | O sistema deve exibir um resumo do período analisado (total gasto, categoria de maior peso, número de transações e média diária de gasto). | 3 | #60 | Backend pronto, sem tela (`GET /v1/dashboard/period-summary`) |
 
 ### 7.4. Mentor Financeiro (IA)
 
 | RF | Requisito | Grupo | Issues | Situação |
 |---|---|---|---|---|
-| **RF19** | O sistema deve disponibilizar um chat de IA generativa para o usuário tirar dúvidas sobre sua situação financeira. | 4 | #26, #27, #38, #70, #71, #83 | Em andamento |
-| **RF20** | O sistema deve gerar, de forma proativa, explicações em linguagem natural sobre padrões identificados no histórico financeiro do usuário. | 4 | #52 | Planejado |
-| **RF21** | O sistema deve emitir alertas sobre eventos relevantes (gastos fora do padrão, proximidade de vencimento de fatura, dinheiro parado sem rendimento). | 4 | #62, #88 | Planejado |
-| **RF22** | O sistema não deve emitir recomendações de compra ou venda de ativos financeiros específicos nas respostas geradas pela IA. | 4 | #53 | Planejado |
+| **RF19** | O sistema deve disponibilizar um chat de IA generativa para o usuário tirar dúvidas sobre sua situação financeira. | 4 | #26, #27, #38, #70, #71, #83 | Entregue |
+| **RF20** | O sistema deve gerar, de forma proativa, explicações em linguagem natural sobre padrões identificados no histórico financeiro do usuário. | 4 | #52 | Entregue |
+| **RF21** | O sistema deve emitir alertas sobre eventos relevantes (gastos fora do padrão, proximidade de vencimento de fatura, dinheiro parado sem rendimento). | 4 | #62, #88 | Entregue |
+| **RF22** | O sistema não deve emitir recomendações de compra ou venda de ativos financeiros específicos nas respostas geradas pela IA. | 4 | #53 | Entregue |
 
 ### 7.5. Metas financeiras
 
 | RF | Requisito | Grupo | Issues | Situação |
 |---|---|---|---|---|
-| **RF23** | O sistema deve permitir o cadastro de metas financeiras (nome, valor desejado e prazo). | 5 | #28, #29, #30, #84 | Em andamento |
-| **RF24** | O sistema deve exibir o progresso do usuário em relação a cada meta cadastrada. | 5 | #40, #41, #65 | Planejado |
+| **RF23** | O sistema deve permitir o cadastro de metas financeiras (nome, valor desejado e prazo). | 5 | #28, #29, #30, #84 | Entregue |
+| **RF24** | O sistema deve exibir o progresso do usuário em relação a cada meta cadastrada. | 5 | #40, #41, #65 | Entregue |
 
 ### 7.6. Investimentos (complementar)
 
@@ -261,32 +262,42 @@ A coluna **Grupo** indica o grupo de features responsável (1 a 5, ou "todos"), 
 |---|---|---|---|---|
 | **RF25** | O sistema deve exibir um painel com o patrimônio total simulado do usuário. | 5 | #54, #75, #76 | Feature futura (Backend pronto, sem tela) |
 | **RF26** | O sistema deve listar os ativos do portfólio simulado do usuário, com valor investido, percentual da carteira e rentabilidade recente. | 5 | #54, #64, #75 | Feature futura (Backend e Servidor prontos, sem tela) |
-| **RF27** | O sistema deve exibir a fatura atual e o limite disponível de um cartão de crédito simulado. | 5 | #65, #77 | Planejado |
-| **RF36** | O sistema deve exibir os parcelamentos ativos do cartão de crédito simulado (valor da parcela, juros e saldo devedor). | 5 | #55, #77, #90 | Parcial (parcelas nas compras; tela manual é feature futura) |
+| **RF27** | O sistema deve exibir a fatura atual e o limite disponível de um cartão de crédito simulado. | 5 | #65, #77 | Entregue |
+| **RF36** | O sistema deve exibir os parcelamentos ativos do cartão de crédito simulado (valor da parcela, juros e saldo devedor). | 5 | #55, #77, #90 | Parcial (os parcelamentos nascem das compras parceladas e aparecem na fatura e no limite; a tela de cadastro manual é feature futura) |
 
 ### 7.7. Personalização e segurança
 
 | RF | Requisito | Grupo | Issues | Situação |
 |---|---|---|---|---|
-| **RF28** | O sistema deve permitir a alternância entre modo claro e modo escuro. | 1 | #43 | Parcial |
-| **RF29** | O sistema deve permitir ocultar valores financeiros sensíveis na tela. | 1 | #43 | Planejado |
-| **RF30** | O sistema deve armazenar dados financeiros do usuário de forma segura, restringindo o acesso ao próprio usuário autenticado. | todos | #17, #56, #57 | Planejado |
+| **RF28** | O sistema deve permitir a alternância entre modo claro e modo escuro. | 1 | #43 | Entregue |
+| **RF29** | O sistema deve permitir ocultar valores financeiros sensíveis na tela. | 1 | #43 | Entregue |
+| **RF30** | O sistema deve armazenar dados financeiros do usuário de forma segura, restringindo o acesso ao próprio usuário autenticado. | todos | #17, #56, #57 | Entregue |
 
-**Resumo em 09/11/2026 (35 requisitos):** 24 planejado, 6 em andamento, 3 entregue, 1 feature futura, 1 parcial.
+### 7.8. Cartões, aparência e desfazer (acréscimos de 23/11/2026)
 
-**Acréscimo em 22/11/2026:** os RF37 a RF42 (contas e transferências) entram como *Planejado*, o que leva o total a 41 requisitos. As issues #114 (atualização da documentação) e #115 (modelagem UML) acompanham esses requisitos, sem serem requisitos funcionais.
+| RF | Requisito | Grupo | Issues | Situação |
+|---|---|---|---|---|
+| **RF43** | O sistema deve permitir até 5 cartões de crédito por usuário, cada um vinculado a uma conta manual, com limite e dia de fechamento da fatura (o vencimento é 7 dias depois), e calcular a fatura de cada cartão pelo ciclo de fechamento. | 5 | — | Entregue |
+| **RF44** | O sistema deve mostrar, na tela do cartão, a fatura do mês escolhido e os lançamentos do cartão, com as mesmas peças das Transações: filtros, busca, edição, seleção em lote, duplicar, excluir e a criação de despesa e de receita (a receita no cartão é um estorno e abate a fatura). | 2, 5 | — | Entregue |
+| **RF45** | O sistema deve permitir escolher um ícone e uma cor para contas, cartões e metas; sem escolha vale o logo do banco. | 2, 5 | — | Entregue |
+| **RF46** | O sistema deve permitir desfazer, pela notificação, a edição, a duplicação e a exclusão de lançamentos e a exclusão de conta ou de cartão (que apaga também os cartões, lançamentos e parcelamentos ligados a eles). | 2, 5 | — | Entregue |
+| **RF47** | O sistema deve tratar as contas e os cartões do Open Finance como somente leitura: só o ícone e a cor mudam, não se excluem (desconectar a conta a torna manual, e os cartões dela também) e os lançamentos delas não se criam nem se excluem à mão. | 2 | — | Entregue |
+
+**Resumo em 23/11/2026 (46 requisitos; o RF11 não existe):** 40 entregues, 1 parcial (RF36), 1 backend pronto sem tela (RF18), 1 não implementado (RF14) e 3 features futuras (RF08, RF25 e RF26).
+
+**Histórico:** em 09/11/2026 eram 35 requisitos (24 planejados, 6 em andamento, 3 entregues, 1 feature futura e 1 parcial); em 22/11/2026 entraram os RF37 a RF42 (contas e transferências, 41 requisitos) e em 23/11/2026 os RF43 a RF47 (46 requisitos). As issues #114 (documentação) e #115 (modelagem UML) acompanham esses requisitos, sem serem requisitos funcionais.
 
 ---
 
 ## 8. Requisitos Não Funcionais
 
-Os requisitos abaixo descrevem como o sistema deve se comportar. Os itens RNF01 a RNF05 e RNF09 refletem decisões já adotadas no código.
+Os requisitos abaixo descrevem como o sistema deve se comportar. Os itens RNF01 a RNF05, RNF09 e RNF11 refletem decisões já adotadas no código.
 
 | RNF | Requisito |
 |---|---|
 | **RNF01** | As senhas devem ser armazenadas apenas como hash com sal (PBKDF2 com HMAC-SHA256, 120.000 iterações), calculado no Servidor Java. |
 | **RNF02** | Toda rota privada da API deve exigir um token JWT válido, e cada usuário só pode ler ou alterar os próprios dados. |
-| **RNF03** | Chaves de API, o segredo do JWT e a URI do banco devem ficar em variáveis de ambiente, fora do repositório. As credenciais da Pluggy ficam só no Backend, nunca no Frontend. |
+| **RNF03** | Chaves de API, os segredos do JWT e do MFA, a senha do e-mail e a URI do banco devem ficar em variáveis de ambiente, fora do repositório (`Backend/.env.example` lista todas). As credenciais da Pluggy ficam só no Backend, nunca no Frontend. |
 | **RNF04** | O Servidor Java deve aceitar conexões só da própria máquina (loopback) e encerrar conexões ociosas após 5 minutos. |
 | **RNF05** | A indisponibilidade do Servidor Java ou de um serviço externo não derruba o Backend: as rotas que dependem deles respondem com erro de serviço indisponível, e o cadastro de transação continua funcionando (a categoria fica "Outros"). |
 | **RNF06** | Listagens devem ser paginadas (no máximo 100 itens por página) e as operações em lote aceitam no máximo 100 itens por chamada. |
@@ -294,6 +305,7 @@ Os requisitos abaixo descrevem como o sistema deve se comportar. Os itens RNF01 
 | **RNF08** | A interface deve se adaptar a telas pequenas (responsividade). |
 | **RNF09** | O contrato entre as camadas deve estar documentado (`docs/contrato-api.md` para a API e `Servidor/README.md` para as mensagens do Servidor), e cada grupo adiciona o seu handler ao Servidor sem alterar o código dos outros. |
 | **RNF10** | O sistema só deve manipular dados fictícios (sandbox da Pluggy); não há dados bancários reais. |
+| **RNF11** | As rotas que um atacante repetiria em massa (login, código MFA, cadastro, recuperação de senha e o chat da IA) devem limitar as tentativas por janela de tempo (`429 TOO_MANY_REQUESTS`); o código MFA não pode ser reutilizado. |
 
 ---
 
@@ -303,11 +315,10 @@ Itens que fazem parte da visão do produto, mas que, por orientação do(a) prof
 
 | RF | Feature | Observação |
 |---|---|---|
-| **RF04** | Autenticação multifator (MFA/2FA) com código TOTP | O cadastro já guarda a marca `mfaEnabled`, mas não há geração do segredo, validação do código nem o fluxo de login em duas etapas (rota `mfa` comentada no Backend; mensagens do Servidor Java só planejadas). |
 | **RF08** | Marcar uma despesa como recorrente (fixa mensal) | Implica um campo de recorrência na transação, a geração automática das ocorrências mensais e a tela correspondente. Não há issue aberta. |
 | **RF25** | Painel com o patrimônio total simulado | Backend e Servidor Java prontos (`/v1/investments`); falta a tela. |
 | **RF26** | Lista dos ativos do portfólio simulado, com percentual da carteira e rentabilidade | Backend e Servidor Java prontos; falta a tela. |
-| **RF36** | Tela de parcelamentos do cartão com cadastro manual e pagamento de parcela | Foi retirada da tela do cartão: os parcelamentos nascem das compras parceladas feitas em Transações, e a tela do cartão mostra as compras de cada cartão. As rotas de parcelamento manual continuam no Backend. As parcelas avançam sozinhas, uma por mês. |
+| **RF36** | Tela de parcelamentos do cartão com cadastro manual e pagamento de parcela | Foi retirada da tela do cartão: os parcelamentos nascem das compras parceladas feitas em Transações ou na aba do cartão, e a tela do cartão mostra os lançamentos de cada cartão. As rotas de parcelamento manual continuam no Backend. As parcelas avançam sozinhas, uma por mês. |
 | RF37 a RF42 | Transferências envolvendo contas Open Finance e limite de contas manuais no plano Free | Decisões em aberto da especificação de contas: por enquanto a transferência só envolve contas manuais (o saldo Open Finance vem do banco) e a proposta é não limitar contas manuais no plano Free. |
 | — | Categorias digitáveis pelo usuário | Hoje a categoria é escolhida na lista oficial (ou automática). Digitar e criar categorias exige uma coleção de categorias por usuário e o ajuste do Servidor Java. Sem RF nem issue. |
 | — | Aplicativo móvel | O Frontend é web; a versão móvel (Flutter) fica para depois da banca. Sem RF nem issue. |
@@ -327,7 +338,9 @@ A ligação entre requisitos e issues está na coluna **Issues** das tabelas da 
 - **Sandbox:** ambiente de teste, sem dados nem instituições reais.
 - **Conta:** conta do usuário com nome, banco e saldo, manual ou Open Finance (esta só no plano Pro); todo lançamento manual referencia uma.
 - **Transferência:** movimentação de valor entre duas contas manuais do mesmo usuário; não é receita nem despesa.
-- **MFA/2FA:** autenticação em mais de uma etapa (além da senha).
+- **MFA/2FA:** autenticação em mais de uma etapa (além da senha); aqui, um código TOTP de 6 dígitos gerado por um aplicativo como o Google Authenticator.
+- **Fatura (ciclo):** período de compras no cartão. Fecha no dia de fechamento do cartão e vence 7 dias depois; uma compra feita depois do fechamento entra na fatura do mês seguinte.
+- **Desfazer:** botão da notificação que restaura o que acabou de ser editado, duplicado ou excluído (vale por poucos segundos).
 - **JWT:** token assinado que identifica o usuário nas chamadas à API.
 - **Handler:** código do Servidor Java que trata um tipo de pedido (por exemplo, categorizar uma transação).
 - **YTD:** acumulado do ano até a data atual (year to date).
