@@ -40,12 +40,21 @@ Detalhes completos da arquitetura, divisão de grupos, padrão de issues e crono
 | Grupo | Frontend | Backend (`/v1/...`) | Servidor Java |
 |---|---|---|---|
 | 1 — Autenticação & Conta | login, cadastro, recuperação de senha, perfil e preferências, planos, suporte | `auth`, `suporte` | hash e conferência de senha (PBKDF2) |
-| 2 — Transações | extrato com filtros, edição e exclusão em lote, duplicar, categoria automática, contas conectadas (Pluggy), compra no crédito com cartão e parcelas | `transactions`, `connected-accounts` | categorização pela descrição |
+| 2 — Transações | extrato com filtros, edição e exclusão em lote (com "Desfazer"), duplicar, categoria automática, contas manuais e Open Finance (Pluggy, plano Pro), transferências entre contas, compra no crédito com cartão e parcelas | `transactions`, `accounts`, `connected-accounts`, `undo` | categorização pela descrição e saldo das contas |
 | 3 — Painel & Análise | dashboard, gastos por categoria, comparação de períodos | `dashboard` | indicadores e comparação de períodos |
 | 4 — Mentor Financeiro (IA) | chat, alertas e mensagens proativas (Insight) | `mentor-ia` | contexto da IA e filtro de resposta |
-| 5 — Metas & Investimentos | metas (prazo opcional), cartões de crédito (até 5) com as compras de cada um | `goals`, `investments` | progresso de meta, parcelamentos e rentabilidade simulada |
+| 5 — Metas & Investimentos | metas (prazo opcional, com ícone e cor), cartões de crédito (até 5, cada um vinculado a uma conta) com a fatura e os lançamentos de cada um (mesmas peças das Transações) | `goals`, `investments` | progresso de meta, parcelamentos e rentabilidade simulada |
 
-Ainda não há tela para o portfólio de investimentos (só a API) e o MFA (verificação em duas etapas) está só no cadastro do usuário: o fluxo com código TOTP ficou como funcionalidade futura. Outras ideias futuras: categorias digitáveis, aplicativo móvel.
+Ainda não há tela para o portfólio de investimentos (só a API). Outras ideias futuras: categorias digitáveis, aplicativo móvel.
+
+### Contas, transferências e cartões
+
+- **Contas:** toda pessoa tem ao menos uma conta. Uma conta é **manual** (saldo calculado pelo Servidor Java a partir do saldo inicial e dos lançamentos) ou **Open Finance** (vinda da Pluggy, só no plano Pro, somente leitura: só o ícone e a cor mudam, não se exclui e não aceita lançamento manual; ao desconectar, ela e os cartões dela viram manuais).
+- **Transferências:** movem valor entre duas contas manuais (um único registro, que não é receita nem despesa).
+- **Cartões:** cada cartão pertence a uma conta manual (ou vem do Open Finance); a fatura fecha no dia escolhido e vence 7 dias depois. Na aba Cartão há a fatura do mês e a lista de lançamentos do cartão, com filtros, edição e criação de despesa e receita (a receita no cartão é um estorno e abate a fatura).
+- **Aparência:** contas, cartões e metas aceitam ícone e cor; sem eles vale o logo do banco (`Frontend/assets/bancos/`).
+- **Exclusão e desfazer:** excluir um cartão exclui também os lançamentos e parcelamentos dele; excluir uma conta exclui os cartões e lançamentos dela. A notificação traz "Desfazer" (`POST /v1/undo/:id`, vale 2 minutos, só na memória do Backend).
+- Detalhes no contrato da API ([`docs/contrato-api.md`](docs/contrato-api.md)) e nos diagramas de [`docs/uml/`](docs/uml/README.md).
 
 ## Como executar
 
@@ -59,7 +68,7 @@ Suba nesta ordem: Servidor Java (porta 3000), depois o Backend (porta 3001, que 
 
 ### Backend
 ```
-# Requer Node 20+ (usado: 22). Copie Backend/.env.example para Backend/.env e ajuste JWT_SECRET e MONGO_URI.
+# Requer Node 20+ (usado: 22). Copie Backend/.env.example para Backend/.env e ajuste JWT_SECRET, MFA_JWT_SECRET (mínimo de 32 caracteres) e MONGO_URI.
 cd Backend
 npm install
 npm run dev          # http://localhost:3001/v1
@@ -116,4 +125,4 @@ docs/        # Documento de visão, organização de sprints, contrato da API, c
 
 ## Status atual
 
-Versão de entrega (1.0.0-final em preparação): as quatro camadas e os cinco grupos estão implementados e integrados na branch `develop`. Backend com 566 testes e Servidor com 174, todos passando. Falta o teste completo manual (`docs/checklist-teste-completo.md`), o ensaio da apresentação e a tag `1.0.0-final`.
+Versão de entrega (1.0.0-final em preparação): as quatro camadas e os cinco grupos estão implementados e integrados na branch `develop`. Backend com 718 testes e Servidor com 188, todos passando. Falta o teste completo manual (`docs/checklist-teste-completo.md`), o ensaio da apresentação e a tag `1.0.0-final`.

@@ -3,6 +3,7 @@
 // config/env valida o process.env no import. Como o dotenv não sobrescreve o que já está definido, os testes não dependem
 // do .env local: nunca chamam a Pluggy de verdade (o host abaixo não existe e o fetch é simulado).
 process.env.JWT_SECRET = "segredo-de-teste";
+process.env.MFA_JWT_SECRET ??= "segredo-mfa-de-teste-com-mais-de-32-caracteres";
 process.env.MONGO_URI = "";
 process.env.EMAIL_USER = "teste@teste.com";
 process.env.EMAIL_PASSWORD = "senha-de-teste";

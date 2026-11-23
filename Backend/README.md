@@ -64,7 +64,7 @@ Quando uma operação falha, o Servidor responde `{"tipo":"Erro","dados":{"code"
 
 Em cada pasta há uma subpasta `exemplo/` com um `.md` para cada arquivo `.ts` planejado, explicando o que o arquivo deve ter (e o que **não** é responsabilidade dele) e trazendo um exemplo de implementação. Ao implementar, crie o `.ts` na pasta correspondente; o `.md` fica como referência (e pode ser apagado quando o projeto estiver andando).
 
-**Estado atual:** todos os módulos estão implementados como código: `sistema`, `auth` e `suporte` (Grupo 1), `transactions` e `connected-accounts` (Grupo 2), `dashboard` (Grupo 3), `mentor-ia` (Grupo 4) e `goals` e `investments` (Grupo 5). O sub-módulo `auth/mfa` (código TOTP) **não existe**: o cadastro guarda só a marca `mfaEnabled` e o fluxo do MFA ficou como funcionalidade futura. Os `.md` de `exemplo/` são só referência histórica.
+**Estado atual:** todos os módulos estão implementados como código: `sistema`, `auth` e `suporte` (Grupo 1), `transactions` e `connected-accounts` (Grupo 2), `dashboard` (Grupo 3), `mentor-ia` (Grupo 4) e `goals` e `investments` (Grupo 5). O sub-módulo `auth/mfa` (código TOTP) está implementado e o login com MFA usa o `MFA_JWT_SECRET` (mínimo de 32 caracteres, no `.env`). Os `.md` de `exemplo/` são só referência histórica.
 
 ## Estrutura de pastas
 
@@ -79,13 +79,15 @@ src/
   modules/
     sistema/         /v1/health e /v1/eco (verificação da base)
     auth/            Grupo 1 — Autenticação & Conta
-      mfa/           (planejado, não implementado)
+      mfa/           verificação em duas etapas (TOTP, Google Authenticator)
     transactions/    Grupo 2 — Transações (Receitas e Despesas)
     dashboard/       Grupo 3 — Painel Financeiro & Análise de Gastos
     mentor-ia/       Grupo 4 — Mentor Financeiro (IA Generativa)
     goals/           Grupo 5 — Metas Financeiras
     investments/     Grupo 5 — Cartões (até 5 por usuário, com tela), parcelamentos das compras no crédito e portfólio simulado (só API, sem tela)
+    accounts/            Grupo 2 — Contas (manuais e Open Finance), saldo calculado pelo Servidor Java, ícone e cor
     connected-accounts/  Grupo 2 — Contas conectadas e importação da Pluggy
+    desfazer/            POST /v1/undo/:id — desfaz a exclusão de conta, cartão ou lançamentos (lixeira em memória, 2 minutos)
     suporte/         Grupo 1 — Chamados de suporte
 ```
 
@@ -131,7 +133,7 @@ O chat do Mentor (`POST /v1/mentor-ia/chat`, contrato na seção 3 de `../docs/c
 
 ## Pontos em aberto
 
-- **MFA no login:** o `login` devolve `mfaEnabled`; o fluxo completo (token temporário até validar o código) será definido por outro integrante do grupo de Autenticação.
+- **MFA no login:** o `login` devolve `mfaEnabled`; com o MFA ligado, o login devolve um token temporário (assinado com `MFA_JWT_SECRET`) até o código ser validado em `POST /v1/auth/login/mfa`.
 - **Contratos Backend↔Servidor:** os tipos de mensagem e seus campos (`PedidoXxx`/`RespostaXxx`) precisam ser os mesmos nos dois lados. A lista completa está em `../Servidor/README.md`.
 
 ## Configuração
@@ -198,7 +200,7 @@ curl -X POST localhost:3001/v1/eco -H "content-type: application/json" -d '{"oi"
 
 ## Testes
 
-Os testes usam o executor nativo do Node (`node:test`) com o `tsx`, sem framework extra. Ficam em `__tests__/` dentro do módulo (hoje são 566 testes, em todos os módulos com lógica) e seguem o padrão `*.test.ts`.
+Os testes usam o executor nativo do Node (`node:test`) com o `tsx`, sem framework extra. Ficam em `__tests__/` dentro do módulo (hoje são 718 testes, em todos os módulos com lógica) e seguem o padrão `*.test.ts`.
 
 ```bash
 npm test                    # todos os *.test.ts de src/

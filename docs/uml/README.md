@@ -148,3 +148,7 @@ Pontos em que a documentação existente e o código não coincidem. Os diagrama
 14. RF33 (duplicar lançamento): o documento de visão diz que falta a ação no Frontend; conferir antes de marcar UC13 como entregue.
 15. A lista do mapeamento traz `PlanoConta.js` duplicado em `fe-auth`; a duplicata é ignorada.
 16. `connected_accounts` (atual) x `accounts` («planejado»): a relação planejada é `Account.conectadaId -> ConnectedAccount (0..1)`, e a migração (RN10) converte as contas conectadas em contas `open_finance`.
+
+## Atualização (22/11/2026)
+
+Os diagramas acima descrevem o planejamento de contas e transferências. Desde então foram implementados, além do planejado: ícone e cor em contas, cartões e metas (`Backend/src/shared/aparencia`), logos dos bancos (`Frontend/assets/bancos`), exclusão em cascata de conta e cartão com desfazer (`Backend/src/shared/lixeira` e `POST /v1/undo/:id`), cartões do Open Finance somente leitura (`openFinance: true`), bloqueio de exclusão de lançamentos de contas Open Finance e a lista de lançamentos do cartão na aba Cartão (as mesmas peças das Transações, com `escopo`). Os diagramas de classes ainda não trazem esses itens; o contrato da API (`docs/contrato-api.md`) é a referência atual.
