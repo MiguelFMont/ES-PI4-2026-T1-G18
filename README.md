@@ -101,7 +101,7 @@ mvn exec:java -Dexec.mainClass=com.financeai.Main
 
 ### Testes automatizados
 ```
-cd Backend && npm test      # node:test (718 testes); MongoDB em memória, IA e Servidor Java simulados (sem .env)
+cd Backend && npm test      # node:test (720 testes); MongoDB em memória, IA e Servidor Java simulados (sem .env)
 cd Servidor && mvn test     # JUnit 5 (188 testes), inclusive os testes OO intraclasse e interclasse do Grupo 2
 # Integração Backend -> Servidor Java (com o Servidor no ar): JAVA_SERVER_INTEGRACAO=1 npm test
 # Detalhes na seção "Testes" de Backend/README.md e Servidor/README.md (ainda não há CI)
@@ -125,4 +125,4 @@ docs/        # Documento de visão, organização de sprints, contrato da API, c
 
 ## Status atual
 
-Versão de entrega (1.0.0-final em preparação): as quatro camadas e os cinco grupos estão implementados e integrados na branch `develop`. Backend com 718 testes e Servidor com 188, todos passando. Falta o teste completo manual (`docs/checklist-teste-completo.md`), o ensaio da apresentação e a tag `1.0.0-final`.
+Versão de entrega (1.0.0-final em preparação): as quatro camadas e os cinco grupos estão implementados e integrados na branch `develop`. Backend com 720 testes e Servidor com 188, todos passando. Falta o teste completo manual (`docs/checklist-teste-completo.md`), o ensaio da apresentação e a tag `1.0.0-final`.

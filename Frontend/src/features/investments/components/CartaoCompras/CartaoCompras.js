@@ -11,8 +11,13 @@ const DIAS_DO_FECHAMENTO_AO_VENCIMENTO = 7; // o mesmo do Backend (a fatura venc
 const MES_EM_TEXTO = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 const DATA_CURTA = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', timeZone: 'UTC' });
 
-const doisDigitos = (n) => String(n).padStart(2, '0');
 const mesAtualDe = (agora = new Date()) => ({ ano: agora.getFullYear(), mes: agora.getMonth() }); // mes de 0 a 11
+// A fatura leva o nome do mês em que FECHA e vai do dia seguinte ao fechamento anterior até o fechamento (fechamento dia 15: a compra de 16/11 é da fatura de dezembro).
+// A fatura "atual" é a que fecha no próximo fechamento (cartao.fatura.mes, AAAA-MM, vem do Backend).
+const mesDaFaturaAtual = (cartao) => {
+  const [ano, mes] = cartao.fatura.mes.split('-').map(Number);
+  return { ano, mes: mes - 1 };
+};
 
 /**
  * Liga a fatura do cartão escolhido (HTML em CartaoCompras.html): cabeçalho com o logo, o nome e o selo ("Fatura atual", "Fatura anterior" ou
@@ -37,12 +42,12 @@ export function iniciarCompras(raiz, { signal, aoMudarMes } = {}) {
   const quadroVencimento = raiz.querySelector('#invest-fatura-vencimento');
 
   let cartaoAtual = null;
-  let periodo = mesAtualDe();
+  let periodo = mesAtualDe(); // até um cartão ser mostrado
   let sequencia = 0; // uma resposta de outro cartão ou mês que ainda esteja a caminho deixa de valer
   signal?.addEventListener('abort', () => { sequencia += 1; });
 
   const ehMesAtual = () => {
-    const agora = mesAtualDe();
+    const agora = mesDaFaturaAtual(cartaoAtual);
     return periodo.ano === agora.ano && periodo.mes === agora.mes;
   };
 
@@ -52,7 +57,7 @@ export function iniciarCompras(raiz, { signal, aoMudarMes } = {}) {
     const nomeDoMes = MES_EM_TEXTO.format(primeiroDia);
     rotuloMes.textContent = nomeDoMes;
 
-    const agora = mesAtualDe();
+    const agora = mesDaFaturaAtual(cartaoAtual);
     const diferenca = (periodo.ano - agora.ano) * 12 + (periodo.mes - agora.mes);
     selo.textContent = diferenca === 0 ? 'Fatura atual' : diferenca < 0 ? 'Fatura anterior' : 'Próxima fatura';
     selo.dataset.situacao = diferenca === 0 ? 'atual' : 'outra';
@@ -81,9 +86,11 @@ export function iniciarCompras(raiz, { signal, aoMudarMes } = {}) {
   }
 
   const intervalo = () => {
-    const ultimoDia = new Date(Date.UTC(periodo.ano, periodo.mes + 1, 0)).getUTCDate();
-    const base = `${periodo.ano}-${doisDigitos(periodo.mes + 1)}`;
-    return { dataInicio: `${base}-01`, dataFim: `${base}-${doisDigitos(ultimoDia)}` };
+    // do dia seguinte ao fechamento do mês anterior até o fechamento deste mês
+    const dia = cartaoAtual?.diaFechamento ?? 1;
+    const fim = new Date(Date.UTC(periodo.ano, periodo.mes, dia));
+    const inicio = new Date(Date.UTC(periodo.ano, periodo.mes - 1, dia) + 86_400_000);
+    return { dataInicio: inicio.toISOString().slice(0, 10), dataFim: fim.toISOString().slice(0, 10) };
   };
 
   /** Desenha o cabeçalho e os totais do mês (no mês atual, os da fatura do Backend; nos outros, somados dos lançamentos do mês). */
@@ -117,7 +124,7 @@ export function iniciarCompras(raiz, { signal, aoMudarMes } = {}) {
   return {
     /** Mostra a fatura do cartão (e busca de novo na API). Outro cartão volta ao mês atual; o mesmo cartão (depois de uma ação) mantém o mês. */
     mostrar(cartao) {
-      if (cartaoAtual?.id !== cartao.id) periodo = mesAtualDe();
+      if (cartaoAtual?.id !== cartao.id) periodo = mesDaFaturaAtual(cartao);
       cartaoAtual = cartao;
       titulo.textContent = cartao.nome;
       raiz.querySelector('#invest-fatura-tag-of').hidden = !cartao.openFinance;

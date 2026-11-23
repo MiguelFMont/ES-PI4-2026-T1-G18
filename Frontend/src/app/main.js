@@ -57,7 +57,7 @@ const TELAS = {
     modulo: () => import('../features/transactions/index.js'),
   },
   'contas-conectadas': {
-    titulo: 'Contas conectadas',
+    titulo: 'Contas',
     html: '/src/features/contas-conectadas/views/contas-conectadas.html',
     css: [
       '/src/shared/styles/campos.css', // os campos da janela de conta

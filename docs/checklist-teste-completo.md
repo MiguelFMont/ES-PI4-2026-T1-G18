@@ -26,7 +26,7 @@ Roteiro para testar o FinanceAI de ponta a ponta na branch de integração, ante
 
 ## 2. Layout, menu e carregamento
 
-- [ ] O menu tem os grupos Geral (Início), Finanças (Transações, Contas conectadas, Cartão) e Planejamento (Metas, Mentor IA), e **Minha conta** no rodapé. O item da tela atual aparece destacado.
+- [ ] O menu tem os grupos Geral (Início), Finanças (Transações, Contas, Cartão) e Planejamento (Metas, Mentor IA), e **Minha conta** no rodapé. O item da tela atual aparece destacado.
 - [ ] Botão de recolher: o menu vira só ícones, os textos aparecem como dica ao passar o mouse, e **a escolha continua depois de recarregar (F5)**.
 - [ ] Com o menu recolhido, abrir "Nova transação": o painel cobre só o conteúdo, sem tapar o menu.
 - [ ] Tema claro e escuro: troca com a animação circular, o texto do botão muda e os dois temas ficam legíveis em **todas** as telas.
@@ -128,7 +128,7 @@ Roteiro para testar o FinanceAI de ponta a ponta na branch de integração, ante
 ## 12. Testes automatizados e build
 
 - [ ] `cd Backend && npx tsc --noEmit`: sem erro.
-- [ ] `cd Backend && npm test`: todos passam (hoje são 718 testes).
+- [ ] `cd Backend && npm test`: todos passam (hoje são 720 testes).
 - [ ] `cd Servidor && mvn test`: todos passam (188 testes).
 - [ ] Console do navegador sem erros em nenhuma das telas acima.
 
@@ -136,7 +136,7 @@ Roteiro para testar o FinanceAI de ponta a ponta na branch de integração, ante
 
 > Implementada (issues #101 a #113). Use um usuário do plano **Free** e outro do plano **Pro**.
 
-**Contas manuais (Contas conectadas)**
+**Contas manuais (tela Contas)**
 - [ ] Criar conta manual (Nova conta) com nome, banco e saldo inicial: ela aparece na lista com o saldo atual igual ao saldo inicial.
 - [ ] Nome vazio, com mais de 40 caracteres ou repetido (mesmo trocando maiúsculas por minúsculas) é recusado com mensagem (`409 ACCOUNT_NAME_IN_USE` no repetido).
 - [ ] Criar mais de uma conta (por exemplo, Nubank e Itaú): todas aparecem na lista, cada uma com o seu banco.

@@ -185,7 +185,8 @@ export interface CardResponseDto {
   saldoDevedor: number; // dos parcelamentos ainda ativos deste cartão
   parcelamentosAtivos: number;
   fatura: {
-    mes: string; // AAAA-MM
+    mes: string; // AAAA-MM do mês em que a fatura fecha
+    inicio: string; // AAAA-MM-DD: o primeiro dia da fatura (o dia seguinte ao fechamento anterior)
     valor: number; // compras no crédito do mês + parcelas do mês
     comprasNoCredito: number; // despesas reais à vista no crédito neste mês (as parceladas entram pelas parcelas)
     parcelasDoMes: number;

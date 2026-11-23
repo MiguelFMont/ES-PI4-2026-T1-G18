@@ -143,7 +143,7 @@ export function iniciarPaginaContas(raiz, { signal } = {}) {
       conectar.definirTotal(contas.length);
     } catch (erro) {
       if (minha !== estado.sequencia) return;
-      lista.mostrarErro(mensagemDeErro(erro, 'Não foi possível carregar as contas conectadas.'));
+      lista.mostrarErro(mensagemDeErro(erro, 'Não foi possível carregar as contas.'));
     }
   }
 

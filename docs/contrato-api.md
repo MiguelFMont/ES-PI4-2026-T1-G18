@@ -953,7 +953,8 @@ Cada usuário pode ter **até 5 cartões**, cada um com `nome` (1 a 40 caractere
   "saldoDevedor": 4878.36,
   "parcelamentosAtivos": 2,
   "fatura": {
-    "mes": "2026-11",
+    "mes": "2026-12",
+    "inicio": "2026-11-04",
     "valor": 1287.86,
     "comprasNoCredito": 256.8,
     "parcelasDoMes": 1031.06,
@@ -965,7 +966,8 @@ Cada usuário pode ter **até 5 cartões**, cada um com `nome` (1 a 40 caractere
 }
 ```
 
-- `comprasNoCredito`: soma das **despesas reais à vista** do usuário, no crédito **neste cartão**, no mês corrente (UTC), até agora. Receitas, outras formas de pagamento e outros meses não entram, e as compras **parceladas** também não (elas entram pelas parcelas).
+- `mes` e `inicio`: a fatura atual é a que fecha no próximo fechamento, e leva o nome do mês em que **fecha**. Ela vai do dia seguinte ao fechamento anterior (`inicio`) até o fechamento. Com fechamento no dia 15, a compra de 16/11 entra na fatura de **dezembro** (a de novembro fechou em 15/11).
+- `comprasNoCredito`: soma das **despesas reais à vista** do usuário, no crédito **neste cartão**, dentro do ciclo da fatura atual (`inicio` até `fechamento`). Receitas, outras formas de pagamento e outros ciclos não entram, e as compras **parceladas** também não (elas entram pelas parcelas).
 - `parcelasDoMes`: soma das parcelas dos parcelamentos **ainda ativos deste cartão** (6.3).
 - `fatura.valor` = `comprasNoCredito` + `parcelasDoMes`: uma compra nunca é contada duas vezes.
 - `fechamento`: o próximo fechamento da fatura (neste mês, ou no seguinte se o dia já passou; o próprio dia ainda vale). `diasParaFechar` conta os dias até ele.

@@ -7,6 +7,7 @@ import { aparenciaNaResposta } from "../../shared/aparencia/aparencia";
 import { guardarParaDesfazer } from "../../shared/lixeira/lixeira";
 import { accountsService } from "../accounts/accounts.service";
 import { investmentsRepository } from "./investments.repository";
+import { inicioDaFatura } from "../../shared/fatura/fatura";
 import { CardDocument, DIAS_DO_FECHAMENTO_AO_VENCIMENTO, InstallmentDocument, InvestmentDocument, MAX_CARTOES } from "./investments.model";
 import {
   AtivoParaCalculo,
@@ -218,10 +219,7 @@ async function montarCartoes(userId: string, apenasId?: string): Promise<CardRes
   const contas = await accountsService.resumos(userId);
   const padraoId = cartoes[0].id;
   const agora = new Date();
-  const [compras, parcelamentos] = await Promise.all([
-    investmentsRepository.somarComprasNoCredito(userId, inicioDoMes(agora), agora),
-    investmentsRepository.findInstallments(userId),
-  ]);
+  const parcelamentos = await investmentsRepository.findInstallments(userId);
   const itens = parcelamentos.map((p) => comoItem<InstallmentDocument>(p));
   const semContexto: ContextoParcelamentos = {
     padraoId,
@@ -234,11 +232,15 @@ async function montarCartoes(userId: string, apenasId?: string): Promise<CardRes
       const ehPadrao = id === padraoId;
       const doCartao = itens.filter((p) => (p.doc.cartaoId ?? padraoId) === id);
       const parc = await calcularParcelamentos(doCartao, semContexto);
+      // A fatura atual é a que fecha no próximo fechamento: vai do dia seguinte ao fechamento anterior até ele (a compra de 16/11 com
+      // fechamento dia 15 já é da fatura de dezembro). Cada cartão tem o seu ciclo.
+      const fechamento = proximoFechamento(doc.diaFechamento, agora);
+      const vencimento = vencimentoDoFechamento(fechamento);
+      const inicioDoCiclo = inicioDaFatura(fechamento, doc.diaFechamento);
+      const compras = await investmentsRepository.somarComprasNoCredito(userId, inicioDoCiclo, fechamento);
       const comprasNoCredito = emReais(
         compras.filter((c) => c.cartaoId === id || (c.cartaoId === null && ehPadrao)).reduce((soma, c) => soma + c.total, 0)
       );
-      const fechamento = proximoFechamento(doc.diaFechamento, agora);
-      const vencimento = vencimentoDoFechamento(fechamento);
 
       return {
         id,
@@ -254,7 +256,8 @@ async function montarCartoes(userId: string, apenasId?: string): Promise<CardRes
         saldoDevedor: parc.totalSaldoDevedor,
         parcelamentosAtivos: parc.parcelamentos.filter((p) => !p.quitado).length,
         fatura: {
-          mes: inicioDoMes(agora).toISOString().slice(0, 7),
+          mes: fechamento.toISOString().slice(0, 7), // a fatura leva o nome do mês em que fecha
+          inicio: inicioDoCiclo.toISOString().slice(0, 10),
           valor: emReais(comprasNoCredito + parc.totalParcelasDoMes),
           comprasNoCredito,
           parcelasDoMes: parc.totalParcelasDoMes,

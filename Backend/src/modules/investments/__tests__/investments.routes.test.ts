@@ -207,14 +207,15 @@ describe("GET e PATCH /v1/investments/card: cartão, limite e fatura", () => {
     assert.equal(await CardModel.countDocuments({ userId: "ana" }), 1);
   });
 
-  test("a fatura é o mês corrente: fecha no próximo dia 3 (deste mês, ou do seguinte se já passou) e vence 7 dias depois", async () => {
+  test("a fatura atual é a que fecha no próximo dia 3 (deste mês, ou do seguinte se já passou) e vence 7 dias depois", async () => {
     simularServidorGrupo5();
     const { fatura } = await json(await api("GET", "/card"));
     const h = inicioDoDiaUtc();
     const fecha = new Date(Date.UTC(h.getUTCFullYear(), h.getUTCDate() <= 3 ? h.getUTCMonth() : h.getUTCMonth() + 1, 3));
     const esperado = new Date(fecha.getTime() + 7 * 86_400_000);
 
-    assert.equal(fatura.mes, h.toISOString().slice(0, 7));
+    assert.equal(fatura.mes, fecha.toISOString().slice(0, 7)); // a fatura leva o nome do mês em que fecha
+    assert.equal(fatura.inicio, new Date(Date.UTC(fecha.getUTCFullYear(), fecha.getUTCMonth() - 1, 4)).toISOString().slice(0, 10));
     assert.equal(fatura.fechamento, fecha.toISOString().slice(0, 10));
     assert.equal(fatura.diasParaFechar, Math.round((fecha.getTime() - h.getTime()) / 86_400_000));
     assert.equal(fatura.vencimento, esperado.toISOString().slice(0, 10));
