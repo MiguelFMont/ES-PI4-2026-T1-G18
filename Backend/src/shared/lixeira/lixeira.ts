@@ -1,11 +1,11 @@
 // src/shared/lixeira/lixeira.ts
 // "Desfazer" de uma exclusão em cascata (conta ou cartão): antes de apagar, quem exclui guarda aqui uma função que traz tudo de volta (com os
-// mesmos ids). O usuário tem alguns minutos para usar o id que a rota de exclusão devolveu (POST /v1/undo/:id). A lixeira fica só na memória do
+// mesmos ids). O usuário tem 30 segundos para usar o id que a rota de exclusão devolveu (POST /v1/undo/:id). A lixeira fica só na memória do
 // processo: se o Backend reiniciar, o que ela guardava se perde (o desfazer é uma cortesia de poucos segundos, não um backup).
 import { randomUUID } from "node:crypto";
 import { AppError } from "../errors/app-error";
 
-const VALIDADE_MS = 2 * 60 * 1000;
+const VALIDADE_MS = 30 * 1000;
 
 interface Entrada {
   userId: string;

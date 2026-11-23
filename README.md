@@ -53,7 +53,7 @@ Ainda não há tela para o portfólio de investimentos (só a API). Outras ideia
 - **Transferências:** movem valor entre duas contas manuais (um único registro, que não é receita nem despesa).
 - **Cartões:** cada cartão pertence a uma conta manual (ou vem do Open Finance); a fatura fecha no dia escolhido e vence 7 dias depois. Na aba Cartão há a fatura do mês e a lista de lançamentos do cartão, com filtros, edição e criação de despesa e receita (a receita no cartão é um estorno e abate a fatura).
 - **Aparência:** contas, cartões e metas aceitam ícone e cor; sem eles vale o logo do banco (`Frontend/assets/bancos/`).
-- **Exclusão e desfazer:** excluir um cartão exclui também os lançamentos e parcelamentos dele; excluir uma conta exclui os cartões e lançamentos dela. A notificação traz "Desfazer" (`POST /v1/undo/:id`, vale 2 minutos, só na memória do Backend).
+- **Exclusão e desfazer:** excluir um cartão exclui também os lançamentos e parcelamentos dele; excluir uma conta exclui os cartões e lançamentos dela. A notificação traz "Desfazer" (`POST /v1/undo/:id`, vale 30 segundos, só na memória do Backend).
 - Detalhes no contrato da API ([`docs/contrato-api.md`](docs/contrato-api.md)) e nos diagramas de [`docs/uml/`](docs/uml/README.md).
 
 ## Como executar

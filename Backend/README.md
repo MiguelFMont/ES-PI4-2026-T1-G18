@@ -87,7 +87,7 @@ src/
     investments/     Grupo 5 — Cartões (até 5 por usuário, com tela), parcelamentos das compras no crédito e portfólio simulado (só API, sem tela)
     accounts/            Grupo 2 — Contas (manuais e Open Finance), saldo calculado pelo Servidor Java, ícone e cor
     connected-accounts/  Grupo 2 — Contas conectadas e importação da Pluggy
-    desfazer/            POST /v1/undo/:id — desfaz a exclusão de conta, cartão ou lançamentos (lixeira em memória, 2 minutos)
+    desfazer/            POST /v1/undo/:id — desfaz a exclusão de conta, cartão ou lançamentos (lixeira em memória, 30 segundos)
     suporte/         Grupo 1 — Chamados de suporte
 ```
 

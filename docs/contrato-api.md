@@ -403,7 +403,7 @@ Erros: `400 VALIDATION_ERROR` (lista vazia, mais de 100 itens, ids repetidos ou 
 
 ### 2.7 Excluir transações
 
-`POST /v1/transactions/bulk-delete` → `200 OK` (é `POST` porque um `DELETE` com corpo não é confiável em todos os clientes). Também vale um lote de um id só. Se algum lançamento for de uma conta Open Finance (como origem ou destino), o lote inteiro é recusado com `422 OPEN_FINANCE_READ_ONLY` e nada é excluído; desconectando a conta, ela vira manual e libera a exclusão. A resposta de uma exclusão que apagou algo traz também `desfazerId`: `POST /v1/undo/:id` (2 minutos) devolve os lançamentos e os parcelamentos, com os mesmos ids.
+`POST /v1/transactions/bulk-delete` → `200 OK` (é `POST` porque um `DELETE` com corpo não é confiável em todos os clientes). Também vale um lote de um id só. Se algum lançamento for de uma conta Open Finance (como origem ou destino), o lote inteiro é recusado com `422 OPEN_FINANCE_READ_ONLY` e nada é excluído; desconectando a conta, ela vira manual e libera a exclusão. A resposta de uma exclusão que apagou algo traz também `desfazerId`: `POST /v1/undo/:id` (30 segundos) devolve os lançamentos e os parcelamentos, com os mesmos ids.
 
 ```json
 { "ids": ["6ae4a14014fb37bcbb2d7fac", "6ae4a14014fb37bcbb2d7fad"] }
@@ -1151,7 +1151,7 @@ Todas as rotas exigem token, e cada usuário só vê e altera as próprias conta
 | `POST /v1/accounts` | Cria uma conta. `tipo: "open_finance"` exige o plano Pro e a conexão (`conectadaId`) | `201` com o `Account` criado |
 | `PATCH /v1/accounts/:id` | Altera `nome` e/ou `banco` (conta manual) | `200` com o `Account` atualizado |
 | `DELETE /v1/accounts/:id` | Exclui a conta **com os cartões dela (e seus parcelamentos) e todos os lançamentos** (inclusive transferências em que ela é origem ou destino). Resposta traz `desfazerId` | `200` `{ desfazerId, cartoes, lancamentos }` |
-| `POST /v1/undo/:id` | Desfaz a exclusão de conta ou cartão (mesmos ids). Vale por 2 minutos, uma vez, só para o dono (`404 UNDO_NOT_FOUND`; `409 UNDO_CONFLICT` se o nome foi reaproveitado) | `200` `{ desfeito: true }` |
+| `POST /v1/undo/:id` | Desfaz a exclusão de conta ou cartão (mesmos ids). Vale por 30 segundos, uma vez, só para o dono (`404 UNDO_NOT_FOUND`; `409 UNDO_CONFLICT` se o nome foi reaproveitado) | `200` `{ desfeito: true }` |
 
 **Criar conta** (`POST /v1/accounts`):
 
@@ -1171,7 +1171,7 @@ Exemplo de requisição:
 
 **Editar conta** (`PATCH /v1/accounts/:id`): edição parcial, com ao menos um de `nome`, `banco`, `icone` e `cor`. O `saldoInicial` só se define ao criar a conta (se vier aqui, é ignorado). Uma conta Open Finance não se edita (só o `icone` e a `cor`, que são do FinanceAI, podem mudar): `422 ACCOUNT_READ_ONLY`; ao desconectar a conexão, ela passa a ser manual e pode ser editada. A resposta traz o `saldoAtual`.
 
-**Excluir conta** (`DELETE /v1/accounts/:id`): exclui a conta, os cartões vinculados a ela (com parcelamentos e lançamentos no cartão) e todos os lançamentos dela, inclusive transferências em que é origem ou destino. **Conta Open Finance não se exclui** (`409 ACCOUNT_IS_OPEN_FINANCE`): o usuário a desconecta (`DELETE /v1/connected-accounts/:id`), ela vira manual e então pode ser excluída. Fora isso, nada bloqueia a exclusão; a tela avisa antes e a notificação traz "Desfazer", que chama `POST /v1/undo/:id` com o `desfazerId` da resposta. A lixeira fica só na memória do Backend (2 minutos).
+**Excluir conta** (`DELETE /v1/accounts/:id`): exclui a conta, os cartões vinculados a ela (com parcelamentos e lançamentos no cartão) e todos os lançamentos dela, inclusive transferências em que é origem ou destino. **Conta Open Finance não se exclui** (`409 ACCOUNT_IS_OPEN_FINANCE`): o usuário a desconecta (`DELETE /v1/connected-accounts/:id`), ela vira manual e então pode ser excluída. Fora isso, nada bloqueia a exclusão; a tela avisa antes e a notificação traz "Desfazer", que chama `POST /v1/undo/:id` com o `desfazerId` da resposta. A lixeira fica só na memória do Backend (30 segundos).
 
 **Regras de plano e de conta:**
 - A conta **manual** pode ser criada por qualquer plano.
