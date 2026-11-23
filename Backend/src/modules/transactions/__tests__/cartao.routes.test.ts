@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/transactions/__tests__/cartao.routes.test.ts
 // Compras no crédito ligadas a um cartão e parceladas (/v1/transactions com cartaoId e parcelas): o parcelamento criado no
 // cartão, a fatura sem contar a mesma compra duas vezes, edição em lote segura, duplicar, excluir e os erros.

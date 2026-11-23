@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 import { atualizarMeta, criarMeta, excluirMeta, listarMetas } from '../../services/goalsService.js';
 import { notificar, confirmar } from '../../../../shared/components/notificacao.js';
 import { iniciarFormulario } from '../GoalForm/GoalForm.js';

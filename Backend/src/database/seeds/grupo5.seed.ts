@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/database/seeds/grupo5.seed.ts
 //
 // Insere dados de exemplo do Grupo 5 (metas com os aportes vinculados, portfólio simulado, cartão e parcelamentos) para um

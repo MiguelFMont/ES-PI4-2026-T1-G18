@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 import { apiFetch } from '../../../core/http/api.js';
 
 // Chamadas ao Backend para as contas do usuário (manuais e Open Finance) e a lista de bancos. Contrato: docs/contrato-api.md,

@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // Ponto de entrada da tela de Contas conectadas. O roteador (app/main.js) busca views/contas-conectadas.html e os CSS,
 // escreve o HTML em #app-content e chama montar(); ao sair da tela, chama desmontar().
 //

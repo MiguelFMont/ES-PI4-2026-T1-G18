@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 import { svgDoIcone } from '../../../../shared/utils/icones.js';
 import { formatarData, formatarMoeda, formatarPercentual } from '../../../../shared/utils/moeda.js';
 

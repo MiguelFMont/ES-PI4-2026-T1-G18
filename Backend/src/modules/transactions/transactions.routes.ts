@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/transactions/transactions.routes.ts
 import { Router } from "express";
 import { transactionsController } from "./transactions.controller";

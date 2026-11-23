@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/connected-accounts/__tests__/pluggy.mapper.test.ts
 // A conversão Pluggy -> FinanceAI, testada com as transações reais do sandbox (a fixture) e com casos de borda.
 import "./ambiente";

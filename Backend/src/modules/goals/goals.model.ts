@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/goals/goals.model.ts
 import { Schema, model } from "mongoose";
 import { CORES, ICONES } from "../../shared/aparencia/aparencia";

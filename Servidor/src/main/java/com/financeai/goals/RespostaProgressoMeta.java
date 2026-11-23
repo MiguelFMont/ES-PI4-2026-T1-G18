@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 package com.financeai.goals;
 
 public class RespostaProgressoMeta

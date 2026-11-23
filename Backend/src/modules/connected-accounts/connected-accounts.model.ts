@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/connected-accounts/connected-accounts.model.ts
 // Coleção `connected_accounts`: as conexões do usuário com instituições (Open Finance, sandbox da Pluggy).
 // Uma conexão é um "item" da Pluggy; cada item tem uma ou mais contas (corrente, cartão...).

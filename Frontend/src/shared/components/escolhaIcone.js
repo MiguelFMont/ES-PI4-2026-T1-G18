@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 import { CHAVES_DE_ICONE, CORES_DE_ITEM, svgDoIcone } from '../utils/icones.js';
 
 const NOMES_DOS_ICONES = {

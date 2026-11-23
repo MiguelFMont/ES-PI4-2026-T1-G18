@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 import { apiFetch } from '../../../core/http/api.js';
 
 // Chamadas ao Backend para os cartões de crédito SIMULADOS (o portfólio e os parcelamentos manuais têm rotas no Backend, mas ficaram sem tela; as compras parceladas se fazem em Transações) (docs/contrato-api.md, seção 6). Valor atual, rendimento,

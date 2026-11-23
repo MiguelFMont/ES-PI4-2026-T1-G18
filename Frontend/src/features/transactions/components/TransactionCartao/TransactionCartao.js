@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 import { criarCartao } from '../../../investments/services/investmentsService.js';
 import { definirAvatar, iniciais } from '../../../../shared/utils/avatar.js';
 import { aplicarMascaraMoeda, ligarCampo } from '../../../../shared/components/campos.js';

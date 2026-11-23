@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/investments/__tests__/cartoes.routes.test.ts
 // Vários cartões de crédito por usuário (/v1/investments/cards): CRUD e limite de 5, nome único, isolamento entre usuários,
 // fatura e limite de cada cartão, parcelamentos ligados a um cartão, exclusão, rotas antigas (/card = cartão padrão) e a

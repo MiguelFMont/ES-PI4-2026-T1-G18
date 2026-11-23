@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // O "avatar" de uma opção das listas que sobem do rodapé das janelas (shared/components/seletor.js): um círculo (conta) ou um quadrado
 // arredondado (cartão) na cor do banco, com as iniciais. Não há imagens de bancos no projeto, então a cor e a sigla fazem o papel do logo.
 

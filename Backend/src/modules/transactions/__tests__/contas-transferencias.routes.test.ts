@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/transactions/__tests__/contas-transferencias.routes.test.ts
 // Lançamentos ligados a contas e transferências (issues #104, #105, #107, #113): contaId obrigatório (RN4 e RN5), filtro e
 // resposta com a conta, POST /transactions/transfers (RN6 e RN7), edição e exclusão de transferências (RN9) e os totais que

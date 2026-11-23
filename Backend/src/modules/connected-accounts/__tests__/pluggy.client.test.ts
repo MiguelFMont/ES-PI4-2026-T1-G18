@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/connected-accounts/__tests__/pluggy.client.test.ts
 // O cliente da Pluggy com a API simulada: apiKey em cache e renovada, paginação por cursor, espera do item e tradução de erros.
 import "./ambiente";

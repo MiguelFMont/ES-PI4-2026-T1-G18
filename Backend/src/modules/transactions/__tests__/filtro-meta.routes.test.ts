@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/transactions/__tests__/filtro-meta.routes.test.ts
 // GET /v1/transactions?metaId=: só as transações vinculadas a uma meta, ou só as sem meta ("nenhuma").
 import { ANA, BETO, inserir, json, prepararApi } from "./apoio";

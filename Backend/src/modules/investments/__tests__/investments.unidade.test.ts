@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/investments/__tests__/investments.unidade.test.ts
 // Regras de data do módulo de investimentos, sem HTTP nem banco: meses completos de rendimento e próximo vencimento da fatura.
 import "../../transactions/__tests__/ambiente";

@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/goals/__tests__/goals.routes.test.ts
 // /v1/goals de ponta a ponta no Backend (issues #28, #29, #30, #40, #65, #66): CRUD das metas, progresso calculado com as
 // transações que o usuário VINCULOU a cada meta (o Servidor Java é simulado aqui) e isolamento entre usuários.

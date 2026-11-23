@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/transactions/__tests__/cadastrar.routes.test.ts
 // POST /v1/transactions de ponta a ponta no Backend (issue #59): cadastro com e sem categoria, categorização pelo
 // Servidor Java (simulado), Servidor fora do ar e validação dos campos.

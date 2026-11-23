@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/connected-accounts/__tests__/banco.ts
 // Banco dos testes de rota. Por padrão é o MongoDB em memória (como nos testes do Mentor IA): nada vai para o Atlas.
 // Se a primeira execução do mongodb-memory-server estiver lenta (ela baixa o binário do MongoDB, uns 700 MB), dá para usar um

@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/transactions/transactions.controller.ts
 import { Response, NextFunction } from "express";
 import { transactionsService } from "./transactions.service";

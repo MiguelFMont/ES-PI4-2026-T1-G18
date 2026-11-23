@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 import { STATUS, TIPOS_DE_CONTA } from '../../utils/constants.js';
 import { formatarDataHora, formatarSaldo } from '../../utils/format.js';
 

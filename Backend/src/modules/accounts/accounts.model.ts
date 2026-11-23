@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/accounts/accounts.model.ts
 // Coleção `accounts`: as contas do usuário (especificação de contas e transferências, seção 3).
 // O saldo atual NUNCA é gravado: é calculado pelo Servidor Java a partir do saldoInicial e dos movimentos (RN9).

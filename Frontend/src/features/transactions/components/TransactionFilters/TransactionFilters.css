@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 /* Componente TransactionFilters: cartão de filtros, mais compacto que o resto da página. Os campos ficam em uma grade de
    colunas iguais: cabem todos numa linha em janelas largas e, em janelas mais estreitas (por exemplo com o menu lateral
    aberto), quebram em linhas com o mesmo tamanho de coluna, sem um campo esticado sozinho.

@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 import { aplicarMascaraMoeda, ligarCampo } from '../../../../shared/components/campos.js';
 import { ligarEscolhaIcone } from '../../../../shared/components/escolhaIcone.js';
 import { definirAvatar, iniciais } from '../../../../shared/utils/avatar.js';

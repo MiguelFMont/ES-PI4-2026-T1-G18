@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // Valores aceitos pela API (docs/contrato-api.md, seção 6) e os textos mostrados na tela.
 
 /** Erros da API com um texto para o usuário; os demais mostram a mensagem da própria API (já em português). */

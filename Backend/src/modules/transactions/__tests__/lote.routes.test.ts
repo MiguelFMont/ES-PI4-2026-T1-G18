@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/transactions/__tests__/lote.routes.test.ts
 // PATCH /v1/transactions/bulk e POST /v1/transactions/bulk-delete de ponta a ponta no Backend (issue #59): edição e
 // exclusão só existem em lote (um item só também vale). O lote não é tudo ou nada: faz o que existe e devolve os ids

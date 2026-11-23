@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 const dataHora = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 
 /** 1500.5, 'BRL' -> "R$ 1.500,50". Se a moeda não for reconhecida, usa o real. */

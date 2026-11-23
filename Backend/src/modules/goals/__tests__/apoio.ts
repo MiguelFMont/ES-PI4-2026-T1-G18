@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/goals/__tests__/apoio.ts
 // Apoio dos testes de metas e de investimentos (Grupo 5): o que os testes de rota de transações já usam (app Express numa
 // porta livre, banco em memória, dois usuários) mais um Servidor Java SIMULADO para os três pedidos do grupo.

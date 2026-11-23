@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/transactions/__tests__/contas-de-teste.ts
 // Todo lançamento manual leva uma conta (contaId obrigatório, RN5). Os testes de rota que não tratam de contas ganham aqui uma
 // conta manual por usuário de teste e o `contaId` é preenchido sozinho na chamada POST /transactions (sem contaId no corpo).

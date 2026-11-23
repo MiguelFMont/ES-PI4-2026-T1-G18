@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/connected-accounts/connected-accounts.service.ts
 // Contas conectadas (Open Finance, sandbox da Pluggy) e a importação das transações delas.
 //

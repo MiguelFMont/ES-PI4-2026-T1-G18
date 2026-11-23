@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/transactions/__tests__/ambiente.ts
 // Variáveis de ambiente dos testes de transações (e do Grupo 5, que reaproveita este arquivo): as de contas conectadas
 // (variáveis falsas, sem Atlas nem Pluggy) mais um Servidor Java que NUNCA é o de verdade. O endereço aponta para uma porta

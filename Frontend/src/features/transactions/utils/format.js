@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 const moeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
 // A API guarda "2026-10-05" como meia-noite UTC; formatar em UTC mantém o dia que o usuário digitou.

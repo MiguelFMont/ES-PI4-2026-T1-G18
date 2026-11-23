@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/transactions/__tests__/listar.routes.test.ts
 // GET /v1/transactions de ponta a ponta no Backend (issue #59): isolamento entre usuários, ordem, paginação, filtros
 // (sozinhos e combinados), resumo do extrato e validação dos parâmetros.

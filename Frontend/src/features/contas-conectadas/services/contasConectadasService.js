@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 import { apiFetch } from '../../../core/http/api.js';
 
 // Chamadas ao Backend para as contas conectadas (Open Finance, sandbox da Pluggy). Contrato: docs/contrato-api.md, seção 2.8.

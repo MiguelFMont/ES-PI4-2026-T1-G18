@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/goals/goals.repository.ts
 import { GoalDocument, GoalModel } from "./goals.model";
 import { TransactionModel } from "../transactions/transactions.model";

@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/goals/__tests__/vinculo.routes.test.ts
 // Vincular uma transação a uma meta, pela API de transações (feature pedida na revisão do Grupo 5): ao cadastrar (POST) ou
 // editar em lote (PATCH /bulk), a transação passa a contar como aporte no progresso da meta. Só vale para metas do PRÓPRIO

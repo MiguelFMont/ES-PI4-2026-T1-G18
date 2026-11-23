@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/accounts/__tests__/accounts.routes.test.ts
 // /v1/accounts de ponta a ponta (issues #101, #102, #103, #113): CRUD, lista de bancos, saldo calculado pelo Servidor Java
 // (simulado), regra do plano Pro para contas Open Finance, exclusão com lançamentos e migração dos lançamentos antigos.

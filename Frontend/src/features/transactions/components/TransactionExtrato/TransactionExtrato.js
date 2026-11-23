@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 import { confirmar, notificar } from '../../../../shared/components/notificacao.js';
 import { formatarData, formatarMoeda } from '../../utils/format.js';
 import { CATEGORIAS, FORMAS_PAGAMENTO, TIPOS, rotuloDe } from '../../utils/constants.js';

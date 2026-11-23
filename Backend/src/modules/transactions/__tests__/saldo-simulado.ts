@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/transactions/__tests__/saldo-simulado.ts
 // A conta do Servidor Java para PedidoCalcularSaldoContas, em TypeScript, só para o Backend ter uma resposta realista nos
 // testes de rota (o Servidor de verdade tem os próprios testes: mvn test, SaldoContasTest). Mesma regra: saldo inicial +

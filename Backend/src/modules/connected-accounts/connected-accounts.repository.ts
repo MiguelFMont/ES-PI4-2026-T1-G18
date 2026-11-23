@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/connected-accounts/connected-accounts.repository.ts
 // Único acesso ao banco para a coleção `connected_accounts`. Todo acesso filtra por userId.
 import { ConnectedAccountDocument, ConnectedAccountModel } from "./connected-accounts.model";

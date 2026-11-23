@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/transactions/__tests__/duplicar.routes.test.ts
 // POST /v1/transactions/:id/duplicate de ponta a ponta no Backend (issue #49): app Express numa porta livre e banco isolado.
 // Reaproveita o ambiente e o banco de teste de contas conectadas (variáveis falsas; TESTE_MONGO_URI opcional).

@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // Widget Pluggy Connect (a janela em que o usuário escolhe a instituição e faz o login). O Frontend não usa bundler,
 // então o script oficial é carregado do CDN da Pluggy só quando o usuário pede para conectar, e não a cada visita.
 // Ele expõe a classe global PluggyConnect (README do quickstart da Pluggy, seção HTML).

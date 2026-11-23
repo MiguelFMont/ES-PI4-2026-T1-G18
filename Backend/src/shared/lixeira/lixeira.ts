@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/shared/lixeira/lixeira.ts
 // "Desfazer" de uma exclusão em cascata (conta ou cartão): antes de apagar, quem exclui guarda aqui uma função que traz tudo de volta (com os
 // mesmos ids). O usuário tem 30 segundos para usar o id que a rota de exclusão devolveu (POST /v1/undo/:id). A lixeira fica só na memória do

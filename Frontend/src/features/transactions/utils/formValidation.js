@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 import { dataValida } from '../../../shared/utils/dateRange.js';
 import { CATEGORIAS, FORMAS_PAGAMENTO, TIPOS } from './constants.js';
 

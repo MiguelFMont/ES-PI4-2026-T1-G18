@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // Ponto de entrada da tela de Transações. O roteador (app/main.js) busca views/transactions.html e os CSS,
 // escreve o HTML em #app-content e chama montar(); ao sair da tela, chama desmontar().
 //

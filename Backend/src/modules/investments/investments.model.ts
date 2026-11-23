@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/investments/investments.model.ts
 // Investimentos e cartão SIMULADOS do Grupo 5. Três coleções: o portfólio (investments), os cartões do usuário (cards, até
 // MAX_CARTOES por usuário) e os parcelamentos dele (card_installments, cada um ligado a um cartão). Valores derivados

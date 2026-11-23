@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/transactions/__tests__/importadas.repository.test.ts
 // Importação de transações (issue #59), no nível do repositório: o que a importação da Pluggy usa para não duplicar.
 // O fluxo completo (Pluggy simulada, sincronizações, categorias) é testado em connected-accounts; aqui ficam as garantias

@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 package com.financeai.goals;
 
 // Pedido de calculo do progresso de uma meta (Grupo 5). O Backend envia o valor acumulado, o objetivo e o prazo;

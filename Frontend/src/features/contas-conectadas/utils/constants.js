@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // Valores devolvidos pela API (docs/contrato-api.md, seção 2.8) e os textos mostrados na tela.
 
 /** Limite de contas conectadas por usuário (o Backend recusa a sexta com ACCOUNT_LIMIT_REACHED). */

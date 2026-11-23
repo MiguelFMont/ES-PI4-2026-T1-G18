@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/shared/aparencia/aparencia.ts
 // A aparência de uma conta, de uma meta ou de um cartão: um ícone (uma chave da lista abaixo) e uma cor (um dos matizes do Frontend,
 // core/styles/global.css). Os dois são opcionais: sem eles o Frontend mostra o padrão (o logo do banco, nas contas e nos cartões).

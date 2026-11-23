@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // O "logo" de um cartão: um quadrado arredondado com o logo do banco da conta vinculada (ou, sem logo, as iniciais do nome do cartão na cor do banco).
 // Se o usuário escolheu um ícone ou uma cor para o cartão, o quadrado mostra o desenho (ou as iniciais) na cor escolhida. As cores, as iniciais e os
 // logos são os mesmos das listas que sobem do rodapé das janelas (shared/utils/avatar.js).

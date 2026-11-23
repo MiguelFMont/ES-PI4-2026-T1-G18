@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/connected-accounts/__tests__/connected-accounts.routes.test.ts
 // As rotas /v1/connected-accounts de ponta a ponta no Backend: app Express numa porta livre, MongoDB em memória,
 // Pluggy simulada (com as transações reais do sandbox) e o Servidor Java de categorização simulado.

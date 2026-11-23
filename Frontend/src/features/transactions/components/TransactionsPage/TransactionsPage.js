@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 import { atualizarTransacoesEmLote, duplicarTransacoes, excluirTransacoesEmLote, listarTransacoes } from '../../services/transactionsService.js';
 import { desfazerExclusao } from '../../../contas-conectadas/services/contasService.js';
 import { notificar, confirmar, comCarregamento } from '../../../../shared/components/notificacao.js';

@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/goals/goals.routes.ts
 import { Router } from "express";
 import { goalsController } from "./goals.controller";

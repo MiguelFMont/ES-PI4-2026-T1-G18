@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // Valores aceitos pela API (ver docs/contrato-api.md, seção 2). O `valor` é o que vai para o
 // Backend; o `rotulo` é o texto mostrado na tela.
 

@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/connected-accounts/__tests__/ambiente.ts
 // Variáveis de ambiente dos testes de contas conectadas. Cada arquivo de teste importa este ANTES de tudo, porque o
 // config/env valida o process.env no import. Como o dotenv não sobrescreve o que já está definido, os testes não dependem

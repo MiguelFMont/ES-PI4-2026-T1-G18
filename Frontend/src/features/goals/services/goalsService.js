@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 import { apiFetch } from '../../../core/http/api.js';
 
 // Chamadas ao Backend para as metas (docs/contrato-api.md, seção 5). O progresso de cada meta vem calculado: o Backend soma

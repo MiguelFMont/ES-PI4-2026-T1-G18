@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/transactions/transactions.dto.ts
 import { z } from "zod";
 import { FORMAS_PAGAMENTO, FormaPagamento } from "./transactions.model";

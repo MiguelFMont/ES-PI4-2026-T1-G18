@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 import { ligarCalendario } from '../../../../shared/components/Calendario.js';
 import { isoParaBr } from '../../../../shared/utils/dateRange.js';
 import { aplicarMascaraMoeda } from '../../../../shared/components/campos.js';

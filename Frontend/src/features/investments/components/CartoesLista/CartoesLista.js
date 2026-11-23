@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 import { formatarMoeda } from '../../../../shared/utils/moeda.js';
 import { MAX_CARTOES } from '../../utils/constants.js';
 import { aplicarLogo } from '../../utils/logo.js';

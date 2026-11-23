@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/connected-accounts/__tests__/apoio.ts
 // Dublês dos testes de contas conectadas: uma "Pluggy" simulada (que serve os dados reais da fixture do sandbox) e o
 // Servidor Java de categorização. Usam o `mock` global do node:test; cada arquivo chama mock.restoreAll() no afterEach.

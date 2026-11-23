@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/transactions/__tests__/transactions.unidade.test.ts
 // Testes de unidade das regras de transações (issue #59), sem HTTP e sem banco: os esquemas de validação (zod) e a
 // categorização pelo Servidor Java (simulado). Rápidos, para pegar um erro de regra antes dos testes de rota.

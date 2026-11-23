@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/transactions/transactions.repository.ts
 import { TransactionDocument, TransactionModel } from "./transactions.model";
 import { CreateTransactionDto, TransactionFiltersDto, UpdateTransactionDto } from "./transactions.dto";

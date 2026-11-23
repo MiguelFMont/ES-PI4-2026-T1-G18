@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 import { corDoBanco, iniciais, mostrarLogoDoBanco } from '../../../../shared/utils/avatar.js';
 import { svgDoIcone } from '../../../../shared/utils/icones.js';
 import { formatarSaldo } from '../../utils/format.js';

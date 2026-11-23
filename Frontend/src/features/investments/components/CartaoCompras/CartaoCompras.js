@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 import { listarTransacoes } from '../../../transactions/services/transactionsService.js';
 import { formatarMoeda } from '../../../../shared/utils/moeda.js';
 import { aplicarLogo } from '../../utils/logo.js';

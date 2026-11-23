@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/accounts/accounts.service.ts
 // Contas do usuário (especificação de contas e transferências).
 //

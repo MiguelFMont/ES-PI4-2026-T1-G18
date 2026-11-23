@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // Ícones das opções das listas que sobem do rodapé das janelas (shared/components/seletor.js): um por categoria, forma de pagamento e tipo.
 // Quem usa põe no <select> o atributo data-icones="categoria" (ou "pagamento" ou "tipo"); o seletor procura aqui o ícone pelo valor da opção.
 // Os desenhos são traços simples de 24x24 (texto fixo do projeto, nunca vindo da API). A cor é o matiz da opção (global.css).

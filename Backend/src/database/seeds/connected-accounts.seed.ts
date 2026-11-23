@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/database/seeds/connected-accounts.seed.ts
 //
 // Insere contas conectadas de exemplo para um usuário, para desenvolver a tela de contas conectadas sem passar pela Pluggy.

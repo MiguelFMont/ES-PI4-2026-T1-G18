@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/goals/__tests__/grupo5.integracao.test.ts
 // Backend + Servidor Java de VERDADE (Grupo 5): metas, investimentos, parcelamentos e cartão. Prova que o contrato dos
 // pedidos (nomes e tipos dos campos) bate dos dois lados. Fica PULADO no `npm test` comum; para rodar, suba o Servidor

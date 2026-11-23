@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 import { criarTransacao, criarTransferencia, sugerirCategoria } from '../../services/transactionsService.js';
 import { dataValida } from '../../../../shared/utils/dateRange.js';
 import { aplicarMascaraMoeda, ligarCampo } from '../../../../shared/components/campos.js';

@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/investments/investments.dto.ts
 import { z } from "zod";
 import { aparenciaNaCriacao, aparenciaNaEdicao } from "../../shared/aparencia/aparencia";

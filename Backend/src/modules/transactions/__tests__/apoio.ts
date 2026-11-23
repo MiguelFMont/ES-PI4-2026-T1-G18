@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/transactions/__tests__/apoio.ts
 // Montagem comum dos testes de rota de transações: o app Express numa porta livre, um banco isolado e as chamadas HTTP.
 // Usa o ambiente de transações (./ambiente: variáveis falsas e Servidor Java inalcançável) e o banco de teste de contas

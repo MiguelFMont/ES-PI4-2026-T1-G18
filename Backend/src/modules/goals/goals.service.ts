@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/goals/goals.service.ts
 import { aparenciaNaResposta } from "../../shared/aparencia/aparencia";
 import { Aportes, goalsRepository } from "./goals.repository";

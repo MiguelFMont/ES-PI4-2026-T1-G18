@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/investments/investments.repository.ts
 import {
   CARTAO_PADRAO,

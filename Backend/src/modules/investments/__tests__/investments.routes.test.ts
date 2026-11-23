@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/investments/__tests__/investments.routes.test.ts
 // /v1/investments de ponta a ponta no Backend (issues #54, #55, #64, #65, #75, #76, #77, #90, #66): portfólio e patrimônio
 // simulados, cartão (fatura com as transações REAIS no crédito, limite e vencimento) e parcelamentos. O Servidor Java é

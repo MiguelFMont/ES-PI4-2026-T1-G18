@@ -1,3 +1,7 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
 // src/modules/accounts/accounts.repository.ts
 // Único acesso ao banco para a coleção `accounts`. Todo acesso filtra por userId.
 import { AccountDocument, AccountModel } from "./accounts.model";
