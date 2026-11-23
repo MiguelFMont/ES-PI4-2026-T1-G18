@@ -134,13 +134,15 @@ function iniciarPreferencias(container, signal) {
     // Ligado = com sombras (o padrão); desligado = com bordas finas.
     function mostrarEstilo() {
         const comSombras = estiloAtual() === 'sombras';
-        interruptor.setAttribute('aria-checked', String(comSombras));
-        estado.textContent = comSombras ? 'Com sombras' : 'Com bordas';
+        if (interruptor) {
+            interruptor.setAttribute('aria-checked', String(comSombras));
+            estado.textContent = comSombras ? 'Com sombras' : 'Com bordas';
+        }
     }
 
     mostrarEstilo();
 
-    interruptor.addEventListener('click', () => {
+    interruptor?.addEventListener('click', () => {
         const novo = alternarEstilo();
         mostrarEstilo();
         mensagem.textContent = '';
