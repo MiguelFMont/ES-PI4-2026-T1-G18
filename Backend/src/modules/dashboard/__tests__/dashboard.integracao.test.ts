@@ -1,4 +1,4 @@
-// src/modules/dashboard/__tests__/dashboard.integracao.test.ts
+// CEZAR AUGUSTO FERNANDEZ RULL - 25007452
 // Teste de integração com o Servidor Java real. Só executa quando JAVA_SERVER_INTEGRACAO=1.
 import { ANA, dataMesesAtras, inserir, json, prepararApi } from "./apoio";
 import { describe, test } from "node:test";

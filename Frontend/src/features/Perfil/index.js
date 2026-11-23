@@ -116,12 +116,13 @@ function iniciarPreferencias(container, signal) {
     // Ligado = com sombras (o padrão); desligado = com bordas finas.
     function mostrarEstilo() {
         const comSombras = estiloAtual() === 'sombras';
-        interruptor.setAttribute('aria-checked', String(comSombras));
-        estado.textContent = comSombras ? 'Com sombras' : 'Com bordas';
+        if (interruptor) {
+            interruptor.setAttribute('aria-checked', String(comSombras));
+            estado.textContent = comSombras ? 'Com sombras' : 'Com bordas';
+        }
     }
 
     mostrarEstilo();
-
     // Paleta de cores: um botão de opção por paleta, com as amostras do tema escuro e do claro
     const caixaPaletas = container.querySelector('#preferencia-paletas');
     const botoesPaleta = PALETAS.map((paleta) => {
@@ -148,21 +149,21 @@ function iniciarPreferencias(container, signal) {
         botao.append(amostras, nome, descricao);
         return botao;
     });
-    caixaPaletas.replaceChildren(...botoesPaleta);
+    caixaPaletas?.replaceChildren(...botoesPaleta);
 
     function mostrarPaleta() {
         for (const botao of botoesPaleta) botao.setAttribute('aria-checked', String(botao.dataset.paleta === paletaAtual()));
     }
     mostrarPaleta();
 
-    caixaPaletas.addEventListener('click', (evento) => {
+    caixaPaletas?.addEventListener('click', (evento) => {
         const botao = evento.target.closest('.paleta');
         if (!botao) return;
         aplicarPaleta(botao.dataset.paleta);
         mostrarPaleta();
     }, { signal });
 
-    interruptor.addEventListener('click', () => {
+    interruptor?.addEventListener('click', () => {
         const novo = alternarEstilo();
         mostrarEstilo();
         mensagem.textContent = '';
@@ -342,7 +343,7 @@ async function carregarAba(container, aba, signal) {
             preencherPerfil(container);
             iniciarEdicaoPerfil(container, signal);
         } else if (aba === 'preferencias') {
-            iniciarPreferencias(container);
+            iniciarPreferencias(container, signal);
         } else if (aba === 'mfa') {
             iniciarSeguranca(container, signal);
             iniciarPreferencias(container, signal);

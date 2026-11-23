@@ -1,4 +1,4 @@
-// src/features/dashboard/services/dashboardService.js
+// CEZAR AUGUSTO FERNANDEZ RULL - 25007452
 import { api } from '../../../core/http/api.js';
 
 export async function buscarResumoDashboard() {

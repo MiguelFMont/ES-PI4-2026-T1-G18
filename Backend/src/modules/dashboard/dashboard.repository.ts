@@ -1,4 +1,4 @@
-// src/modules/dashboard/dashboard.repository.ts
+// CEZAR AUGUSTO FERNANDEZ RULL - 25007452
 import { TransactionModel } from "../transactions/transactions.model";
 
 // Transferências entre contas não são receita nem despesa: não entram nos totais do painel (RN6).

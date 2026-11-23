@@ -1,4 +1,4 @@
-// src/modules/dashboard/__tests__/dashboard.service.unidade.test.ts
+// CEZAR AUGUSTO FERNANDEZ RULL - 25007452
 // Testes de unidade do dashboardService: valida cálculos, arredondamento, preenchimento de meses e erros sem tocar no banco.
 import "./ambiente";
 import { afterEach, describe, mock, test } from "node:test";

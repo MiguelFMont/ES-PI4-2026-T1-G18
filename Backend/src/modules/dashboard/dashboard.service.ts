@@ -1,4 +1,4 @@
-// src/modules/dashboard/dashboard.service.ts
+// CEZAR AUGUSTO FERNANDEZ RULL - 25007452
 import { dashboardRepository } from "./dashboard.repository";
 import {
     ComparePeriodsResponseDto,

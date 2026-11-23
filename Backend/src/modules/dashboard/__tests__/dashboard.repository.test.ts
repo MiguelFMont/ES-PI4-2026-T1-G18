@@ -1,4 +1,4 @@
-// src/modules/dashboard/__tests__/dashboard.repository.test.ts
+// CEZAR AUGUSTO FERNANDEZ RULL - 25007452
 // Testes de repositório do Dashboard: valida as agregações do MongoDB em banco isolado.
 import "./ambiente";
 import { after, before, beforeEach, describe, test } from "node:test";

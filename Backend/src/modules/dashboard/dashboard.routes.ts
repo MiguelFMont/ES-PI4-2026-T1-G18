@@ -1,4 +1,4 @@
-// src/modules/dashboard/dashboard.routes.ts
+// CEZAR AUGUSTO FERNANDEZ RULL - 25007452
 import { Router } from "express";
 import { dashboardController } from "./dashboard.controller";
 import { authMiddleware } from "../../middlewares/auth.middleware";

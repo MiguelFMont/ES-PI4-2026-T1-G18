@@ -1,4 +1,4 @@
-// src/modules/dashboard/dashboard.dto.ts
+// CEZAR AUGUSTO FERNANDEZ RULL - 25007452
 export interface DashboardSummaryDto {
     receitas: number;
     despesas: number;

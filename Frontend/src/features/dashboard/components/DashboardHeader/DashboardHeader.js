@@ -1,4 +1,4 @@
-// src/features/dashboard/components/DashboardHeader/DashboardHeader.js
+// CEZAR AUGUSTO FERNANDEZ RULL - 25007452
 import { obterIntervaloPeriodo } from '../../utils/dashboardGrupos.js';
 
 async function buscarNomeUsuario() {

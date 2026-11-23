@@ -1,4 +1,4 @@
-// src/features/dashboard/components/DashboardCategorias/DashboardCategorias.js
+// CEZAR AUGUSTO FERNANDEZ RULL - 25007452
 import { formatarData, formatarMoeda } from '../../../transactions/utils/format.js';
 import { CATEGORIAS, FORMAS_PAGAMENTO, rotuloDe } from '../../../transactions/utils/constants.js';
 import { agruparGastos } from '../../utils/dashboardGrupos.js';
