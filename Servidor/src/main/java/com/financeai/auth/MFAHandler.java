@@ -1,3 +1,7 @@
+/*
+Autor: Julia Da Silva Maia 
+ RA: 25016200
+*/
 package com.financeai.auth;
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;

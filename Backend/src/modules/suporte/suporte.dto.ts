@@ -1,3 +1,7 @@
+/*
+Autor: Julia Da Silva Maia 
+ RA: 25016200
+ */
 import { z } from "zod";
 export const criarSuporteSchema = z.object({
     assunto: z.string()

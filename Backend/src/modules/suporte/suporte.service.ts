@@ -1,3 +1,7 @@
+/*
+Autor: Julia Da Silva Maia 
+ RA: 25016200
+ */
 import { criarSuporteSchema } from "./suporte.dto";
 import { suporteRepository } from "./suporte.repository";
 import type { CriarSuporteDto } from "./suporte.dto";

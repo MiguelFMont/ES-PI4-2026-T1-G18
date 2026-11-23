@@ -1,3 +1,7 @@
+/*
+Autor: Julia Da Silva Maia 
+ RA: 25016200
+ */
 import { notificar } from "../../../shared/components/notificacao.js";
 import { api, ApiError } from "../../../core/http/api.js";
 

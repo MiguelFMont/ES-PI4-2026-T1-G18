@@ -1,3 +1,7 @@
+/*
+Autor: Julia Da Silva Maia 
+ RA: 25016200
+ */
 import { Schema, model, Types } from "mongoose";
 export interface ISuporte {
     usuarioId: Types.ObjectId;

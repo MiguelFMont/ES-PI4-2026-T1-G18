@@ -1,4 +1,7 @@
-
+/*
+Autor: Julia Da Silva Maia 
+ RA: 25016200
+ */
 async function confirmarEmail() {
     const token = new URLSearchParams(window.location.search).get("token");
     const mensagem = document.getElementById("mensagem");

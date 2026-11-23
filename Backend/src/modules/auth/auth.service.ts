@@ -1,3 +1,7 @@
+/*
+Autor: Julia Da Silva Maia 
+ RA: 25016200
+ */
 import { authRepository } from "./auth.repository";
 import { javaServerClient } from "../../java-client/java-server.client";
 import { env } from "../../config/env";

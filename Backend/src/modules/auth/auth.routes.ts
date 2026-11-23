@@ -1,3 +1,7 @@
+/*
+Autor: Julia Da Silva Maia 
+ RA: 25016200
+ */
 import { Router } from "express";
 import { authController } from "./auth.controller";
 import { authMiddleware } from "../../middlewares/auth.middleware";

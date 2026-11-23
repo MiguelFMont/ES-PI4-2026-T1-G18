@@ -1,3 +1,7 @@
+/*
+Autor: Julia Da Silva Maia 
+ RA: 25016200
+ */
 import { Request, Response, NextFunction } from "express";
 import { authService } from "./auth.service";
 import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema} from "./auth.dto";

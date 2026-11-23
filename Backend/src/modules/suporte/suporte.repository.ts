@@ -1,3 +1,7 @@
+/*
+Autor: Julia Da Silva Maia 
+ RA: 25016200
+ */
 import { SuporteModel } from "./suporte.model";
 import type { CriarSuporteDto } from "./suporte.dto";
 export const suporteRepository = {

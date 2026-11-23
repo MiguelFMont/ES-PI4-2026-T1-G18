@@ -1,4 +1,7 @@
-
+/*
+Autor: Julia Da Silva Maia 
+ RA: 25016200
+ */
 import { Schema, model } from "mongoose";
 
 interface PendingRegistrationDocument {

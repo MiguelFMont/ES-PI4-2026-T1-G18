@@ -1,3 +1,7 @@
+/*
+Autor: Julia Da Silva Maia 
+ RA: 25016200
+ */
 import { UserModel } from "./auth.model";
 import type { RegisterDto, AtualizarPerfilDto } from "./auth.dto";
 import { PendingRegistrationModel } from "./pending-registration.model";

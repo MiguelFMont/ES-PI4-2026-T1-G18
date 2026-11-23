@@ -1,3 +1,7 @@
+/*
+Autor: Julia Da Silva Maia 
+ RA: 25016200
+ */
 import type { Response, NextFunction } from "express";
 import type { AuthenticatedRequest } from "../../middlewares/auth.middleware";
 import { suporteService } from "./suporte.service";

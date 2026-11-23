@@ -1,4 +1,7 @@
-
+/*
+Autor: Julia Da Silva Maia 
+ RA: 25016200
+ */
 import type { Request, Response, NextFunction } from "express";
 import { mfaService } from "./mfa.service";
 import type { AuthenticatedRequest } from "../../../middlewares/auth.middleware";
