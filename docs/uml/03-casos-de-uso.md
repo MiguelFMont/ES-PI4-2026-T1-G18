@@ -1,6 +1,6 @@
 # Casos de uso — FinanceAI
 
-Modelagem de casos de uso (UML 2, padrão Astah) do FinanceAI. Fontes: `docs/documento-de-visao.md` (requisitos RF01 a RF42) e `docs/especificacao-contas-e-transferencias.md` (contas e transferências, issues #101 a #115).
+Modelagem de casos de uso (UML 2, padrão Astah) do FinanceAI. Fontes: `docs/documento-de-visao.md` (requisitos RF01 a RF42, que incluem contas e transferências, issues #101 a #115).
 
 Legenda de estado:
 
@@ -242,7 +242,7 @@ end note
 
 ### 2.4 Grupo D — Contas e transferências (UC28 a UC33)
 
-Todo o grupo é (ver `especificacao-contas-e-transferencias.md`).
+Todo o grupo está implementado.
 
 ```mermaid
 flowchart LR
@@ -348,7 +348,7 @@ end note
 
 ## 4. Descrições textuais (formato Astah)
 
-Convenção: RN refere-se às regras de negócio da `especificacao-contas-e-transferencias.md`. Os fluxos descrevem o comportamento a partir do plano de modelagem; detalhes de tela e de rota estão em `contrato-api.md`.
+Convenção: RN refere-se às regras de negócio de contas e transferências (RN1 a RN10). Os fluxos descrevem o comportamento a partir do plano de modelagem; detalhes de tela e de rota estão em `contrato-api.md`.
 
 ### Grupo A — Acesso, conta e plano
 
@@ -760,7 +760,7 @@ Convenção: RN refere-se às regras de negócio da `especificacao-contas-e-tran
 | Atores secundários | Servidor Java |
 | Pré-condições | Usuário autenticado. |
 | Fluxo principal | 1. O usuário abre Contas Conectadas e clica em Nova conta.<br>2. Na janela (modal), informa nome (1 a 40 caracteres, único por usuário), banco (lista fixa) e saldo inicial, com tipo manual.<br>3. O Backend grava a conta (`POST /v1/accounts`).<br>4. O Backend calcula o saldo atual de cada conta: «include» UC33.<br>5. A lista mostra as contas, cada uma com saldo atual.<br>6. O usuário pode editar nome, banco e saldo inicial (`PATCH`) ou excluir a conta (`DELETE`). O usuário pode ter várias contas. |
-| Fluxos alternativos | A1. Nome já usado (sem diferenciar maiúsculas): 409 `ACCOUNT_NAME_IN_USE`.<br>A2. Excluir conta com lançamentos: 409 `ACCOUNT_HAS_TRANSACTIONS` (RN8).<br>A3. Conta inexistente: 404 `ACCOUNT_NOT_FOUND`.<br>A4. Dados inválidos: 400. |
+| Fluxos alternativos | A1. Nome já usado (sem diferenciar maiúsculas): 409 `ACCOUNT_NAME_IN_USE`.<br>A2. Excluir conta: apaga também os cartões e lançamentos dela, com "Desfazer" por 30 segundos (`POST /v1/undo/:id`); conta Open Finance: 409 `ACCOUNT_IS_OPEN_FINANCE`.<br>A3. Conta inexistente: 404 `ACCOUNT_NOT_FOUND`.<br>A4. Dados inválidos: 400. |
 | Pós-condições | A conta criada, editada ou excluída é refletida na lista com o saldo atual calculado. |
 | Requisitos relacionados | RF37, RF38, RF39 |
 

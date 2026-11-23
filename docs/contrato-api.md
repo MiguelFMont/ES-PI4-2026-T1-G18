@@ -70,7 +70,7 @@ Todo erro tem o mesmo formato, e o Frontend decide o que fazer pelo `code`, nunc
 | 503 | `JAVA_SERVER_UNAVAILABLE` | O Servidor de cálculos está fora do ar (só afeta as rotas que dependem dele) |
 | 503 | `JAVA_SERVER_SHUTTING_DOWN` | O Servidor de cálculos está sendo desligado |
 
-Cada módulo acrescenta os seus códigos de negócio na própria seção (por exemplo, `EMAIL_IN_USE` e `INVALID_CREDENTIALS` na autenticação, `TRANSACTION_NOT_FOUND` nas transações). Os da integração com a Pluggy (`PLUGGY_*` e `ACCOUNT_*`) estão na seção 2.8, os das metas (`GOAL_NOT_FOUND`) na 5.3 e os dos investimentos e do cartão (`INVESTMENT_NOT_FOUND`, `INSTALLMENT_NOT_FOUND`) na 6.4. Os códigos de contas e transferências (`PLAN_REQUIRED`, `ACCOUNT_REQUIRED`, `TRANSFER_NOT_ALLOWED`, `ACCOUNT_HAS_TRANSACTIONS`, `ACCOUNT_NOT_FOUND` e `ACCOUNT_NAME_IN_USE`) estão na 8.5.
+Cada módulo acrescenta os seus códigos de negócio na própria seção (por exemplo, `EMAIL_IN_USE` e `INVALID_CREDENTIALS` na autenticação, `TRANSACTION_NOT_FOUND` nas transações). Os da integração com a Pluggy (`PLUGGY_*` e `ACCOUNT_*`) estão na seção 2.8, os das metas (`GOAL_NOT_FOUND`) na 5.3 e os dos investimentos e do cartão (`INVESTMENT_NOT_FOUND`, `INSTALLMENT_NOT_FOUND`) na 6.4. Os códigos de contas e transferências (`PLAN_REQUIRED`, `ACCOUNT_REQUIRED`, `TRANSFER_NOT_ALLOWED`, `ACCOUNT_IS_OPEN_FINANCE`, `ACCOUNT_NOT_FOUND` e `ACCOUNT_NAME_IN_USE`) estão na 8.5; os de cartão (`CARD_REQUIRED`, `CARD_ACCOUNT_MISMATCH`, `CARD_IS_OPEN_FINANCE`) e o `UNDO_NOT_FOUND` / `UNDO_CONFLICT` do desfazer, nas seções 6.4 e 8.5.
 
 Códigos de contas e transferências (detalhes na 8.5):
 
@@ -532,7 +532,7 @@ Resposta: `{ "categoria": "Lazer" }`. Diferente do cadastro sem `categoria` (que
 
 ### 2.11 Transferência entre contas
 
-> Regras RN6 a RN9 de `especificacao-contas-e-transferencias.md`. Uma transferência pode ser editada em lote (2.6): `valor`, `data`, `descricao`, `observacoes`, `contaId` (origem) e `contaDestinoId` (destino); `tipo`, `categoria`, `formaPagamento`, `metaId`, `cartaoId` e `parcelas` não valem nela (`400`). Duplicar (2.7) copia origem e destino.
+> Uma transferência pode ser editada em lote (2.6): `valor`, `data`, `descricao`, `observacoes`, `contaId` (origem) e `contaDestinoId` (destino); `tipo`, `categoria`, `formaPagamento`, `metaId`, `cartaoId` e `parcelas` não valem nela (`400`). Duplicar (2.7) copia origem e destino.
 
 `POST /v1/transactions/transfers` → `201 Created`, com o objeto `Transaction` do tipo `transferencia`. Move um valor de uma conta de origem para uma conta de destino. É **um único registro**, não é receita nem despesa e **não entra** nos totais de receitas, despesas e saldo (ver `resumo` em 2.5 e o painel na seção 9).
 
@@ -1010,6 +1010,8 @@ O Backend só guarda e valida a chave (`Backend/src/shared/aparencia`); o desenh
 | 404 | `CARD_NOT_FOUND` | O cartão não existe ou é de outro usuário |
 | 409 | `CARD_LIMIT_REACHED` | O usuário já tem 5 cartões |
 | 409 | `CARD_NAME_TAKEN` | Já existe um cartão com esse nome |
+| 409 | `CARD_IS_OPEN_FINANCE` | Excluir um cartão do Open Finance: desconecte a conta (ele vira manual) |
+| 422 | `CARD_REQUIRED` / `CARD_ACCOUNT_MISMATCH` | Compra no crédito sem cartão, ou com cartão de outra conta (ver 2.4) |
 | 409 | `INSTALLMENT_FROM_TRANSACTION` | O parcelamento veio de uma compra: exclua a transação |
 | 503 | `JAVA_SERVER_UNAVAILABLE` | O Servidor de cálculos está fora do ar |
 
@@ -1124,7 +1126,7 @@ Em caso de falha, o Frontend informa que não foi possível enviar o relatório.
 
 ## 8. Contas — `/v1/accounts` (Grupo 2)
 
-> Implementada conforme `especificacao-contas-e-transferencias.md` (seção 4). O módulo é `Backend/src/modules/accounts/`.
+> Implementada. O módulo é `Backend/src/modules/accounts/`.
 
 Todas as rotas exigem token, e cada usuário só vê e altera as próprias contas. Uma **conta** tem nome, banco, tipo e saldo. O saldo atual **não é guardado**: é calculado a cada leitura (ver 8.4).
 
@@ -1195,6 +1197,9 @@ O `saldoAtual` de cada conta é calculado pelo **Servidor de cálculos**, com a 
 | 403 | `PLAN_REQUIRED` | Criar conta `open_finance` no plano Free (o plano vem do usuário em `users`) |
 | 404 | `ACCOUNT_NOT_FOUND` | A conta não existe ou é de outro usuário (os dois casos são tratados igual) |
 | 409 | `ACCOUNT_NAME_IN_USE` | O usuário já tem uma conta com esse nome (sem diferenciar maiúsculas de minúsculas) |
+| 409 | `ACCOUNT_IS_OPEN_FINANCE` | Excluir uma conta Open Finance: desconecte-a antes (ela vira manual) |
+| 404 | `UNDO_NOT_FOUND` | `POST /v1/undo/:id` com id inexistente, já usado, de outro usuário ou depois dos 30 segundos |
+| 409 | `UNDO_CONFLICT` | Desfazer, mas o nome da conta ou do cartão já foi reaproveitado |
 | 422 | `ACCOUNT_REQUIRED` | Lançamento manual sem conta, ou usuário sem nenhuma conta criada (ver 2.4) |
 | 422 | `TRANSFER_NOT_ALLOWED` | Transferência que envolve conta Open Finance (ver 2.11) |
 
@@ -1217,7 +1222,7 @@ O `saldoAtual` de cada conta é calculado pelo **Servidor de cálculos**, com a 
 
 ## 9. Painel e resumo do período — transferências (Grupo 3)
 
-> Regra RN6 de `especificacao-contas-e-transferencias.md`. O módulo do painel (`/v1/dashboard`) continua "a documentar"; esta seção registra só esta regra. O Mentor IA também ignora as transferências.
+> O módulo do painel (`/v1/dashboard`) continua "a documentar"; esta seção registra só esta regra. O Mentor IA também ignora as transferências.
 
 As **transferências** entre contas (2.11) **não entram** nos totais de receitas, despesas e saldo do painel nem no `resumo` da listagem de transações (2.5): mover dinheiro entre duas contas do próprio usuário não é ganho nem gasto. As transferências também não entram nas somas por categoria.
 

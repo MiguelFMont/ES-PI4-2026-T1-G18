@@ -1,6 +1,6 @@
 # Servidor Java: núcleo (core)
 
-Modelo UML (padrão Astah / UML 2) dos elementos do grupo **srv-core**: infraestrutura de conexão, protocolo e despacho de pedidos do Servidor Java. Todos os elementos abaixo existem no código; este grupo não possui elementos «planejado» (contas e transferências, descritas em `docs/especificacao-contas-e-transferencias.md`, serão implementadas em handlers de outros grupos).
+Modelo UML (padrão Astah / UML 2) dos elementos do grupo **srv-core**: infraestrutura de conexão, protocolo e despacho de pedidos do Servidor Java. Todos os elementos abaixo existem no código; este grupo não possui elementos «planejado» (contas e transferências serão implementadas em handlers de outros grupos).
 
 Notação: visibilidade `+` público, `-` privado, `#` protegido, `~` pacote. Atributos e operações `static` são indicados na descrição. Cada diagrama aparece em dois blocos (Mermaid para o GitHub e PlantUML para recriar no Astah).
 

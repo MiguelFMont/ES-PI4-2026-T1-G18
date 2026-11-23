@@ -13,7 +13,7 @@ Campinas — 2026
 | 1.0 | 26/09/2026 | Versão inicial (anexada à issue #1) |
 | 1.1 | 09/11/2026 | Revisão para refletir a arquitetura e o plano de sprints atuais (ver a seção 1.3) |
 | 1.2 | 16/11/2026 | O portfólio de investimentos simulado (RF25 e RF26) passa a **feature futura**: o Backend e o Servidor estão prontos, mas a interface mostra só o cartão de crédito (RF27 e RF36). Ver a seção 5.8 |
-| 1.3 | 22/11/2026 | **Entregue:** contas (nome, banco e saldo), lançamentos vinculados a uma conta, transferências entre contas e coluna Origem mostrando a conta (RF37 a RF42, issues #101 a #115). Ver `especificacao-contas-e-transferencias.md` |
+| 1.3 | 22/11/2026 | **Entregue:** contas (nome, banco e saldo), lançamentos vinculados a uma conta, transferências entre contas e coluna Origem mostrando a conta (RF37 a RF42, issues #101 a #115). |
 
 ---
 
@@ -110,7 +110,7 @@ O sistema deverá oferecer mecanismo de recuperação de senha ("Esqueci minha s
 
 O usuário poderá cadastrar suas fontes de receita (salário, bolsas, outras rendas) e suas despesas, de forma manual ou por meio de importação via sandbox de Open Finance (Pluggy), que fornece dados de instituições fictícias sem necessidade de credenciais reais. Cada transação conterá descrição, valor, categoria, data e forma de pagamento, podendo incluir observações. As contas conectadas à Pluggy poderão ser listadas, conectadas e desconectadas. A marcação de recorrência (despesa fixa mensal) é uma feature futura (seção 9).
 
-**Contas e transferências.** O usuário poderá criar uma ou mais contas, definindo o **nome**, o **banco** (escolhido numa lista fixa) e o **saldo bancário**, na tela Contas Conectadas. A conta pode ser **manual**, disponível em qualquer plano, ou **Open Finance**, conectada pela Pluggy e disponível **somente no plano Pro**. O usuário precisa ter pelo menos uma conta para fazer lançamentos manuais, e todo lançamento manual referencia obrigatoriamente uma conta. Além de receita e despesa, o lançamento pode ser uma **transferência** entre duas contas manuais do mesmo usuário: ela não é receita nem despesa e não entra nos totais do painel. Na lista de transações, a coluna **Origem** passa a mostrar a conta do lançamento. As regras completas estão em `especificacao-contas-e-transferencias.md`.
+**Contas e transferências.** O usuário poderá criar uma ou mais contas, definindo o **nome**, o **banco** (escolhido numa lista fixa) e o **saldo bancário**, na tela Contas Conectadas. A conta pode ser **manual**, disponível em qualquer plano, ou **Open Finance**, conectada pela Pluggy e disponível **somente no plano Pro**. O usuário precisa ter pelo menos uma conta para fazer lançamentos manuais, e todo lançamento manual referencia obrigatoriamente uma conta. Além de receita e despesa, o lançamento pode ser uma **transferência** entre duas contas manuais do mesmo usuário: ela não é receita nem despesa e não entra nos totais do painel. Na lista de transações, a coluna **Origem** passa a mostrar a conta do lançamento.
 
 ### 5.3. Categorização e listagem de transações
 

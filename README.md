@@ -33,7 +33,7 @@ O sistema é dividido em quatro camadas independentes:
 
 O projeto é dividido em 5 grupos de features, cada um responsável por uma fatia vertical completa (Frontend + Backend + Servidor + BD): Autenticação & Conta, Transações, Painel Financeiro & Análise, Mentor Financeiro (IA) e Metas & Investimentos.
 
-Detalhes completos da arquitetura, divisão de grupos, padrão de issues e cronograma de sprints estão em [`docs/organizacao-sprints.md`](docs/organizacao-sprints.md). O escopo e os requisitos funcionais completos estão em [`docs/documento-de-visao.md`](docs/documento-de-visao.md), o contrato de todas as rotas em [`docs/contrato-api.md`](docs/contrato-api.md) e o roteiro do teste completo em [`docs/checklist-teste-completo.md`](docs/checklist-teste-completo.md).
+Detalhes completos da arquitetura, divisão de grupos, padrão de issues e cronograma de sprints estão em [`docs/organizacao-sprints.md`](docs/organizacao-sprints.md). O escopo e os requisitos funcionais completos estão em [`docs/documento-de-visao.md`](docs/documento-de-visao.md), o dicionário de dados em [`docs/dicionario-de-dados.md`](docs/dicionario-de-dados.md), o contrato de todas as rotas em [`docs/contrato-api.md`](docs/contrato-api.md) e o roteiro do teste completo em [`docs/checklist-teste-completo.md`](docs/checklist-teste-completo.md).
 
 ### O que cada grupo entregou
 
@@ -101,8 +101,8 @@ mvn exec:java -Dexec.mainClass=com.financeai.Main
 
 ### Testes automatizados
 ```
-cd Backend && npm test      # node:test (566 testes); MongoDB em memória, IA e Servidor Java simulados (sem .env)
-cd Servidor && mvn test     # JUnit 5 (174 testes), inclusive os testes OO intraclasse e interclasse do Grupo 2
+cd Backend && npm test      # node:test (718 testes); MongoDB em memória, IA e Servidor Java simulados (sem .env)
+cd Servidor && mvn test     # JUnit 5 (188 testes), inclusive os testes OO intraclasse e interclasse do Grupo 2
 # Integração Backend -> Servidor Java (com o Servidor no ar): JAVA_SERVER_INTEGRACAO=1 npm test
 # Detalhes na seção "Testes" de Backend/README.md e Servidor/README.md (ainda não há CI)
 ```

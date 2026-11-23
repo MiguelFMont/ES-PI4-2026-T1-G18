@@ -76,7 +76,7 @@ Quando uma mensagem já está implementada, o contrato vale pelo `.java` (o `.md
 
 ### Grupo 2 — Saldo das contas (`transactions/`)
 
-Issue #106 (especificação em `docs/especificacao-contas-e-transferencias.md`, seção 5). Operação pura, sem banco, como as demais: o Backend lê as contas e os movimentos no MongoDB e manda tudo no pedido; o Servidor devolve o saldo atual de cada conta.
+Issue #106. Operação pura, sem banco, como as demais: o Backend lê as contas e os movimentos no MongoDB e manda tudo no pedido; o Servidor devolve o saldo atual de cada conta.
 
 | Mensagem | `dados` |
 |---|---|

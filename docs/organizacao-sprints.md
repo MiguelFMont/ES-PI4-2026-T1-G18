@@ -50,7 +50,7 @@ Cada grupo é uma **fatia vertical completa** (Frontend + Backend + Servidor Jav
 - MFA opcional
 - Perfil e preferências (modo claro/escuro, ocultar valores sensíveis)
 - Plano da conta (Free/Pro) e tela de upgrade
-- **Entregue:** regra do plano Pro para contas Open Finance — só o plano Pro cria conta Open Finance; no Free a API responde `403 PLAN_REQUIRED` e a tela mostra a opção bloqueada com o convite para o upgrade (RN3 de `especificacao-contas-e-transferencias.md`)
+- **Entregue:** regra do plano Pro para contas Open Finance — só o plano Pro cria conta Open Finance; no Free a API responde `403 PLAN_REQUIRED` e a tela mostra a opção bloqueada com o convite para o upgrade
 - Canal de suporte / reportar problema
 
 ### Grupo 2 — Transações (Receitas e Despesas)
@@ -65,7 +65,6 @@ Cada grupo é uma **fatia vertical completa** (Frontend + Backend + Servidor Jav
 - **Entregue:** transferências entre contas (contas manuais), com a opção "Nova transferência" no menu Lançamento junto de despesa e receita (atalho T)
 - **Entregue:** coluna Origem mostrando a conta, filtro por conta e tipo Transferência na lista
 - **Entregue:** `PedidoCalcularSaldoContas` no Servidor Java (saldo atual de cada conta)
-- Detalhes em `especificacao-contas-e-transferencias.md`
 
 ### Grupo 3 — Painel Financeiro & Análise de Gastos
 - Dashboard inicial (saldo, gastos do mês, economia, fluxo de caixa)
@@ -279,7 +278,7 @@ Cada grupo segue a mesma sequência (CRUD básico → regra de negócio própria
 
 #### Contas e transferências — Sprint 5
 
-Issues #101 a #115, descritas em `especificacao-contas-e-transferencias.md`. Todas **Entregue** (implementadas em Servidor, Backend e Frontend, com testes).
+Issues #101 a #115. Todas **Entregue** (implementadas em Servidor, Backend e Frontend, com testes).
 
 | Issue | Título | Camada | Grupo | Estimativa |
 |---|---|---|---|---|

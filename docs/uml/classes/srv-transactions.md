@@ -1,6 +1,6 @@
 # Modelo UML — Servidor Java: transações
 
-Pacote `com.financeai.transactions` (`Servidor/src/main/java/com/financeai/transactions/`). Notação Astah / UML 2. Visibilidade: `+` público, `-` privado, `#` protegido, `~` pacote. Elementos marcados com ainda não existem no código (ver `docs/especificacao-contas-e-transferencias.md`).
+Pacote `com.financeai.transactions` (`Servidor/src/main/java/com/financeai/transactions/`). Notação Astah / UML 2. Visibilidade: `+` público, `-` privado, `#` protegido, `~` pacote. Elementos marcados com ainda não existem no código.
 
 ## Diagrama do grupo
 

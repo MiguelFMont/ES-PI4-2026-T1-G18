@@ -5,7 +5,7 @@ Diagramas de classes (UML 2, padrão Astah) do Servidor Java do FinanceAI. Cada 
 ## Legenda
 
 - Visibilidade: `+` público, `-` privado, `#` protegido, `~` pacote. Atributo: `- nome: Tipo`. Operação: `+ nome(param: Tipo): Retorno`.
-- Estereótipos: «interface», «handler» (classe que registra e trata mensagens), «dto» (mensagem de pedido/resposta com constante `TIPO`), (elemento que ainda não existe no código; ver `docs/especificacao-contas-e-transferencias.md`).
+- Estereótipos: «interface», «handler» (classe que registra e trata mensagens), «dto» (mensagem de pedido/resposta com constante `TIPO`), (elemento que ainda não existe no código).
 - Relações: generalização (seta com triângulo cheio), realização, associação, agregação (losango vazio), composição (losango cheio), dependência (tracejada).
 - Multiplicidade: `1`, `0..1`, `*`, `1..*`.
 

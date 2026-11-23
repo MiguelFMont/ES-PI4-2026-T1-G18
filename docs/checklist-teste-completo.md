@@ -90,7 +90,7 @@ Roteiro para testar o FinanceAI de ponta a ponta na branch de integração, ante
 - [ ] Em Nova transação, com pagamento **Cartão de crédito**, escolher o cartão e as **parcelas** (1 a 24). Compra à vista sobe a fatura do cartão escolhido; sem cartão escolhido vale o mais antigo.
 - [ ] Compra parcelada: a fatura passa a contar a parcela do mês (não a compra inteira); o saldo devedor e o limite disponível refletem o parcelamento. Conferir uma conta à mão (Tabela Price, se houver juros).
 - [ ] As parcelas pagas avançam sozinhas, uma por mês desde a compra (conferir com uma compra de data antiga). Não há mais tela de parcelamentos nem botão de pagar parcela.
-- [ ] Excluir uma transação parcelada remove o parcelamento dela. Excluir um cartão com parcelamento em andamento é recusado.
+- [ ] Excluir uma transação parcelada remove o parcelamento dela. Excluir um cartão apaga também os lançamentos e parcelamentos dele (a tela avisa antes) e a notificação traz "Desfazer".
 
 ## 7. Início / Painel (Grupo 3)
 
@@ -128,20 +128,21 @@ Roteiro para testar o FinanceAI de ponta a ponta na branch de integração, ante
 ## 12. Testes automatizados e build
 
 - [ ] `cd Backend && npx tsc --noEmit`: sem erro.
-- [ ] `cd Backend && npm test`: todos passam (na integração, 447 testes; a contagem sobe com os testes de transações e da `develop`).
-- [ ] `cd Servidor && mvn test`: todos passam (130 testes).
+- [ ] `cd Backend && npm test`: todos passam (hoje são 718 testes).
+- [ ] `cd Servidor && mvn test`: todos passam (188 testes).
 - [ ] Console do navegador sem erros em nenhuma das telas acima.
 
 ## 13. Contas e transferências
 
-> Implementada (issues #101 a #113; regras RN1 a RN10 em `especificacao-contas-e-transferencias.md`). Use um usuário do plano **Free** e outro do plano **Pro**.
+> Implementada (issues #101 a #113). Use um usuário do plano **Free** e outro do plano **Pro**.
 
 **Contas manuais (Contas conectadas)**
 - [ ] Criar conta manual (Nova conta) com nome, banco e saldo inicial: ela aparece na lista com o saldo atual igual ao saldo inicial.
 - [ ] Nome vazio, com mais de 40 caracteres ou repetido (mesmo trocando maiúsculas por minúsculas) é recusado com mensagem (`409 ACCOUNT_NAME_IN_USE` no repetido).
 - [ ] Criar mais de uma conta (por exemplo, Nubank e Itaú): todas aparecem na lista, cada uma com o seu banco.
 - [ ] Editar nome, banco e saldo inicial de uma conta manual e conferir que o saldo atual recalcula.
-- [ ] Excluir uma conta sem lançamentos funciona, com confirmação. Excluir uma conta com lançamentos é recusado com mensagem clara (`409 ACCOUNT_HAS_TRANSACTIONS`).
+- [ ] Excluir uma conta manual pede confirmação e apaga também os cartões e lançamentos dela (inclusive transferências); a notificação traz "Desfazer", que vale por 30 segundos.
+- [ ] Conta Open Finance não se exclui (`409 ACCOUNT_IS_OPEN_FINANCE`): desconectando, ela vira manual e então pode ser excluída.
 - [ ] Usuário que já tinha lançamentos antes da mudança: existe a conta **Conta principal** (banco "Outro", saldo inicial 0) com todos os lançamentos antigos nela, e as contas conectadas antigas viraram contas Open Finance.
 
 **Regra do plano Pro (Open Finance)**
