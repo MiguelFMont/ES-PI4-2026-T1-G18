@@ -85,12 +85,16 @@ Roteiro para testar o FinanceAI de ponta a ponta na branch de integração, ante
 ## 6. Cartões de crédito (Grupo 5)
 
 - [ ] A tela abre com um card por cartão (fila horizontal, 3 à vista e barra de rolagem se houver mais), com fatura do mês, vencimento e limite. O card **Novo cartão** fica fixo à direita.
-- [ ] Criar até 5 cartões (nome único, limite, dia do vencimento de 1 a 28). Nome repetido, sexto cartão e valores inválidos mostram erro. Editar e excluir um cartão sem parcelamentos em andamento.
-- [ ] Clicar em um card (ou em **Ver compras**) o seleciona, com contorno, e abaixo aparecem **as compras feitas nele**, com data, descrição, categoria, parcelas e valor, mais o total. Cartão sem compras mostra a mensagem de vazio.
+- [ ] Criar até 5 cartões (nome único, limite, **dia do fechamento** de 1 a 28, e **a conta do cartão**, obrigatória e só entre as contas manuais). Nome repetido, sexto cartão e valores inválidos mostram erro. Editar abre o mesmo modal e mostra a conta vinculada; excluir pede confirmação e a notificação traz "Desfazer".
+- [ ] Clicar em um card o seleciona, com contorno, e abaixo aparecem a **fatura do mês** (navegação de mês, total, compras à vista, parcelas, fechamento e vencimento) e **os lançamentos do cartão**, com a mesma barra e lista das Transações: filtros (tipo, categoria, valor e busca, sem filtro de data nem de meta), seleção em lote, edição na linha e no painel, duplicar e excluir, todos com "Desfazer".
+- [ ] Na aba do cartão, **Lançamento** abre só Despesa e Receita, já no cartão e na conta dele, pagando no crédito (com parcelas na despesa). Uma **receita** no cartão (estorno) abate a fatura e devolve limite.
 - [ ] Em Nova transação, com pagamento **Cartão de crédito**, escolher o cartão e as **parcelas** (1 a 24). Compra à vista sobe a fatura do cartão escolhido; sem cartão escolhido vale o mais antigo.
 - [ ] Compra parcelada: a fatura passa a contar a parcela do mês (não a compra inteira); o saldo devedor e o limite disponível refletem o parcelamento. Conferir uma conta à mão (Tabela Price, se houver juros).
 - [ ] As parcelas pagas avançam sozinhas, uma por mês desde a compra (conferir com uma compra de data antiga). Não há mais tela de parcelamentos nem botão de pagar parcela.
 - [ ] Excluir uma transação parcelada remove o parcelamento dela. Excluir um cartão apaga também os lançamentos e parcelamentos dele (a tela avisa antes) e a notificação traz "Desfazer".
+- [ ] **Cartão do Open Finance** (conta conectada com cartão): mostra a tag "Open Finance", não tem botão Excluir, o Editar abre só ícone e cor, e a aba dele não tem o botão Lançamento. Ao desconectar a conta, o cartão vira manual.
+- [ ] Ícone e cor: escolher no modal de conta, de cartão e de meta; aparece na lista, na fatura e nas listas de seleção. "Padrão" volta ao logo do banco.
+- [ ] Desfazer exclusão: excluir um cartão ou uma conta e clicar em "Desfazer" na notificação (até 30 segundos) traz de volta o cartão, os parcelamentos e os lançamentos. Depois do prazo, o botão já não existe.
 
 ## 7. Início / Painel (Grupo 3)
 
@@ -112,6 +116,7 @@ Roteiro para testar o FinanceAI de ponta a ponta na branch de integração, ante
 - [ ] Alterar perfil e preferências, **recarregar** e conferir que foram salvos no banco.
 - [ ] Plano da conta (Free/Pro) abre e muda se estiver implementado.
 - [ ] Relatar problema: envia e confirma o envio.
+- [ ] **MFA (verificação em duas etapas)**: em Minha conta, ativar o MFA mostra o QR Code (Google Authenticator); digitar o código de 6 dígitos confirma a ativação. No login seguinte, depois da senha, o sistema pede o código; código errado é recusado e o mesmo código não vale duas vezes. Desativar o MFA volta ao login só com a senha.
 
 ## 10. Resiliência (Servidor fora do ar)
 

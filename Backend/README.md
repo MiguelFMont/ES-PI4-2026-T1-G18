@@ -23,8 +23,8 @@ O navegador não consegue abrir um socket TCP puro, por isso o Backend fica no m
 
 | Backend                                                                           | Servidor Java                                                                    |
 | --------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| Rotas HTTP, validação do corpo (`zod`), CORS, JWT                             | Hash e conferência de senha (PBKDF2)                                            |
-| CRUD no MongoDB (usuários, transações, metas, chat...)                         | Categorização de transações                                                  |
+| Rotas HTTP, validação do corpo (`zod`), CORS, JWT                             | Hash e conferência de senha (PBKDF2) e MFA (segredo e código TOTP)              |
+| CRUD no MongoDB (usuários, contas, transações, metas, cartões, chat...)        | Categorização de transações e saldo atual das contas                         |
 | Orquestração: lê os dados, pede a operação ao Servidor e grava o resultado   | Cálculo dos indicadores do painel e comparação entre períodos                |
 | Chamadas externas que precisam de internet e chave: API de IA generativa e Pluggy | Contexto e filtro de segurança do Mentor IA                                     |
 | Tradução dos erros do Servidor em status HTTP                                   | Progresso de meta, rentabilidade com juros compostos e cálculo de parcelamentos |
@@ -64,18 +64,20 @@ Quando uma operação falha, o Servidor responde `{"tipo":"Erro","dados":{"code"
 
 Em cada pasta há uma subpasta `exemplo/` com um `.md` para cada arquivo `.ts` planejado, explicando o que o arquivo deve ter (e o que **não** é responsabilidade dele) e trazendo um exemplo de implementação. Ao implementar, crie o `.ts` na pasta correspondente; o `.md` fica como referência (e pode ser apagado quando o projeto estiver andando).
 
-**Estado atual:** todos os módulos estão implementados como código: `sistema`, `auth` e `suporte` (Grupo 1), `transactions` e `connected-accounts` (Grupo 2), `dashboard` (Grupo 3), `mentor-ia` (Grupo 4) e `goals` e `investments` (Grupo 5). O sub-módulo `auth/mfa` (código TOTP) está implementado e o login com MFA usa o `MFA_JWT_SECRET` (mínimo de 32 caracteres, no `.env`). Os `.md` de `exemplo/` são só referência histórica.
+**Estado atual:** todos os módulos estão implementados como código: `sistema`, `auth` e `suporte` (Grupo 1), `transactions`, `accounts`, `connected-accounts` e `desfazer` (Grupo 2), `dashboard` (Grupo 3), `mentor-ia` (Grupo 4) e `goals` e `investments` (Grupo 5). O sub-módulo `auth/mfa` (código TOTP) está implementado e o login com MFA usa o `MFA_JWT_SECRET` (mínimo de 32 caracteres, no `.env`). Os `.md` de `exemplo/` são só referência histórica.
 
 ## Estrutura de pastas
 
 ```
 src/
   config/            variáveis de ambiente (env.ts)
-  database/          conexão com o MongoDB (mongo.connection.ts)
+  database/          conexão com o MongoDB (mongo.connection.ts) e seeds/ (dados de exemplo: `npm run seed:transacoes|contas|grupo5`)
   http/              app.ts (Express e rotas), frontend.ts (entrega o Frontend e as páginas) e server.ts (listen)
   middlewares/       auth.middleware.ts (JWT) e error-handler.middleware.ts
   java-client/       cliente do Servidor Java (comunicado.ts, parceiro.ts, java-server.client.ts)
-  shared/errors/     erro compartilhado (app-error.ts) e tabela code -> status (error-codes.ts)
+  integrations/      pluggy/ (cliente da API da Pluggy e conversão das transações)
+  shared/            errors/ (app-error.ts e a tabela code -> status), aparencia/ (ícone e cor de contas, cartões e metas), email/ (Nodemailer e modelos do e-mail),
+                     fatura/ (ciclo da fatura do cartão, funções puras), lixeira/ (desfazer em memória, 30 s) e utils/
   modules/
     sistema/         /v1/health e /v1/eco (verificação da base)
     auth/            Grupo 1 — Autenticação & Conta
@@ -139,13 +141,15 @@ O chat do Mentor (`POST /v1/mentor-ia/chat`, contrato na seção 3 de `../docs/c
 ## Configuração
 
 ```bash
-cp .env.example .env   # ajuste JWT_SECRET e MONGO_URI
+cp .env.example .env   # preencha ao menos JWT_SECRET, MFA_JWT_SECRET, EMAIL_USER, EMAIL_PASSWORD e MONGO_URI
 ```
 
 | Variável                                             | Para quê                                                                                                                                                                                                       |
 | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `PORT`                                              | Porta da API (padrão 3001)                                                                                                                                                                                     |
 | `JWT_SECRET`                                        | Segredo para assinar o JWT                                                                                                                                                                                      |
+| `MFA_JWT_SECRET` | Segredo do token temporário do MFA (**obrigatória**, mínimo de 32 caracteres, diferente do `JWT_SECRET`) |
+| `EMAIL_USER`, `EMAIL_PASSWORD` | Conta do Gmail que envia o e-mail de recuperação de senha (**obrigatórias**): `EMAIL_USER` é um e-mail válido e `EMAIL_PASSWORD` é a senha de app do Gmail |
 | `MONGO_URI`, `MONGO_DB`                           | MongoDB Atlas. Sem `MONGO_URI` o Backend sobe sem banco (só `/v1/health` e `/v1/eco`)                                                                                                                    |
 | `JAVA_SERVER_HOST`, `JAVA_SERVER_PORT`            | Onde está o Servidor Java (padrão `localhost:3000`)                                                                                                                                                         |
 | `JAVA_SERVER_TIMEOUT_MS`, `JAVA_SERVER_POOL_SIZE` | Timeout por pedido (5000) e máximo de conexões simultâneas (5)                                                                                                                                               |
@@ -156,7 +160,7 @@ cp .env.example .env   # ajuste JWT_SECRET e MONGO_URI
 | `PLUGGY_BASE_URL`, `PLUGGY_TIMEOUT_MS`            | Endereço da API da Pluggy (padrão `https://api.pluggy.ai`) e tempo máximo de espera por chamada (20000)                                                                                                    |
 | `PLUGGY_ESPERA_ITEM_MS`, `PLUGGY_INTERVALO_MS`    | Quanto tempo esperar uma conexão terminar de sincronizar (60000) e de quanto em quanto tempo consultar (2000)                                                                                                  |
 
-O `.env` está no `.gitignore` e nunca deve ser commitado.
+O `.env` está no `.gitignore` e nunca deve ser commitado. O `.env.example` lista todas as variáveis (as opcionais, com os valores padrão, comentadas).
 
 ### MongoDB Atlas (cada integrante)
 
@@ -283,6 +287,19 @@ $env:JAVA_SERVER_INTEGRACAO="1"; $env:JAVA_SERVER_PORT="3000"; npm test       # 
 ```
 
 Dados de exemplo para as telas: `npm run seed:grupo5` (metas com os aportes vinculados, ativos, cartão e parcelamentos do `usuario-demo`; aceita `<userId>` e `--limpar`, que apaga também as transações vinculadas às metas). Os aportes das metas são transações que o próprio seed cria; a fatura do cartão soma as despesas no crédito do mês, então rode também o `npm run seed:transacoes` com o mesmo usuário para ela ter compras.
+
+### Contas, transferências, cartões e desfazer (Grupo 2 e 5)
+
+Rodam no mesmo `npm test` (o Servidor Java é simulado; o saldo vem de `transactions/__tests__/saldo-simulado.ts`):
+
+| Arquivo | O que cobre |
+|---|---|
+| `accounts/__tests__/accounts.routes.test.ts` | `/v1/accounts`: CRUD e lista de bancos, nome único, saldo calculado, plano Pro para Open Finance, conta Open Finance só muda ícone e cor e não se exclui, exclusão em cascata com desfazer, migração dos lançamentos antigos, ícone e cor |
+| `transactions/__tests__/contas-transferencias.routes.test.ts` | Lançamento com `contaId` obrigatório, filtro por conta, transferência entre contas manuais e fora dos totais, lançamentos de conta Open Finance |
+| `investments/__tests__/cartoes.routes.test.ts` | Cartões vinculados a uma conta, `diaFechamento`, fatura de cada cartão, cartão do Open Finance somente leitura, exclusão com lançamentos e parcelamentos e desfazer |
+| `shared/fatura/fatura.test.ts` | Ciclo da fatura (fechamento, vencimento 7 dias depois) e a data em que a compra no cartão sai do saldo da conta |
+
+O desfazer (`POST /v1/undo/:id`, 30 segundos, só em memória) é coberto dentro desses testes de conta, cartão e lançamentos.
 
 ### Integração com o Servidor Java
 

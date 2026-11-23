@@ -15,7 +15,7 @@ O Servidor é um **executor de operações**, como o fazedor de continhas: o Bac
 
 | Grupo | Operações no Servidor |
 |---|---|
-| 1 — Autenticação & Conta | hash e conferência de senha (PBKDF2). Geração do segredo TOTP e validação do código do MFA estão planejadas (só `.md` em `auth/exemplo/`), sem uso hoje |
+| 1 — Autenticação & Conta | hash e conferência de senha (PBKDF2); MFA: geração do segredo TOTP (otpauth) e validação do código de 6 dígitos |
 | 2 — Transações | categorização automática de uma transação e cálculo do saldo atual de cada conta (contas e transferências) |
 | 3 — Painel & Análise | cálculo dos indicadores (saldo, economia, fluxo de caixa) e **comparação entre períodos** (variação % de receitas, despesas e saldo, tendência das despesas) |
 | 4 — Mentor Financeiro (IA) | montar o contexto da IA e filtrar a resposta (nunca recomendar compra/venda de ativo) |
@@ -48,11 +48,11 @@ Tudo que é CRUD (cadastro, listagens, edição) fica no Backend.
 
 ## Mensagens por grupo (contrato com o Backend)
 
-Os campos de cada mensagem estão no `.java` dela (quando já implementada) ou no `.md` de `exemplo/` (um por `PedidoXxx`/`RespostaXxx`, enquanto for só planejada) e precisam ser **idênticos** aos que o Backend envia e espera.
+Os campos de cada mensagem estão no `.java` dela (quando já implementada) ou no `.md` de `exemplo/` (um por `PedidoXxx`/`RespostaXxx`, só nas mensagens que ainda não têm `.java`) e precisam ser **idênticos** aos que o Backend envia e espera.
 
 | Grupo | Pedido → Resposta | Handler |
 |---|---|---|
-| 1 — Autenticação & Conta | `PedidoHashSenha` → `RespostaHashSenha`; `PedidoValidarSenha` → `RespostaValidarSenha`. Planejadas, ainda não implementadas: `PedidoGerarSegredoMFA` → `RespostaGerarSegredoMFA`; `PedidoValidarMFA` → `RespostaValidarMFA` | `AuthHandler` |
+| 1 — Autenticação & Conta | `PedidoHashSenha` → `RespostaHashSenha`; `PedidoValidarSenha` → `RespostaValidarSenha`; `PedidoGerarSegredoMFA` → `RespostaGerarSegredoMFA`; `PedidoValidarMFA` → `RespostaValidarMFA` | `AuthHandler` e `MFAHandler` |
 | 2 — Transações | `PedidoCategorizarTransacao` → `RespostaCategorizarTransacao`; `PedidoCalcularSaldoContas` → `RespostaCalcularSaldoContas` | `TransactionsHandler` |
 | 3 — Painel & Análise | `PedidoCalcularIndicadores` → `RespostaCalcularIndicadores`; `PedidoCompararPeriodos` → `RespostaCompararPeriodos` | `DashboardHandler` |
 | 4 — Mentor Financeiro (IA) | `PedidoMontarContextoIA` → `RespostaMontarContextoIA`; `PedidoFiltrarResposta` → `RespostaFiltrarResposta` | `MentorHandler` |
@@ -61,6 +61,20 @@ Os campos de cada mensagem estão no `.java` dela (quando já implementada) ou n
 Cada grupo mexe só na própria pasta e adiciona **uma linha** em `HandlerRegistry.criarPadrao()`. Se um grupo precisar de uma operação nova, cria o par `PedidoXxx`/`RespostaXxx` e o registra no seu handler, combinando os campos com quem implementa o lado do Backend.
 
 Quando uma mensagem já está implementada, o contrato vale pelo `.java` (o `.md` de `exemplo/` pode estar desatualizado). Por isso `core/` e `transactions/` já não têm pasta `exemplo/`: tudo o que havia nelas virou código.
+
+### Grupo 1 — MFA (`auth/`, implementado)
+
+Verificação em duas etapas com TOTP (RFC 6238), compatível com o Google Authenticator. Operação pura: o segredo não é guardado no Servidor (o Backend o grava no usuário).
+
+| Mensagem | `dados` |
+|---|---|
+| `PedidoGerarSegredoMFA` | `{ "email": "ana@exemplo.com" }`: `email` ausente ou em branco responde `Erro` `VALIDATION` |
+| `RespostaGerarSegredoMFA` | `{ "segredo": "<20 bytes aleatórios em Base32>", "uri": "otpauth://totp/FinanceAI%3Aana%40exemplo.com?secret=...&issuer=FinanceAI&algorithm=SHA1&digits=6&period=30" }`: a `uri` é o que vira QR Code no Frontend |
+| `PedidoValidarMFA` | `{ "segredo": "...", "codigo": "123456" }` |
+| `RespostaValidarMFA` | `{ "valido": true, "contador": 12345678 }`: `contador` é o passo de 30 s que bateu (ou `null` se inválido); o Backend o usa para recusar o mesmo código duas vezes |
+
+- O código é HMAC-SHA1 de 6 dígitos, com passo de 30 s, e aceita o passo anterior e o seguinte (tolerância de relógio). A comparação é em tempo constante.
+- Código que não tem 6 dígitos, segredo ausente ou Base32 inválido respondem `valido: false` (não é erro de negócio).
 
 ### Grupo 2 — Transações (`transactions/`, implementado)
 
@@ -129,7 +143,7 @@ src/main/java/com/financeai/
   Main.java                  (exemplo/Main.md)
   core/                      Comunicado, Parceiro, Aceitadora, Supervisora, Handler, HandlerRegistry,
                              ErroDeNegocio, EcoHandler, Teclado
-  auth/                      AuthHandler + mensagens de senha e MFA
+  auth/                      AuthHandler (senha) e MFAHandler (TOTP) + as mensagens deles
   transactions/              TransactionsHandler + mensagens de categorização
   dashboard/                 DashboardHandler + mensagens de indicadores e comparação de períodos
   mentoria/                  MentorHandler + mensagens de contexto e filtro da IA
@@ -139,7 +153,7 @@ src/main/java/com/financeai/
 
 ## Estado atual
 
-Implementados como código: o `Main` e o `core/` (`Comunicado`, `Parceiro`, `Aceitadora`, `Supervisora`, `Handler`, `HandlerRegistry`, `ErroDeNegocio`, `Teclado`), o `EcoHandler` (handler de teste: `PedidoEco` devolve `RespostaEco` com os mesmos `dados`; com `{"falhar":"negocio"}` responde `Erro` `TESTE_NEGOCIO` e com `{"falhar":"interno"}` responde `Erro` `INTERNAL_ERROR`) e os handlers dos cinco grupos: `AuthHandler` (hash e conferência de senha), `TransactionsHandler` (categorização e saldo das contas), `DashboardHandler` (indicadores e comparação de períodos), `MentorHandler` (contexto e filtro do Mentor IA), `GoalsHandler` e `InvestmentsHandler` (metas, rentabilidade e parcelamentos). Só as mensagens de MFA do Grupo 1 continuam como `.md` de exemplo.
+Implementados como código: o `Main` e o `core/` (`Comunicado`, `Parceiro`, `Aceitadora`, `Supervisora`, `Handler`, `HandlerRegistry`, `ErroDeNegocio`, `Teclado`), o `EcoHandler` (handler de teste: `PedidoEco` devolve `RespostaEco` com os mesmos `dados`; com `{"falhar":"negocio"}` responde `Erro` `TESTE_NEGOCIO` e com `{"falhar":"interno"}` responde `Erro` `INTERNAL_ERROR`) e os handlers dos cinco grupos: `AuthHandler` (hash e conferência de senha), `TransactionsHandler` (categorização e saldo das contas), `DashboardHandler` (indicadores e comparação de períodos), `MentorHandler` (contexto e filtro do Mentor IA), `GoalsHandler` e `InvestmentsHandler` (metas, rentabilidade e parcelamentos). O `MFAHandler` (Grupo 1) trata a geração do segredo e a validação do código TOTP.
 
 ## Build com Maven
 
@@ -178,14 +192,16 @@ Testes automatizados com JUnit 5 (dependência de teste no `pom.xml`, executada 
 mvn test        # ou mvn -q test
 ```
 
-São 188 testes no total. Cobertura do Grupo 1 (`auth/`) e do Grupo 3 (`dashboard/`):
+São 188 testes no total (`mvn test`). Cobertura do Grupo 1 (`auth/` e `mfa/`) e do Grupo 3 (`dashboard/`):
 
 - **`AuthHandlerTest`** (6 casos): hash no formato `sal:hash` e diferente da senha; a mesma senha gera hashes diferentes (sal); senha correta confere com o hash gerado por outro pedido; senha errada ou diferente só na caixa não confere; senha ausente e hash mal formado (sem `:` ou fora do Base64) respondem `VALIDATION`.
+- **`MFAHandlerTest`** (4 casos): geração do segredo em Base32 com a `uri` `otpauth`; código correto aceito; código incorreto recusado; código expirado (fora da janela de tolerância) recusado.
 - **`DashboardHandlerTest`** (10 casos): saldo, economia e fluxo de caixa; sem receitas a economia é 0; despesas maiores que receitas dão saldo e economia negativos; comparação com um só período, variação em %, tendência de alta, queda e estável (limite de 5%), período anterior zerado sem divisão por zero; lista vazia ou ausente e valor que não é número respondem `VALIDATION`.
 
 Cobertura do Grupo 2 e do `core/` (testes de Teste OO, intraclasse e interclasse):
 
 - **`TransactionsHandlerTest`** (14 casos): particionamento por categorias de métodos (registro no `HandlerRegistry`, serviço pelo registry, `categoriaDe`, normalização) e por atributos (classes de equivalência da `descricao`: palavra-chave, sem palavra-chave, só números, só ruído, palavra dentro de outra, exceção antes da regra geral, ausente ou em branco; o `valor` não influencia). Registra como limitação que o plural ("farmacias") não casa.
+- **`SaldoContasTest`** (10 casos): sem movimentos o saldo é o inicial; receita soma e despesa subtrai; transferência sai da origem e entra no destino; movimento de conta fora do pedido é ignorado; soma de decimais arredondada em 2 casas; sem contas devolve lista vazia; `contas` ausente, tipo desconhecido, valor zero e transferência sem destino respondem `Erro` `VALIDATION`.
 - **`ComunicadoTest`** (9 casos, `core/`): estados do objeto (válido, sem dados, tipo ausente, vindo do JSON) e categorias de métodos (fábricas, conversão de e para JSON, leitura inválida).
 - **`CategorizarTransacaoInterclasseTest`** (5 casos): abre uma conexão TCP de verdade com uma `Supervisora` e percorre `Supervisora` → `Parceiro` → `Comunicado` → `HandlerRegistry` → `TransactionsHandler`: cenário normal, descrição em branco (`VALIDATION`), tipo desconhecido (`UNKNOWN_TYPE`), `dados` fora do formato (`VALIDATION`) e conexão que continua aberta depois de um erro.
 
@@ -205,6 +221,6 @@ O caminho Backend → Servidor (socket) é testado pelo teste de integração do
 ## Pontos em aberto
 
 - **Biblioteca JSON:** os exemplos usam Gson. Se o professor preferir outra, só `Comunicado` muda.
-- **MFA no login:** o Backend decide quando pedir o código; a validação em si (`PedidoValidarMFA`) é do Servidor. O fluxo completo (token temporário até validar o código) será definido por outro integrante do grupo de Autenticação.
-- **Alertas do Mentor IA:** quem **gera** os alertas (tarefa periódica ou o próprio fluxo do chat) ainda não está definido; a lista e a gravação são do Backend.
+- **MFA:** o fluxo está completo: o Backend pede o segredo (`PedidoGerarSegredoMFA`), guarda no usuário e valida o código no login (`PedidoValidarMFA`), com token temporário até o código ser aceito.
+- **Alertas do Mentor IA:** são gerados e atualizados pelo Backend a cada leitura (`alertas.service.ts`); o Servidor só monta o contexto e filtra a resposta.
 - **Mudança de contrato:** qualquer alteração em um `PedidoXxx`/`RespostaXxx` precisa ser feita junto com o Backend (ver o `service` do módulo correspondente).

@@ -33,13 +33,13 @@ O sistema é dividido em quatro camadas independentes:
 
 O projeto é dividido em 5 grupos de features, cada um responsável por uma fatia vertical completa (Frontend + Backend + Servidor + BD): Autenticação & Conta, Transações, Painel Financeiro & Análise, Mentor Financeiro (IA) e Metas & Investimentos.
 
-Detalhes completos da arquitetura, divisão de grupos, padrão de issues e cronograma de sprints estão em [`docs/organizacao-sprints.md`](docs/organizacao-sprints.md). O escopo e os requisitos funcionais completos estão em [`docs/documento-de-visao.md`](docs/documento-de-visao.md), o dicionário de dados em [`docs/dicionario-de-dados.md`](docs/dicionario-de-dados.md), o contrato de todas as rotas em [`docs/contrato-api.md`](docs/contrato-api.md) e o roteiro do teste completo em [`docs/checklist-teste-completo.md`](docs/checklist-teste-completo.md).
+Detalhes completos da arquitetura, divisão de grupos, padrão de issues e cronograma de sprints estão em [`docs/organizacao-sprints.md`](docs/organizacao-sprints.md). O escopo e os requisitos funcionais completos estão em [`docs/documento-de-visao.md`](docs/documento-de-visao.md), o dicionário de dados em [`docs/dicionario-de-dados.md`](docs/dicionario-de-dados.md), o contrato de todas as rotas em [`docs/contrato-api.md`](docs/contrato-api.md), as coleções do MongoDB em [`docs/dicionario-de-dados.md`](docs/dicionario-de-dados.md) e o roteiro do teste completo em [`docs/checklist-teste-completo.md`](docs/checklist-teste-completo.md).
 
 ### O que cada grupo entregou
 
 | Grupo | Frontend | Backend (`/v1/...`) | Servidor Java |
 |---|---|---|---|
-| 1 — Autenticação & Conta | login, cadastro, recuperação de senha, perfil e preferências, planos, suporte | `auth`, `suporte` | hash e conferência de senha (PBKDF2) |
+| 1 — Autenticação & Conta | login, cadastro, recuperação de senha por e-mail, verificação em duas etapas (MFA com Google Authenticator), perfil e preferências, planos, suporte | `auth` (com `auth/mfa`), `suporte` | hash e conferência de senha (PBKDF2) e MFA (segredo e código TOTP) |
 | 2 — Transações | extrato com filtros, edição e exclusão em lote (com "Desfazer"), duplicar, categoria automática, contas manuais e Open Finance (Pluggy, plano Pro), transferências entre contas, compra no crédito com cartão e parcelas | `transactions`, `accounts`, `connected-accounts`, `undo` | categorização pela descrição e saldo das contas |
 | 3 — Painel & Análise | dashboard, gastos por categoria, comparação de períodos | `dashboard` | indicadores e comparação de períodos |
 | 4 — Mentor Financeiro (IA) | chat, alertas e mensagens proativas (Insight) | `mentor-ia` | contexto da IA e filtro de resposta |
@@ -68,7 +68,7 @@ Suba nesta ordem: Servidor Java (porta 3000), depois o Backend (porta 3001, que 
 
 ### Backend
 ```
-# Requer Node 20+ (usado: 22). Copie Backend/.env.example para Backend/.env e ajuste JWT_SECRET, MFA_JWT_SECRET (mínimo de 32 caracteres) e MONGO_URI.
+# Requer Node 20+ (usado: 22). Copie Backend/.env.example para Backend/.env e preencha JWT_SECRET, MFA_JWT_SECRET (mínimo de 32 caracteres), EMAIL_USER, EMAIL_PASSWORD e MONGO_URI.
 cd Backend
 npm install
 npm run dev          # http://localhost:3001/v1
@@ -113,7 +113,7 @@ cd Servidor && mvn test     # JUnit 5 (188 testes), inclusive os testes OO intra
 Backend/     # API REST em TypeScript/Node.js (Express), MongoDB e cliente do Servidor Java
 Servidor/    # Servidor Java por sockets (JSON) que executa as operações específicas, build com Maven
 Frontend/    # Telas em HTML/CSS/JS
-docs/        # Documento de visão, organização de sprints, contrato da API, checklist de teste e palavras-chave das categorias
+docs/        # Documento de visão, organização de sprints, contrato da API, dicionário de dados, checklist de teste, palavras-chave das categorias e UML do Servidor (docs/uml)
 ```
 
 ## Fluxo de trabalho

@@ -1,3 +1,8 @@
+/**
+ * Biblioteca de terceiros: qrcode v1.5.4 (https://github.com/soldair/node-qrcode), licença MIT.
+ * Arquivo GERADO: a biblioteca foi empacotada com o esbuild em um módulo ES para ser usada sem bundler (ver Frontend/README.md).
+ * Usado só para desenhar o QR Code do MFA no Perfil. Não edite à mão; para atualizar, gere de novo e substitua o arquivo.
+ */
 var __getOwnPropNames = Object.getOwnPropertyNames;
 var __commonJS = (cb, mod) => function __require() {
   try {

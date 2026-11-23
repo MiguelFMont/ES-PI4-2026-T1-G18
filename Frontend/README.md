@@ -12,7 +12,7 @@ npm run dev
 
 Abra `http://localhost:3001`. O Backend precisa do `.env` preenchido (ver `Backend/README.md`) e serve:
 
-- `/` abre o `index.html`, a única página: ele tem o menu fixo e um roteador por `#` (`#dashboard`, `#transactions`, `#contas-conectadas`, `#metas`, `#cartao`, `#mentor-ia`) que troca só o conteúdo de `#app-content` (SPA);
+- `/` abre o `index.html`, a única página: ele tem o menu fixo e um roteador por `#` (`#dashboard`, `#transactions`, `#contas-conectadas`, `#metas`, `#cartao`, `#perfil`, `#mentor-ia`) que troca só o conteúdo de `#app-content` (SPA);
 - `/transactions`, `/mentor-ia` e `/dashboard` são atalhos que redirecionam para `/#transactions` etc.; `/login` leva à página de login (`features/auth/components/inicio.html`, independente do `index.html`). Ficam em `Backend/src/http/frontend.ts`: quem criar uma tela nova acrescenta uma linha lá e uma entrada em `TELAS` no `src/app/main.js`;
 - `/v1/...` é a API.
 
@@ -26,7 +26,7 @@ As páginas internas exigem um token e, sem ele, voltam para o login (`/login`):
 localStorage.setItem('@FinanceAI:token', '<token>')
 ```
 
-Para ver dados de exemplo, rode na pasta `Backend` `npm run seed:transacoes -- <userId>` com o mesmo `userId` do token.
+Para ver dados de exemplo, rode na pasta `Backend` `npm run seed:transacoes -- <userId>` (transações), `npm run seed:contas -- <userId>` (contas conectadas) ou `npm run seed:grupo5 -- <userId>` (metas, cartão e parcelamentos) com o mesmo `userId` do token.
 
 ### Só para ver uma tela (Live Server)
 
@@ -51,7 +51,9 @@ src/
 
 Regra: **a estrutura é HTML; o JavaScript só cuida de comportamento** (chamar a API, validar, preencher dados). Textos vindos da API entram sempre por `textContent`.
 
-Componentes compartilhados em `src/shared/`: `Calendario.js` (calendário com atalhos de período), `seletor.js` (lista dos selects que abre ao passar o mouse), `notificacao.js` (`notificar(mensagem, 'sucesso' | 'erro' | 'info')`) e `campos.js` (ligar campos e `aceitarSomenteNumeros`). O visual com sombras (padrão) ou com bordas finas se escolhe em Minha conta > Preferências.
+Componentes compartilhados em `src/shared/`: `Calendario.js` (calendário com atalhos de período), `seletor.js` (as listas dos selects: nos modais abrem como "folha" no meio da tela, com o fundo escurecido), `notificacao.js` (`notificar(mensagem, 'sucesso' | 'erro' | 'aviso', { acao })` e `confirmar`), `campos.js` (ligar campos e máscaras) e `escolhaIcone.js` (ícone e cor). O visual com sombras (padrão) ou com bordas finas se escolhe em Minha conta > Preferências, junto com a paleta de cores.
+
+`src/core/vendor/qrcode.js` é a biblioteca `qrcode` (MIT, v1.5.4) já empacotada com o `esbuild`, usada para mostrar o QR Code do MFA no Perfil. É um arquivo gerado: não edite à mão (não há `package.json` na raiz nem no Frontend).
 
 A comunicação com o Backend é REST/HTTP: os services chamam exclusivamente `apiFetch` de `src/core/http/api.js`, que centraliza a URL base (`/v1`, a mesma origem da página), o token JWT, a leitura de respostas e os erros HTTP. Para outro ambiente, defina `window.FINANCEAI_API_URL` antes do módulo principal.
 
