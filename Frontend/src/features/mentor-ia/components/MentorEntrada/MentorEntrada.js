@@ -1,3 +1,4 @@
+// Gabriel Henrique Pozeti de Faria / R.A 25022716
 const ALTURA_MAXIMA_PX = 160; // o campo cresce com o texto até umas 6 linhas; depois rola por dentro
 
 /**

@@ -1,3 +1,4 @@
+// Gabriel Henrique Pozeti de Faria / R.A 25022716
 // src/modules/mentor-ia/alertas.service.ts
 // Os alertas são gerados quando o usuário os lê (GET /alerts), com as transações reais dele: assim não
 // dependem de gancho no cadastro de transações (Grupo 2) nem de job agendado, e refletem edições e

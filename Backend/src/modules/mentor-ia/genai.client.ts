@@ -1,3 +1,4 @@
+// Gabriel Henrique Pozeti de Faria / R.A 25022716
 // src/modules/mentor-ia/genai.client.ts
 // Único arquivo que fala com a API de IA generativa. Usa o formato de chat da OpenAI
 // (/chat/completions), que o Groq aceita: para trocar de provedor, basta mudar

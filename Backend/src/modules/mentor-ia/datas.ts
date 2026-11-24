@@ -1,3 +1,4 @@
+// Gabriel Henrique Pozeti de Faria / R.A 25022716
 // src/modules/mentor-ia/datas.ts
 // O mês e o dia do usuário são os de Brasília (UTC-3, sem horário de verão desde 2019), não os do servidor.
 export const FUSO_BRASILIA_MS = 3 * 60 * 60 * 1000;

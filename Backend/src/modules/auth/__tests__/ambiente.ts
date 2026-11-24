@@ -1,3 +1,4 @@
+// Gabriel Henrique Pozeti de Faria / R.A 25022716
 // src/modules/auth/__tests__/ambiente.ts
 // Variáveis de ambiente dos testes de autenticação. Cada arquivo de teste importa este ANTES de tudo, porque o
 // config/env valida o process.env no import. Como o dotenv não sobrescreve o que já está definido, os testes não

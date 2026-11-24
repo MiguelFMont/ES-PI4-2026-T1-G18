@@ -1,3 +1,4 @@
+// Gabriel Henrique Pozeti de Faria / R.A 25022716
 // src/modules/auth/__tests__/auth.routes.test.ts
 // Cadastro, confirmação de e-mail, login e recuperação de senha de ponta a ponta no Backend: app Express numa porta
 // livre, MongoDB em memória, e o Servidor Java (hash e conferência da senha) e o envio de e-mail simulados.

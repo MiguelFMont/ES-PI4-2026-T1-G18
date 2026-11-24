@@ -1,3 +1,4 @@
+// Gabriel Henrique Pozeti de Faria / R.A 25022716
 // src/modules/mentor-ia/__tests__/apoio.ts
 // Dublês usados pelos testes do Mentor IA: a API de IA (fetch) e o Servidor Java (javaServerClient).
 // Usam o `mock` global do node:test: cada arquivo chama mock.restoreAll() no afterEach.

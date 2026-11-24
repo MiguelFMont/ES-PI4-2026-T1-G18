@@ -1,3 +1,4 @@
+// Gabriel Henrique Pozeti de Faria / R.A 25022716
 // Ponto de entrada da tela do Mentor IA. O roteador (app/main.js) busca views/mentor-ia.html e os CSS,
 // escreve o HTML em #app-content e chama montar(); ao sair da tela, chama desmontar().
 //

@@ -1,3 +1,4 @@
+// Gabriel Henrique Pozeti de Faria / R.A 25022716
 // src/modules/mentor-ia/alertas.regras.ts
 // Regras que decidem quais alertas o usuário tem hoje. São funções puras: recebem as transações e o
 // instante "hoje" (sem banco e sem Date.now()), para poderem ser testadas com qualquer data.

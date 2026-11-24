@@ -1,3 +1,4 @@
+// Gabriel Henrique Pozeti de Faria / R.A 25022716
 // src/middlewares/rate-limit.middleware.ts
 // Limite de tentativas por janela de tempo, para as rotas que um atacante repetiria em massa: login e código MFA
 // (adivinhar a senha ou os 6 dígitos), cadastro e recuperação de senha (disparar e-mails) e o chat do Mentor IA (gastar

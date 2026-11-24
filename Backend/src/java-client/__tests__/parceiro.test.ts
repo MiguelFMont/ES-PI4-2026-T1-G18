@@ -1,3 +1,4 @@
+// Gabriel Henrique Pozeti de Faria / R.A 25022716
 // src/java-client/__tests__/parceiro.test.ts
 // Leitura das mensagens do Servidor Java pelo Parceiro, com um socket simulado (sem rede).
 import { describe, test } from "node:test";

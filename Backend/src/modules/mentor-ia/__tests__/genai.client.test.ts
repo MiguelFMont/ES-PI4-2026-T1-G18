@@ -1,3 +1,4 @@
+// Gabriel Henrique Pozeti de Faria / R.A 25022716
 // src/modules/mentor-ia/__tests__/genai.client.test.ts
 import "./ambiente";
 import { afterEach, describe, mock, test } from "node:test";

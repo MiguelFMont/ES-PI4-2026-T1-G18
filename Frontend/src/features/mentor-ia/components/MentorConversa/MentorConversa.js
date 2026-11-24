@@ -1,3 +1,4 @@
+// Gabriel Henrique Pozeti de Faria / R.A 25022716
 import { formatarHorario } from '../../utils/format.js';
 import { markdownParaElementos } from '../../utils/markdown.js';
 

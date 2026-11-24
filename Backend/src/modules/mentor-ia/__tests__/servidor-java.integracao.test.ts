@@ -1,3 +1,4 @@
+// Gabriel Henrique Pozeti de Faria / R.A 25022716
 // src/modules/mentor-ia/__tests__/servidor-java.integracao.test.ts
 // Integração Backend -> Servidor Java DE VERDADE (socket em JAVA_SERVER_HOST:JAVA_SERVER_PORT).
 // Fica pulado no `npm test` comum; para rodar, suba o Servidor e defina JAVA_SERVER_INTEGRACAO=1.

@@ -1,3 +1,4 @@
+// Gabriel Henrique Pozeti de Faria / R.A 25022716
 // Nome de cada tipo de alerta (docs/contrato-api.md, seção 3.5). Aparece escrito no cartão: a cor só reforça.
 const NOMES_DOS_TIPOS = {
   gasto_fora_do_padrao: 'Gasto fora do padrão',

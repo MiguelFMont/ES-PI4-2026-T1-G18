@@ -1,3 +1,4 @@
+// Gabriel Henrique Pozeti de Faria / R.A 25022716
 /**
  * Converte o markdown simples das respostas da IA (ver docs/contrato-api.md, seção 3.1) em elementos:
  * parágrafos (separados por linha em branco), listas com "- " ou "* ", listas numeradas ("1. ") e **negrito**.

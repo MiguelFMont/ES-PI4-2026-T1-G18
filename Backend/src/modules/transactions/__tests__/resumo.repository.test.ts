@@ -1,3 +1,4 @@
+// Gabriel Henrique Pozeti de Faria / R.A 25022716
 // src/modules/transactions/__tests__/resumo.repository.test.ts
 // A consulta que alimenta o resumo do Mentor IA (o Servidor Java soma a lista inteira): todas as transações do período,
 // sem paginação, só do usuário e só com os campos que o resumo usa.

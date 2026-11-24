@@ -1,3 +1,4 @@
+// Gabriel Henrique Pozeti de Faria / R.A 25022716
 // src/modules/mentor-ia/mentor-ia.model.ts
 import { Schema, model } from "mongoose";
 import { TIPOS_ALERTA, TipoAlerta } from "./alertas.regras";

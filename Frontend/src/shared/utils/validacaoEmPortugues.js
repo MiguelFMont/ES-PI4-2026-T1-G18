@@ -1,3 +1,4 @@
+// Gabriel Henrique Pozeti de Faria / R.A 25022716
 /**
  * Mensagens da validação nativa do navegador (campos com `required`, `type="email"`, `minlength`, `pattern`) em
  * português. O balão de aviso é escrito no idioma do navegador, não no `lang` da página: num Chrome em inglês o

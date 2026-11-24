@@ -1,3 +1,4 @@
+// Gabriel Henrique Pozeti de Faria / R.A 25022716
 // src/modules/mentor-ia/__tests__/banco-de-teste.ts
 // MongoDB em memória (mongodb-memory-server) para os testes de repository e de rota: nada vai
 // para o Atlas. Na primeira execução o pacote baixa o binário do MongoDB (fica em cache).

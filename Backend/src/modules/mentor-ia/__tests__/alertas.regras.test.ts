@@ -1,3 +1,4 @@
+// Gabriel Henrique Pozeti de Faria / R.A 25022716
 // src/modules/mentor-ia/__tests__/alertas.regras.test.ts
 // As regras de alerta (alertas.regras.ts) são funções puras: aqui não há banco nem relógio, o "hoje"
 // de cada caso é passado explicitamente. Inclui o teste de propriedade com os dados do seed: nenhum
