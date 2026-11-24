@@ -1,1 +1,4 @@
 node_modules/
+
+# Worktrees temporários do Claude Code (não vão para o repositório)
+.claude/worktrees/
