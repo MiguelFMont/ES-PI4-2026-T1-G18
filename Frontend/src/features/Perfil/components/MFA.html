@@ -1,0 +1,55 @@
+<!--
+Autor: Julia Da Silva Maia 
+ RA: 25016200
+ -->
+<section class="seguranca-conta">
+    <div class="secao-cabecalho">
+        <h2>Segurança da conta</h2>
+        <p>Gerencie a proteção e o acesso à sua conta.</p>
+    </div>
+
+    <div class="seguranca-conta__mfa">
+        <h3>Autenticação em duas etapas (MFA)</h3>
+
+        <p>
+            Adicione uma camada extra de segurança à sua conta
+            usando um aplicativo autenticador.
+        </p>
+
+        <p id="mfa-status" role="status">
+            Verificando configuração...
+        </p>
+
+        <button type="button" id="ativar-mfa" hidden>
+            Ativar autenticação em duas etapas
+        </button>
+
+        <div id="mfa-configuracao" hidden>
+            <h4>Configure seu aplicativo autenticador</h4>
+
+            <p>
+                Escaneie o QR Code com o Google Authenticator
+                ou outro aplicativo compatível.
+            </p>
+
+            <div id="mfa-qrcode"></div>
+            <label for="mfa-codigo">Código de verificação</label>
+
+            <input type="text" id="mfa-codigo" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" placeholder="000000" autocomplete="one-time-code">
+            <button type="button" id="confirmar-mfa">
+                Confirmar ativação
+            </button>
+        </div>
+        <div id="mfa-desativacao" hidden>
+            <label for="mfa-codigo-desativar">
+                Código do aplicativo autenticador
+            </label>
+
+            <input type="text" id="mfa-codigo-desativar" inputmode="numeric" maxlength="6" pattern="[0-9]{6}" placeholder="000000" autocomplete="one-time-code">
+            <button type="button" id="desativar-mfa">
+                Desativar autenticação em duas etapas
+            </button>
+        </div>
+        <p id="mfa-mensagem" role="status"></p>
+    </div>
+</section>

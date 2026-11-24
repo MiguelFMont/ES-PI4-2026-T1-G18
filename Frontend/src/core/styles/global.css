@@ -1,0 +1,922 @@
+* {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --black: #000000;
+    --white: #ffffff;
+    --gray: #333333;
+
+    /* tema escuro (padrão) */
+    --fundo: #0b0c10;
+    --fundo-card: #14161c;
+    --fundo-campo: #1c1f27;
+    --borda: #272b35;
+    --texto: #f4f5f7;
+    --texto-suave: #9aa1b2;
+    --destaque: #c6f432  ;
+    --destaque-texto: #0b0c10;
+    /* a cor de apoio: nas paletas é uma segunda cor que contrasta com o destaque; no padrão é o próprio destaque */
+    --destaque-2: var(--destaque);
+    --destaque-2-texto: var(--destaque-texto);
+    --positivo: #4ade80;
+    --negativo: #f87171;
+    --foco: #c6f432;
+    /* duração da mudança de cor dos botões ao passar o mouse ou chegar por Tab (a mesma suavidade da troca de tema) */
+    --duracao-cor: 0.4s;
+    /* sombra bem suave dos cartões, botões e campos (no lugar de bordas) */
+    --sombra: 0 1px 2px rgba(48, 46, 46, 0.044), 0 2px 8px rgba(58, 56, 56, 0.18);
+    /* sombra pequena de quem está com o foco do teclado (no lugar do contorno) */
+    --sombra-foco: 0 2px 6px rgb(0 0 0 / 0.5);
+    --backgroundBarra:rgba(211, 211, 211, 0.071);
+    /* sombra de quem flutua por cima da tela (calendário, listas, painel, notificações) */
+    --sombra-flutuante: 0 12px 28px rgb(0 0 0 / 0.4);
+    /* contorno de cartões, campos e botões: nenhum no estilo com sombras (a sombra os destaca). O estilo "bordas"
+       (bloco :root[data-estilo='bordas'], mais abaixo) troca isto por uma borda fina. */
+    --borda-elemento: 0;
+    /* fundo levemente mais cinza das linhas do extrato */
+    --fundo-linha: color-mix(in srgb, var(--texto) 5%, var(--fundo-card));
+    /* fundo, mais escuro ainda, de cada campo editável dentro da linha */
+    --fundo-celula: color-mix(in srgb, var(--texto) 10%, var(--fundo-card));
+}
+
+:root[data-tema='claro'] {
+    --fundo: #f1f3f2; /* a página: mais escura que os cartões e o menu, que são brancos */
+    --fundo-card: #ffffff;
+    --fundo-campo: #ffffff;
+    --borda: #d0d5dd;
+    --texto: #101828;
+    --texto-suave: #475467;
+    --destaque: #1E6B47  ;
+    --destaque-texto: #ffffff;
+    --positivo: #067647;
+    --negativo: #b42318;
+    --foco: grey;
+    --sombra: 0 2px 1px rgb(16 24 40 / 0.03), 0 1px 4px rgb(16 24 40 / 0.07);
+    --sombra-foco: 0 2px 6px rgb(16 24 40 / 0.2);
+    --sombra-flutuante: 0 12px 28px rgb(16 24 40 / 0.18);
+    /*cor da barra que separa o botão "nova transação" dos cards de
+        entrada, saida e saldo. Coloquei aqui porque ela muda o tom
+        de acordo com o tema da pagina (claro/escuro)
+        -Miguel Fernandes Monteiro */
+    --backgroundBarra:rgba(211, 211, 211, 0.156); 
+}
+
+/* Estilo da interface "bordas" (Minha conta > Preferências; theme.js põe data-estilo="bordas" no <html>): no lugar
+   das sombras, linhas finas. Vale nos dois temas porque só usa as cores do tema (--borda, --destaque). Este bloco vem
+   depois do tema claro de propósito: tem a mesma especificidade e precisa vencer. */
+:root[data-estilo='bordas'] {
+    --sombra: 0 0 0 0 transparent; /* sem sombra (valor válido dentro de listas de box-shadow) */
+    --sombra-foco: 0 0 0 2px var(--destaque); /* o foco do teclado vira um anel */
+    --sombra-flutuante: 0 0 0 1px var(--borda); /* calendário, listas, painel: só uma linha fina */
+    --borda-elemento: 1px solid var(--borda);
+}
+
+/* Matizes: as cores de apoio, usadas para distinguir categorias, formas de pagamento, origem e metas (um pontinho colorido ao lado do
+   texto). Mais claras no tema escuro e mais fechadas no claro, para manter o contraste. Quem quiser uma cor põe data-cor="azul" (ou
+   outro nome) no elemento e lê var(--matiz). "destaque" acompanha a paleta escolhida em Minha conta > Preferências. */
+:root {
+    --matiz-azul: #60a5fa;
+    --matiz-roxo: #a78bfa;
+    --matiz-rosa: #f472b6;
+    --matiz-laranja: #fb923c;
+    --matiz-ambar: #fbbf24;
+    --matiz-turquesa: #2dd4bf;
+    --matiz-verde: #4ade80;
+    --matiz-vermelho: #f87171;
+    --matiz-cinza: #8a91a3;
+}
+
+:root[data-tema='claro'] {
+    --matiz-azul: #2563eb;
+    --matiz-roxo: #7c3aed;
+    --matiz-rosa: #db2777;
+    --matiz-laranja: #ea580c;
+    --matiz-ambar: #d97706;
+    --matiz-turquesa: #0d9488;
+    --matiz-verde: #16a34a;
+    --matiz-vermelho: #dc2626;
+    --matiz-cinza: #98a2b3;
+}
+
+[data-cor='azul'] { --matiz: var(--matiz-azul); }
+[data-cor='roxo'] { --matiz: var(--matiz-roxo); }
+[data-cor='rosa'] { --matiz: var(--matiz-rosa); }
+[data-cor='laranja'] { --matiz: var(--matiz-laranja); }
+[data-cor='ambar'] { --matiz: var(--matiz-ambar); }
+[data-cor='turquesa'] { --matiz: var(--matiz-turquesa); }
+[data-cor='verde'] { --matiz: var(--matiz-verde); }
+[data-cor='vermelho'] { --matiz: var(--matiz-vermelho); }
+[data-cor='cinza'] { --matiz: var(--matiz-cinza); }
+[data-cor='destaque'] { --matiz: var(--destaque); }
+[data-cor='destaque2'] { --matiz: var(--destaque-2); }
+
+/* o pontinho colorido: nas células da lista de transações, nas opções dos menus e nos filtros */
+.linha__celula[data-cor]::before,
+.linha__origem[data-cor]::before,
+.celula__opcao[data-cor]::before,
+.selecao__opcao[data-cor]::before,
+.barra__opcao[data-cor]::before {
+    content: '';
+    display: inline-block;
+    flex: none;
+    width: 0.55rem;
+    height: 0.55rem;
+    margin-right: 0.55rem;
+    border-radius: 50%;
+    background: var(--matiz, var(--matiz-cinza));
+    vertical-align: 0.05em;
+}
+
+/* Paletas de cor (Minha conta > Preferências; theme.js põe data-paleta no <html>). Cada paleta mistura duas cores: fundos quase
+   neutros (só um toque da família), uma cor de destaque principal (botões, itens ativos) e uma cor de apoio que contrasta com ela
+   (--destaque-2: foco, marca do menu, chip de seleção). Também trocam texto, bordas, receita (positivo) e despesa (negativo).
+   Como o resto do projeto só lê essas variáveis, tudo muda junto. "padrao" não aparece aqui: são os valores dos blocos acima.
+   Cada paleta tem um bloco para o tema escuro e outro, mais específico, para o claro (por isso o claro define tudo de novo). */
+:root[data-paleta='esmeralda'] {
+    --fundo: #0e1114;
+    --fundo-card: #161a1e;
+    --fundo-campo: #1e2328;
+    --borda: #2a3138;
+    --texto: #f1f5f4;
+    --texto-suave: #9aa5a8;
+    --destaque: #34d399;
+    --destaque-texto: #04271c;
+    --destaque-2: #fbbf24;
+    --destaque-2-texto: #3b2a02;
+    --positivo: #34d399;
+    --negativo: #fb7185;
+    --foco: #fbbf24;
+}
+:root[data-tema='claro'][data-paleta='esmeralda'] {
+    --fundo: #f3f5f4;
+    --fundo-card: #ffffff;
+    --fundo-campo: #ffffff;
+    --borda: #d8dedc;
+    --texto: #12201b;
+    --texto-suave: #52615b;
+    --destaque: #047857;
+    --destaque-texto: #ffffff;
+    --destaque-2: #d97706;
+    --destaque-2-texto: #ffffff;
+    --positivo: #047857;
+    --negativo: #be123c;
+    --foco: grey;
+}
+
+:root[data-paleta='oceano'] {
+    --fundo: #0d1117;
+    --fundo-card: #151b23;
+    --fundo-campo: #1d2530;
+    --borda: #2a3441;
+    --texto: #eef3f8;
+    --texto-suave: #93a1b3;
+    --destaque: #38bdf8;
+    --destaque-texto: #06293d;
+    --destaque-2: #fb7185;
+    --destaque-2-texto: #3b0613;
+    --positivo: #34d399;
+    --negativo: #fb7185;
+    --foco: #fb7185;
+}
+:root[data-tema='claro'][data-paleta='oceano'] {
+    --fundo: #f2f5f9;
+    --fundo-card: #ffffff;
+    --fundo-campo: #ffffff;
+    --borda: #d5dde8;
+    --texto: #101a27;
+    --texto-suave: #4c5d73;
+    --destaque: #0369a1;
+    --destaque-texto: #ffffff;
+    --destaque-2: #e11d48;
+    --destaque-2-texto: #ffffff;
+    --positivo: #047857;
+    --negativo: #be123c;
+    --foco: grey;
+}
+
+:root[data-paleta='violeta'] {
+    --fundo: #100f14;
+    --fundo-card: #18171e;
+    --fundo-campo: #211f29;
+    --borda: #312e3b;
+    --texto: #f4f3f8;
+    --texto-suave: #a09cb0;
+    --destaque: #a78bfa;
+    --destaque-texto: #2b1065;
+    --destaque-2: #bef264;
+    --destaque-2-texto: #1a2e05;
+    --positivo: #bef264;
+    --negativo: #fb7185;
+    --foco: #bef264;
+}
+:root[data-tema='claro'][data-paleta='violeta'] {
+    --fundo: #f4f3f8;
+    --fundo-card: #ffffff;
+    --fundo-campo: #ffffff;
+    --borda: #ddd9e8;
+    --texto: #191527;
+    --texto-suave: #5b5470;
+    --destaque: #6d28d9;
+    --destaque-texto: #ffffff;
+    --destaque-2: #65a30d;
+    --destaque-2-texto: #ffffff;
+    --positivo: #4d7c0f;
+    --negativo: #be123c;
+    --foco: grey;
+}
+
+:root[data-paleta='terra'] {
+    --fundo: #13110f;
+    --fundo-card: #1c1a17;
+    --fundo-campo: #262320;
+    --borda: #393530;
+    --texto: #f7f3ee;
+    --texto-suave: #aaa196;
+    --destaque: #fb923c;
+    --destaque-texto: #3a1802;
+    --destaque-2: #2dd4bf;
+    --destaque-2-texto: #032b27;
+    --positivo: #2dd4bf;
+    --negativo: #fb7185;
+    --foco: #2dd4bf;
+}
+:root[data-tema='claro'][data-paleta='terra'] {
+    --fundo: #f6f3ef;
+    --fundo-card: #fffdfb;
+    --fundo-campo: #fffdfb;
+    --borda: #e3dbd0;
+    --texto: #25201a;
+    --texto-suave: #6b6257;
+    --destaque: #c2410c;
+    --destaque-texto: #ffffff;
+    --destaque-2: #0f766e;
+    --destaque-2-texto: #ffffff;
+    --positivo: #0f766e;
+    --negativo: #b91c1c;
+    --foco: grey;
+}
+
+body {
+    /* Nunito vem do Google Fonts (<link> no <head> de cada página); as outras só entram se ela não carregar */
+    font-family: 'Nunito', 'Roboto', system-ui, sans-serif;
+    font-weight: 500; /* um pouco mais grossa que o normal (400); títulos e botões têm os próprios pesos */
+    background-color: var(--fundo);
+    color: var(--texto);
+    min-height: 100vh;
+}
+
+/* Troca de tema, caso 1 (View Transitions): a animação do círculo que nasce no botão é criada em
+   core/theme/theme.js. Aqui se desliga o fade padrão e se põe o tema novo por cima do antigo. */
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+    z-index: 1;
+}
+
+::view-transition-new(root) {
+    z-index: 2147483646;
+}
+
+/* Troca de tema, caso 2 (navegadores sem View Transitions): fade das cores. A classe é ligada por theme.js só
+   durante a troca (cerca de 0,4 s); fora dela as transições ficam desligadas e o tema inicial carrega sem animação. */
+html.tema-em-transicao,
+html.tema-em-transicao *,
+html.tema-em-transicao *::before,
+html.tema-em-transicao *::after {
+    transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease,
+        box-shadow 0.4s ease, outline-color 0.4s ease !important;
+}
+
+/* texto só para leitores de tela */
+.so-leitor {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+/* sem sessão (tela de login) o menu não aparece; as páginas internas já nascem com a classe com-sessao */
+body:not(.com-sessao) #main-header {
+    display: none;
+}
+
+/* Largura do menu lateral: 14rem aberto e 4.5rem recolhido (só os ícones). O painel do formulário de transação usa a
+   mesma variável para cobrir só o conteúdo. */
+:root {
+    --largura-menu: 14rem;
+}
+
+body.menu-recolhido {
+    --largura-menu: 4.5rem;
+}
+
+/* Espaçamento padrão das telas: o #app-content dá o mesmo recuo (ao menu, ao topo, à direita e à base, também com o menu
+   recolhido) e a mesma largura máxima a todas. As telas (features/*) não definem recuo nem largura próprios. */
+:root {
+    --espaco-pagina: 1.5rem;
+    --largura-maxima-conteudo: 90rem;
+}
+
+body.com-sessao #app-content {
+    padding: var(--espaco-pagina);
+}
+
+body.com-sessao #app-content > * {
+    width: 100%;
+    max-width: var(--largura-maxima-conteudo);
+    margin-inline: auto;
+}
+
+@media (max-width: 767px) {
+    :root {
+        --espaco-pagina: 1rem;
+    }
+}
+
+/* Barras de rolagem de todo o projeto: finas e cinzas (nos dois temas, pois a cor sai do --texto) */
+:root {
+    --rolagem-polegar: color-mix(in srgb, var(--texto) 16%, transparent);
+    --rolagem-polegar-hover: color-mix(in srgb, var(--texto) 30%, transparent);
+}
+
+/* Chromium (Chrome, Edge): só a listra fina e cinza, sem trilho nem setinhas. As propriedades padrão (scrollbar-width e
+   scrollbar-color) NÃO podem estar ligadas junto: quando estão, o Chromium ignora os ::-webkit-scrollbar abaixo. */
+@supports selector(::-webkit-scrollbar) {
+    *::-webkit-scrollbar {
+        width: 5px;
+        height: 5px;
+        background: transparent;
+    }
+
+    *::-webkit-scrollbar-track,
+    *::-webkit-scrollbar-track-piece,
+    *::-webkit-scrollbar-corner {
+        background: transparent;
+    }
+
+    *::-webkit-scrollbar-thumb {
+        background: var(--rolagem-polegar);
+        border-radius: 999px;
+        min-height: 2rem;
+    }
+
+    *::-webkit-scrollbar-thumb:hover {
+        background: var(--rolagem-polegar-hover);
+    }
+
+    *::-webkit-scrollbar-button,
+    *::-webkit-scrollbar-button:single-button,
+    *::-webkit-scrollbar-button:start:decrement,
+    *::-webkit-scrollbar-button:end:increment {
+        display: none;
+        width: 0;
+        height: 0;
+    }
+}
+
+/* Firefox e outros: a versão padrão, também fina e cinza (sem setinhas) */
+@supports not selector(::-webkit-scrollbar) {
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: var(--rolagem-polegar) transparent;
+    }
+}
+
+/* Alguns navegadores recentes (Chromium) põem botões circulares de seta nas áreas que rolam na horizontal (a tabela do
+   extrato). O projeto não usa esse recurso, então ele é desligado (regra à parte: navegador sem suporte a ignora). */
+::scroll-button(*) {
+    content: none;
+}
+
+/* com sessão: menu lateral + conteúdo (o main.js marca o body) */
+body.com-sessao {
+    display: grid;
+    /* a coluna do menu leva também o recuo à esquerda do painel flutuante */
+    grid-template-columns: calc(var(--largura-menu) + var(--espaco-pagina)) 1fr;
+    transition: grid-template-columns 0.25s ease;
+}
+
+body.com-sessao #app-content {
+    min-width: 0; /* sem isso uma tabela larga estica a coluna em vez de rolar dentro do cartão */
+}
+
+/* O menu é um painel flutuante de cantos arredondados, com o recuo da página em volta e o mesmo fundo dos cartões */
+body.com-sessao #main-header {
+    position: sticky;
+    top: var(--espaco-pagina);
+    height: calc(100vh - 2 * var(--espaco-pagina));
+    margin: var(--espaco-pagina) 0 0 var(--espaco-pagina);
+    padding: 1.25rem 0.75rem;
+    border: 1px solid var(--borda);
+    border-radius: 1.5rem;
+    background: var(--fundo-card); /* o mesmo fundo dos cartões; o fundo mais escuro é o da página (--fundo) */
+    overflow: hidden; /* o texto some sem quebrar linha enquanto a largura encolhe */
+}
+
+.menu-lateral {
+    position: relative;
+    isolation: isolate; /* o marcador fica atrás dos itens, mas na frente do fundo do menu */
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem; /* mais justo: com o painel menor, cabe em janelas baixas sem rolar */
+    height: 100%;
+}
+
+/* topo: marca e botão de recolher */
+.menu-lateral__topo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    min-height: 2.5rem;
+    padding-inline: 0.25rem;
+}
+
+.menu-lateral__marca {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--texto);
+    white-space: nowrap;
+}
+
+.menu-lateral__logo {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.6rem;
+    background: var(--destaque-2);
+    color: var(--destaque-2-texto);
+    font-weight: 800;
+}
+
+.menu-lateral__recolher {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border: 0; /* sem a borda padrão do navegador */
+    border-radius: 0.6rem;
+    color: var(--texto-suave);
+    background: transparent;
+    cursor: pointer;
+}
+
+.menu-lateral__recolher .menu-icone {
+    transition: rotate 0.25s ease;
+}
+
+/* ícones (SVG de traço, na cor do texto do item) */
+.menu-icone {
+    flex: none;
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.main-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-height: 0;
+    overflow-y: auto; /* se a janela for baixa, só a lista rola; o rodapé continua visível */
+    scrollbar-width: none; /* sem barra de rolagem à vista no menu (a lista ainda rola com a roda do mouse) */
+}
+
+.main-nav::-webkit-scrollbar {
+    display: none;
+}
+
+.main-nav__grupo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.main-nav__titulo {
+    padding: 0 0.75rem 0.3rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--texto-suave);
+    white-space: nowrap;
+}
+
+.menu-lateral a,
+.menu-lateral__rodape button {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 2.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.75rem;
+    white-space: nowrap;
+}
+
+.menu-lateral a {
+    color: var(--texto-suave);
+    text-decoration: none;
+}
+
+.menu-lateral a:hover {
+    color: var(--texto);
+    background: color-mix(in srgb, var(--texto) 7%, transparent);
+}
+
+.menu-lateral a[aria-current=page] {
+    color: var(--destaque-texto);
+    background: var(--destaque);
+    font-weight: 700;
+}
+
+/* O marcador deslizante (core/layout/marcadorMenu.js): quando ele está à vista, o fundo do item atual fica por conta dele. */
+.menu-marcador {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 0;
+    border-radius: 0.75rem;
+    background: var(--destaque);
+    pointer-events: none;
+    opacity: 0;
+    /* entrada: a curva de entrada do projeto */
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), width 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+        height 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+}
+
+.menu-marcador--visivel {
+    opacity: 1;
+}
+
+.menu-marcador--parado {
+    transition: opacity 0.2s ease; /* reposiciona na hora (primeira vez, recolher o menu, rolar) */
+}
+
+.menu-lateral a,
+.menu-lateral__rodape button {
+    position: relative;
+    z-index: 1;
+}
+
+.menu-lateral a {
+    transition: color 0.25s ease;
+}
+
+.menu-lateral:has(.menu-marcador--visivel) a[aria-current=page] {
+    background: transparent;
+}
+
+.menu-lateral__rodape {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    margin-top: auto;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--borda);
+}
+
+.menu-lateral__rodape button {
+    width: 100%;
+    border: 0; /* itens do menu nunca têm borda, nem no estilo "bordas" */
+    color: var(--texto-suave);
+    background: transparent;
+    font: inherit;
+    cursor: pointer;
+}
+
+.menu-lateral a,
+.menu-lateral__rodape button,
+.menu-lateral__recolher {
+    transition: scale 0.1s ease, box-shadow 0.1s ease, background-color var(--duracao-cor) ease, color var(--duracao-cor) ease;
+}
+
+/* hover ou Tab nos botões: o fundo se preenche com a cor principal */
+.menu-lateral__rodape button:hover,
+.menu-lateral__rodape button:focus-visible,
+.menu-lateral__recolher:hover,
+.menu-lateral__recolher:focus-visible {
+    color: var(--destaque-texto);
+    background: var(--destaque);
+}
+
+/* navegando com Tab: sem contorno, o item cresce um pouco (como o hover dos botões) e ganha uma sombra pequena */
+.menu-lateral a:focus-visible,
+.menu-lateral__rodape button:focus-visible,
+.menu-lateral__recolher:focus-visible {
+    outline: none;
+    scale: 1.01;
+    box-shadow: var(--sombra-foco);
+}
+
+/* ---- menu recolhido: só os ícones. O texto continua para leitores de tela (mesma técnica do .so-leitor) */
+body.menu-recolhido .menu-texto {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+body.menu-recolhido .menu-lateral__topo {
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.75rem;
+    padding-inline: 0;
+}
+
+body.menu-recolhido .menu-lateral__recolher .menu-icone {
+    rotate: 180deg;
+}
+
+body.menu-recolhido .menu-lateral a,
+body.menu-recolhido .menu-lateral__rodape button {
+    justify-content: center;
+    padding-inline: 0;
+}
+
+/* sem os títulos dos grupos, um traço separa um do outro */
+body.menu-recolhido .main-nav__grupo + .main-nav__grupo {
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--borda);
+}
+
+/* ---- dica do menu recolhido (core/layout/dicaMenu.js): um rótulo que nasce do ícone e se expande para a direita.
+   position: fixed porque o #main-header corta o que passa da sua borda. Abaixo das notificações (z-index 100). */
+.dica-menu {
+    position: fixed;
+    z-index: 90;
+    display: flex;
+    align-items: center;
+    padding-inline: 0.9rem;
+    border-radius: 0.75rem;
+    color: var(--texto);
+    background: var(--fundo-card);
+    box-shadow: var(--sombra-flutuante);
+    font-size: 0.875rem;
+    font-weight: 600;
+    white-space: nowrap;
+    pointer-events: none;
+    transform-origin: left center;
+    /* escondida: do tamanho e da posição do ícone, transparente */
+    transform: translateX(calc(-1 * var(--dica-recuo, 0px))) scaleX(var(--dica-escala, 1));
+    opacity: 0;
+    visibility: hidden;
+    transition: transform 0.12s cubic-bezier(0.7, 0, 0.84, 0), opacity 0.1s ease, visibility 0s linear 0.12s; /* some mais rápido do que aparece */
+}
+
+.dica-menu__texto {
+    opacity: 0;
+    transition: opacity 0.1s ease;
+}
+
+.dica-menu--visivel {
+    transform: none;
+    opacity: 1;
+    visibility: visible;
+    transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.18s ease, visibility 0s;
+}
+
+.dica-menu--visivel .dica-menu__texto {
+    opacity: 1;
+    transition: opacity 0.16s ease 0.1s; /* o texto aparece quando a caixa já quase abriu, sem ficar esticado */
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dica-menu,
+    .dica-menu--visivel {
+        transform: none;
+        transition: opacity 0.15s ease, visibility 0s linear 0.15s;
+    }
+
+    .dica-menu--visivel {
+        transition: opacity 0.15s ease, visibility 0s;
+    }
+
+    .dica-menu__texto,
+    .dica-menu--visivel .dica-menu__texto {
+        opacity: 1;
+        transition: none;
+    }
+}
+
+/* celular: o menu nunca fica recolhido, então não há dica */
+@media (max-width: 767px) {
+    .dica-menu {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.com-sessao,
+    .menu-lateral__recolher .menu-icone {
+        transition: none;
+    }
+}
+
+/* Animação circular de troca de tema (View Transitions API) */
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+}
+
+/* Celular (fora do escopo da entrega; o app móvel será feito à parte): o menu vira uma faixa no topo, sempre aberto */
+@media (max-width: 767px) {
+    body.com-sessao {
+        grid-template-columns: 1fr;
+    }
+
+    body.com-sessao #main-header {
+        position: static;
+        height: auto;
+        margin: 0;
+        border: 0;
+        border-radius: 0;
+        border-bottom: 1px solid var(--borda);
+        padding: 0.75rem 1rem;
+        overflow: visible;
+    }
+
+    .menu-lateral {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .menu-lateral__recolher,
+    .main-nav__titulo {
+        display: none;
+    }
+
+    .main-nav {
+        flex-direction: row;
+        flex-wrap: wrap; /* com 7 itens o menu passa da largura do celular e alargaria a página toda */
+        overflow: visible;
+    }
+
+    .main-nav__grupo {
+        display: contents;
+    }
+
+    .menu-lateral__rodape {
+        flex-direction: row;
+        margin-top: 0;
+        margin-left: auto;
+        padding-top: 0;
+        border-top: 0;
+    }
+
+    .menu-lateral__rodape button {
+        width: auto;
+    }
+
+    /* no celular o menu nunca fica recolhido: o texto sempre aparece */
+    body.menu-recolhido .menu-texto {
+        position: static;
+        width: auto;
+        height: auto;
+        clip: auto;
+    }
+}
+.valores-ocultos .valor-financeiro {
+    font-size: 0 !important;
+}
+
+.valores-ocultos .valor-financeiro::after {
+    content: "••••••";
+    font-size: 16px;
+    color: var(--texto, #ffffff) !important;
+}
+
+/* Esqueleto de carregamento: blocos cinza com um brilho que passa, no lugar do conteúdo que ainda está chegando da API.
+   Cada componente põe o seu esqueleto no HTML (dentro de um .esqueleto-grupo) e o JS só liga e desliga o grupo, como
+   qualquer outro estado da tela. Use role="status" no grupo e um texto .so-leitor para quem usa leitor de tela. */
+:root {
+    --esqueleto-base: color-mix(in srgb, var(--texto) 9%, var(--fundo-card));
+    --esqueleto-brilho: color-mix(in srgb, var(--texto) 17%, var(--fundo-card));
+}
+
+.esqueleto-grupo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.esqueleto-grupo[hidden] {
+    display: none;
+}
+
+.esqueleto {
+    display: block;
+    min-height: 1rem;
+    border-radius: 0.75rem;
+    background: linear-gradient(100deg, var(--esqueleto-base) 30%, var(--esqueleto-brilho) 50%, var(--esqueleto-base) 70%) 100% 0 / 250% 100%;
+    animation: esqueleto-brilho 1.4s ease-in-out infinite;
+}
+
+.esqueleto--titulo {
+    width: 40%;
+    height: 1.4rem;
+}
+
+.esqueleto--linha {
+    height: 1rem;
+}
+
+.esqueleto--curto {
+    width: 55%;
+}
+
+.esqueleto--bloco {
+    height: 6.5rem;
+}
+
+.esqueleto--alto {
+    height: 9rem;
+}
+
+.esqueleto--card {
+    height: 17rem;
+}
+
+.esqueleto--linha-extrato {
+    height: 3.2rem;
+}
+
+@keyframes esqueleto-brilho {
+    to { background-position: 0 0; }
+}
+
+/* sem animação: só os blocos cinza, parados */
+@media (prefers-reduced-motion: reduce) {
+    .esqueleto {
+        animation: none;
+        background: var(--esqueleto-base);
+    }
+}
+
+/* Troca de tela: o roteador esconde o conteúdo (sem mostrar nada no lugar) até a tela nova estar montada (app/main.js) */
+#app-content.tela-trocando {
+    visibility: hidden;
+}
+
+/* Movimento reduzido: quem pede menos movimento ao sistema não vê as transições nem as animações do projeto (hover, painéis, listas, menu). As animações que precisam existir mesmo assim têm regra própria (barra de tempo das notificações). */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        transition-delay: 0s !important;
+    }
+}
+
+
+/* ---------------------------------------------------------------- Revelar (padrão de animação)
+   Tudo o que aparece depois de apertar um botão (uma área que se abre, um campo extra, uma observação) usa o atributo
+   data-revelar no elemento que já alterna o atributo hidden: ao aparecer ele cresce em altura e ganha opacidade; ao sumir,
+   encolhe mais rápido. Nenhum JS novo: o código continua só fazendo `elemento.hidden = false/true`.
+   Entrada: a curva de entrada do projeto; saída: a de saída. O respiro (padding e margem negativa) evita cortar o anel de foco. */
+:root {
+    interpolate-size: allow-keywords; /* permite animar de 0 até "auto" */
+}
+
+[data-revelar] {
+    overflow: hidden;
+    padding: 0.35rem;
+    margin: -0.35rem;
+    height: auto;
+    opacity: 1;
+    transition: height 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, padding 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+        display 0.28s allow-discrete;
+    @starting-style {
+        height: 0;
+        opacity: 0;
+    }
+}
+
+[data-revelar][hidden] {
+    display: none;
+    height: 0;
+    padding-block: 0;
+    opacity: 0;
+    transition: height 0.14s cubic-bezier(0.7, 0, 0.84, 0), opacity 0.1s ease, padding 0.14s cubic-bezier(0.7, 0, 0.84, 0),
+        display 0.14s allow-discrete;
+}

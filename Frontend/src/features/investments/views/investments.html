@@ -1,0 +1,50 @@
+<!-- Autor: Miguel Fernandes Monteiro | RA: 25014808 -->
+<!--
+  Tela do Cartão de crédito (uma fila horizontal de cartões e, abaixo, a fatura do cartão escolhido, com fatura e limite SIMULADOS), um fragmento: não é um documento completo. O index.html (menu,
+  fontes e estilos globais) fica sempre aberto e o roteador (app/main.js) coloca este conteúdo em #app-content, junto com
+  os CSS da tela. Toda a estrutura é HTML (este arquivo e os componentes); o JavaScript só junta os componentes e liga a
+  lógica pelos ids (chamar a API, validar, mostrar e esconder estados, preencher textos).
+  Os caminhos começam em / (a raiz do Frontend).
+-->
+<section class="investments-page" aria-labelledby="investments-titulo">
+    <div class="investments-cabecalho">
+        <h1 id="investments-titulo">Cartão de crédito</h1>
+        <p class="investments-subtitulo">Cartão de crédito simulado: a fatura vem das suas despesas no crédito; limite e parcelamentos são fictícios.</p>
+    </div>
+
+    <div id="investments-carregando" class="esqueleto-grupo" role="status">
+        <!-- o mesmo desenho da fila de cartões: três cartões à vista e o espaço do cartão de novo cartão ao lado -->
+        <div class="investments-cartoes-faixa">
+            <div class="investments-cartoes">
+                <span class="esqueleto esqueleto--cartao"></span>
+                <span class="esqueleto esqueleto--cartao"></span>
+                <span class="esqueleto esqueleto--cartao"></span>
+            </div>
+            <div class="investments-cartao-novo-area">
+                <span class="esqueleto esqueleto--cartao"></span>
+            </div>
+        </div>
+        <span class="esqueleto esqueleto--alto"></span>
+        <span class="so-leitor">Carregando seu cartão...</span>
+    </div>
+
+    <div id="investments-erro" class="investments-estado" hidden>
+        <p id="investments-erro-texto" role="alert"></p>
+        <button type="button" id="investments-tentar-novamente" class="investments-botao">Tentar novamente</button>
+    </div>
+
+    <div id="investments-conteudo" class="investments-conteudo" hidden>
+        <div data-incluir="/src/features/investments/components/CartoesLista/CartoesLista.html"></div>
+        <!-- O formulário do cartão é só uma janela (modal): aparece por cima da página ao clicar em Novo cartão ou Editar -->
+        <div class="investments-modal">
+            <div data-incluir="/src/features/investments/components/CartaoForm/CartaoForm.html"></div>
+        </div>
+        <!-- a fatura do cartão escolhido (aparece ao escolher um cartão), com os lançamentos dele: as mesmas peças da tela de Transações -->
+        <div data-incluir="/src/features/investments/components/CartaoCompras/CartaoCompras.html"></div>
+        <div class="transactions-page transactions-page--embutida transactions-page--modais">
+            <div data-incluir="/src/features/transactions/components/TransactionForm/TransactionForm.html"></div>
+            <div data-incluir="/src/features/transactions/components/TransactionDetalhe/TransactionDetalhe.html"></div>
+            <div data-incluir="/src/features/transactions/components/TransactionCartao/TransactionCartao.html"></div>
+        </div>
+    </div>
+</section>

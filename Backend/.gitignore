@@ -1,0 +1,16 @@
+# Segredos: nunca commitar (use o .env.example como modelo)
+.env
+.env.*
+!.env.example
+
+# Dependencias e build
+node_modules/
+dist/
+
+# Logs e IDE
+*.log
+.idea/
+.vscode/
+
+
+package-lock.json

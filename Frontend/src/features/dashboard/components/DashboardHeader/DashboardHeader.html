@@ -1,0 +1,29 @@
+<!-- CEZAR AUGUSTO FERNANDEZ RULL - 25007452-->
+<!-- Componente: Cabeçalho "Olá, <Nome>!" + Atalhos de Período + Datas -->
+<div class="transactions-cabecalho dashboard-header">
+    <div>
+        <h1 id="dashboard-titulo" class="dashboard-header__ola">Olá! 👋</h1>
+        <p class="transactions-subtitulo dashboard-header__sub">Resumo financeiro</p>
+    </div>
+
+    <div class="dashboard-header__controles" role="group" aria-label="Filtro de período do painel">
+        <div class="dashboard-pills" id="dashboard-atalhos-periodo">
+        <button type="button" class="dashboard-pill ativo" data-periodo="mes-atual">Este mês</button>
+        <button type="button" class="dashboard-pill" data-periodo="mes-anterior">Mês passado</button>
+        <button type="button" class="dashboard-pill" data-periodo="3meses">3 meses</button>
+        <button type="button" class="dashboard-pill" data-periodo="6meses">6 meses</button>
+        <button type="button" class="dashboard-pill" data-periodo="ytd">No ano</button>
+        </div>
+
+        <div class="dashboard-header__datas">
+        <div class="campo dashboard-campo-data">
+            <label for="dash-data-inicio">De</label>
+            <input type="date" id="dash-data-inicio" aria-label="Data inicial">
+        </div>
+        <div class="campo dashboard-campo-data">
+            <label for="dash-data-fim">Até</label>
+            <input type="date" id="dash-data-fim" aria-label="Data final">
+        </div>
+        </div>
+    </div>
+</div>

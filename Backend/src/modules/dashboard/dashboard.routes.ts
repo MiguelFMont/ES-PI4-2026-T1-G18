@@ -1,0 +1,15 @@
+// CEZAR AUGUSTO FERNANDEZ RULL - 25007452
+import { Router } from "express";
+import { dashboardController } from "./dashboard.controller";
+import { authMiddleware } from "../../middlewares/auth.middleware";
+
+export const dashboardRouter = Router();
+
+dashboardRouter.use(authMiddleware);
+
+dashboardRouter.get("/summary", dashboardController.summary);
+dashboardRouter.get("/period-summary", dashboardController.periodSummary);
+dashboardRouter.get("/by-category", dashboardController.byCategory);
+dashboardRouter.get("/compare", dashboardController.compare);
+
+export default dashboardRouter;

@@ -1,0 +1,33 @@
+<!--
+Autor: Julia Da Silva Maia 
+ RA: 25016200
+ -->
+<section class="preferencias-conta">
+    <div class="secao-cabecalho">
+        <h2>Preferências</h2>
+        <p>Ajuste a aparência do sistema. A escolha vale já, sem recarregar a página.</p>
+    </div>
+    <div class="preferencias-conta__lista">
+        <div class="preferencia-item">
+            <div class="preferencia-item__informacoes">
+                <h3 id="preferencia-estilo-titulo">Estilo da interface</h3>
+                <p id="preferencia-estilo-descricao">Com sombras, os cartões e campos se destacam por sombras suaves. Com bordas, por linhas finas.</p>
+            </div>
+            <div class="preferencia-item__controle">
+                <span class="interruptor__estado" id="preferencia-estilo-estado" aria-hidden="true">Com sombras</span>
+                <button type="button" id="preferencia-estilo" class="interruptor" role="switch" aria-checked="true"
+                    aria-labelledby="preferencia-estilo-titulo" aria-describedby="preferencia-estilo-descricao">
+                    <span class="interruptor__bolinha"></span>
+                </button>
+            </div>
+        </div>
+        <div class="preferencia-item preferencia-item--paleta">
+            <div class="preferencia-item__informacoes">
+                <h3 id="preferencia-paleta-titulo">Paleta de cores</h3>
+                <p id="preferencia-paleta-descricao">Cada paleta mistura duas cores (uma principal e uma de apoio) e muda o sistema todo: fundos, bordas, textos, destaque, receitas e despesas. Há versão para o tema escuro e para o claro.</p>
+            </div>
+            <div class="paletas" id="preferencia-paletas" role="radiogroup" aria-labelledby="preferencia-paleta-titulo"></div>
+        </div>
+    </div>
+    <p id="preferencias-mensagem" role="status"></p>
+</section>

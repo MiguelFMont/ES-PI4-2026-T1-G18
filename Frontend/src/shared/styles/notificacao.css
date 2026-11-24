@@ -1,0 +1,324 @@
+/* Notificações e confirmação (shared/components/notificacao.js). Visual do alert.css do projeto PI_NotaDez
+   (Miguel Fernandes Monteiro): faixa colorida que desliza pela direita, com o ícone num círculo branco. */
+
+.alertas {
+  --alerta-sucesso: #25e475;
+  --alerta-aviso: #ffb319;
+  --alerta-erro: #ff4a4a;
+  position: fixed;
+  top: 15px;
+  right: 0;
+  z-index: 100; /* acima do painel do formulário (z-index 50) */
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none; /* só as notificações recebem clique, não a área vazia */
+}
+
+.alerta {
+  --cor: var(--alerta-sucesso);
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 350px;
+  max-width: 100vw;
+  min-height: 90px;
+  padding: 15px;
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+  color: var(--white, #fff);
+  background: var(--cor);
+  box-shadow: -4px 8px 10px rgb(0 0 0 / 0.2);
+  animation: alerta-entrar 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  position: relative;
+  overflow: hidden; /* a linha de tempo na base acompanha o canto arredondado */
+}
+
+.alerta--sucesso { --cor: var(--alerta-sucesso); }
+.alerta--aviso { --cor: var(--alerta-aviso); }
+.alerta--erro { --cor: var(--alerta-erro); }
+
+.alerta--saindo {
+  animation: alerta-sair 0.12s cubic-bezier(0.7, 0, 0.84, 0) forwards; /* sai mais rápido do que entra */
+}
+
+/* o ícone do tipo é também o botão de fechar */
+.alerta__fechar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 50%;
+  color: var(--cor);
+  background: var(--white);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.alerta__fechar:focus-visible {
+  outline: 2px solid var(--white);
+  outline-offset: 2px;
+}
+
+/* botão de ação da notificação (por exemplo "Desfazer"): uma pílula clara, como o botão de fechar */
+.alerta__acao {
+  flex: none;
+  padding: 0.3rem 0.9rem;
+  border: 0;
+  border-radius: 999px;
+  color: var(--cor);
+  background: var(--white);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: scale 0.1s ease;
+}
+
+.alerta__acao:hover:not(:disabled),
+.alerta__acao:focus-visible {
+  scale: 1.05;
+  outline: none;
+}
+
+.alerta__acao:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+/* linha de tempo: esvazia de forma linear até a notificação sumir; pausa junto com o temporizador (mouse ou foco) */
+.alerta__tempo {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  background: rgb(255 255 255 / 0.35);
+  pointer-events: none;
+}
+
+.alerta__tempo-barra {
+  height: 100%;
+  background: color-mix(in srgb, var(--cor) 55%, #000);
+  transform-origin: left center;
+  will-change: transform;
+  /* a animação (scaleX de 1 a 0) é criada em notificacao.js, que também a pausa; ela é o relógio da notificação */
+}
+
+.alerta--pausado .alerta__tempo-barra {
+  opacity: 0.6; /* sinal discreto de que o tempo está parado */
+}
+
+.alerta__mensagem {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+@keyframes alerta-entrar {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes alerta-sair {
+  from { transform: translateX(0); }
+  to { transform: translateX(100%); }
+}
+
+/* Confirmação: janela da mesma cor do tipo, que desce do topo sobre um fundo escuro */
+.confirmacao {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 10vh;
+  background: rgb(0 0 0 / 0.5);
+  backdrop-filter: blur(6px); /* o fundo desfocado atrás da janela */
+  -webkit-backdrop-filter: blur(6px);
+  animation: confirmacao-fundo-entrar 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.confirmacao--saindo {
+  animation: confirmacao-fundo-sair 0.12s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+}
+
+.confirmacao--saindo .confirmacao__janela {
+  animation: confirmacao-sair 0.12s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+}
+
+.confirmacao__janela {
+  --cor: #ffb319;
+  width: 90%;
+  max-width: 550px;
+  padding: 20px;
+  border-radius: 8px;
+  color: var(--white);
+  background: var(--cor);
+  box-shadow: 0 8px 20px rgb(0 0 0 / 0.2);
+  transform-origin: top center; /* a janela cresce do alto, de onde ela aparece */
+  animation: confirmacao-entrar 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.confirmacao__janela--sucesso { --cor: #25e475; }
+.confirmacao__janela--aviso { --cor: #ffb319; }
+.confirmacao__janela--erro { --cor: #ff4a4a; }
+
+.confirmacao__conteudo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.confirmacao__icone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  color: var(--cor);
+  background: var(--white);
+  font-size: 26px;
+  font-weight: 800;
+}
+
+.confirmacao__mensagem {
+  font-size: 15px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.confirmacao__botoes {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.confirmacao__botao {
+  min-width: 110px;
+  padding: 10px 25px;
+  border: 2px solid var(--white);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.confirmacao__botao--cancelar {
+  color: var(--white);
+  background: transparent;
+}
+
+.confirmacao__botao--cancelar:hover,
+.confirmacao__botao--cancelar:focus-visible {
+  background: rgb(255 255 255 / 0.2);
+}
+
+.confirmacao__botao--confirmar {
+  color: var(--cor);
+  background: var(--white);
+}
+
+.confirmacao__botao--confirmar:hover,
+.confirmacao__botao--confirmar:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgb(0 0 0 / 0.2);
+}
+
+.confirmacao__botao:focus-visible {
+  outline: 2px solid var(--white);
+  outline-offset: 2px;
+}
+
+@keyframes confirmacao-fundo-entrar { from { opacity: 0; } to { opacity: 1; } }
+@keyframes confirmacao-fundo-sair { from { opacity: 1; } to { opacity: 0; } }
+@keyframes confirmacao-entrar { from { transform: scale(0.96) translateY(-0.5rem); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes confirmacao-sair { from { transform: none; opacity: 1; } to { transform: scale(0.96) translateY(-0.5rem); opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .alerta,
+  .alerta--saindo,
+  .confirmacao,
+  .confirmacao--saindo,
+  .confirmacao__janela,
+  .confirmacao--saindo .confirmacao__janela {
+    animation: none;
+  }
+}
+
+/* Indicador de carregamento (carregando() em notificacao.js): fica no centro do alto da tela, numa região própria (#carregamentos),
+   como uma pílula bem escura, totalmente arredondada, com a rodinha à esquerda */
+.carregamentos {
+  position: fixed;
+  top: 15px;
+  left: 50%;
+  z-index: 110; /* acima das notificações (100) */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  translate: -50% 0;
+  pointer-events: none;
+}
+
+.alerta--carregando {
+  --cor: #1b1c1b;
+  width: auto;
+  min-height: 0;
+  gap: 0.8rem;
+  padding: 0.75rem 1.4rem 0.75rem 1.1rem;
+  border-radius: 999px;
+  box-shadow: 0 8px 20px rgb(0 0 0 / 0.35);
+  animation: carregando-entrar 0.28s cubic-bezier(0.16, 1, 0.3, 1) both; /* desce do alto da tela */
+}
+
+.alerta--carregando.alerta--saindo {
+  animation: carregando-sair 0.12s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+}
+
+@keyframes carregando-entrar {
+  from { opacity: 0; transform: translateY(-1.2rem) scale(0.92); }
+}
+
+@keyframes carregando-sair {
+  to { opacity: 0; transform: translateY(-0.8rem) scale(0.95); }
+}
+
+.alerta--carregando .alerta__mensagem {
+  flex: none;
+  font-weight: 700;
+}
+
+/* a rodinha: um anel de traço uniforme (trilho e arco com a mesma espessura) que gira sempre na mesma velocidade, sem acelerar nem parar */
+.alerta__roda {
+  flex: none;
+  box-sizing: border-box;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 0.22rem solid rgb(255 255 255 / 0.18);
+  border-top-color: #4ade80;
+  border-radius: 50%;
+  animation: alerta-roda 0.8s linear infinite;
+}
+
+@keyframes alerta-roda {
+  to { rotate: 360deg; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .alerta__roda {
+    animation-duration: 2.4s;
+  }
+}

@@ -1,0 +1,376 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
+/* Tela de Metas: layout, cartões, formulário, lista e barra de progresso (prefixo goals-).
+   Os campos do formulário (.campo) e o calendário vêm de shared/styles/campos.css e calendario.css.
+   Usa as variáveis de tema de core/styles/global.css. */
+
+.goals-page {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.goals-page [hidden] {
+  display: none !important; /* os estados do HTML usam o atributo hidden, mesmo em elementos com display próprio */
+}
+
+.goals-cabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.goals-cabecalho h1 {
+  font-size: 1.75rem;
+}
+
+.goals-subtitulo,
+.goals-texto-suave,
+.goals-ajuda {
+  color: var(--texto-suave);
+}
+
+.goals-subtitulo {
+  margin-top: 0.25rem;
+}
+
+.goals-ajuda {
+  font-size: 0.9rem;
+}
+
+.goals-cartao {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem;
+  border: var(--borda-elemento, 0);
+  border-radius: 1rem;
+  background: var(--fundo-card);
+  box-shadow: var(--sombra);
+}
+
+.goals-cartao h2 {
+  font-size: 1.1rem;
+}
+
+/* ---------------------------------------------------------------- botões */
+
+.goals-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.goals-botao {
+  transition: scale 0.1s ease, box-shadow 0.1s ease, background-color var(--duracao-cor) ease, color var(--duracao-cor) ease;
+  min-height: 2.75rem;
+  padding: 0.5rem 1.25rem;
+  border: var(--borda-elemento, 0);
+  border-radius: 0.6rem;
+  color: var(--destaque-texto);
+  background: var(--destaque); /* botão primário: verde */
+  box-shadow: var(--sombra);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.goals-botao--secundario {
+  color: var(--texto-suave);
+  background: var(--fundo-campo);
+  font-weight: 600;
+}
+
+/* hover ou Tab: o botão secundário se preenche com a cor principal; desativado não muda */
+.goals-botao--secundario:hover:not(:disabled),
+.goals-botao--secundario:focus-visible:not(:disabled) {
+  color: var(--destaque-texto);
+  background: var(--destaque);
+}
+
+.goals-botao--perigo {
+  color: var(--white);
+  background: var(--negativo); /* ação destrutiva (excluir): vermelho */
+}
+
+.goals-botao--perigo:hover:not(:disabled),
+.goals-botao--perigo:focus-visible:not(:disabled) {
+  background: color-mix(in srgb, var(--negativo) 82%, var(--black));
+}
+
+.goals-botao:hover:not(:disabled),
+.goals-botao:focus-visible:not(:disabled) {
+  scale: 1.01;
+}
+
+.goals-botao:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+/* foco do teclado visível: um contorno na cor de foco, além da sombra e do scale */
+.goals-botao:focus-visible {
+  outline: 2px solid var(--foco);
+  outline-offset: 2px;
+  box-shadow: var(--sombra-foco);
+}
+
+/* ---------------------------------------------------------------- formulário */
+
+.goals-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 1rem;
+}
+
+.goals-campo--larga {
+  grid-column: 1 / -1;
+}
+
+/* ---------------------------------------------------------------- lista */
+
+.goals-estado {
+  display: grid;
+  justify-items: start;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  border-radius: 1rem;
+  color: var(--texto-suave);
+  background: var(--fundo-card);
+  box-shadow: var(--sombra);
+}
+
+.goals-itens {
+  display: grid;
+  gap: 1rem;
+  list-style: none;
+}
+
+.goals-item__topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.goals-item__titulo {
+  font-size: 1.15rem;
+}
+
+/* etiqueta de estado: o texto sempre aparece; a cor só reforça */
+.goals-status {
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--texto);
+  background: var(--fundo-campo);
+}
+
+.goals-status--ok {
+  color: var(--positivo);
+}
+
+.goals-status--erro {
+  color: var(--negativo);
+}
+
+.goals-item__valores {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.goals-item__atual {
+  font-size: 1.35rem;
+}
+
+.goals-item__percentual {
+  margin-left: auto;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+/* a barra: --progresso (0% a 100%) é definido pelo JS no elemento .goals-barra */
+.goals-barra {
+  height: 0.75rem;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--fundo-campo);
+}
+
+.goals-barra__preenchida {
+  width: var(--progresso, 0%);
+  height: 100%;
+  border-radius: inherit;
+  background: var(--destaque);
+  transition: width 0.6s ease;
+}
+
+.goals-barra--concluida .goals-barra__preenchida {
+  background: var(--positivo);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .goals-barra__preenchida {
+    transition: none;
+  }
+}
+
+.goals-detalhes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.75rem;
+}
+
+.goals-detalhes div {
+  padding: 0.6rem 0.9rem;
+  border-radius: 0.6rem;
+  background: var(--fundo-campo);
+}
+
+.goals-detalhes dt {
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+}
+
+.goals-detalhes dd {
+  font-weight: 700;
+}
+
+.goals-item__origem {
+  font-size: 0.85rem;
+}
+/* A janela "Nova meta" no mesmo estilo do "Novo lançamento": cartão de cantos bem arredondados, campos altos e sem contorno,
+   botões em pílula e a mesma entrada (zoom curto com fade). */
+:is(.transactions-meta-modal, .goals-modal):not([hidden]) .goals-cartao {
+  animation: meta-modal-entrar 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes meta-modal-entrar {
+  from { opacity: 0; transform: scale(0.96); }
+}
+
+:is(.transactions-meta-modal, .goals-modal) .goals-cartao {
+  width: 100%;
+  max-width: 28rem;
+  gap: 1rem;
+  padding: 1.5rem;
+  border: 0;
+  border-radius: 1.75rem;
+  box-shadow: var(--sombra-flutuante);
+}
+
+:is(.transactions-meta-modal, .goals-modal) .goals-cartao h2 {
+  font-size: 1.35rem;
+}
+
+:is(.transactions-meta-modal, .goals-modal) .goals-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+:is(.transactions-meta-modal, .goals-modal) .campo label {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+:is(.transactions-meta-modal, .goals-modal) .campo input:not([type='radio']):not([type='checkbox']) {
+  min-height: 3.25rem;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--borda);
+  border-radius: 1rem;
+  font-size: 1rem;
+}
+
+:is(.transactions-meta-modal, .goals-modal) .goals-ajuda {
+  font-size: 0.85rem;
+}
+
+:is(.transactions-meta-modal, .goals-modal) .goals-acoes {
+  flex-wrap: nowrap;
+  padding-top: 1rem;
+  border-top: 1px solid var(--borda);
+}
+
+:is(.transactions-meta-modal, .goals-modal) .goals-botao {
+  min-height: 3.2rem;
+  padding: 0.5rem 1.25rem;
+  border: 0;
+  border-radius: 999px;
+  box-shadow: none;
+}
+
+:is(.transactions-meta-modal, .goals-modal) .goals-botao:not(.goals-botao--secundario) {
+  flex: 1;
+  background: var(--destaque);
+  color: var(--destaque-texto);
+}
+
+:is(.transactions-meta-modal, .goals-modal) .goals-botao--secundario {
+  background: var(--fundo-celula);
+}
+
+/* sem contorno ao clicar nem ao usar o teclado: o botão só cresce de leve */
+:is(.transactions-meta-modal, .goals-modal) .goals-botao:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+/* A tela de Metas usa só a janela: o formulário fica escondido até clicar em "Nova meta" ou "Editar", e aparece por cima da página. */
+.goals-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: none;
+  place-items: center;
+  overflow-y: auto;
+  padding: 1rem;
+  background: rgb(0 0 0 / 0.6);
+  backdrop-filter: blur(6px); /* o fundo desfocado atrás da janela */
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.goals-modal:has(#goals-form-area:not([hidden])) {
+  display: grid;
+}
+
+.goals-modal .goals-cartao[hidden] {
+  display: none;
+}
+
+.goals-modal:has(#goals-form-area:not([hidden])) {
+  animation: meta-fundo-entrar 0.2s ease;
+}
+
+@keyframes meta-fundo-entrar {
+  from { opacity: 0; }
+}
+
+/* o ícone da meta (escolhido no formulário): um círculo suave na cor escolhida, antes do título */
+.goals-item__icone {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--icone-cor, var(--destaque)) 18%, transparent);
+  color: var(--icone-cor, var(--destaque));
+}
+
+.goals-item__icone[hidden] {
+  display: none;
+}
+
+.goals-item__topo:has(.goals-item__icone:not([hidden])) {
+  justify-content: flex-start;
+  gap: 0.75rem;
+}
+
+.goals-item__topo:has(.goals-item__icone:not([hidden])) .goals-status {
+  margin-left: auto;
+}

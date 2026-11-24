@@ -1,0 +1,653 @@
+/* Campos de formulário compartilhados (usa as variáveis de tema de core/styles/global.css). */
+
+.campo {
+  --escala-foco: 1.03; /* quanto o campo cresce quando está selecionado (o mesmo valor do hover dos botões) */
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.campo label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+}
+
+.campo input:not([type='radio']):not([type='checkbox']),
+.campo select,
+.campo textarea {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.75rem;
+  border: var(--borda-elemento, 0);
+  border-radius: 0.6rem;
+  box-shadow: var(--sombra);
+  color: var(--texto);
+  background: var(--fundo-campo);
+  font: inherit;
+  transition: scale 0.1s ease; /* o campo cresce e volta suavemente (mesma duração do hover dos botões) */
+}
+
+.campo textarea {
+  resize: vertical;
+}
+
+.campo input::placeholder,
+.campo textarea::placeholder {
+  color: var(--texto-suave);
+  opacity: 0.8;
+}
+
+/* Campo selecionado: sem contorno, ele cresce um pouco (como o hover dos botões). */
+.campo input:not([type='radio']):not([type='checkbox']):focus,
+.campo select:focus,
+.campo select:open, /* com a lista aberta o foco passa para ela, mas o select continua "selecionado" */
+.campo textarea:focus {
+  outline: none;
+  scale: var(--escala-foco);
+}
+
+.campo input:not([type='radio']):not([type='checkbox'])[aria-invalid='true'],
+.campo select[aria-invalid='true'],
+.campo textarea[aria-invalid='true'] {
+  /* sem borda: o erro aparece como um anel vermelho (o seletor do input é mais longo para ganhar da regra base) */
+  box-shadow: 0 0 0 2px var(--negativo), var(--sombra);
+}
+
+.campo__erro {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--negativo);
+}
+
+/* Lista aberta do select, parecida com o calendário do período: cantos arredondados, sombra, fundo de cartão,
+   opções com cantos arredondados e a mesma descida suave. Usa o select personalizável (appearance: base-select,
+   Chrome e Edge recentes); nos outros navegadores a lista continua nativa, sem perder a função. */
+@supports (appearance: base-select) {
+  .campo select,
+  .campo select::picker(select) {
+    appearance: base-select;
+  }
+
+  .campo select::picker-icon {
+    color: var(--texto-suave);
+    transition: rotate 0.2s ease;
+  }
+
+  .campo select:open::picker-icon {
+    rotate: 180deg;
+  }
+
+  .campo select::picker(select) {
+    box-sizing: border-box;
+    margin-block: 0.3rem;
+    padding: 0.35rem;
+    border: var(--borda-elemento, 0);
+    border-radius: 0.75rem;
+    background: var(--fundo-card);
+    box-shadow: var(--sombra-flutuante);
+
+    /* descida suave ao abrir (a mesma do calendário) */
+    opacity: 1;
+    translate: 0 0;
+    transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1), translate 0.18s cubic-bezier(0.16, 1, 0.3, 1), overlay 0.18s allow-discrete, display 0.18s allow-discrete;
+  }
+
+  .campo select::picker(select):not(:popover-open) {
+    opacity: 0;
+    translate: 0 -0.6rem;
+    transition: opacity 0.1s cubic-bezier(0.7, 0, 0.84, 0), translate 0.1s cubic-bezier(0.7, 0, 0.84, 0), overlay 0.1s allow-discrete, display 0.1s allow-discrete;
+  }
+
+  @starting-style {
+    .campo select::picker(select):popover-open {
+      opacity: 0;
+      translate: 0 -0.6rem;
+    }
+  }
+
+  /* a lista nativa nunca fica mais estreita que o campo nem que a maior opção */
+  .campo select::picker(select) {
+    min-inline-size: anchor-size(inline);
+    max-inline-size: calc(100vw - 1rem);
+  }
+
+  .campo select option {
+    padding: 0.5rem 0.7rem;
+    white-space: nowrap;
+    border-radius: 0.5rem;
+    color: var(--texto);
+    background: transparent;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+
+  /* passar o mouse (ou navegar com o teclado): o mesmo verde escuro dos dias do calendário */
+  .campo select option:hover,
+  .campo select option:focus-visible {
+    outline: none;
+    background: color-mix(in srgb, var(--destaque) 22%, transparent);
+  }
+
+  .campo select option:checked {
+    color: var(--destaque-texto);
+    background: var(--destaque);
+    font-weight: 700;
+  }
+
+  .campo select option::checkmark {
+    display: none; /* a opção escolhida já aparece em verde */
+  }
+}
+
+/* Selects com lista própria (shared/components/seletor.js): a lista abre ao passar o mouse ou ao chegar por Tab,
+   com o visual do calendário (cantos arredondados, sombra e a mesma descida suave). */
+.campo--seletor {
+  position: relative;
+}
+
+/* o clique vai para o campo, e não para o select, para não abrir a lista nativa do navegador */
+.campo--seletor select {
+  pointer-events: none;
+  text-align: center;
+  text-align-last: center; /* centraliza também o texto da opção escolhida, e não só as da lista */
+  justify-content: center;
+  position: relative;
+  padding-inline: 0.6rem;
+}
+
+/* O texto exibido do select é o <button><selectedcontent> escrito no começo de cada select (no HTML). Ele ocupa o campo
+   todo e centraliza o texto na área à esquerda da setinha: a folga da direita (--folga-seta) é a largura da seta.
+   Para mover o texto, mude o padding: aumentar o de cima o desce, e aumentar o da direita o leva para a esquerda. */
+.campo--seletor select > button {
+  --folga-seta: 1.4rem;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem var(--folga-seta) 0 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: inherit;
+}
+
+.campo--seletor select::picker-icon {
+  position: absolute;
+  right: 0.7rem;
+}
+
+/* Rótulo longo (ex.: "Cartão de crédito"): fica numa linha só, com reticências, e nunca sai do campo */
+.campo select > button {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.campo select > button selectedcontent {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.seletor__lista {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  right: 0;
+  margin-inline: auto; /* com largura menor que a do campo, a lista fica no meio dele */
+  width: min(100%, 16rem); /* a lista que abre é mais estreita que os campos largos (nos campos pequenos ela acompanha o campo) */
+  z-index: 30;
+  padding: 0.35rem;
+  border: var(--borda-elemento, 0);
+  border-radius: 0.75rem;
+  background: var(--fundo-card);
+  box-shadow: var(--sombra-flutuante);
+  max-height: var(--altura-lista, 18rem); /* recalculada em seletor.js conforme o espaço livre da janela */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  /* fechada: invisível e fora do Tab; aberta: desce suavemente (a mesma animação do calendário) */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-0.6rem);
+  transition: opacity 0.1s cubic-bezier(0.7, 0, 0.84, 0), transform 0.1s cubic-bezier(0.7, 0, 0.84, 0), visibility 0s 0.1s;
+}
+
+/* sem espaço embaixo do campo, a lista abre para cima (decidido em seletor.js) */
+.seletor__lista--acima {
+  top: auto;
+  bottom: calc(100% + 0.25rem);
+  transform: translateY(0.6rem); /* aberta para cima, a lista entra subindo em direção ao campo */
+}
+
+.seletor__lista--aberta {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  transition: opacity 0.18s cubic-bezier(0.16, 1, 0.3, 1), transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s;
+}
+
+.seletor__opcao {
+  padding: 0.5rem 0.7rem;
+  border-radius: 0.5rem;
+  color: var(--texto);
+  font-size: 0.85rem;
+  text-align: center;
+  cursor: pointer;
+}
+
+.seletor__opcao:hover {
+  background: color-mix(in srgb, var(--destaque) 22%, transparent);
+}
+
+.seletor__opcao--escolhida,
+.seletor__opcao--escolhida:hover {
+  color: var(--destaque-texto);
+  background: var(--destaque);
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .seletor__lista,
+  .seletor__lista--aberta {
+    transition: none;
+  }
+}
+
+/* Caixa de seleção (checkbox) do projeto: fundo cinza e cantos bem arredondados; marcada, fica na cor de destaque com o
+   "visto". Usada no extrato (selecionar várias transações) e no formulário de transação (Vincular a uma meta). Use
+   <input type="checkbox" class="caixa-selecao">. */
+.caixa-selecao {
+  appearance: none;
+  display: inline-grid;
+  flex: none;
+  place-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  margin: 0;
+  border: 0;
+  border-radius: 0.55rem;
+  background: color-mix(in srgb, var(--texto) 16%, var(--fundo-card));
+  cursor: pointer;
+  transition: background-color var(--duracao-cor) ease, box-shadow 0.1s ease, scale 0.1s ease;
+}
+
+.caixa-selecao::after {
+  content: '';
+  width: 0.85rem;
+  height: 0.85rem;
+  background: var(--destaque-texto);
+  clip-path: polygon(14% 52%, 0 66%, 38% 100%, 100% 22%, 86% 8%, 38% 72%); /* o visto */
+  scale: 0;
+  transition: scale 0.1s ease;
+}
+
+.caixa-selecao:hover {
+  background: color-mix(in srgb, var(--texto) 26%, var(--fundo-card));
+}
+
+.caixa-selecao:checked,
+.caixa-selecao:indeterminate {
+  background: var(--destaque);
+}
+
+.caixa-selecao:checked::after {
+  scale: 1;
+}
+
+/* "algumas selecionadas" no cabeçalho do extrato: um traço no lugar do visto */
+.caixa-selecao:indeterminate::after {
+  clip-path: none;
+  width: 0.8rem;
+  height: 0.19rem;
+  border-radius: 0.1rem;
+  scale: 1;
+}
+
+.caixa-selecao:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--destaque); /* anel de foco do teclado */
+  scale: var(--escala-foco, 1.03);
+}
+
+/* campo com erro: uma sacudida curta de lado a lado (usa `translate`, que não briga com o `scale` do foco) */
+.campo--tremendo {
+  animation: campo-tremer 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes campo-tremer {
+  0%, 100% { translate: 0; }
+  15% { translate: -7px; }
+  30% { translate: 6px; }
+  45% { translate: -5px; }
+  60% { translate: 4px; }
+  75% { translate: -2px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .campo--tremendo {
+    animation: none;
+  }
+}
+
+
+/* ---------------------------------------------------------------- lista em folha (campos dentro de uma janela com data-folha)
+   A lista sobe do rodapé da janela, com a largura dela: título e botão de fechar no alto, linhas grandes com o círculo (conta) ou o
+   quadrado (cartão) do banco, o "visto" na escolhida e, se o campo tiver data-folha-rodape, um botão no rodapé. A posição vem de
+   seletor.js (variáveis --folha-*); a entrada é uma cortina que sobe da borda de baixo da janela. */
+.seletor__lista--folha,
+[data-folha] .seletor__lista {
+  position: fixed;
+  top: 50%; /* no meio da tela (centralizada na vertical) */
+  right: auto;
+  bottom: auto;
+  left: var(--folha-esquerda, 0);
+  width: var(--folha-largura, 100%);
+  max-height: var(--folha-altura, 70vh);
+  margin: 0;
+  padding: 0 0 0.75rem;
+  z-index: 90;
+  border: 1px solid var(--borda);
+  border-radius: 1.5rem;
+  box-shadow: none; /* sem sombra: quem destaca a lista é o fundo escuro */
+  opacity: 0;
+  transform: translateY(calc(-50% + 1.2rem));
+  transition: opacity 0.12s cubic-bezier(0.7, 0, 0.84, 0), transform 0.12s cubic-bezier(0.7, 0, 0.84, 0), visibility 0s linear 0.12s;
+}
+
+[data-folha] .seletor__lista--aberta {
+  opacity: 1;
+  transform: translateY(-50%);
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s;
+}
+
+/* o fundo escuro que cobre a tela enquanto a lista em folha está aberta (criado por seletor.js, fica entre a janela e a lista); sem desfoque */
+.seletor__escurecer {
+  position: fixed;
+  inset: 0;
+  z-index: 85;
+  background: rgb(0 0 0 / 0.62);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s cubic-bezier(0.7, 0, 0.84, 0), visibility 0s linear 0.15s;
+}
+
+.seletor__escurecer--ligado {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s;
+}
+
+[data-folha] .campo--seletor {
+  position: static; /* a lista se ancora na janela, não no campo */
+}
+
+.seletor__cabecalho {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem 0.75rem;
+  background: var(--fundo-card);
+  color: var(--texto);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.seletor__fechar {
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border: 0;
+  border-radius: 50%;
+  background: var(--fundo-linha, var(--fundo-campo));
+  color: var(--texto-suave);
+  cursor: pointer;
+  transition: scale 0.1s ease;
+}
+
+.seletor__fechar:hover,
+.seletor__fechar:focus-visible {
+  scale: 1.08;
+  outline: none;
+}
+
+.seletor__opcao--folha {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.65rem 1.5rem;
+  border-radius: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-align: left;
+}
+
+/* a escolhida não se pinta: só ganha o "visto" à direita */
+.seletor__opcao--folha.seletor__opcao--escolhida,
+.seletor__opcao--folha.seletor__opcao--escolhida:hover {
+  color: var(--texto);
+  background: transparent;
+  font-weight: 700;
+}
+
+.seletor__opcao--folha:hover {
+  background: var(--fundo-linha, color-mix(in srgb, var(--texto) 6%, transparent));
+}
+
+.seletor__textos {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.seletor__titulo {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.seletor__subtitulo {
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.seletor__visto {
+  flex: none;
+  color: var(--positivo);
+}
+
+.seletor__avatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.9rem;
+  height: 2.9rem;
+  border-radius: 50%;
+  background: var(--avatar-fundo, #4b4d4b);
+  color: var(--avatar-texto, #fff);
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.seletor__avatar--quadrado {
+  width: 3.4rem;
+  height: 2.4rem;
+  border-radius: 0.5rem;
+}
+
+.seletor__rodape {
+  position: sticky;
+  bottom: 0;
+  padding: 0.75rem 1.5rem 0.25rem;
+  background: var(--fundo-card);
+}
+
+.seletor__rodape-botao {
+  width: 100%;
+  min-height: 3rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--destaque);
+  color: var(--destaque-texto);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: scale 0.1s ease;
+}
+
+.seletor__rodape-botao:hover,
+.seletor__rodape-botao:focus-visible {
+  scale: 1.02;
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-folha] .seletor__lista,
+  [data-folha] .seletor__lista--aberta,
+  .seletor__escurecer,
+  .seletor__escurecer--ligado {
+    transition: none;
+  }
+}
+
+/* o ícone da opção: um círculo suave na cor do matiz dela */
+.seletor__icone {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.7rem;
+  height: 2.7rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--icone-cor, var(--texto-suave)) 16%, transparent);
+  color: var(--icone-cor, var(--texto-suave));
+}
+
+
+/* ---------------------------------------------------------------- escolha de ícone e cor (shared/components/escolhaIcone.js)
+   Uma grade de ícones e uma fileira de cores; o ícone marcado ganha a cor escolhida (--escolha-cor). */
+.escolha-icone {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.escolha-icone__rotulo {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+}
+
+.escolha-icone__grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(2.9rem, 1fr));
+  gap: 0.4rem;
+}
+
+.escolha-icone__item {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border: 1px solid transparent;
+  border-radius: 0.85rem;
+  background: var(--fundo-linha, var(--fundo-campo));
+  color: var(--texto-suave);
+  cursor: pointer;
+  transition: scale 0.1s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.escolha-icone__item:hover,
+.escolha-icone__item:focus-visible {
+  scale: 1.06;
+  outline: none;
+}
+
+.escolha-icone__item--marcado {
+  border-color: var(--escolha-cor);
+  background: color-mix(in srgb, var(--escolha-cor) 18%, transparent);
+  color: var(--escolha-cor);
+}
+
+.escolha-icone__padrao {
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.escolha-icone__cores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.escolha-icone__cor {
+  width: 1.7rem;
+  height: 1.7rem;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  background: var(--ponto, var(--fundo-linha));
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  cursor: pointer;
+  transition: scale 0.1s ease, outline-color 0.15s ease;
+}
+
+.escolha-icone__cor--padrao {
+  border: 2px dashed var(--texto-suave);
+  background: transparent;
+}
+
+.escolha-icone__cor:hover,
+.escolha-icone__cor:focus-visible {
+  scale: 1.12;
+}
+
+.escolha-icone__cor--marcada {
+  outline-color: var(--texto);
+}
+
+/* o avatar com ícone nas listas em folha: o desenho em branco sobre a cor escolhida */
+.seletor__avatar svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+/* O avatar com o logo do banco: um selo branco, mais largo que alto (a maioria dos logos é horizontal), com o logo encaixado sem cortar. */
+.logo-banco {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.seletor__avatar.com-logo {
+  width: 3.8rem;
+  height: 2.6rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.65rem;
+  background: #ffffff;
+}
+
+/* A tag "Open Finance": a conta (ou o cartão) vem do Open Finance; mesma tag em Contas e em Cartão */
+.tag-open-finance {
+  display: inline-block;
+  width: fit-content;
+  justify-self: start;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--destaque) 18%, transparent);
+  color: var(--destaque);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tag-open-finance[hidden] {
+  display: none;
+}
+

@@ -1,0 +1,131 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
+/* Componente ContasMinhas: a lista das contas do usuário. Cartão e botões vêm de styles/contas-conectadas.css. */
+
+.minhas__topo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.minhas__nova {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* as contas ficam numa fila horizontal com barra de rolagem, como os cartões da aba Cartão: três à vista, o resto se vê rolando */
+.minhas__itens {
+  display: flex;
+  gap: 1rem;
+  margin: 0;
+  padding: 1rem 1rem 1.1rem;
+  border-radius: 1rem;
+  background: var(--fundo); /* a faixa das contas, mais escura que o cartão da seção */
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: 1rem;
+  list-style: none;
+}
+
+.minhas__itens > * {
+  flex: 0 0 max(13rem, calc((100% - 5rem) / 4)); /* quatro à vista, o resto se vê rolando */
+  scroll-snap-align: start;
+}
+
+.minha {
+  display: grid;
+  align-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.2rem;
+  border-radius: 0.9rem;
+  background: var(--fundo-card); /* o cartão de cada conta se destaca da faixa escura */
+}
+
+.minha__info {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.minha__banco {
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+}
+
+.minha__nome {
+  font-size: 1.05rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.minha__tipo {
+  justify-self: start;
+  padding: 0.1rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--texto-suave);
+  background: var(--fundo-card);
+}
+
+.minha__saldo {
+  display: grid;
+  justify-items: start;
+  gap: 0.1rem;
+}
+
+.minha__saldo-rotulo {
+  font-size: 0.75rem;
+}
+
+.minha__saldo strong {
+  font-size: 1.1rem;
+}
+
+.minha__saldo--negativo {
+  color: var(--negativo);
+}
+
+.minha__acoes {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.minha__acoes .contas-botao {
+  flex: 1;
+  min-height: 2.25rem;
+  padding: 0.3rem 0.9rem;
+}
+
+/* o avatar da conta: círculo na cor do banco (ou na cor escolhida), com as iniciais ou o ícone escolhido */
+.minha__avatar {
+  display: grid;
+  place-items: center;
+  width: 2.8rem;
+  height: 2.8rem;
+  margin-bottom: 0.4rem;
+  border-radius: 50%;
+  background: var(--avatar-fundo, #4b4d4b);
+  color: var(--avatar-texto, #fff);
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.minha__avatar svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.minha__avatar.com-logo {
+  width: 3.8rem;
+  height: 2.6rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.65rem;
+  background: #ffffff;
+}

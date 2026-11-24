@@ -1,0 +1,890 @@
+/*
+Autor: Julia Da Silva Maia 
+ RA: 25016200
+*/
+/* CORES DO TEMA ESCURO */
+
+:root[data-tema="escuro"] .minha-conta {
+    /* as cores vêm das variáveis globais (core/styles/global.css), então acompanham a paleta escolhida */
+    --conta-fundo: var(--fundo);
+    --conta-card: var(--fundo-card);
+    --conta-campo: var(--fundo-campo);
+    --conta-borda: var(--borda);
+    --conta-texto: var(--texto);
+    --conta-suave: var(--texto-suave);
+    --conta-hover: color-mix(in srgb, var(--texto) 8%, var(--fundo-card));
+    --conta-destaque: var(--destaque);
+}
+
+/* CORES DO TEMA CLARO */
+
+:root[data-tema="claro"] .minha-conta {
+    --conta-fundo: var(--fundo);
+    --conta-card: var(--fundo-card);
+    --conta-campo: color-mix(in srgb, var(--texto) 7%, var(--fundo-card));
+    --conta-borda: var(--borda);
+    --conta-texto: var(--texto);
+    --conta-suave: var(--texto-suave);
+    --conta-hover: color-mix(in srgb, var(--texto) 7%, var(--fundo-card));
+    --conta-destaque: var(--destaque);
+}
+
+/* ESTRUTURA PRINCIPAL */
+
+.minha-conta {
+    width: 100%;
+    color: var(--conta-texto);
+    font-family: inherit;
+}
+
+.minha-conta * {
+    box-sizing: border-box;
+}
+
+/* CABEÇALHO */
+
+.minha-conta__cabecalho h1 {
+    margin: 0 0 8px;
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--conta-texto);
+}
+
+.minha-conta__cabecalho p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--conta-suave);
+}
+
+/* ABAS */
+
+.minha-conta__abas {
+    display: flex;
+    gap: 5px;
+    width: fit-content;
+    max-width: 100%;
+    padding: 5px;
+    margin: 26px 0;
+    border: 1px solid var(--conta-borda);
+    border-radius: 10px;
+    background: var(--conta-card);
+    overflow-x: auto;
+}
+
+.minha-conta .aba {
+    padding: 11px 18px;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--conta-suave);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.minha-conta .aba:hover {
+    color: var(--conta-texto);
+}
+
+.minha-conta .aba.ativo {
+    background: var(--conta-campo);
+    color: var(--conta-texto);
+    font-weight: 700;
+}
+
+/* ========================================
+   VISÃO GERAL
+======================================== */
+
+.visao-geral {
+    display: grid;
+    grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+    gap: 20px;
+    align-items: stretch;
+}
+
+/* COLUNA DO USUÁRIO */
+
+.visao-geral__coluna-usuario {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 24px;
+    border: 1px solid var(--conta-borda);
+    border-radius: 13px;
+    background: var(--conta-card);
+}
+
+.visao-geral__coluna-opcoes {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-width: 0;
+}
+
+/* AVATAR E INFORMAÇÕES */
+
+.visao-geral__usuario {
+    text-align: center;
+}
+
+.usuario__avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 76px;
+    height: 76px;
+    margin: 0 auto 14px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #a63bd8, #ee459e);
+    color: #ffffff;
+    font-size: 30px;
+    font-weight: 800;
+}
+
+.visao-geral__usuario h2 {
+    margin: 0 0 5px;
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--conta-texto);
+    overflow-wrap: anywhere;
+}
+
+.visao-geral__usuario p {
+    margin: 0;
+    font-size: 12px;
+    color: var(--conta-suave);
+    overflow-wrap: anywhere;
+}
+
+/* PLANO E BANCO */
+
+.usuario__estatisticas {
+    display: grid;
+    grid-template-columns:1fr;
+    gap: 10px;
+    margin-top: 24px;
+}
+
+.usuario__estatistica {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    min-height: 58px;
+    padding: 10px 6px;
+    border-radius: 9px;
+    background: var(--conta-campo);
+}
+
+.usuario__estatistica span {
+    color: var(--conta-suave);
+    font-size: 11px;
+}
+
+.usuario__estatistica strong {
+    color: var(--conta-texto);
+    font-size: 12px;
+    overflow-wrap: anywhere;
+}
+
+/* CARTÃO PRO */
+
+.visao-geral__premium {
+    position: relative;
+    padding: 17px;
+    border: 1px solid #344462;
+    border-radius: 11px;
+    background: linear-gradient(125deg, #17251b, #192b4c);
+}
+
+.pro__selo {
+    display: inline-block;
+    padding: 4px 7px;
+    border-radius: 5px;
+    background: #c4f52b;
+    color: #152000;
+    font-size: 10px;
+    font-weight: 900;
+}
+
+.pro__brilho {
+    position: absolute;
+    top: 18px;
+    right: 16px;
+}
+
+.pro__brilho::after {
+    content: "✦";
+    color: #c4f52b;
+    font-size: 22px;
+}
+
+.visao-geral__premium p {
+    margin: 17px 0;
+    color: #e3e9f3;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.minha-conta .botao-assinatura {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    margin: 0 auto;
+    padding: 11px 17px;
+    border-radius: 7px;
+    background: #c4f52b;
+    color: #182400;
+    font-size: 12px;
+    font-weight: 800;
+    text-decoration: none;
+    transition: filter .2s;
+}
+
+.minha-conta .botao-assinatura:hover {
+    filter: brightness(.93);
+}
+
+/* GRUPOS DE OPÇÕES*/
+
+.grupo-opcoes {
+    padding: 10px 0 0;
+    border: 1px solid var(--conta-borda);
+    border-radius: 13px;
+    background: var(--conta-card);
+    overflow: hidden;
+}
+
+.grupo-opcoes h3 {
+    margin: 0;
+    padding: 7px 18px 14px;
+    color: var(--conta-suave);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+.minha-conta .opcao-conta {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    padding: 16px 18px;
+    border: none;
+    border-top: 1px solid var(--conta-borda);
+    background: transparent;
+    color: var(--conta-texto);
+    text-decoration: none;
+    text-align: left;
+    font: inherit;
+    cursor: pointer;
+}
+
+.minha-conta .opcao-conta:hover {
+    background: var(--conta-hover);
+}
+
+.opcao-conta__icone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: var(--conta-campo);
+    color: var(--conta-texto);
+    font-size: 17px;
+}
+
+.opcao-conta__texto {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.opcao-conta__texto strong {
+    color: var(--conta-texto);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.opcao-conta__texto small {
+    color: var(--conta-suave);
+    font-size: 11px;
+}
+
+.opcao-conta__seta {
+    margin-left: auto;
+    color: var(--conta-suave);
+    font-size: 20px;
+}
+
+/* ABA PERFIL*/
+
+.perfil-conta,
+.preferencias-conta,
+.seguranca-conta {
+    padding: 25px;
+    border: 1px solid var(--conta-borda);
+    border-radius: 13px;
+    background: var(--conta-card);
+}
+
+.secao-cabecalho {
+    margin-bottom: 26px;
+}
+
+.secao-cabecalho h2 {
+    margin: 0 0 8px;
+    color: var(--conta-texto);
+    font-size: 21px;
+}
+
+.secao-cabecalho p {
+    margin: 0;
+    color: var(--conta-suave);
+    font-size: 13px;
+}
+
+.perfil-conta__dados {
+    display: grid;
+    gap: 18px;
+}
+
+.campo-perfil {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.campo-perfil label {
+    color: var(--conta-texto);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.campo-perfil input {
+    width: 100%;
+    padding: 13px;
+    border: 1px solid var(--conta-borda);
+    border-radius: 8px;
+    background: var(--conta-campo);
+    color: var(--conta-texto);
+    font: inherit;
+}
+
+.perfil-conta .botao-assinatura {
+    margin: 8px 0 0;
+}
+
+/* SEGURANÇA */
+
+.preferencia-item,
+.seguranca-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--conta-borda);
+}
+
+.preferencia-item:last-child,
+.seguranca-item:last-child {
+    border-bottom: none;
+}
+
+.preferencia-item__informacoes h3,
+.seguranca-item__informacoes h3 {
+    margin: 0 0 7px;
+    color: var(--conta-texto);
+    font-size: 15px;
+}
+
+.preferencia-item__informacoes p,
+.seguranca-item__informacoes p {
+    margin: 0;
+    color: var(--conta-suave);
+    font-size: 12px;
+}
+
+.minha-conta .botao-seguranca {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 11px 16px;
+    border-radius: 7px;
+    background: var(--conta-destaque);
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+/* PREFERÊNCIAS */
+
+.preferencia-item__controle {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 12px;
+}
+
+.interruptor__estado {
+    color: var(--conta-suave);
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* paletas de cor: um botão de opção com a amostra (escuro e claro) e o nome */
+.preferencia-item--paleta {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.paletas {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.paleta {
+    display: grid;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid var(--conta-borda);
+    border-radius: 14px;
+    background: var(--conta-campo);
+    color: var(--conta-texto);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: scale 0.1s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.paleta:hover,
+.paleta:focus-visible {
+    scale: 1.03;
+    outline: none;
+}
+
+.paleta[aria-checked="true"] {
+    border-color: var(--conta-destaque);
+    background: color-mix(in srgb, var(--conta-destaque) 14%, var(--conta-campo));
+}
+
+.paleta__amostras {
+    display: flex;
+    gap: 6px;
+}
+
+.paleta__amostras span {
+    flex: 1;
+    height: 28px;
+    border-radius: 8px;
+}
+
+.paleta__nome {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.paleta__descricao {
+    color: var(--conta-suave);
+    font-size: 12px;
+}
+
+/* interruptor (botão com role="switch"): ligado = trilho na cor de destaque, bolinha à direita */
+.minha-conta .interruptor {
+    position: relative;
+    flex-shrink: 0;
+    width: 46px;
+    height: 26px;
+    padding: 0;
+    border: 1px solid var(--conta-borda);
+    border-radius: 999px;
+    background: var(--conta-campo);
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.minha-conta .interruptor[aria-checked="true"] {
+    border-color: var(--conta-destaque);
+    background: var(--conta-destaque);
+}
+
+.interruptor__bolinha {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--conta-texto);
+    transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.minha-conta .interruptor[aria-checked="true"] .interruptor__bolinha {
+    transform: translateX(20px);
+    background: #ffffff;
+}
+
+.minha-conta .interruptor:focus-visible {
+    outline: 2px solid var(--conta-destaque);
+    outline-offset: 3px;
+}
+
+#preferencias-mensagem {
+    min-height: 1.2em;
+    margin-top: 14px;
+    color: var(--conta-suave);
+    font-size: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .minha-conta .interruptor,
+    .interruptor__bolinha {
+        transition: none;
+    }
+}
+
+/* ========================================
+   RESPONSIVIDADE
+======================================== */
+
+@media (max-width: 750px) {
+    .visao-geral {
+        grid-template-columns: 1fr;
+    }
+
+    .minha-conta__abas {
+        width: 100%;
+    }
+}
+
+@media (max-width: 450px) {
+    .minha-conta .aba {
+        padding: 10px;
+        font-size: 12px;
+    }
+
+    .seguranca-item,
+    .preferencia-item {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
+/* Salvar alterações — tema claro e escuro */
+#formulario-perfil #salvar-perfil {
+    display: block;
+    width: 100%;
+    padding: 14px 20px;
+    margin-top: 12px;
+
+    background: #C5FA28;
+    color: #111111;
+
+    border: none;
+    border-radius: 10px;
+
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+#formulario-perfil #salvar-perfil:hover {
+    background: #B2E522;
+}
+
+#formulario-perfil #salvar-perfil:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+/* Botão Salvar alterações — tema claro */
+:root[data-tema="claro"] #formulario-perfil #salvar-perfil {
+    background-color: #1d704e;
+    color: #ffffff;
+}
+
+:root[data-tema="claro"] #formulario-perfil #salvar-perfil:hover {
+    background-color: #15583c;
+}
+
+:root[data-tema="escuro"] #formulario-perfil #salvar-perfil {
+    background-color: #c5fa28;
+    color: #111318;
+}
+
+:root[data-tema="escuro"] #formulario-perfil #salvar-perfil:hover {
+    background-color: #b2e522;
+}
+
+/* SEGURANÇA E MFA */
+
+.minha-conta .seguranca-conta {
+    width: 100%;
+    max-width: 850px;
+    padding: 32px;
+    background: var(--conta-card);
+    border: 1px solid var(--conta-borda);
+    border-radius: 16px;
+    color: var(--conta-texto);
+}
+
+.minha-conta .seguranca-conta .secao-cabecalho {
+    margin-bottom: 28px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--conta-borda);
+}
+
+.minha-conta .seguranca-conta .secao-cabecalho h2 {
+    margin: 0 0 8px;
+    font-size: 23px;
+    font-weight: 700;
+    color: var(--conta-texto);
+}
+
+.minha-conta .seguranca-conta .secao-cabecalho p {
+    color: var(--conta-suave);
+    font-size: 13px;
+}
+
+.minha-conta .seguranca-conta__mfa {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.minha-conta .seguranca-conta__mfa h3,
+.minha-conta .seguranca-conta__mfa h4,
+.minha-conta .seguranca-conta__mfa label {
+    color: var(--conta-texto);
+}
+
+.minha-conta .seguranca-conta__mfa h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.minha-conta .seguranca-conta__mfa > p:not(#mfa-status):not(#mfa-mensagem),
+.minha-conta #mfa-configuracao > p {
+    margin: 0;
+    color: var(--conta-suave);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.minha-conta #mfa-status {
+    display: inline-flex;
+    align-items: center;
+    margin: 0;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: var(--conta-campo);
+    color: var(--conta-texto);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.minha-conta #mfa-configuracao,
+.minha-conta #mfa-desativacao {
+    width: 100%;
+    padding: 24px;
+    background: var(--conta-campo);
+    border: 1px solid var(--conta-borda);
+    border-radius: 12px;
+}
+
+.minha-conta #mfa-configuracao h4 {
+    margin: 0 0 12px;
+    font-size: 17px;
+}
+
+.minha-conta #mfa-qrcode {
+    display: flex;
+    justify-content: flex-start;
+    margin: 20px 0;
+}
+
+.minha-conta #mfa-qrcode img {
+    display: block;
+    width: 220px;
+    max-width: 100%;
+    height: auto;
+    padding: 10px;
+    border-radius: 12px;
+    background: #ffffff;
+}
+
+.minha-conta #mfa-configuracao label,
+.minha-conta #mfa-desativacao label {
+    display: block;
+    margin: 0 0 10px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.minha-conta #mfa-codigo,
+.minha-conta #mfa-codigo-desativar {
+    display: block;
+    width: 100%;
+    max-width: 320px;
+    height: 48px;
+    padding: 0 16px;
+    margin: 0 0 16px;
+    border: 1px solid var(--conta-borda);
+    border-radius: 8px;
+    outline: none;
+    background: var(--conta-card);
+    color: var(--conta-texto);
+    font: inherit;
+    font-size: 18px;
+    letter-spacing: 4px;
+}
+
+.minha-conta #mfa-codigo:focus,
+.minha-conta #mfa-codigo-desativar:focus {
+    border-color: var(--conta-destaque);
+}
+
+.minha-conta #ativar-mfa,
+.minha-conta #confirmar-mfa,
+.minha-conta .botao-configurar-mfa {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    padding: 12px 18px;
+    border: none;
+    border-radius: 8px;
+    background: var(--conta-destaque);
+    color: var(--conta-fundo);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    transition: filter 0.2s;
+}
+
+.minha-conta #ativar-mfa:hover,
+.minha-conta #confirmar-mfa:hover,
+.minha-conta .botao-configurar-mfa:hover {
+    filter: brightness(0.92);
+}
+
+.minha-conta #desativar-mfa {
+    padding: 12px 18px;
+    border: 1px solid #a84d54;
+    border-radius: 8px;
+    background: transparent;
+    color: #db6069;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+:root[data-tema="escuro"] .minha-conta #desativar-mfa {
+    color: #ff9da4;
+}
+
+.minha-conta #desativar-mfa:hover {
+    background: rgba(180, 60, 70, 0.12);
+}
+
+.minha-conta #ativar-mfa:disabled,
+.minha-conta #confirmar-mfa:disabled,
+.minha-conta #desativar-mfa:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.minha-conta #mfa-mensagem {
+    margin: 0;
+    color: var(--conta-texto);
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.minha-conta .seguranca-conta [hidden] {
+    display: none !important;
+}
+
+@media (max-width: 600px) {
+    .minha-conta .seguranca-conta {
+        padding: 20px;
+    }
+
+    .minha-conta #mfa-configuracao,
+    .minha-conta #mfa-desativacao {
+        padding: 16px;
+    }
+
+    .minha-conta #ativar-mfa,
+    .minha-conta #confirmar-mfa,
+    .minha-conta #desativar-mfa,
+    .minha-conta .botao-configurar-mfa {
+        width: 100%;
+    }
+}
+/* Botões da aba Segurança */
+
+.minha-conta .seguranca-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+}
+
+.minha-conta .botao-seguranca {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 18px;
+    min-height: 42px;
+    border: none;
+    border-radius: 8px;
+    background: var(--conta-destaque);
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: filter 0.2s ease;
+}
+
+.minha-conta .botao-seguranca:hover {
+    filter: brightness(0.9);
+}
+
+:root[data-tema="escuro"] .minha-conta .botao-seguranca {
+    color: #111318;
+}
+
+@media (max-width: 650px) {
+    .minha-conta .seguranca-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .minha-conta .botao-seguranca {
+        width: 100%;
+        white-space: normal;
+        text-align: center;
+    }
+}

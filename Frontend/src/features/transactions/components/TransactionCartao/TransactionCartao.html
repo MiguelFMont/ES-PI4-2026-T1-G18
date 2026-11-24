@@ -1,0 +1,53 @@
+<!-- Autor: Miguel Fernandes Monteiro | RA: 25014808 -->
+<!-- Componente: janela "Novo cartão" aberta por cima do formulário de lançamento (ou do painel de detalhes), para o usuário criar um cartão sem sair
+     da tela e sem perder o que já digitou. Já vem com a conta escolhida e com o limite e o fechamento padrão: normalmente só falta o nome.
+     Lógica em TransactionCartao.js; usa a janela do projeto (transactions-painel e transactions-fundo, de TransactionForm.css) um nível acima. -->
+<div id="cartao-rapido-fundo" class="transactions-fundo cartao-rapido-fundo"></div>
+<div id="cartao-rapido" class="transactions-painel cartao-rapido" role="dialog" aria-modal="true" aria-labelledby="cartao-rapido-titulo">
+  <section class="transactions-cartao cartao-rapido__cartao" data-folha aria-labelledby="cartao-rapido-titulo">
+    <div class="transactions-form-topo">
+      <h2 id="cartao-rapido-titulo">Novo cartão</h2>
+      <button type="button" id="cartao-rapido-fechar" class="form-fechar" aria-label="Fechar">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <form id="cartao-rapido-form" class="transactions-form" novalidate>
+      <div class="campo transactions-campo--larga">
+        <label for="cartao-rapido-nome">Nome do cartão *</label>
+        <input type="text" id="cartao-rapido-nome" maxlength="40" placeholder="Ex.: Nubank, Itaú" autocomplete="off">
+        <p class="campo__erro" id="cartao-rapido-nome-erro" hidden></p>
+      </div>
+
+      <div class="campo campo--seletor transactions-campo--larga" data-ao-clicar>
+        <label for="cartao-rapido-conta">Conta do cartão *</label>
+        <select id="cartao-rapido-conta" aria-controls="lista-cartao-rapido-conta" aria-expanded="false">
+          <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
+        </select>
+        <div class="seletor__lista" id="lista-cartao-rapido-conta" role="listbox" aria-label="Conta do cartão"></div>
+        <p class="campo__erro" id="cartao-rapido-conta-erro" hidden></p>
+      </div>
+
+      <div class="campo">
+        <label for="cartao-rapido-limite">Limite (R$) *</label>
+        <input type="text" id="cartao-rapido-limite" inputmode="decimal" placeholder="0,00" autocomplete="off">
+        <p class="campo__erro" id="cartao-rapido-limite-erro" hidden></p>
+      </div>
+
+      <div class="campo">
+        <label for="cartao-rapido-dia">Dia do fechamento (1 a 28) *</label>
+        <input type="text" id="cartao-rapido-dia" inputmode="numeric" maxlength="2" placeholder="3" autocomplete="off">
+        <p class="campo__erro" id="cartao-rapido-dia-erro" hidden></p>
+      </div>
+
+      <div class="form-rodape transactions-campo--larga">
+        <span></span>
+        <button type="submit" id="cartao-rapido-salvar" class="form-salvar">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Criar cartão</span>
+        </button>
+        <span></span>
+      </div>
+    </form>
+  </section>
+</div>

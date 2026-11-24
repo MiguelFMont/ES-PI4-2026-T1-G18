@@ -1,0 +1,81 @@
+/* CEZAR AUGUSTO FERNANDEZ RULL - 25007452 */
+.dashboard-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+}
+
+.dashboard-kpi {
+    gap: 0.45rem;
+    padding: 1.2rem 1.3rem;
+    align-content: start;
+    }
+
+.dashboard-kpi__rotulo {
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: var(--texto-suave);
+}
+
+.dashboard-kpi__valor {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--texto);
+    letter-spacing: -0.02em;
+}
+
+.dashboard-kpi__variacao {
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.dashboard-kpi__variacao--positiva {
+    color: var(--positivo);
+}
+
+.dashboard-kpi__variacao--negativa {
+    color: var(--negativo);
+}
+
+.dashboard-kpi__variacao--neutra {
+    color: var(--texto-suave);
+}
+
+.dashboard-kpi__meta-rodape {
+    display: grid;
+    gap: 0.35rem;
+    margin-top: 0.1rem;
+}
+
+.dashboard-kpi__meta-pct {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--texto-suave);
+}
+
+.dashboard-kpi__meta-trilha {
+    width: 100%;
+    height: 0.42rem;
+    border-radius: 999px;
+    background: var(--fundo-celula);
+    overflow: hidden;
+}
+
+.dashboard-kpi__meta-preenchimento {
+    height: 100%;
+    border-radius: 999px;
+    background: var(--positivo);
+    transition: width 0.35s ease;
+}
+
+@media (max-width: 1024px) {
+    .dashboard-kpis {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 560px) {
+    .dashboard-kpis {
+        grid-template-columns: 1fr;
+    }
+}

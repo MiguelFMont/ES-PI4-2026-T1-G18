@@ -1,0 +1,911 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
+/* Barra do topo das transações (TransactionBarra.html). Usa as variáveis de tema de core/styles/global.css. */
+
+.barra {
+  display: grid;
+  gap: 1.25rem;
+  container: barra / inline-size; /* as regras responsivas (no fim do arquivo) olham a largura da própria barra */
+}
+
+.barra__linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+/* primeira linha: Lançamento e Selecionar | mês | busca. As colunas das pontas têm a mesma largura para o mês ficar no centro */
+.barra__topo {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+}
+
+.barra__acoes {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.barra__direita {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+/* ---------------------------------------------------------------- botão Lançamento */
+.barra__novo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.1rem;
+  border: 0;
+  border-radius: 0.9rem;
+  background: var(--texto);
+  color: var(--fundo-card);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: scale 0.1s ease, box-shadow 0.1s ease;
+}
+
+.barra__novo:hover,
+.barra__novo:focus-visible {
+  scale: 1.03;
+}
+
+/* com a caixa aberta o botão fica parado atrás dela */
+.barra__novo-area:has(.barra__novo-menu--aberto) .barra__novo {
+  scale: 1;
+  box-shadow: none;
+}
+
+.barra__novo:focus-visible {
+  outline: none;
+  box-shadow: var(--sombra-foco);
+}
+
+/* menu do botão: ao passar o mouse, o próprio botão se expande (largura, altura e cantos) até virar a caixa com Nova despesa e
+   Nova receita. A caixa nasce com o tamanho exato do botão e a mesma cor, e as opções aparecem um instante depois. */
+.barra__novo-area {
+  position: relative;
+}
+
+.barra__novo-menu {
+  --expansao: 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+  position: absolute;
+  top: -0.25rem; /* uma folga ao redor do botão, para a caixa cobri-lo por inteiro (o botão cresce de leve no hover) */
+  left: -0.25rem;
+  z-index: 30;
+  display: grid;
+  align-content: start;
+  gap: 0.15rem;
+  box-sizing: border-box;
+  width: calc(100% + 0.5rem); /* fechada: do tamanho do botão, com a folga */
+  height: calc(100% + 0.5rem);
+  padding: 0.5rem;
+  overflow: hidden;
+  border-radius: 0.9rem;
+  background: var(--texto); /* a cor do botão */
+  color: #f4f5f7;
+  box-shadow: none;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: width var(--expansao), height var(--expansao), border-radius var(--expansao), background-color 0.25s ease,
+    box-shadow 0.25s ease, opacity 0.12s ease 0.1s, visibility 0s linear 0.44s; /* fechando: some só depois de encolher */
+}
+
+.barra__novo-menu--aberto {
+  width: 20.5rem;
+  height: 12.6rem; /* três opções */
+  border-radius: 1.2rem;
+  background: #2b2d2a;
+  box-shadow: var(--sombra-flutuante);
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: width var(--expansao), height var(--expansao), border-radius var(--expansao), background-color 0.25s ease,
+    box-shadow 0.25s ease, opacity 0.05s ease, visibility 0s;
+}
+
+/* as opções entram um instante depois do início da expansão, subindo de leve; ao fechar somem na hora */
+.barra__novo-menu .barra__novo-item {
+  opacity: 0;
+  transform: translateY(0.3rem);
+  transition: opacity 0.1s ease, transform 0.1s ease, background-color 0.15s ease;
+}
+
+.barra__novo-menu--aberto .barra__novo-item {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.22s ease 0.1s, transform 0.28s cubic-bezier(0.16, 1, 0.3, 1) 0.1s, background-color 0.15s ease;
+}
+
+.barra__novo-menu--aberto .barra__novo-item + .barra__novo-item {
+  transition-delay: 0.16s, 0.16s, 0s; /* a segunda opção chega logo depois da primeira */
+}
+
+.barra__novo-menu--aberto .barra__novo-item + .barra__novo-item + .barra__novo-item {
+  transition-delay: 0.22s, 0.22s, 0s; /* e a terceira, depois da segunda */
+}
+
+.barra__novo-item {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.55rem 0.7rem;
+  border: 0;
+  border-radius: 0.85rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.barra__novo-item:hover,
+.barra__novo-item:focus-visible {
+  background: rgb(255 255 255 / 0.16);
+  outline: none;
+}
+
+.barra__novo-icone {
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 0.8rem;
+  background: #fff;
+}
+
+.barra__novo-icone--despesa {
+  color: #dc2626;
+}
+
+.barra__novo-icone--receita {
+  color: var(--positivo);
+}
+
+.barra__novo-icone--transferencia {
+  color: #2563eb;
+}
+
+.barra__novo-nome {
+  flex: 1;
+  white-space: nowrap;
+}
+
+.barra__novo-tecla {
+  padding: 0.25rem 0.8rem;
+  border: 1px solid rgb(255 255 255 / 0.3);
+  border-radius: 999px;
+  color: rgb(255 255 255 / 0.7);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap; /* "letra T" não quebra em duas linhas */
+  flex: none;
+}
+
+/* ---------------------------------------------------------------- mês */
+.barra__mes {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.barra__mes[hidden] {
+  display: none;
+}
+
+.barra__mes-area {
+  position: relative;
+}
+
+/* o mês é um botão: clicar nele abre o calendário de período */
+.barra__mes-botao {
+  padding: 0.3rem 0.9rem;
+  border: 0;
+  border-radius: 0.9rem;
+  background: transparent;
+  color: var(--texto);
+  font: inherit;
+  cursor: pointer;
+  transition: scale 0.1s ease, background-color 0.15s ease;
+}
+
+.barra__mes-botao:hover,
+.barra__mes-botao:focus-visible,
+.barra__mes-botao[aria-expanded='true'] {
+  background: var(--fundo-linha);
+}
+
+.barra__mes-botao:hover {
+  scale: 1.03;
+}
+
+.barra__mes-botao:focus-visible {
+  outline: none;
+  box-shadow: var(--sombra-foco);
+}
+
+/* o calendário de período: um cartão só com Início e Final lado a lado; o calendário e os atalhos abrem embaixo dele
+   (os estilos de Calendario.html estão em shared/styles/calendario.css) */
+.barra__periodo {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 50%;
+  z-index: 30;
+  width: 19rem;
+  transform: translateX(-50%);
+}
+
+.barra__periodo[hidden] {
+  display: none;
+}
+
+.barra__periodo .periodo {
+  position: relative;
+  min-width: 0;
+  margin: 0;
+  padding: 0.75rem;
+  border: var(--borda-elemento, 0);
+  border-radius: 1.1rem;
+  background: var(--fundo-card);
+  box-shadow: var(--sombra-flutuante);
+}
+
+.barra__periodo .periodo > legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.barra__periodo .periodo__caixas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.barra__periodo .periodo__item {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.barra__periodo .periodo__item label {
+  color: var(--texto-suave);
+  font-size: 0.8rem;
+}
+
+.barra__periodo input.periodo__caixa {
+  width: 100%;
+  min-height: 2.5rem;
+  padding: 0.4rem 0.7rem;
+  border-radius: 0.8rem;
+  font-size: 0.9rem;
+}
+
+.barra__mes-texto {
+  min-width: 10rem;
+  text-align: center;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.barra__seta {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--texto);
+  cursor: pointer;
+  transition: scale 0.1s ease, background-color 0.15s ease;
+}
+
+.barra__seta:hover,
+.barra__seta:focus-visible {
+  scale: 1.1;
+  background: var(--fundo-linha);
+}
+
+.barra__seta:focus-visible {
+  outline: none;
+  box-shadow: var(--sombra-foco);
+}
+
+/* ---------------------------------------------------------------- Selecionar */
+.barra__selecionar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.9rem;
+  border: 0;
+  border-radius: 0.9rem;
+  background: transparent;
+  color: var(--destaque);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: scale 0.1s ease, background-color 0.15s ease;
+}
+
+.barra__selecionar:hover,
+.barra__selecionar:focus-visible {
+  scale: 1.03;
+  background: var(--fundo-linha);
+}
+
+/* modo de seleção ligado: o botão vira "Cancelar", escuro como o botão Lançamento */
+.barra__selecionar[aria-pressed='true'] {
+  background: var(--texto);
+  color: var(--fundo-card);
+}
+
+.barra__selecionar-icone--cancelar,
+.barra__selecionar[aria-pressed='true'] .barra__selecionar-icone--marcar {
+  display: none;
+}
+
+.barra__selecionar[aria-pressed='true'] .barra__selecionar-icone--cancelar {
+  display: block;
+}
+
+.barra__selecionar:focus-visible {
+  outline: none;
+  box-shadow: var(--sombra-foco);
+}
+
+/* ---------------------------------------------------------------- pílulas de filtro e busca */
+.barra__filtros-linha {
+  align-items: stretch;
+}
+
+/* a faixa dos filtros e a pílula da busca são duas pílulas lado a lado */
+.barra__faixa {
+  flex: 1;
+  padding: 0.35rem 0.5rem;
+  border-radius: 999px;
+  background: var(--fundo-linha);
+}
+
+.barra__pilulas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.barra__pilula-area {
+  position: relative;
+}
+
+/* "Limpar filtros": no fim da faixa dos filtros, só aparece quando há filtro ligado */
+.barra__limpar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0.85rem;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--negativo) 14%, transparent);
+  color: var(--negativo);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: scale 0.1s ease, background-color 0.15s ease, opacity 0.2s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  opacity: 0;
+  transform: translateY(0.5rem) scale(0.92);
+}
+
+/* a área abre e fecha em altura (0fr -> 1fr), então o campo de busca desce e sobe suavemente junto com o botão */
+.barra__limpar-area {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.barra__limpar-area--aberta {
+  grid-template-rows: 1fr;
+}
+
+.barra__limpar-interno {
+  min-height: 0;
+  /* folga nas laterais para o botão crescer (scale no hover/foco) sem ser cortado pelo overflow; a margem negativa devolve o alinhamento */
+  padding: 0 0.4rem;
+  margin-inline: -0.4rem;
+  overflow: hidden;
+}
+
+.barra__limpar-area--aberta .barra__limpar {
+  opacity: 1;
+  transform: none;
+}
+
+.barra__limpar-area--aberta .barra__limpar-interno {
+  padding-block: 0.25rem 0.6rem; /* espaço entre o botão e o campo de busca */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .barra__limpar-area,
+  .barra__limpar {
+    transition: none;
+  }
+}
+
+.barra__limpar:hover,
+.barra__limpar:focus-visible {
+  scale: 1.03;
+  background: color-mix(in srgb, var(--negativo) 22%, transparent);
+  outline: none;
+}
+
+.barra__pilula {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.5rem 0.85rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--texto);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: scale 0.1s ease, background-color 0.15s ease;
+}
+
+.barra__pilula:hover,
+.barra__pilula:focus-visible,
+.barra__pilula[aria-expanded='true'] {
+  background: var(--fundo-celula);
+}
+
+.barra__pilula:hover {
+  scale: 1.03;
+}
+
+.barra__pilula:focus-visible {
+  outline: none;
+  box-shadow: var(--sombra-foco);
+}
+
+/* filtro em uso: a pílula fica na cor principal */
+.barra__pilula--ativa {
+  background: var(--destaque);
+  color: var(--destaque-texto);
+}
+
+.barra__pilula--ativa:hover,
+.barra__pilula--ativa:focus-visible,
+.barra__pilula--ativa[aria-expanded='true'] {
+  background: var(--destaque);
+}
+
+/* o menu da pílula Valor: usa os campos (.campo, com a máscara de moeda) e os botões (.transactions-botao) do projeto; aqui só o tamanho */
+.barra__menu.barra__menu--valor { /* os dois seletores: .barra__menu vem depois e, sozinho, sobrescreveria o padding */
+  gap: 0.85rem;
+  width: 17rem;
+  max-width: calc(100vw - 2rem);
+  padding: 1.1rem;
+  border-radius: 1.2rem;
+}
+
+.barra__menu--valor[hidden] {
+  display: none;
+}
+
+.barra__valor-campos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.barra__menu--valor .campo label {
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.barra__menu--valor .campo input {
+  min-height: 2.4rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 0.8rem;
+  font-size: 0.95rem;
+}
+
+.barra__valor-erro {
+  margin: 0;
+  color: var(--negativo);
+  font-size: 0.9rem;
+}
+
+.barra__valor-acoes {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.barra__valor-acoes .transactions-botao {
+  flex: 1;
+  min-height: 2.4rem;
+  padding-inline: 0.5rem;
+  font-size: 0.9rem;
+  border-radius: 999px;
+}
+
+.barra__menu {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  left: 0;
+  z-index: 30;
+  display: grid;
+  min-width: 8.5rem;
+  max-height: 20rem;
+  padding: 0.35rem;
+  overflow-x: hidden; /* só rola na vertical */
+  overflow-y: auto;
+  border: var(--borda-elemento, 0);
+  border-radius: 1rem;
+  background: var(--fundo-card);
+  box-shadow: var(--sombra-flutuante);
+  animation: barra-menu-entrar 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: top left;
+}
+
+@keyframes barra-menu-entrar {
+  from { opacity: 0; transform: translateY(-0.4rem) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+.barra__opcao {
+  padding: 0.45rem 0.7rem;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  border: 0;
+  border-radius: 0.65rem;
+  background: transparent;
+  color: var(--texto);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.barra__opcao:hover,
+.barra__opcao:focus-visible {
+  background: var(--fundo-linha);
+  outline: none;
+}
+
+.barra__opcao[aria-selected='true'] {
+  font-weight: 700;
+  background: var(--fundo-celula);
+}
+
+/* busca: uma pílula à parte, sempre à vista, ao lado da faixa de filtros */
+.barra__busca {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 17rem;
+  max-width: 100%;
+  padding: 0.65rem 1.25rem;
+  border-radius: 999px;
+  background: var(--fundo-linha);
+  color: var(--texto-suave);
+}
+
+.barra__busca-campo {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--texto);
+  font: inherit;
+}
+
+.barra__busca-campo:focus {
+  outline: none;
+}
+
+.barra__busca {
+  transition: scale 0.15s ease;
+}
+
+/* campo selecionado: sem contorno, só cresce de leve (o padrão dos campos do projeto) */
+.barra__busca:focus-within {
+  box-shadow: none;
+  outline: none;
+  scale: 1.02;
+}
+
+.barra__busca-campo,
+.barra__busca-campo:focus,
+.barra__busca-campo:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+/* O painel dos filtros e o botão que o recolhe só existem em tela estreita (os filtros das telas largas ficam no cabeçalho das colunas) */
+.barra__filtros-painel,
+.barra__filtros-toggle {
+  display: none;
+}
+
+/* ---------------------------------------------------------------- filtros no cabeçalho das colunas (telas largas) */
+.barra__pilula-area--cab {
+  display: inline-block;
+}
+
+.barra__cab-filtro {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.5rem;
+  margin-inline: -0.5rem;
+  border: 0;
+  border-radius: 0.6rem;
+  background: transparent;
+  color: inherit; /* a cor, o tamanho e as maiúsculas do título da coluna */
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, scale 0.1s ease;
+}
+
+.barra__cab-filtro:hover,
+.barra__cab-filtro:focus-visible,
+.barra__cab-filtro[aria-expanded='true'] {
+  background: var(--fundo-linha);
+  color: var(--texto);
+  outline: none;
+}
+
+.barra__cab-filtro.barra__pilula--ativa {
+  background: color-mix(in srgb, var(--destaque) 16%, transparent);
+  color: var(--destaque);
+  font-weight: 700;
+}
+
+.barra__cab-seta {
+  flex: none;
+  opacity: 0.7;
+}
+
+/* o menu do filtro sai do cabeçalho: texto normal (o cabeçalho é em caixa alta) e alinhado à esquerda da coluna; a coluna do valor, à direita */
+.barra__pilula-area--cab .barra__menu {
+  top: calc(100% + 0.35rem);
+  left: -0.5rem;
+  color: var(--texto);
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+  text-align: left;
+}
+
+.cab--valor .barra__pilula-area--cab .barra__menu,
+.cab--origem .barra__pilula-area--cab .barra__menu {
+  left: auto;
+  right: -0.5rem;
+}
+
+/* a coluna do valor é alinhada à direita */
+.cab--valor .barra__pilula-area--cab {
+  float: right;
+}
+
+/* ---------------------------------------------------------------- tela estreita da barra (menos de 46rem): botões só com o ícone */
+@container barra (max-width: 46rem) {
+  .barra__topo {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.75rem 0.5rem;
+  }
+
+  /* o "Limpar filtros" desce para uma linha só dele (e some quando não há filtro) */
+  .barra__direita {
+    grid-column: 1 / -1;
+    order: 3;
+    justify-content: flex-start;
+  }
+
+  .barra__direita:not(:has(.barra__limpar:not([hidden]))) {
+    display: none;
+  }
+
+  /* botão Lançamento: só o "+" */
+  .barra__novo {
+    justify-content: center;
+    width: 2.9rem;
+    height: 2.9rem;
+    padding: 0;
+  }
+
+  .barra__novo > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* o mês ocupa o resto da linha, sem quebrar */
+  .barra__mes {
+    justify-content: center;
+    gap: 0.25rem;
+    min-width: 0;
+  }
+
+  .barra__mes-texto {
+    min-width: 0;
+    font-size: 1.05rem;
+    white-space: nowrap;
+  }
+
+  /* Selecionar: só o ícone, num quadrado com borda */
+  .barra__selecionar {
+    position: relative;
+    justify-content: center;
+    width: 2.9rem;
+    height: 2.9rem;
+    padding: 0;
+    border: 1px solid var(--borda);
+  }
+
+  .barra__selecionar[aria-pressed='true'] {
+    border-color: transparent;
+  }
+
+  #barra-selecionar-texto {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/* ---------------------------------------------------------------- sem espaço para as colunas (menos de 62rem): filtros num painel recolhível */
+@container barra (max-width: 62rem) {
+  .barra__filtros-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0.9rem 1.1rem;
+    border: 0;
+    border-radius: 1.1rem;
+    background: var(--fundo-linha);
+    color: var(--texto);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: scale 0.1s ease;
+  }
+
+  .barra__filtros-toggle:hover,
+  .barra__filtros-toggle:focus-visible {
+    scale: 1.01;
+    outline: none;
+  }
+
+  .barra__filtros-toggle svg {
+    transition: rotate 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .barra__filtros-toggle[aria-expanded='false'] svg {
+    rotate: 180deg;
+  }
+
+  .barra__filtros-painel {
+    display: block;
+    animation: barra-filtros-entrar 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .barra__filtros-painel[data-recolhido] {
+    display: none;
+  }
+
+  /* os filtros: um embaixo do outro, cada um numa linha inteira */
+  .barra__faixa {
+    padding: 0.5rem;
+    border-radius: 1.4rem;
+  }
+
+  .barra__pilulas {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 0.25rem;
+  }
+
+  .barra__pilula-area {
+    width: 100%;
+  }
+
+  .barra__pilula {
+    justify-content: space-between;
+    width: 100%;
+    padding: 0.85rem 1rem;
+    border-radius: 1rem;
+  }
+
+  /* a lista de cada filtro abre dentro do fluxo, logo abaixo dele (como uma sanfona), em vez de flutuar por cima */
+  .barra__pilulas .barra__menu,
+  .barra__pilulas .barra__menu.barra__menu--valor {
+    position: static;
+    width: 100%;
+    max-height: 14rem;
+    margin-top: 0.35rem;
+    box-shadow: none;
+  }
+}
+
+@keyframes barra-filtros-entrar {
+  from { opacity: 0; transform: translateY(-0.4rem); }
+}
+
+/* A busca no cabeçalho da coluna Descrição: a mesma pílula de antes, na largura da coluna, com o texto em tamanho normal (o cabeçalho é em caixa alta) */
+.cab.cab--busca {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr); /* o campo nunca passa da largura da coluna */
+  /* sai da coluna Descrição e começa no mesmo ponto da caixa de seleção e do ícone das linhas: o recuo de -0.5rem que o `.cab` já tem
+     (TransactionLista.css, carregado depois, por isso o seletor mais forte aqui) + a coluna da caixa (1.6rem) + o espaço entre colunas (0.9rem) */
+  margin-inline-start: -3rem;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.cab--busca .barra__busca {
+  box-sizing: border-box; /* o preenchimento não faz o campo invadir a coluna Tipo */
+  width: 100%;
+  max-width: 19rem;
+  padding: 0.45rem 1rem;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+/* Telas largas: o "Limpar filtros" deixa a ponta direita livre para o cartão dos totais, que sobe até esta linha */
+@container barra (min-width: 62rem) {
+  .barra__direita {
+    padding-right: 19.5rem;
+  }
+}
+
+/* o cabeçalho alinha pela base: quando o "Limpar filtros" abre acima da busca, os nomes das colunas não pulam para baixo */
+.lista .lista__cabecalho {
+  align-items: end;
+}
+
+/* a lista lateral dos cartões (Pagamento > Cartão de crédito): fica ao lado da lista de opções, na posição que o JS calcula */
+.barra__submenu {
+  top: auto;
+  z-index: 31;
+  min-width: 12rem;
+}
+
+.barra__submenu[hidden] {
+  display: none;
+}
+
+/* Na aba Cartão o menu do Lançamento tem duas opções (sem Nova transferência): a caixa não deixa o espaço da terceira */
+[data-escopo-cartao] .barra__novo-menu--aberto {
+  height: 8.5rem;
+}

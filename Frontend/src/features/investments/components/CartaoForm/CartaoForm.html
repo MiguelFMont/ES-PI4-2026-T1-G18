@@ -1,0 +1,44 @@
+<!-- Autor: Miguel Fernandes Monteiro | RA: 25014808 -->
+<!-- Componente: formulário para criar um cartão ou editar o nome, o limite e o dia do fechamento da fatura de um cartão. Lógica em CartaoForm.js.
+     Fica escondido até o usuário escolher Novo cartão ou Editar em um card; aparece como uma janela (modal) por cima da página (CSS em investments.css). -->
+<section id="invest-cartao-form-area" class="investments-cartao" data-folha aria-labelledby="invest-cartao-form-titulo" hidden>
+  <form id="invest-cartao-form" class="investments-form" novalidate>
+    <h2 id="invest-cartao-form-titulo" class="investments-campo--larga">Novo cartão</h2>
+    <div class="campo investments-campo--larga">
+      <label for="invest-cartao-nome">Nome do cartão *</label>
+      <input type="text" id="invest-cartao-nome" name="nome" maxlength="40" placeholder="Ex: Nubank, Itaú" autocomplete="off">
+      <p class="campo__erro" id="invest-cartao-nome-erro" hidden></p>
+    </div>
+    <!-- A conta do cartão é obrigatória: o cartão é vinculado a uma das contas do usuário. A lista é a do projeto (shared/components/seletor.js). -->
+    <div class="campo campo--seletor investments-campo--larga" data-ao-clicar>
+      <label for="invest-cartao-conta">Conta do cartão *</label>
+      <select id="invest-cartao-conta" name="contaId" aria-controls="lista-invest-cartao-conta" aria-expanded="false">
+        <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
+      </select>
+      <div class="seletor__lista" id="lista-invest-cartao-conta" role="listbox" aria-label="Conta do cartão"></div>
+      <p class="campo__erro" id="invest-cartao-conta-erro" hidden></p>
+    </div>
+    <div class="campo">
+      <label for="invest-cartao-limite">Limite (R$) *</label>
+      <input type="text" id="invest-cartao-limite" name="limite" inputmode="decimal" placeholder="0,00" autocomplete="off">
+      <p class="campo__erro" id="invest-cartao-limite-erro" hidden></p>
+    </div>
+    <div class="campo">
+      <label for="invest-cartao-dia">Dia do fechamento (1 a 28) *</label>
+      <input type="text" id="invest-cartao-dia" name="diaFechamento" inputmode="numeric" maxlength="2" placeholder="3" autocomplete="off">
+      <p class="campo__erro" id="invest-cartao-dia-erro" hidden></p>
+    </div>
+    <!-- Ícone e cor do cartão (opcionais): sem eles vale o logo do banco da conta. Montado por shared/components/escolhaIcone.js -->
+    <div class="campo investments-campo--larga escolha-icone" id="invest-cartao-aparencia" data-rotulo="Ícone e cor (opcional)"></div>
+
+    <div class="investments-acoes investments-campo--larga">
+      <button type="submit" id="invest-cartao-salvar" class="investments-botao">Criar cartão</button>
+      <button type="button" id="invest-cartao-cancelar" class="investments-botao investments-botao--secundario">Cancelar</button>
+    </div>
+  </form>
+</section>
+
+<!-- Modelo de uma opção das listas dos selects do projeto (shared/components/seletor.js copia este bloco para cada <option>). -->
+<template id="modelo-opcao-seletor">
+  <div class="seletor__opcao" role="option"></div>
+</template>

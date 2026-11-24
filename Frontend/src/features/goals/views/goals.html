@@ -1,0 +1,23 @@
+<!-- Autor: Miguel Fernandes Monteiro | RA: 25014808 -->
+<!--
+  Tela de Metas, um fragmento: não é um documento completo. O index.html (menu, fontes e estilos globais) fica sempre
+  aberto e o roteador (app/main.js) coloca este conteúdo em #app-content, junto com os CSS da tela. Toda a estrutura é
+  HTML (este arquivo e os componentes); o JavaScript só junta os componentes e liga a lógica pelos ids (chamar a API,
+  validar, mostrar e esconder estados, preencher textos).
+  Os caminhos começam em / (a raiz do Frontend).
+-->
+<section class="goals-page" aria-labelledby="goals-titulo">
+    <div class="goals-cabecalho">
+        <div>
+            <h1 id="goals-titulo">Metas</h1>
+            <p class="goals-subtitulo">Defina quanto quer juntar e até quando. O progresso vem das transações que você vincula a cada meta.</p>
+        </div>
+        <button type="button" id="goals-nova" class="goals-botao" aria-expanded="false" aria-controls="goals-form-area">Nova meta</button>
+    </div>
+
+    <!-- O formulário é só uma janela (modal): aparece por cima da página ao clicar em Nova meta ou Editar -->
+    <div class="goals-modal">
+        <div data-incluir="/src/features/goals/components/GoalForm/GoalForm.html"></div>
+    </div>
+    <div data-incluir="/src/features/goals/components/GoalList/GoalList.html"></div>
+</section>

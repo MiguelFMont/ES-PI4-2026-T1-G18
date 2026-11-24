@@ -1,0 +1,671 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
+/* Componente TransactionForm: formulário "Nova transação". Cartão, botões e utilitários de grade ficam em styles/transactions.css. */
+
+.transactions-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.85rem;
+}
+
+/* as áreas de cartão e parcelas só existem no crédito (o atributo hidden precisa vencer o display dos campos) */
+.transactions-form [hidden] {
+  display: none;
+}
+
+.transactions-parcela-ajuda {
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+}
+
+.transactions-tipo {
+  border: 0;
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.transactions-tipo legend {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+  margin-bottom: 0.35rem;
+}
+
+.transactions-opcoes {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.transactions-opcao {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.35rem;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.9rem;
+  position: relative;
+  border: var(--borda-elemento, 0);
+  border-radius: 0.6rem;
+  background: var(--fundo-campo);
+  box-shadow: var(--sombra);
+  cursor: pointer;
+  transition: scale 0.1s ease;
+}
+
+/* sem a bolinha: o botão de opção continua no HTML (e no teclado), só não aparece */
+.transactions-opcao input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.transactions-opcao:has(input:checked) {
+  font-weight: 700;
+  box-shadow: 0 0 0 2px var(--destaque); /* opção escolhida: anel verde, sem borda */
+}
+
+.transactions-opcao:has(input:focus-visible) {
+  scale: var(--escala-foco, 1.03); /* com Tab: cresce um pouco, como os outros campos */
+}
+
+.transactions-contador {
+  margin-top: 0.25rem;
+  text-align: right;
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+}
+
+/* Painel que desce do topo por cima do conteúdo (abre com .transactions-painel--aberto, via JS) */
+.transactions-fundo {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgb(0 0 0 / 0.55);
+  backdrop-filter: blur(6px); /* o fundo desfocado atrás da janela */
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  visibility: hidden; /* fechado, não recebe clique nem foco */
+  transition: opacity 0.15s cubic-bezier(0.7, 0, 0.84, 0), visibility 0s 0.15s; /* fecha mais rápido do que abre */
+}
+
+.transactions-fundo--aberto {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s;
+}
+
+.transactions-painel {
+  position: fixed;
+  inset: 0; /* a página inteira: o cartão do formulário fica centralizado na janela, com o menu aberto ou recolhido */
+  z-index: 50;
+  display: flex; /* o cartão fica no meio do painel (na horizontal e na vertical) */
+  overflow-y: auto;
+  padding: 1rem;
+  transform: translateY(-100%);
+  visibility: hidden;
+  transition: transform 0.15s cubic-bezier(0.7, 0, 0.84, 0), visibility 0s 0.15s; /* fecha mais rápido do que abre */
+}
+
+.transactions-painel--aberto {
+  transform: translateY(0);
+  visibility: visible;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s;
+}
+
+.transactions-painel .transactions-cartao {
+  width: 100%;
+  max-width: 44rem;
+  margin: auto; /* centraliza; se a tela for baixa e o cartão não couber, o painel rola e nada fica cortado */
+  gap: 0.85rem;
+  padding: 1.1rem 1.25rem;
+  box-shadow: var(--sombra-flutuante);
+}
+
+/* campos um pouco menores que os do resto da tela (o seletor é mais específico que o de shared/styles/campos.css) */
+.transactions-painel .campo input:not([type='radio']):not([type='checkbox']),
+.transactions-painel .campo select,
+.transactions-painel .campo textarea {
+  min-height: 2.35rem;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.9rem;
+}
+
+.transactions-painel .campo label,
+.transactions-painel .transactions-tipo legend {
+  font-size: 0.8rem;
+}
+
+.transactions-form-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+@media (max-width: 767px) {
+  .transactions-painel {
+    inset-inline-start: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .transactions-fundo,
+  .transactions-painel {
+    transition: none;
+  }
+}
+
+/* ---------------------------------------------------------------- vincular a transação a uma meta (MetaDoLancamento.js) */
+
+.transactions-meta {
+  display: grid;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+}
+
+.transactions-meta-opcao {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: fit-content;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.transactions-meta-ajuda {
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+}
+
+.transactions-meta-lista {
+  display: grid;
+  gap: 0.5rem;
+}
+
+/* cada meta é uma opção (botão de opção) com o nome e o progresso; a escolhida ganha o anel verde, como o Tipo */
+.transactions-meta-item {
+  position: relative;
+  display: grid;
+  gap: 0.1rem;
+  padding: 0.55rem 0.8rem;
+  border: var(--borda-elemento, 0);
+  border-radius: 0.6rem;
+  background: var(--fundo-campo);
+  box-shadow: var(--sombra);
+  cursor: pointer;
+}
+
+.transactions-meta-item input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* a meta escolhida: fundo com um toque da cor de destaque (sem contorno); com o teclado, cresce de leve como os botões */
+.transactions-meta-item {
+  transition: scale 0.1s ease, background-color 0.15s ease;
+}
+
+.transactions-meta-item:has(input:checked) {
+  background: color-mix(in srgb, var(--destaque) 16%, var(--fundo-campo));
+  box-shadow: none;
+}
+
+.transactions-meta-item:hover,
+.transactions-meta-item:has(input:focus-visible) {
+  scale: 1.01;
+}
+
+.transactions-meta-item__titulo {
+  font-weight: 700;
+}
+
+.transactions-meta-item__resumo {
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+}
+
+.transactions-meta-nova {
+  justify-self: start;
+  min-height: 2.5rem;
+  padding: 0.25rem 1.1rem;
+  border: 0;
+  border-radius: 999px;
+  font-size: 0.9rem;
+}
+
+.transactions-meta-nova:focus-visible,
+.transactions-meta-nova:active {
+  outline: none;
+}
+
+/* A janela "Nova meta": por cima do painel (z-index 50) e do fundo escuro, centralizada na página inteira. */
+.transactions-meta-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  padding: 1rem;
+  background: rgb(0 0 0 / 0.6);
+  backdrop-filter: blur(6px); /* o fundo desfocado atrás da janela */
+  -webkit-backdrop-filter: blur(6px);
+}
+
+@media (max-width: 767px) {
+  .transactions-meta-modal {
+    inset-inline-start: 0;
+  }
+}
+
+/* ================================================================ Janela "Novo lançamento" (modal no centro da tela) ====== */
+
+/* entra com um zoom curto e um fade, em vez de descer do topo; a saída é mais rápida (regra de animação do projeto) */
+.transactions-painel {
+  transform: scale(0.96);
+  opacity: 0;
+  transition: transform 0.12s cubic-bezier(0.7, 0, 0.84, 0), opacity 0.12s ease, visibility 0s 0.12s;
+}
+
+.transactions-painel--aberto {
+  transform: none;
+  opacity: 1;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, visibility 0s;
+}
+
+.transactions-painel .transactions-cartao {
+  max-width: 28rem;
+  gap: 1rem;
+  padding: 1.5rem;
+  border-radius: 1.75rem;
+}
+
+.transactions-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem 1rem;
+}
+
+.transactions-form-topo h2 {
+  font-size: 1.35rem;
+}
+
+.form-fechar {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--texto-suave);
+  cursor: pointer;
+  transition: scale 0.1s ease, background-color 0.15s ease;
+}
+
+.form-fechar:hover,
+.form-fechar:focus-visible {
+  scale: 1.08;
+  background: var(--fundo-linha);
+  outline: none;
+}
+
+/* campos mais altos e arredondados, como na referência */
+.transactions-painel .campo input:not([type='radio']):not([type='checkbox']),
+.transactions-painel .campo select,
+.transactions-painel .campo textarea {
+  min-height: 3.25rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: 1rem;
+  font-size: 1rem;
+}
+
+.transactions-painel .campo textarea {
+  min-height: 4.5rem;
+}
+
+.transactions-painel .campo label {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--texto-suave);
+}
+
+/* a descrição e os campos de texto alinham o texto à esquerda (os selects do projeto centralizam) */
+.transactions-painel .campo--seletor select {
+  text-align: left;
+  text-align-last: left;
+}
+
+.transactions-painel .campo--seletor select > button {
+  justify-content: flex-start;
+  padding-left: 0;
+}
+
+/* Valor: o "R$" fica dentro da caixa, antes do número */
+.form-prefixo {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.form-prefixo__texto {
+  position: absolute;
+  left: 0.9rem;
+  color: var(--texto-suave);
+  pointer-events: none;
+}
+
+.transactions-painel .form-prefixo input:not([type='radio']):not([type='checkbox']) {
+  width: 100%;
+  padding-left: 2.6rem;
+}
+
+/* Categoria: o rótulo à esquerda e o botão Sugerir à direita, na mesma linha */
+.form-rotulo-linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.form-sugerir {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.7rem;
+  border: 1px solid var(--borda);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--texto);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: scale 0.1s ease, background-color 0.15s ease;
+}
+
+.form-sugerir:hover:not(:disabled),
+.form-sugerir:focus-visible {
+  scale: 1.06;
+  background: var(--fundo-linha);
+  outline: none;
+}
+
+.form-sugerir:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+/* Despesa | Receita | Transferência: três abas numa faixa arredondada, sem contorno. Um marcador branco desliza de uma para a outra. */
+.transactions-tipo {
+  grid-column: 1 / -1;
+  gap: 0;
+}
+
+.transactions-tipo .transactions-opcoes {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.25rem;
+  padding: 0.3rem;
+  border-radius: 1rem;
+  background: var(--fundo-linha);
+}
+
+/* o marcador que desliza (cresce no hover/foco de leve: o scale do projeto) */
+.transactions-tipo .transactions-opcoes::before {
+  content: '';
+  position: absolute;
+  top: 0.3rem;
+  bottom: 0.3rem;
+  left: 0.3rem;
+  width: calc((100% - 1.1rem) / 3);
+  border-radius: 0.8rem;
+  background: var(--fundo-card);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.transactions-tipo .transactions-opcoes:has(input[value='receita']:checked)::before {
+  transform: translateX(calc(100% + 0.25rem));
+}
+
+.transactions-tipo .transactions-opcoes:has(input[value='transferencia']:checked)::before {
+  transform: translateX(calc(200% + 0.5rem));
+}
+
+.transactions-tipo .transactions-opcao,
+.transactions-tipo .transactions-opcao:has(input:checked) {
+  position: relative; /* acima do marcador */
+  z-index: 1;
+  min-height: 2.7rem;
+  border: 0;
+  border-radius: 0.8rem;
+  background: transparent;
+  box-shadow: none; /* sem contorno nem anel, escolhida ou não */
+  color: var(--texto-suave);
+  font-size: 1rem;
+  font-weight: 600;
+  transition: color 0.2s ease, scale 0.1s ease;
+}
+
+.transactions-tipo .transactions-opcao:has(input[value='despesa']:checked) { color: var(--negativo); }
+.transactions-tipo .transactions-opcao:has(input[value='receita']:checked) { color: var(--positivo); }
+.transactions-tipo .transactions-opcao:has(input[value='transferencia']:checked) { color: var(--matiz-azul, #2563eb); }
+
+/* Troca entre lançamento e transferência: cada modo esconde os campos do outro; no meio da troca os campos somem e o esqueleto
+   de carregamento ocupa o lugar deles (as abas continuam à vista). */
+.transactions-form[data-modo='transferencia'] [data-so-lancamento],
+.transactions-form[data-modo='lancamento'] [data-so-transferencia] {
+  display: none;
+}
+
+.transactions-form.transactions-form--trocando > :not(.transactions-tipo):not(#form-esqueleto) {
+  display: none !important;
+}
+
+#form-esqueleto {
+  animation: form-campos-entrar 0.2s ease both;
+}
+
+.transactions-form:not([data-modo]) [data-so-transferencia] {
+  display: none; /* antes de o JS ligar, o formulário é o de lançamento */
+}
+
+@keyframes form-campos-entrar {
+  from { opacity: 0; }
+}
+
+/* os botões redondos de Observação e Meta */
+.form-extras {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-inline: 0.5rem;
+}
+
+.form-redondo {
+  display: grid;
+  place-items: center;
+  width: 4rem;
+  height: 4rem;
+  border: 1px solid var(--borda);
+  border-radius: 1.2rem;
+  background: transparent;
+  color: var(--texto);
+  cursor: pointer;
+  transition: scale 0.1s ease, background-color 0.15s ease;
+}
+
+.form-redondo:hover,
+.form-redondo:focus-visible {
+  scale: 1.08;
+  background: var(--fundo-linha);
+  outline: none;
+}
+
+/* A dica no hover, no padrão da barra lateral: o balão se abre a partir do botão (a entrada é mais lenta que a saída), ao lado dele. Por padrão fica à direita; data-dica-lado="esquerda" a põe à esquerda. */
+.form-redondo,
+.form-lateral,
+.detalhe__icone {
+  position: relative;
+}
+
+:is(.form-redondo, .form-lateral, .detalhe__icone)[data-dica]::after {
+  position: absolute;
+  top: 50%;
+  z-index: 5;
+  background: color-mix(in srgb, var(--fundo-card) 90%, black); /* um pouco mais escuro que o resto */
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.1s ease, clip-path 0.12s cubic-bezier(0.7, 0, 0.84, 0), visibility 0s linear 0.12s;
+}
+
+:is(.form-redondo, .form-lateral, .detalhe__icone)[data-dica]::after {
+  content: attr(data-dica);
+  left: calc(100% + 0.6rem);
+  padding: 0.45rem 0.9rem;
+  border-radius: 0.75rem;
+  color: var(--texto);
+  box-shadow: var(--sombra-flutuante);
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transform: translateY(-50%);
+  clip-path: inset(0 100% 0 0 round 0.75rem); /* fechada: só a borda do lado do botão */
+}
+
+:is(.form-redondo, .form-lateral, .detalhe__icone)[data-dica][data-dica-lado="esquerda"]::after {
+  left: auto;
+  right: calc(100% + 0.6rem);
+  clip-path: inset(0 0 0 100% round 0.75rem);
+}
+
+:is(.form-redondo, .form-lateral, .detalhe__icone)[data-dica]:hover::after,
+:is(.form-redondo, .form-lateral, .detalhe__icone)[data-dica]:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.18s ease, clip-path 0.28s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s;
+}
+
+:is(.form-redondo, .form-lateral, .detalhe__icone)[data-dica]:hover::after,
+:is(.form-redondo, .form-lateral, .detalhe__icone)[data-dica]:focus-visible::after {
+  clip-path: inset(0 round 0.75rem);
+}
+
+.form-redondo--ativo {
+  border-color: var(--destaque);
+  background: color-mix(in srgb, var(--destaque) 14%, transparent);
+}
+
+/* rodapé: a lixeira, o botão verde de salvar (uma pílula) e "salvar e criar outro" */
+.form-rodape {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--borda);
+}
+
+.form-lateral {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 3.4rem;
+  height: 3.4rem;
+  border: 0;
+  border-radius: 50%;
+  background: var(--fundo-celula);
+  color: var(--texto-suave);
+  cursor: pointer;
+  transition: scale 0.1s ease, background-color 0.15s ease;
+}
+
+.form-lateral:hover:not(:disabled),
+.form-lateral:focus-visible {
+  scale: 1.08;
+  outline: none;
+}
+
+.form-lateral:disabled,
+.form-salvar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.form-salvar {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  min-height: 3.4rem;
+  padding: 0.5rem 1.25rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--destaque);
+  color: var(--destaque-texto);
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: scale 0.1s ease, box-shadow 0.1s ease;
+}
+
+.form-salvar:hover:not(:disabled),
+.form-salvar:focus-visible {
+  scale: 1.02;
+  outline: none;
+}
+
+.form-salvar:focus-visible {
+  box-shadow: var(--sombra-foco);
+}
+
+@media (max-width: 480px) {
+  .transactions-form {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* conta sem cartão: a lista some e fica só o aviso com o botão Criar cartão */
+.campo-cartao--sem > label,
+.campo-cartao--sem > select,
+.campo-cartao--sem > .seletor__lista {
+  display: none;
+}
+
+/* Na aba Cartão o lançamento já nasce na conta e no cartão escolhidos, pagando no crédito: esses campos não aparecem */
+[data-escopo-cartao] .campo:has(> #campo-conta),
+[data-escopo-cartao] .campo:has(> #campo-formaPagamento),
+[data-escopo-cartao] #campo-cartao-area {
+  display: none !important;
+}
+
+/* ... e não há transferência: a aba some (sobram Despesa e Receita) */
+[data-escopo-cartao] .transactions-opcao:has(input[value="transferencia"]) {
+  display: none;
+}
+
+/* ... e a meta não faz sentido num lançamento do cartão */
+[data-escopo-cartao] #form-alternar-meta,
+[data-escopo-cartao] #form-meta-area {
+  display: none !important;
+}
+
+/* Sem a aba Transferência, o seletor tem duas colunas (Despesa e Receita) e o marcador ocupa metade */
+[data-escopo-cartao] .transactions-tipo .transactions-opcoes {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+[data-escopo-cartao] .transactions-tipo .transactions-opcoes::before {
+  width: calc((100% - 0.85rem) / 2);
+}

@@ -1,0 +1,215 @@
+<!-- Autor: Miguel Fernandes Monteiro | RA: 25014808 -->
+<!-- Componente: janela "Novo lançamento". Lógica em TransactionForm.js.
+     Os campos de lista e a data abrem só ao clicar (data-ao-clicar), não ao passar o mouse. Abre no centro da tela por cima do conteúdo (CSS em TransactionForm.css); o fundo escurece a página enquanto ela está aberta.
+     Despesa, Receita e Transferência são abas: a aba Transferência troca os campos desta mesma janela (De, Para, valor, data, descrição e observação),
+     com um esqueleto de carregamento no meio da troca. Os campos com data-so-lancamento somem na transferência.
+     A categoria se escolhe na lista ou com o botão Sugerir (que pergunta ao Servidor pela descrição). Despesa e Receita são abas; Observação e Meta ficam recolhidas atrás dos botões redondos até serem pedidas. -->
+<div id="transactions-fundo" class="transactions-fundo"></div>
+<div id="transactions-painel-form" class="transactions-painel" role="dialog" aria-modal="true"
+  aria-labelledby="transactions-form-titulo">
+  <section class="transactions-cartao" data-folha aria-labelledby="transactions-form-titulo">
+    <div class="transactions-form-topo">
+      <h2 id="transactions-form-titulo">Novo lançamento</h2>
+      <button type="button" id="botao-fechar-form" class="form-fechar" aria-label="Fechar">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <form id="form-transacao" class="transactions-form" novalidate>
+      <!-- Tipo: duas abas (o botão de opção continua no HTML, para o teclado e o leitor de tela) -->
+      <fieldset class="transactions-tipo">
+        <legend class="so-leitor">Tipo *</legend>
+        <div class="transactions-opcoes">
+          <label class="transactions-opcao">
+            <input type="radio" name="tipo" value="despesa" checked>
+            <span>Despesa</span>
+          </label>
+          <label class="transactions-opcao">
+            <input type="radio" name="tipo" value="receita">
+            <span>Receita</span>
+          </label>
+          <!-- Transferência: não é receita nem despesa (não entra nos totais); move um valor entre duas contas manuais -->
+          <label class="transactions-opcao">
+            <input type="radio" name="tipo" value="transferencia">
+            <span>Transferência</span>
+          </label>
+        </div>
+        <p class="campo__erro" id="campo-tipo-erro" hidden></p>
+      </fieldset>
+
+      <!-- Esqueleto de carregamento: aparece no lugar dos campos enquanto a janela troca entre lançamento e transferência -->
+      <div id="form-esqueleto" class="esqueleto-grupo transactions-campo--larga" role="status" hidden>
+        <span class="esqueleto esqueleto--linha-extrato"></span>
+        <span class="esqueleto esqueleto--linha-extrato"></span>
+        <span class="esqueleto esqueleto--linha-extrato"></span>
+        <span class="so-leitor">Carregando os campos...</span>
+      </div>
+
+      <div class="campo transactions-campo--larga" id="campo-descricao-area">
+        <label for="campo-descricao" id="rotulo-descricao">Descrição</label>
+        <input type="text" id="campo-descricao" name="descricao" placeholder="Adicione uma descrição para o lançamento" autocomplete="off">
+        <p class="campo__erro" id="campo-descricao-erro" hidden></p>
+      </div>
+
+      <div class="campo">
+        <label for="campo-valor">Valor</label>
+        <div class="form-prefixo">
+          <span class="form-prefixo__texto" aria-hidden="true">R$</span>
+          <input type="text" id="campo-valor" name="valor" inputmode="decimal" placeholder="0,00" autocomplete="off">
+        </div>
+        <p class="campo__erro" id="campo-valor-erro" hidden></p>
+      </div>
+
+      <!-- Data: o mesmo calendário do filtro Período (abre ao passar o mouse); também dá para digitar dd/mm/aaaa. -->
+      <div class="campo" data-calendario="unico" data-ao-clicar>
+        <label for="campo-data">Data</label>
+        <input type="text" id="campo-data" name="data" class="calendario__caixa" placeholder="dd/mm/aaaa"
+          inputmode="numeric" maxlength="10" autocomplete="off" aria-haspopup="dialog" aria-expanded="false">
+        <div data-incluir="/src/shared/components/calendario/Calendario.html"></div>
+        <p class="campo__erro" id="campo-data-erro" hidden></p>
+      </div>
+
+      <!-- Conta: a conta do lançamento (obrigatória). As contas vêm do Backend (TransactionsPage.js) e o saldo delas muda com o lançamento. -->
+      <div class="campo campo--seletor" data-ao-clicar>
+        <label for="campo-conta" id="rotulo-conta">Conta</label>
+        <select id="campo-conta" name="contaId" aria-controls="lista-campo-conta" aria-expanded="false">
+          <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
+        </select>
+        <div class="seletor__lista" id="lista-campo-conta" role="listbox" aria-label="Conta"></div>
+        <p class="campo__erro" id="campo-conta-erro" hidden></p>
+      </div>
+
+      <!-- Só na transferência: a conta de destino (a de origem é o campo Conta, acima) -->
+      <div class="campo campo--seletor" id="campo-conta-destino-area" data-so-transferencia data-ao-clicar>
+        <label for="campo-conta-destino">Para (conta de destino)</label>
+        <select id="campo-conta-destino" aria-controls="lista-campo-conta-destino" aria-expanded="false">
+          <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
+        </select>
+        <div class="seletor__lista" id="lista-campo-conta-destino" role="listbox" aria-label="Conta de destino"></div>
+        <p class="campo__erro" id="campo-conta-destino-erro" hidden></p>
+      </div>
+
+      <div class="campo campo--seletor" data-so-lancamento data-ao-clicar>
+        <label for="campo-formaPagamento">Pagamento</label>
+        <select id="campo-formaPagamento" name="formaPagamento" data-icones="pagamento" aria-controls="lista-campo-formaPagamento" aria-expanded="false">
+        <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
+      <option value="">Selecione...</option>
+      <option value="dinheiro">Dinheiro</option>
+      <option value="pix">Pix</option>
+      <option value="debito">Cartão de débito</option>
+      <option value="credito">Cartão de crédito</option>
+      <option value="boleto">Boleto</option>
+      <option value="outro">Outro</option>
+    </select>
+        <div class="seletor__lista" id="lista-campo-formaPagamento" role="listbox" aria-label="Pagamento"></div>
+        <p class="campo__erro" id="campo-formaPagamento-erro" hidden></p>
+      </div>
+
+      <div class="campo campo--seletor" data-so-lancamento data-ao-clicar>
+        <div class="form-rotulo-linha">
+          <label for="campo-categoria">Categoria</label>
+          <!-- Sugerir: só aqui o Servidor Java é chamado; ele devolve a categoria pela descrição e ela já aparece no campo -->
+          <button type="button" id="botao-sugerir" class="form-sugerir" title="Pergunta ao Servidor a categoria pela descrição">
+            <svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" fill="currentColor"/></svg>
+            <span>Sugerir</span>
+          </button>
+        </div>
+        <select id="campo-categoria" name="categoria" data-icones="categoria" aria-controls="lista-campo-categoria" aria-expanded="false">
+        <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
+      <option value="">Selecione...</option>
+      <option value="Alimentacao">Alimentação</option>
+      <option value="Transporte">Transporte</option>
+      <option value="Moradia">Moradia</option>
+      <option value="Saude">Saúde</option>
+      <option value="Lazer">Lazer</option>
+      <option value="Educacao">Educação</option>
+      <option value="Salario">Salário</option>
+      <option value="Outros">Outros</option>
+    </select>
+        <div class="seletor__lista" id="lista-campo-categoria" role="listbox" aria-label="Categoria"></div>
+        <p class="campo__erro" id="campo-categoria-erro" hidden></p>
+      </div>
+
+      <!-- Cartão e parcelas: só aparecem quando o pagamento é Cartão de crédito (as parcelas, só em despesa). Lógica em
+           CartaoDoLancamento.js. Uma compra em mais de 1 parcela cria o parcelamento dela no cartão (aba Cartão). -->
+      <div class="campo campo--seletor" id="campo-cartao-area" data-so-lancamento data-ao-clicar data-folha-rodape="Criar outro cartão" hidden>
+        <label for="campo-cartao">Cartão *</label>
+        <select id="campo-cartao" name="cartaoId" aria-controls="lista-campo-cartao" aria-expanded="false">
+          <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
+        </select>
+        <div class="seletor__lista" id="lista-campo-cartao" role="listbox" aria-label="Cartão"></div>
+        <p class="transactions-parcela-ajuda" id="campo-cartao-aviso" role="status" hidden></p>
+        <!-- Conta sem cartão: no lugar da lista, o botão que leva à aba Cartão para criar um (toda compra no crédito precisa de um cartão) -->
+        <button type="button" id="campo-cartao-criar" class="transactions-botao transactions-botao--secundario" hidden>Criar cartão para esta conta</button>
+        <p class="campo__erro" id="campo-cartao-erro" hidden></p>
+      </div>
+
+      <div class="campo" id="campo-parcelas-area" data-so-lancamento hidden>
+        <label for="campo-parcelas">Parcelas</label>
+        <!-- Digita-se o número de parcelas (de 1 a 24; 1 = à vista). -->
+        <input type="text" id="campo-parcelas" name="parcelas" inputmode="numeric" maxlength="2" value="1" placeholder="1 (à vista)" autocomplete="off">
+        <p class="transactions-parcela-ajuda" id="campo-parcelas-ajuda" aria-live="polite"></p>
+      </div>
+
+      <!-- Os dois botões redondos abrem as partes recolhidas: Observação e Meta -->
+      <div class="form-extras transactions-campo--larga">
+        <button type="button" id="form-alternar-obs" class="form-redondo" aria-expanded="false" aria-controls="form-obs-area" aria-label="Observação" data-dica="Adicionar observação">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 5.5h14a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5H10l-4 3.5V16.5H5A1.5 1.5 0 0 1 3.5 15V7A1.5 1.5 0 0 1 5 5.5z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M8 10h8M8 13h5" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+        </button>
+        <button type="button" id="form-alternar-meta" class="form-redondo" data-so-lancamento aria-expanded="false" aria-controls="form-meta-area" aria-label="Vincular a uma meta" data-dica="Vincular a uma meta" data-dica-lado="esquerda">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.9"/><circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="1.9"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>
+        </button>
+      </div>
+
+      <div id="form-obs-area" class="campo transactions-campo--larga" data-revelar hidden>
+        <label for="campo-observacoes">Observações</label>
+        <textarea id="campo-observacoes" name="observacoes" rows="2" maxlength="300" placeholder="Informações adicionais (opcional)"></textarea>
+        <p class="campo__erro" id="campo-observacoes-erro" hidden></p>
+        <p class="transactions-contador" id="contador-observacoes" aria-hidden="true">0/300</p>
+      </div>
+
+      <!-- Meta (Grupo 5): vincula a transação a uma meta; a despesa soma no progresso da meta (guardou) e a receita subtrai (retirou). Lógica em
+           MetaDoLancamento.js: sem metas, abre a janela "Nova meta" (no fim deste arquivo); com metas, mostra a lista. -->
+      <fieldset id="form-meta-area" class="transactions-meta transactions-campo--larga" data-so-lancamento data-revelar hidden>
+        <legend class="so-leitor">Meta</legend>
+        <!-- O botão redondo de meta (acima) é quem liga e desliga o vínculo: esta caixa só guarda o estado e fica escondida -->
+        <input type="checkbox" id="campo-vincular-meta" hidden>
+        <p class="transactions-meta-ajuda" id="campo-meta-ajuda">Separou esse dinheiro para um objetivo? Vincule: uma despesa guarda o valor na meta e uma receita retira da meta.</p>
+        <p id="campo-meta-carregando" class="transactions-meta-ajuda" role="status" hidden>Carregando suas metas...</p>
+        <div id="campo-meta-lista" class="transactions-meta-lista" role="radiogroup" aria-label="Meta da transação" hidden></div>
+        <button type="button" id="campo-meta-nova" class="transactions-botao transactions-botao--secundario transactions-meta-nova" hidden>Criar outra meta</button>
+        <p class="campo__erro" id="campo-meta-erro" hidden></p>
+      </fieldset>
+
+      <!-- Rodapé: limpar o formulário, salvar (o botão verde) e salvar e criar outro -->
+      <div class="form-rodape transactions-campo--larga">
+        <button type="button" id="botao-limpar-form" class="form-lateral" aria-label="Limpar o formulário" data-dica="Limpar o formulário">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 7h14M10 7V4.8h4V7M7 7l.8 12.2h8.4L17 7M10.2 11v5M13.8 11v5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button type="submit" id="botao-salvar" class="form-salvar">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span id="botao-salvar-texto">Salvar lançamento</span>
+        </button>
+        <button type="button" id="botao-salvar-outro" class="form-lateral" aria-label="Salvar e criar outro lançamento" data-dica="Salvar e criar outro" data-dica-lado="esquerda">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3.5" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M12 8.5v7M8.5 12h7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </form>
+  </section>
+</div>
+
+<!-- Janela "Nova meta": abre por cima do painel quando o usuário quer vincular a transação a uma meta e ainda não tem nenhuma
+     (ou escolhe "Criar outra meta"). É o mesmo formulário da tela de Metas (features/goals). Fica fora do painel porque o
+     painel tem `transform`, que prenderia uma janela `fixed` dentro dele. -->
+<div id="transactions-meta-modal" class="transactions-meta-modal" role="dialog" aria-modal="true" aria-label="Nova meta" hidden>
+  <div data-incluir="/src/features/goals/components/GoalForm/GoalForm.html"></div>
+</div>
+
+<!-- Modelo de uma meta na lista de escolha: o JS copia este bloco para cada meta e só preenche os textos. -->
+<template id="modelo-meta-opcao">
+  <label class="transactions-meta-item">
+    <input type="radio" name="metaId">
+    <span class="transactions-meta-item__titulo" data-campo="titulo"></span>
+    <span class="transactions-meta-item__resumo" data-campo="resumo"></span>
+  </label>
+</template>

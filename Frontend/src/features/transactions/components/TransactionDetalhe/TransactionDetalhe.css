@@ -1,0 +1,356 @@
+/**
+ * Autor: Miguel Fernandes Monteiro
+ * RA: 25014808
+ */
+/* Painel de detalhes de uma transação (TransactionDetalhe.html): desliza da direita. Usa as variáveis de tema de core/styles/global.css. */
+
+.detalhe-fundo {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgb(0 0 0 / 0.35);
+  backdrop-filter: blur(6px); /* o fundo desfocado atrás da janela */
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.detalhe-fundo--aberto {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.detalhe {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 41;
+  display: flex;
+  flex-direction: column;
+  width: min(26rem, calc(100vw - 2rem));
+  border: var(--borda-elemento, 0);
+  border-radius: 1.6rem;
+  background: var(--fundo-card);
+  box-shadow: var(--sombra-flutuante);
+  transform: translateX(calc(100% + 2rem));
+  visibility: hidden;
+  /* saída mais rápida e com ease-in; a entrada, com ease-out (regra de animação do projeto) */
+  transition: transform 0.12s cubic-bezier(0.7, 0, 0.84, 0), visibility 0s linear 0.12s;
+}
+
+.detalhe--aberto {
+  transform: none;
+  visibility: visible;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s;
+}
+
+.detalhe__topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem 0;
+}
+
+.detalhe__chip {
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  background: var(--fundo-celula);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--texto-suave);
+}
+
+.detalhe__chip--ok {
+  background: color-mix(in srgb, var(--positivo) 18%, transparent);
+  color: var(--positivo);
+}
+
+.detalhe__fechar {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 0;
+  border-radius: 50%;
+  background: var(--fundo-celula);
+  color: var(--texto);
+  cursor: pointer;
+  transition: scale 0.1s ease;
+}
+
+.detalhe__fechar:hover,
+.detalhe__fechar:focus-visible {
+  scale: 1.08;
+}
+
+.detalhe__fechar:focus-visible {
+  outline: none;
+  box-shadow: var(--sombra-foco);
+}
+
+.detalhe__form {
+  flex: 1;
+  min-height: 0;
+  padding: 0.75rem 1.5rem 1rem;
+  overflow-y: auto;
+}
+
+/* ---------------------------------------------------------------- descrição e valor */
+.detalhe__cabecalho {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 1.25rem;
+}
+
+.detalhe__descricao {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.detalhe__valor {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
+.detalhe__moeda {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.detalhe__valor-campo {
+  font-size: 2.1rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------- campos */
+/* cada campo: o nome em cima e uma caixa grande embaixo */
+.detalhe__linhas {
+  display: grid;
+  gap: 1.1rem;
+}
+
+.detalhe__linha.campo {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.detalhe__linha label {
+  color: var(--texto-suave);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.detalhe__linha .campo__erro {
+  margin: 0;
+}
+
+.detalhe__linha input,
+.detalhe__linha textarea {
+  width: 100%;
+  min-height: 3.6rem;
+  padding: 0.9rem 1.1rem;
+  border: 0;
+  border-radius: 1rem;
+  background: var(--fundo-linha);
+  box-shadow: none;
+  color: var(--texto);
+  font: inherit;
+  font-size: 1.1rem;
+}
+
+.detalhe__linha input:focus,
+.detalhe__linha textarea:focus {
+  outline: none;
+  box-shadow: var(--sombra-foco);
+}
+
+/* a data: centralizada, sem sombra nem contorno (vence a regra geral de .campo input) */
+.detalhe__linha.campo input,
+.detalhe__linha.campo input:focus {
+  border: 0;
+  box-shadow: none;
+  background: var(--fundo-linha);
+}
+
+/* só a data fica centralizada; descrição e valor alinham à esquerda */
+.detalhe__linha.campo[data-calendario] input {
+  text-align: center;
+}
+
+/* o botão que liga a edição de todos os campos */
+.detalhe__modo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-self: start;
+  margin-bottom: 1rem;
+  padding: 0.55rem 1rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--fundo-linha);
+  color: var(--texto);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: scale 0.1s ease, background-color 0.15s ease;
+}
+
+.detalhe__modo:hover,
+.detalhe__modo:focus-visible {
+  scale: 1.03;
+  background: var(--fundo-celula);
+  outline: none;
+}
+
+.detalhe__extras {
+  display: grid;
+  gap: 1.1rem;
+}
+
+.detalhe__extras[hidden] {
+  display: none;
+}
+
+/* as listas (selects do projeto) do modo completo, no mesmo tamanho dos campos */
+.detalhe__linha.campo--seletor select {
+  min-height: 3.6rem;
+  padding: 0.9rem 1.1rem;
+  border: 0;
+  border-radius: 1rem;
+  background: var(--fundo-linha);
+  box-shadow: none;
+  font-size: 1.1rem;
+  text-align: left;
+  text-align-last: left;
+}
+
+.detalhe__linha.campo--seletor select > button {
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.detalhe__linha textarea {
+  min-height: 9rem;
+  resize: none;
+}
+
+.detalhe__nota {
+  padding: 0.25rem 0 0.5rem;
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+  text-align: left;
+}
+
+/* ---------------------------------------------------------------- rodapé */
+.detalhe__rodape {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 1rem 1.5rem 1.25rem;
+  border-top: 1px solid var(--borda);
+}
+
+.detalhe__salvar {
+  flex: 1;
+  min-height: 3rem;
+  padding: 0.5rem 1rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--destaque);
+  color: var(--destaque-texto);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: scale 0.1s ease;
+}
+
+.detalhe__salvar:hover:not(:disabled),
+.detalhe__salvar:focus-visible {
+  scale: 1.02;
+}
+
+.detalhe__salvar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.detalhe__salvar[hidden] {
+  display: none;
+}
+
+/* sem alterações o rodapé só tem os dois ícones, à direita */
+.detalhe__rodape::before {
+  content: '';
+  flex: 1;
+}
+
+.detalhe__salvar:not([hidden]) ~ .detalhe__icone {
+  flex: none;
+}
+
+.detalhe__rodape:has(.detalhe__salvar:not([hidden]))::before {
+  display: none;
+}
+
+.detalhe__icone {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border: 0;
+  border-radius: 1rem;
+  background: var(--fundo-celula);
+  color: var(--texto);
+  cursor: pointer;
+  transition: scale 0.1s ease;
+}
+
+.detalhe__icone:hover:not(:disabled),
+.detalhe__icone:focus-visible {
+  scale: 1.08;
+}
+
+.detalhe__icone:focus-visible {
+  outline: none;
+  box-shadow: var(--sombra-foco);
+}
+
+.detalhe__icone:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.detalhe__icone--perigo {
+  background: color-mix(in srgb, var(--negativo) 16%, transparent);
+  color: var(--negativo);
+}
+
+@media (max-width: 767px) {
+  .detalhe {
+    inset: 0;
+    width: 100%;
+    border-radius: 0;
+  }
+}
+
+/* fora do modo "Editar todos os campos" a observação é só para ler: não reage a clique nem a foco (sem contorno, cursor ou aumento) */
+.detalhe__linha textarea:read-only {
+  pointer-events: none;
+  caret-color: transparent;
+  outline: none;
+  resize: none;
+  scale: 1;
+  box-shadow: none;
+}
+
+/* Na aba Cartão não se vincula meta */
+[data-escopo-cartao] .campo:has(> #detalhe-metaId) {
+  display: none;
+}

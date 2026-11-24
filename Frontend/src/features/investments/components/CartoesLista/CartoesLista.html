@@ -1,0 +1,59 @@
+<!-- Autor: Miguel Fernandes Monteiro | RA: 25014808 -->
+<!-- Componente: a fila horizontal de cartões (com barra de rolagem) e o card para adicionar outro. Cada cartão é um card: logo, nome, tipo e conta,
+     fechamento e vencimento, os botões Editar e Excluir e, embaixo, a fatura atual e o limite disponível. Clicar no card (ou Enter nele) o escolhe, e a
+     fatura dele aparece logo abaixo (CartaoCompras). Lógica em CartoesLista.js. Cada card é feito a partir dos <template> no fim deste arquivo. -->
+<!-- Como a lista de contas em Contas conectadas: um cartão da seção (com o título) e, dentro dele, a faixa de fundo mais escuro com os cards. -->
+<section class="investments-cartao investments-cartoes-secao" aria-labelledby="invest-cartoes-titulo">
+  <div class="investments-secao-topo">
+    <div>
+      <h2 id="invest-cartoes-titulo">Meus cartões</h2>
+      <p class="investments-texto-suave">Escolha um cartão para ver a fatura dele logo abaixo. Cada cartão é vinculado a uma das suas contas.</p>
+    </div>
+  </div>
+  <div id="invest-cartoes-faixa" class="investments-cartoes-faixa">
+    <!-- só esta lista rola; o card de novo cartão fica fixo ao lado -->
+    <ul id="invest-cartoes-lista" class="investments-cartoes"></ul>
+    <div id="invest-cartao-novo-area" class="investments-cartao-novo-area"></div>
+  </div>
+  <p id="invest-sem-cartao" class="investments-vazio" hidden>
+    Você ainda não tem nenhum cartão. Crie o primeiro: ele é vinculado a uma das suas contas e é opcional (a conexão com o Open Finance não exige cartão).
+  </p>
+</section>
+
+<!-- Modelo de um cartão: o JS copia este bloco para cada cartão e só preenche os textos. -->
+<template id="modelo-cartao">
+  <li class="investments-cartao-card" tabindex="0" role="button" aria-pressed="false">
+    <div class="investments-cartao-card__topo">
+      <span class="cartao-logo" data-campo="logo" aria-hidden="true"></span>
+      <div class="investments-cartao-card__texto">
+        <h3 data-campo="nome"></h3>
+        <span class="tag-open-finance" data-campo="tagOpenFinance" hidden>Open Finance</span>
+        <p class="investments-texto-suave" data-campo="tipo"></p>
+        <p class="investments-texto-suave" data-campo="ciclo"></p>
+      </div>
+      <div class="investments-cartao-card__acoes">
+        <button type="button" class="investments-botao investments-botao--pequeno investments-botao--secundario" data-acao="editar">Editar</button>
+        <button type="button" class="investments-botao investments-botao--pequeno investments-botao--perigo" data-acao="excluir">Excluir</button>
+      </div>
+    </div>
+    <div class="investments-cartao-card__rodape">
+      <div>
+        <p class="investments-texto-suave">Fatura atual</p>
+        <p class="investments-cartao-card__valor valor-financeiro" data-campo="faturaValor"></p>
+      </div>
+      <p class="investments-texto-suave investments-cartao-card__limite">
+        Limite disponível de <strong class="valor-financeiro" data-campo="limiteDisponivel"></strong>
+      </p>
+    </div>
+  </li>
+</template>
+
+<!-- Modelo do card que adiciona um cartão novo -->
+<template id="modelo-cartao-novo">
+  <div class="investments-cartao-novo">
+    <button type="button" id="invest-cartao-novo" class="investments-cartao-novo__botao" aria-controls="invest-cartao-form-area">
+      <span class="investments-cartao-novo__mais" aria-hidden="true">+</span>
+      <span>Novo cartão</span>
+    </button>
+  </div>
+</template>

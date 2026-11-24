@@ -1,0 +1,87 @@
+<!-- Autor: Miguel Fernandes Monteiro | RA: 25014808 -->
+<!-- Componente: janela "Nova conta" / "Editar conta". Lógica em ContaForm.js. Abre no centro da tela por cima do conteúdo (CSS em
+     ContaForm.css); o fundo escurece a página enquanto ela está aberta. Os campos de lista (Banco e Conexão) usam a lista do
+     projeto (shared/components/seletor.js), que precisa do <template id="modelo-opcao-seletor"> no fim deste arquivo.
+     O tipo (manual ou Open Finance) só se escolhe ao criar. A opção Open Finance leva o selo PRO e fica bloqueada no plano Free. -->
+<div id="conta-fundo" class="conta-fundo"></div>
+<div id="conta-painel" class="conta-painel" role="dialog" aria-modal="true" aria-labelledby="conta-titulo">
+  <section class="contas-cartao conta-cartao" data-folha>
+    <div class="conta-topo">
+      <h2 id="conta-titulo">Nova conta</h2>
+      <button type="button" id="conta-fechar" class="conta-fechar" aria-label="Fechar">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <form id="conta-form" class="conta-form" novalidate>
+      <fieldset id="conta-tipo-area" class="conta-tipo">
+        <legend class="so-leitor">Tipo da conta</legend>
+        <label class="conta-opcao">
+          <input type="radio" name="conta-tipo" value="manual" checked>
+          <span>Manual</span>
+        </label>
+        <label class="conta-opcao" id="conta-opcao-open">
+          <input type="radio" name="conta-tipo" value="open_finance">
+          <span>Open Finance</span>
+          <span class="conta-pro">PRO</span>
+        </label>
+        <p id="conta-pro-aviso" class="conta-ajuda" hidden>
+          Contas Open Finance fazem parte do plano Pro: o saldo vem direto do banco. Faça o upgrade para usar.
+        </p>
+      </fieldset>
+
+      <div class="campo" id="conta-nome-area">
+        <label for="conta-nome">Nome</label>
+        <input type="text" id="conta-nome" maxlength="40" placeholder="Ex.: Conta corrente, Reserva" autocomplete="off">
+        <p class="campo__erro" id="conta-nome-erro" hidden></p>
+      </div>
+
+      <div class="campo campo--seletor" id="conta-banco-area" data-ao-clicar>
+        <label for="conta-banco">Banco</label>
+        <select id="conta-banco" aria-controls="lista-conta-banco" aria-expanded="false">
+          <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
+        </select>
+        <div class="seletor__lista" id="lista-conta-banco" role="listbox" aria-label="Banco"></div>
+        <p class="campo__erro" id="conta-banco-erro" hidden></p>
+      </div>
+
+      <!-- Ícone e cor da conta (opcionais): sem eles vale o logo do banco. Montado por shared/components/escolhaIcone.js -->
+      <div class="campo escolha-icone" id="conta-aparencia" data-rotulo="Ícone e cor (opcional)"></div>
+
+      <div class="campo" id="conta-saldo-area">
+        <label for="conta-saldo" id="conta-saldo-rotulo">Saldo bancário</label>
+        <div class="conta-prefixo">
+          <span class="conta-prefixo__texto" aria-hidden="true">R$</span>
+          <input type="text" id="conta-saldo" inputmode="decimal" placeholder="0,00" autocomplete="off">
+        </div>
+        <p class="conta-ajuda" id="conta-saldo-ajuda">O saldo que a conta tem hoje. Os lançamentos e as transferências partem dele.</p>
+        <p class="campo__erro" id="conta-saldo-erro" hidden></p>
+      </div>
+
+      <div class="campo campo--seletor" id="conta-conexao-area" data-ao-clicar hidden>
+        <label for="conta-conexao">Conexão Open Finance</label>
+        <select id="conta-conexao" aria-controls="lista-conta-conexao" aria-expanded="false">
+          <button type="button" tabindex="-1"><selectedcontent></selectedcontent></button>
+        </select>
+        <div class="seletor__lista" id="lista-conta-conexao" role="listbox" aria-label="Conexão Open Finance"></div>
+        <p class="conta-ajuda">Uma conexão que você já fez e ainda não virou conta.</p>
+        <p class="campo__erro" id="conta-conexao-erro" hidden></p>
+      </div>
+
+      <!-- Conectar uma conta pelo Open Finance (banco de teste ou widget da Pluggy). Ao terminar, a conta aparece sozinha na lista. -->
+      <div id="conta-conectar-area" class="conta-conectar" hidden>
+        <div data-incluir="/src/features/contas-conectadas/components/ContasConectar/ContasConectar.html"></div>
+      </div>
+
+      <div class="conta-rodape">
+        <button type="button" id="conta-cancelar" class="contas-botao contas-botao--secundario">Cancelar</button>
+        <button type="submit" id="conta-salvar" class="contas-botao">Salvar conta</button>
+      </div>
+    </form>
+  </section>
+</div>
+
+<!-- Modelo de uma opção das listas dos selects do projeto (shared/components/seletor.js copia este bloco para cada <option>). -->
+<template id="modelo-opcao-seletor">
+  <div class="seletor__opcao" role="option"></div>
+</template>
